@@ -196,8 +196,8 @@ void AUXROM_SDCUR(void)
 //                    first=0           wildcards=0      match          We don't support wildcards in this revision
 //                    next=1            unique=1         pattern
 //  SDCAT             0                 0                 *             Should handle this. Initialize and return first result
-//                    1                 junk?             junk          Should handle this. This is the second call
-//                    1                 junk?             junk          Should handle this. This is for the rest of the calls
+//                    1                 xxx               xxx           Should handle this. This is the second call
+//                    1                 xxx               xxx           Should handle this. This is for the rest of the calls
 //  SDCAT "*"         0                 0                 *             Should handle this. Initialize and return first result
 //  SDCAT "D*"        0                 0                 D*            Can't handle this
 //  SDCAT A$,S,F,0    0                 0                 *             Should handle this. Initialize and return first result
@@ -205,6 +205,11 @@ void AUXROM_SDCUR(void)
 //  SDCAT A$,S,F,0,fileSpec$                                            Can't handle this
 //  SDCAT A$,S,F,1,fileSpec$                                            Can't handle this
 //
+//  Note: In above table, the "xxx" are data left in OPTS/Buffers from the previous call. This only happens
+//  for second and successive calls, where AR_BUF6_OPTS 0..3 are used for passing back the file length, and
+//  since successive calls set AR_BUF6_OPTS[0] to 1, it will be 1, but on entry, the rest of AR_BUF6_OPTS 1..3
+//  will have the remnants of the previous file's length, and Buffer 6 will have the prior file name, since
+//  the pattern specification, which we ignore, is only provided on the first call
 //
 
 //static int        SDCAT_line_count = 0;
@@ -221,9 +226,9 @@ void AUXROM_SDCAT(void)
   //
   //  Show Parameters
   //
-  Serial.printf("\nSDCAT\nAR_BUF6_OPTS[0] = %d\n",AUXROM_RAM_Window.as_struct.AR_BUF6_OPTS[0]);
-  Serial.printf("AR_BUF6_OPTS[1] = %d\n",AUXROM_RAM_Window.as_struct.AR_BUF6_OPTS[1]);
-  Serial.printf("Buffer 6 [%s]\n", AUXROM_RAM_Window.as_struct.AR_Buffer_6);
+  //  Serial.printf("\nSDCAT\nAR_BUF6_OPTS[0] = %d\n", AUXROM_RAM_Window.as_struct.AR_BUF6_OPTS[0]);
+  //  Serial.printf("AR_BUF6_OPTS[1] = %d\n", AUXROM_RAM_Window.as_struct.AR_BUF6_OPTS[1]);
+  //  Serial.printf("Buffer 6 [%s]\n", AUXROM_RAM_Window.as_struct.AR_Buffer_6);
 
   if(AUXROM_RAM_Window.as_struct.AR_BUF6_OPTS[0] == 0)  //  This is a First Call
   {
@@ -259,13 +264,13 @@ void AUXROM_SDCAT(void)
   //    2020-09-07 16:24          0 pathtest/
   //    01234567890123456789012345678901234567890     Sub-directories are marked by a trailing slash, otherwise it is a file
   //
-  Serial.printf("dir_line   [%s]\n", dir_line);
+  //  Serial.printf("dir_line   [%s]\n", dir_line);
   strlcpy(date_time, dir_line, 17);
   strlcpy(file_size, &dir_line[16], 12);
   temp_uint = strlcpy(AUXROM_RAM_Window.as_struct.AR_Buffer_6, &dir_line[28], 129);
   AUXROM_RAM_Window.as_struct.AR_Lengths[6] = temp_uint;
   temp_uint = atoi(file_size);
-  Serial.printf("Filename [%s]   Date/time [%s]   Size [%s] = %d\n", AUXROM_RAM_Window.as_struct.AR_Buffer_6, date_time, file_size, temp_uint);
+  //Serial.printf("Filename [%s]   Date/time [%s]   Size [%s] = %d\n", AUXROM_RAM_Window.as_struct.AR_Buffer_6, date_time, file_size, temp_uint);
   AUXROM_RAM_Window.as_struct.AR_Usages[6]  = 0;        //  Success
  
   // this should just be a casted store

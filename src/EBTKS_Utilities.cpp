@@ -1192,7 +1192,7 @@ redo_bus:
   }
 
   if(strlen(serial_string) != 3)
-  { Serial.printf("Please enter a 3 digit number, only use 0 and 1\n\n"); serial_string_used(); goto redo_bus; }
+  { Serial.printf("Please enter a 3 digit number, /WR /RD /LMA, only use 0 and 1\n\n"); serial_string_used(); goto redo_bus; }
 
   if(serial_string[0] == '1') Logic_Analyzer_Trigger_Value |= BIT_MASK_WR;
   else if (serial_string[0] == '0') {}
@@ -1354,8 +1354,8 @@ void Logic_Analyzer_Poll(void)
     Serial.printf("waiting... Valid Samples:%4d Sample:%08X Mask:%08X TrigPattern:%08X Event:%d RSELEC %03o\n",
                     Logic_Analyzer_Valid_Samples, Logic_Analyzer_sample, Logic_Analyzer_Trigger_Mask,
                     Logic_Analyzer_Trigger_Value, Logic_Analyzer_Event_Count, rselec);
-    Serial.printf("Mailboxes 0..6  :");
-    show_mailboxes_and_usage();
+    //Serial.printf("Mailboxes 0..6  :");
+    //show_mailboxes_and_usage();
   }
   if(Ctrl_C_seen)                           //  Need to do better clean up of this I think. Really need to re-do all serial I/O
   {                                         //  Type any character to abort    
@@ -1370,11 +1370,13 @@ void Logic_Analyzer_Poll(void)
   //
   //  Logic analyzer has completed acquisition
   //
+  Logic_Analyzer_State = ANALYZER_IDLE;
   Serial.printf("Logic Analyzer results\n\n");
   Serial.printf("Buffer Length %d  Address Mask  %d\n" , Logic_Analyzer_Current_Buffer_Length, Logic_Analyzer_Current_Index_Mask);
   Serial.printf("Trigger Index %d  Pre Trigger Samples %d\n\n", Logic_Analyzer_Index_of_Trigger, Logic_Analyzer_Pre_Trigger_Samples);
   show_mailboxes_and_usage();
   Serial.printf("Sample  Address      Data    Cycle\n");
+  Serial.printf("                             WRL\n");
   sample_number_relative_to_trigger = - Logic_Analyzer_Pre_Trigger_Samples;
 
   for(i = 0 ; i < Logic_Analyzer_Current_Buffer_Length ; i++)
@@ -1393,9 +1395,9 @@ void Logic_Analyzer_Poll(void)
                                                              temp & 0x000000FFU,
                                                              temp & 0x000000FFU);
     }
-    Serial.printf("%c", (temp & BIT_MASK_LMA) ? '-' : 'L');   //  Remember that these 3 signals are active low
+    Serial.printf("%c", (temp & BIT_MASK_WR)  ? '-' : 'W');   //  Remember that these 3 signals are active low
     Serial.printf("%c", (temp & BIT_MASK_RD)  ? '-' : 'R');
-    Serial.printf("%c", (temp & BIT_MASK_WR)  ? '-' : 'W');
+    Serial.printf("%c", (temp & BIT_MASK_LMA) ? '-' : 'L');
     if(j == Logic_Analyzer_Index_of_Trigger)
     {
       Serial.printf("  Trigger\n");
