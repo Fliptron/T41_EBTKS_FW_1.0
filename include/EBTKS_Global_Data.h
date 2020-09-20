@@ -16,14 +16,14 @@
 
 #include <setjmp.h>
 
+#define PACKED __attribute__((__packed__))
+
 ///////////////////////////////////////////////////  Uninitialized Globals. Actually initialized to 0x00000000  /////////////////////////////////////////
 
 //  These depend on the automatic initialization to Zero (NULL for pointers , false for bool)
 //  https:stackoverflow.com/questions/16015656/are-global-variables-always-initialized-to-zero-in-c?lq=1
 
-EXTERN  uint8_t *romMap[256];                       //  Hold the pointers to the rom data based on ID as the index
-
-struct __attribute__((__packed__)) AUXROM_RAM
+struct PACKED AUXROM_RAM
 {                                                   //  Octal Addresses   Decimal byte number     AUXROM Internal name
                                                     //                    in this struct
   uint8_t       AR_Mailboxes[32];                   //  070000 - 070037       0 -    31           A.MB0    - A.MB31
@@ -62,7 +62,7 @@ struct __attribute__((__packed__)) AUXROM_RAM
 //    This is to avoid a compiler warning "warning: dereferencing type-punned pointer will break strict-aliasing rules [-Wstrict-aliasing]"
 //    when compiling the WROM function in EBTKS_AUXROM_SD_Services.cpp
 //
-struct __attribute__((__packed__)) AUXROM_RAM_A
+struct PACKED AUXROM_RAM_A
 {                                                   //  Octal Addresses   Decimal byte number     AUXROM Internal name
                                                     //                    in this struct
   uint8_t       AR_Mailboxes[32];                   //  070000 - 070037       0 -    31           A.MB0    - A.MB31
@@ -105,25 +105,25 @@ union RAM_WINDOW_OVERLAY
 
 EXTERN union RAM_WINDOW_OVERLAY AUXROM_RAM_Window;
 
-struct __attribute__((__packed__)) S_HP85_Number
+struct PACKED S_HP85_Number
 {
   uint8_t     real_bytes[8];
 };
 
-struct __attribute__((__packed__)) S_HP85_String_Ref
+struct PACKED S_HP85_String_Ref
 {
   uint16_t     unuseable_abs_rel_addr;                              //  Actually could be used by looking up whether in Calculator or Basic program mode
   uint16_t     length;
   uint16_t     address;                                             //  Do I need to set MSB if I am over-writing a string, What about if the param is a quoted string?
 };
 
-struct __attribute__((__packed__)) S_HP85_String_Val
+struct PACKED S_HP85_String_Val
 {
   uint16_t     length;                                              //  Length of string
   uint16_t     address;                                             //  Location of string, could be a var, or result of an expression. Read only
 };
 
-struct __attribute__((__packed__)) S_HP85_String_Variable
+struct PACKED S_HP85_String_Variable
 {
   uint8_t     flags_1;
   uint8_t     flags_2;
@@ -133,17 +133,17 @@ struct __attribute__((__packed__)) S_HP85_String_Variable
   uint8_t     text[];
 };
 
-struct __attribute__((__packed__)) S_Parameter_Block_N_N_N_N_N_N    //  up to 6 numbers, total of 48 bytes
+struct PACKED S_Parameter_Block_N_N_N_N_N_N    //  up to 6 numbers, total of 48 bytes
 {
   struct S_HP85_Number  numbers[6];
 };
 
-struct __attribute__((__packed__)) S_Parameter_Block_SREF           //  1 string ref, total of 6 bytes
+struct PACKED S_Parameter_Block_SREF           //  1 string ref, total of 6 bytes
 {
   struct S_HP85_String_Ref  string;
 };
 
-struct __attribute__((__packed__)) S_Parameter_Block_SVAL              //  1 string, total of 4 bytes
+struct PACKED S_Parameter_Block_SVAL              //  1 string, total of 4 bytes
 {
   struct S_HP85_String_Val  string_val;
 };
@@ -160,29 +160,11 @@ EXTERN  union PARAMETER_BLOCK_OVERLAY Parameter_blocks;
 EXTERN  bool      new_AUXROM_Alert;
 EXTERN  uint8_t   Mailbox_to_be_processed;
 
-// Configuration that we'll store on disk
-struct Config
-{
-  bool ram16k;
-  bool tapeEmu;
-  bool screenEmu;
-  char tapeFile[MAX_ROM_NAME_LENGTH + 1];
-  char diskFile[MAX_ROM_NAME_LENGTH + 1];
-  char roms[MAX_ROMS][MAX_ROM_NAME_LENGTH + 1];
-};
-
-EXTERN  Config config;                        //  <- global configuration object
-
-EXTERN  uint8_t Mirror_Video_RAM[8192];       //
-
-EXTERN  uint8_t vram[8192];                   // Virtual Graphics memory, to avoid needing Read-Modify-Write
-
 EXTERN  uint8_t HP85A_16K_RAM_module[EXP_RAM_SIZE]; //map this into the HP85 address space @ 0xc000..0xfeff
 
 EXTERN  uint8_t Shared_DMA_Buffer_1[MAX_DMA_TRANSFER_LENGTH + 8];    // + 8 for a tiny bit of off by error safety
 EXTERN  uint8_t Shared_DMA_Buffer_2[MAX_DMA_TRANSFER_LENGTH + 8];    // + 8 for a tiny bit of off by error safety
 
-EXTERN  uint8_t *currRom; //pointer to the currently selected rom data. NULL if not selected
 
 EXTERN  bool haltReq; //set true to request the HP85 to halt/DMA request
 
@@ -223,8 +205,8 @@ EXTERN  volatile  uint8_t   just_once;      //  This is used to trigger a tempor
 typedef void (*ioWriteFuncPtr_t)(uint8_t);
 typedef bool (*ioReadFuncPtr_t)(void);
 
-EXTERN  ioReadFuncPtr_t ioReadFuncs[256];      //ensure the setup() code initialises this!
-EXTERN  ioWriteFuncPtr_t ioWriteFuncs[256];
+
+
 
 //
 //  Log file support
@@ -263,7 +245,7 @@ EXTERN  SdFat SD;
 
 EXTERN  Print_Splitter PS;
 
-EXTERN EXTMEM char Directory_Listing_Buffer[DIRECTORY_LISTING_BUFFER_SIZE];     //  Normally this should be inside the Class as private, but I don't
+EXTERN  EXTMEM char Directory_Listing_Buffer[DIRECTORY_LISTING_BUFFER_SIZE];    //  Normally this should be inside the Class as private, but I don't
                                                                                 //  know if the EXTMEM can be done within a class, and we certainly
                                                                                 //  don't want this buffer to be dynamically allocated on heap either.
 
@@ -275,16 +257,6 @@ EXTERN EXTMEM char Directory_Listing_Buffer[DIRECTORY_LISTING_BUFFER_SIZE];     
 
         const char *Config_filename = "/config.txt";    // <- SD library uses 8.3 filenames
 
-        volatile uint8_t rselec = 0;          //holds rom ID currently selected
-
-        volatile uint8_t crtControl = 0;      //write to status register stored here. bit 7 == 1 is graphics mode, else char mode
-        volatile bool writeCRTflag = false;
-
-        bool badFlag = false;                 //odd/even flag for Baddr
-        uint16_t badAddr = 0;
-
-        bool sadFlag = false;                 //odd/even flag for CRT start address
-        uint16_t sadAddr = 0;
 
         volatile bool DMA_Request = false;
         volatile bool DMA_Acknowledge = false;
@@ -298,14 +270,11 @@ EXTERN EXTMEM char Directory_Listing_Buffer[DIRECTORY_LISTING_BUFFER_SIZE];     
 				uint16_t       serial_string_length    = 0;
 
 
-        DMAMEM uint8_t roms[MAX_ROMS][ROM_PAGE_SIZE];    //  Array to store the rom images loaded from SD card
-
+        
 #else
         //  Just declare them, no allocation, no initialization (see above)
 
         extern  const char *Config_filename;
-
-        extern  volatile uint8_t rselec;
 
         extern  volatile uint8_t crtControl;
         extern  volatile bool writeCRTflag;
@@ -324,8 +293,6 @@ EXTERN EXTMEM char Directory_Listing_Buffer[DIRECTORY_LISTING_BUFFER_SIZE];     
 
 				extern  bool           serial_string_available;
 				extern  uint16_t       serial_string_length;
-
-        extern  uint8_t roms[MAX_ROMS][ROM_PAGE_SIZE];    //  Array to store the rom images loaded from SD card
 
 #endif
 

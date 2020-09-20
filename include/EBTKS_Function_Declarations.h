@@ -5,15 +5,15 @@
 //
 //  1MB5/disk functions
 //
-bool onReadStatus(void);
-bool onReadIB(void);
-void onWriteCCR(uint8_t val);
-void onWriteOb(uint8_t val);
-void onWriteInterrupt(uint8_t val);
-bool onReadInterrupt(void);
 void initTranslator(void);
 void loopTranslator(void);
-
+//
+//  bank rom functions
+//
+uint8_t getRselec(void);
+uint8_t *getRomSlotPtr(int slotNum);
+void initRoms(void);
+void setRomMap(uint8_t romId,uint8_t slotNum);
 
 //
 //  Tape functions
@@ -51,11 +51,7 @@ void    MEM_Test_3(void);
 //
 //  CRT Functions
 //
-
-void ioWriteCrtSad(uint8_t val);
-void ioWriteCrtBad(uint8_t val);
-void ioWriteCrtCtrl(uint8_t val);
-void ioWriteCrtDat(uint8_t val);
+void initCrtEmu(void);
 void dumpCrtAlpha(void);
 void Write_on_CRT_Alpha(uint16_t row, uint16_t column, const char *  text);
 void a3_to_a4(unsigned char *a4, unsigned char *a3);
@@ -67,9 +63,8 @@ void writeLine(int x0, int y0, int x1, int y1, int color);
 //
 //  Bank Switched ROM support
 //
-
-void ioWriteRSELEC(uint8_t val);
-bool readBankRom(uint16_t addr);
+bool      readBankRom(uint16_t addr);
+uint8_t * getROMEntry(uint8_t romId);
 
 //
 //  HP-85 Bus interface and ISR functions
@@ -81,20 +76,28 @@ void release_DMA_request(void);
 inline void onPhi_1_Rise(void);
 inline void onWriteData(uint16_t addr, uint8_t data) __attribute__((always_inline, unused));
 inline void onPhi_1_Fall(void);
-FASTRUN void pinChange_isr(void)   __attribute__ ((interrupt ("IRQ")));     //  Apparently this is needed 10/12/2020
-//FASTRUN void pinChange_isr(void);
+FASTRUN void pinChange_isr(void) __attribute__ ((interrupt ("IRQ")));
 void setupPinChange(void);
 void mySystick_isr(void);
+void initIOfuncTable(void);
+void setIOReadFunc(uint8_t addr,ioReadFuncPtr_t readFuncP);
+void setIOWriteFunc(uint8_t addr,ioWriteFuncPtr_t writeFuncP);
+
 
 //
 //  SD Card support
 //
-
 bool loadRom(const char *fname, int slotNum, const char * description);
-void saveConfiguration(const char *filename, const Config &config);
-bool loadConfiguration(const char *filename, Config &config);
+void saveConfiguration(const char *filename);
+bool loadConfiguration(const char *filename);
 void printDirectory(File dir, int numTabs);
 void no_SD_card_message(void);
+
+//
+//  HP85 16k exp ram
+//
+void enHP85RamExp(bool en);
+bool getHP85RamExp(void);
 
 bool LineAtATime_ls_Init(void);
 bool LineAtATime_ls_Next(void);

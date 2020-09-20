@@ -47,6 +47,49 @@
 
 #include "Inc_Common_Headers.h"
 
+ioReadFuncPtr_t ioReadFuncs[256];      //ensure the setup() code initialises this!
+ioWriteFuncPtr_t ioWriteFuncs[256];
+
+
+bool ioReadNullFunc(void) //  This function is running within an ISR, keep it short and fast.
+{
+  return false;
+}
+
+void ioWriteNullFunc(uint8_t) //  This function is running within an ISR, keep it short and fast.
+{
+  return;
+}
+
+void initIOfuncTable(void)
+{
+for (int a = 0; a < 256; a++)
+  {
+    ioReadFuncs[a] = &ioReadNullFunc; //default all
+    ioWriteFuncs[a] = &ioWriteNullFunc;
+  }
+}
+void setIOReadFunc(uint8_t addr,ioReadFuncPtr_t readFuncP)
+{
+  ioReadFuncs[addr] = readFuncP;
+}
+
+void setIOWriteFunc(uint8_t addr,ioWriteFuncPtr_t writeFuncP)
+{
+  ioWriteFuncs[addr] = writeFuncP;
+}
+
+bool enRam16k = false;
+
+void enHP85RamExp(bool en)
+{
+  enRam16k = en;
+}
+
+bool getHP85RamExp(void)
+{
+  return enRam16k;
+}
 //
 //  EBTKS has only 2 interrupts, one for Phi 1 rising edge, and one for Phi 2 rising edge
 //  Both interupts come here to be serviced. They are mutually exclusive.
@@ -465,7 +508,7 @@ inline bool onReadData(uint16_t Current_Read_Address)                  //  This 
                                                         //  This function knows about the AUXROM RAM Window, and handles these reads as well
   }
 
-  if(config.ram16k)
+  if(enRam16k)
   {
     //
     //  For HP-85 A, implement 16384 - 256 bytes of RAM, mapped at 0xC000 to 0xFEFF (if enabled)
@@ -519,7 +562,7 @@ inline void onWriteData(uint16_t addr, uint8_t data)
     return;
   }
 
-  if(config.ram16k)
+  if(enRam16k)
   {
     //
     //  For HP-85 A, implement 16384 - 256 bytes of RAM, mapped at 0xC000 to 0xFEFF (if enabled)
@@ -536,7 +579,7 @@ inline void onWriteData(uint16_t addr, uint8_t data)
   //  Handle special RAM window in the AUXROM(s)
   //
 
-  if((rselec >= AUXROM_PRIMARY_ID) && (rselec <= AUXROM_SECONDARY_ID_END))      //  Testing for Primary AUXROM and all secondaries
+  if((getRselec() >= AUXROM_PRIMARY_ID) && (getRselec() <= AUXROM_SECONDARY_ID_END))      //  Testing for Primary AUXROM and all secondaries
   {
     if((addr >= (AUXROM_RAM_WINDOW_START + 060000)) && (addr <= (AUXROM_RAM_WINDOW_LAST + 060000)))     //  Write AUXROM shared RAM window
     {
@@ -636,7 +679,4 @@ void mySystick_isr(void)
 //   release_DMA_request();    //  Release the HP85 bus and enable interrupts
 //   while(DMA_Active){};      //  Wait for release
 // }
-
-
-
-
+// }

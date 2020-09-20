@@ -9,15 +9,6 @@
 #include "Inc_Common_Headers.h"
 
 #include "USBHost_t36.h"
-//##DISABLED##//#include "cpm_emu.h"
-//#include "Adafruit_GFX.h"
-//#include "Adafruit_SSD1306.h"
-//#include "EBTKS_Term85.h"
-
-//##DISABLED##//#define NUM_CPM_DISK 4 //number of emulated cp/m disk drives
-//##DISABLED##//File dfile[NUM_CPM_DISK]; // file pointers for the kaypro4 disk images
-
-extern void lisp_do_repl(void);
 
 USBHost myusb;
 USBHub hub1(myusb);
@@ -26,22 +17,10 @@ USBHub hub3(myusb);
 KeyboardController keyboard1(myusb);
 KeyboardController keyboard2(myusb);
 
-//  Term85 xterm;
-//  MapScreen xscreen(&xterm);
 
 
-void OnPress(int key)
-{
-	Serial.print("key '");
-	Serial.print((char)key);
-	Serial.print("'  ");
-	Serial.println(key);
-	//Serial.print("key ");
-	//Serial.print((char)keyboard1.getKey());
-	//Serial.print("  ");
-	//Serial.print((char)keyboard2.getKey());
-	//Serial.println();
-}
+
+
 
 
 
@@ -445,15 +424,6 @@ GPIO9   33         7           CORE_PIN33_PORTREG
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////    Handlers for I/O device support
 
-bool ioReadNullFunc(void)                  //  This function is running within an ISR, keep it short and fast.
-{
-  return false;
-}
-
-void ioWriteNullFunc(uint8_t)              //  This function is running within an ISR, keep it short and fast.
-{
-  return;
-}
 
 //
 //  Setup Tasks
@@ -478,7 +448,6 @@ void setup()
 
   int   setjmp_reason;
   int   message_count = 0;
-  int   i, j;
   bool  config_success;
 
   setjmp_reason = setjmp(PWO_While_Running);
@@ -576,41 +545,21 @@ void setup()
   pinMode(CORE_PIN_DB7, INPUT);   //  DB7
 
   // setup io function calls
-  for (int a = 0; a < 256;a++)
-  {
-    ioReadFuncs[a] = &ioReadNullFunc; //default all
-    ioWriteFuncs[a] = &ioWriteNullFunc;
-  }
+  initIOfuncTable();
+  initRoms();
+  initCrtEmu();
 
-  ioWriteFuncs[4]    = &ioWriteCrtSad;          // Address 0xFF04   CRT controller
-  ioWriteFuncs[5]    = &ioWriteCrtBad;
-  ioWriteFuncs[6]    = &ioWriteCrtCtrl;
-  ioWriteFuncs[7]    = &ioWriteCrtDat;
-  ioWriteFuncs[0x18] = &ioWriteRSELEC;          // rom select register for banked roms
-  ioWriteFuncs[0340] = &ioWriteAuxROM_Alert;    // AUXROM Alert that a Mailbox/Buffer has been updated. Named HEYEBTKS
-
-//setup the tape emulation
+  setIOWriteFunc(0340,&ioWriteAuxROM_Alert); // AUXROM Alert that a Mailbox/Buffer has been updated
+  setIOReadFunc(0340,&onReadAuxROM_Alert);   // Use HEYEBTKS to return identification string
 
   TXD_Pulser(4);
-  EBTKS_delay_ns(10000);    //  10 us
+  EBTKS_delay_ns(10000); //  10 us
 
-  //  1MB5 device #7 /hpib/disk interface
-  ioReadFuncs[0x58]  = &onReadStatus;
-  ioReadFuncs[0x59]  = &onReadIB;
-  ioWriteFuncs[0x58] = &onWriteCCR;
-  ioWriteFuncs[0x59] = &onWriteOb;
-  ioWriteFuncs[0x40] = &onWriteInterrupt;
-  ioReadFuncs[0x40]  = &onReadInterrupt;
-  ioReadFuncs[0340]  = &onReadAuxROM_Alert;    // Use HEYEBTKS to return identification string
-
-
-
-  myusb.begin();
-	keyboard1.attachPress(OnPress);
-	keyboard2.attachPress(OnPress);
-
-  //  xterm.begin(80,25);
-  //  xterm.begin(32,16);
+  //extern void OnPress(int key);
+  //
+  //myusb.begin();
+	//keyboard1.attachPress(OnPress);
+	//keyboard2.attachPress(OnPress);
 
 #if DEVELOPMENT_MODE
   //
@@ -631,18 +580,6 @@ void setup()
   Serial.printf("%s", LOGLEVEL_AUX_MESSAGE);
   Serial.printf("%s", LOGLEVEL_1MB5_MESSAGE);
   Serial.printf("%s\n", LOGLEVEL_TAPE_MESSAGE);
-
-  //
-  //  As we have now moved the ROM storage area to DMAMEM which is not initialized, let's set it all to zero, just to be safe
-  //
-
-  for(i = 0 ; i < MAX_ROMS ; i++)
-  {
-    for(j = 0 ; j < ROM_PAGE_SIZE ; j++)
-    {
-      roms[i][j] = 0;
-    }
-  }
 
   //  Use CONFIG.TXT file on sd card for configuration
 
@@ -676,7 +613,7 @@ void setup()
 
                               //  It took 74 ms to get to here from SD.begin (open logfile, send some stuff, Init HPIB/Disk)
                               //  With 9 ROMs being loaded and JSON parsing of CONFIG.TXT , loadConfiguration()  takes 108ms
-  config_success = loadConfiguration(Config_filename, config);
+  config_success = loadConfiguration(Config_filename);
 
   setupPinChange();           //  Set up the two critical interrupt handlers on Pin Change (rising) on Phi 1 and Phi 2
 
@@ -773,7 +710,7 @@ void setup()
 //
 
 static int  loop_count = 0;
-//##DISABLED##//static uint32_t tickTime = millis();
+
 
 void loop()
 {
@@ -820,7 +757,7 @@ void loop()
   AUXROM_Poll();
   Logic_Analyzer_Poll();
   loopTranslator();     //  1MB5 / HPIB / DISK poll
-  myusb.Task();
+  //myusb.Task();
 
 #if ENABLE_THREE_SHIFT_DETECTION
   if(Three_Shift_Clicks_Poll())
@@ -832,104 +769,4 @@ void loop()
 
   loop_count++;
 }
-
-
-
-  //##DISABLED##//static uint32_t seconds = 0;
-  //##DISABLED##//static uint32_t delaySeconds = 30;
-  //##DISABLED##//
-  //##DISABLED##//if (millis() > (50 + tickTime))
-  //##DISABLED##//{
-  //##DISABLED##//  tickTime = millis();
-  //##DISABLED##//
-  //##DISABLED##//  //xterm.printf("%08d ",loop_count);
-  //##DISABLED##//  if (seconds)
-  //##DISABLED##//  {
-  //##DISABLED##//    seconds--;
-  //##DISABLED##//  }
-  //##DISABLED##//  else
-  //##DISABLED##//  {
-  //##DISABLED##//     //xterm.printf("%08d\n",loop_count);
-  //##DISABLED##//     seconds = 20;
-  //##DISABLED##//     if (delaySeconds)
-  //##DISABLED##//    {
-  //##DISABLED##//      delaySeconds--;
-  //##DISABLED##//    }
-  //##DISABLED##//  }
-  //##DISABLED##//  
-  //##DISABLED##// 
-  //##DISABLED##//  //xterm.printf("CAT\r\n");
-  //##DISABLED##//  if (delaySeconds == 0)
-  //##DISABLED##//  {
-  //##DISABLED##//    xscreen.update();
-  //##DISABLED##//  }
-  //##DISABLED##//  
-  //##DISABLED##//}
-  
-  //##DISABLED##//lisp_do_repl();
-  //##DISABLED##//cpm_loop();
-  
-//##DISABLED##//// for the cp/m emulation
-//##DISABLED##//
-//##DISABLED##//int ext_inkey(void)
-//##DISABLED##//{
-//##DISABLED##//  return Serial.available();
-//##DISABLED##//}
-//##DISABLED##//
-//##DISABLED##//char ext_inchar(void)
-//##DISABLED##//{
-//##DISABLED##//  while (!Serial.available())
-//##DISABLED##//  {
-//##DISABLED##//  }
-//##DISABLED##//  return Serial.read();
-//##DISABLED##//}
-//##DISABLED##//void ext_pchar(char c)
-//##DISABLED##//{
-//##DISABLED##//  Serial.write(c);
-//##DISABLED##//  xterm.write(c);
-//##DISABLED##//}
-//##DISABLED##//
-//##DISABLED##//int open_disk(int driveNum, char *fname)
-//##DISABLED##//{
-//##DISABLED##//  if (driveNum < NUM_CPM_DISK)
-//##DISABLED##//  {
-//##DISABLED##//    dfile[driveNum] = SD.open(fname, O_RDWR);
-//##DISABLED##//
-//##DISABLED##//    if (!dfile[driveNum])
-//##DISABLED##//    {
-//##DISABLED##//      Serial.printf("Cannot open disk image file %s\r\n", fname);
-//##DISABLED##//      return 0;
-//##DISABLED##//    }
-//##DISABLED##//    else
-//##DISABLED##//    {
-//##DISABLED##//      return 1;
-//##DISABLED##//    }
-//##DISABLED##//  }
-//##DISABLED##//  return 0;
-//##DISABLED##//}
-//##DISABLED##//
-//##DISABLED##//int read_sector(int driveNum,int pos, uint8_t *dest, int len)
-//##DISABLED##//{
-//##DISABLED##//    int bytesread = 0; 
-//##DISABLED##//
-//##DISABLED##//    if (!dfile[driveNum].seek(pos))     //seek the index
-//##DISABLED##//      {
-//##DISABLED##//        Serial.printf("Read seek failed\r\n");
-//##DISABLED##//      }
-//##DISABLED##//    bytesread = dfile[driveNum].read(dest,(uint16_t)len); //read a sector worth of data
-//##DISABLED##//
-//##DISABLED##//  //Serial.printf("Read bytes %08X %04X  %02X\r\n",pos,bytesread,driveNum);
-//##DISABLED##//    return bytesread;
-//##DISABLED##//}
-//##DISABLED##//
-//##DISABLED##//int write_sector(int driveNum,int pos, uint8_t *dest, int len)
-//##DISABLED##//{
-//##DISABLED##//    int byteswritten = 0; 
-//##DISABLED##//
-//##DISABLED##//    dfile[driveNum].seek(pos);     //seek the index
-//##DISABLED##//    byteswritten = dfile[driveNum].write(dest,len); //read a sector worth of data
-//##DISABLED##//
-//##DISABLED##//    return byteswritten;
-//##DISABLED##//}
-//##DISABLED##//
 

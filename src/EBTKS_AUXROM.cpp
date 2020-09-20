@@ -205,7 +205,7 @@ void AUXROM_Fetch_Memory(uint8_t * dest, uint32_t src_addr, uint16_t num_bytes)
 {
   while(num_bytes--)
   {
-    if(config.ram16k)
+    if(getHP85RamExp())
     {
       //
       //  For HP-85 A, implement 16384 - 256 bytes of RAM, mapped at 0xC000 to 0xFEFF (if enabled)

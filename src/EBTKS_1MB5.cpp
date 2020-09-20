@@ -298,27 +298,35 @@ void requestInterrupt(uint8_t reason)
     }
 
 void initTranslator(void)
-    {
+{
 
-    SR[0] = 1;    //hpib board ID
-    SR[1] = 0;    //interrupt cause
-    SR[2] = 0xFC; //hpib bits
-    SR[3] = 0;    //hpib data
-    SR[4] = 0x22; //system controller
-    SR[5] = 0xA0; //controller active
-    SR[6] = 1;    //SC1
+  SR[0] = 1;    //hpib board ID
+  SR[1] = 0;    //interrupt cause
+  SR[2] = 0xFC; //hpib bits
+  SR[3] = 0;    //hpib data
+  SR[4] = 0x22; //system controller
+  SR[5] = 0xA0; //controller active
+  SR[6] = 1;    //SC1
 
-    CR[16] = 2;
-    CR[17] = 0x0d;
-    CR[18] = 0x0a;
-    Serial.printf("HPIB init\n");
-    devices[0] = new HpibDisk(0);     //define one disk system as device #0
-    devices[1] = new HpibDisk(1);    //test multiple devices
-    devices[1]->addDisk(DISK_TYPE_5Q);
-    devices[1]->addDisk(DISK_TYPE_5Q);
-    devices[1]->setFile(0, (char *)"/disks/85Games2.dsk", false);
-    devices[1]->setFile(1, (char *)"/disks/85Games1.dsk", false);
-    }
+  CR[16] = 2;
+  CR[17] = 0x0d;
+  CR[18] = 0x0a;
+  Serial.printf("HPIB init\n");
+  devices[0] = new HpibDisk(0);     //define one disk system as device #0
+  //devices[1] = new HpibDisk(1);    //test multiple devices
+  //devices[1]->addDisk(DISK_TYPE_5Q);
+  //devices[1]->addDisk(DISK_TYPE_5Q);
+  //devices[1]->setFile(0, (char *)"/disks/85Games2.dsk", false);
+  //devices[1]->setFile(1, (char *)"/disks/85Games1.dsk", false);
+
+//  1MB5 device #7 /hpib/disk interface
+  setIOReadFunc(0x58,&onReadStatus);
+  setIOReadFunc(0x59,&onReadIB);
+  setIOWriteFunc(0x58,&onWriteCCR);
+  setIOWriteFunc(0x59,&onWriteOb);
+  setIOWriteFunc(0x40,&onWriteInterrupt);
+  setIOReadFunc(0x40,&onReadInterrupt);
+}
 
 void loopTranslator(void)
     {

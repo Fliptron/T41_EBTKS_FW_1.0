@@ -13,12 +13,7 @@
 #include "Inc_Common_Headers.h"
 
 
-//##DISABLED##//#include "cpm_emu.h"
 
-//##DISABLED##//extern void lisp_setup(void);
-//##DISABLED##//extern void lisp_loop(void);
-//##DISABLED##//extern void lisp_enable(bool en);
-//##DISABLED##//extern void cpm_run(void);
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////  Diagnostic Pulse Generation
 //
@@ -413,7 +408,7 @@ void Serial_Command_Poll(void)
   int   command_index;
 
   get_serial_string_poll();
-  if(!serial_string_available) return;          //  Don't hang around here if there isn't a cmmand to be processed
+  if(!serial_string_available) return;          //  Don't hang around here if there isn't a command to be processed
 
   //  Serial.printf("\nSerial_Command_Poll diag: serial_string_available %1d\n", serial_string_available);
   //  Serial.printf(  "                          serial_string_length    %2d  serial_string [%s]   ", serial_string_length, serial_string);
@@ -1353,7 +1348,7 @@ void Logic_Analyzer_Poll(void)
     LA_Heartbeat_Timer = systick_millis_count + 1000;
     Serial.printf("waiting... Valid Samples:%4d Sample:%08X Mask:%08X TrigPattern:%08X Event:%d RSELEC %03o\n",
                     Logic_Analyzer_Valid_Samples, Logic_Analyzer_sample, Logic_Analyzer_Trigger_Mask,
-                    Logic_Analyzer_Trigger_Value, Logic_Analyzer_Event_Count, rselec);
+                    Logic_Analyzer_Trigger_Value, Logic_Analyzer_Event_Count, getRselec());
     //Serial.printf("Mailboxes 0..6  :");
     //show_mailboxes_and_usage();
   }

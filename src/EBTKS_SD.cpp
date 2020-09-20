@@ -90,8 +90,8 @@ bool loadRom(const char *fname, int slotNum, const char * description)
 
   //  ROM header looks good, read the ROM file into memory
   rfile.seek(0);    //  Rewind the file
-  int flen = rfile.read(&roms[slotNum][0], 8192);
-  if (flen != 8192)
+   int flen = rfile.read(getRomSlotPtr(slotNum), ROM_PAGE_SIZE);
+  if (flen != ROM_PAGE_SIZE)
   {
     LOGPRINTF("ROM file length error length: %d\n", flen);
     rfile.close();
@@ -100,7 +100,7 @@ bool loadRom(const char *fname, int slotNum, const char * description)
 
   //  We got this far, update the rom mapping table to say we're here
 
-  romMap[id] = &roms[slotNum][0];
+  setRomMap(id,slotNum);
 
   LOGPRINTF("%-1s\n", description);
   rfile.close();
@@ -111,7 +111,7 @@ bool loadRom(const char *fname, int slotNum, const char * description)
 //  Saves the configuration to a file
 //
 
-void saveConfiguration(const char *filename, const Config &config)
+void saveConfiguration(const char *filename)
 {
   // Delete existing file, otherwise the configuration is appended to the file
   SD.remove(filename);
@@ -131,8 +131,8 @@ void saveConfiguration(const char *filename, const Config &config)
   StaticJsonDocument<3000> doc;
 
   // Set the values in the document
-  doc["ram16k"] = config.ram16k;
-  doc["screenEmu"] = config.screenEmu;
+  doc["ram16k"] = false;
+  doc["screenEmu"] = false;
   
 
   // option roms
@@ -233,10 +233,8 @@ void saveConfiguration(const char *filename, const Config &config)
 //  Loads the configuration from a file, return true if successful
 //
 
-bool loadConfiguration(const char *filename, Config &config)
+bool loadConfiguration(const char *filename)
 {
-   bool tapeEmu;
-
   TXD_Pulser(1);
   EBTKS_delay_ns(10000);    //  10 us
   TXD_Pulser(1);
@@ -249,20 +247,6 @@ bool loadConfiguration(const char *filename, Config &config)
   // Open file for reading
   File file = SD.open(filename);
 
-  LOGPRINTF("File handle for config file %d\n", (int)file);
-
-  if(!file)
-  {
-    //
-    //  No SD card, so no tape, no disk, no ROMs
-    //
-    config.ram16k = false;
-    config.screenEmu = false;
-    tapeEmu = false;
-    tape.enable(tapeEmu);
-    return false;
-  }
-
   // Allocate a temporary JsonDocument
   // Don't forget to change the capacity to match your requirements.
   // Use arduinojson.org/v6/assistant to compute the capacity.
@@ -272,26 +256,28 @@ bool loadConfiguration(const char *filename, Config &config)
   DeserializationError error = deserializeJson(doc, file);
   if (error)
   {
-    saveConfiguration(filename, config);
-    LOGPRINTF("Failed to read file, using default configuration\n");
+    saveConfiguration(filename);
     LOGPRINTF("Failed to read file, using default configuration\n");
   }
-  LOGPRINTF("deserializeJson Successful\n");
+  
+  enHP85RamExp(doc["ram16k"] | false);
+  //bool enScreenEmu = doc["screenEmu"] | false;
+  bool tapeEn = doc["tape"]["enable"] | false;
 
   // Copy values from the JsonDocument to the Config
-  config.ram16k = doc["ram16k"] | false;
-  LOGPRINTF("16K RAM for 85A:      %s\n", config.ram16k ? "Active" : "Inactive");
-  config.screenEmu = doc["screenEmu"] | false;
-  LOGPRINTF("Screen Emulation:     %s\n", config.screenEmu ? "Active" : "Inactive");
-  tapeEmu = doc["tape"]["enable"] | false;
-  //LOGPRINTF("Tape Drive Emulation: %s\n", config.tapeEmu ? "Active" : "Inactive");
+
+  LOGPRINTF("16K RAM for 85A:      %s\n", (doc["ram16k"] | false) ? "Active" : "Inactive");
+
+  LOGPRINTF("Screen Emulation:     %s\n", (doc["screenEmu"] | false) ? "Active" : "Inactive");
+
+  //LOGPRINTF("Tape Drive Emulation: %s\n", tapeEn ? "Active" : "Inactive");
 
   const char *tapeFname=  doc["tape"]["filename"] | "tape1.tap";
   const char *path = doc["tape"]["directory"] | "/tapes/";
   tape.setPath(path);
   tape.setFile(tapeFname);
-  tape.enable(tapeEmu);
-  LOGPRINTF("Tape file: %s%s enabled is: %s\n", path, tapeFname, tapeEmu ? "Active" : "Inactive");  
+  tape.enable(tapeEn);
+  LOGPRINTF("Tape file: %s%s enabled is: %s\n", path, tapeFname, tapeEn ? "Active" : "Inactive");  
   
 
   TXD_Pulser(1);                                                                  //  From beginning of function to here is 23 ms

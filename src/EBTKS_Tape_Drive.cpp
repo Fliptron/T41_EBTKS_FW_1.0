@@ -326,10 +326,10 @@ bool Tape::blockRead(uint32_t blkNum)
         }
     else
         {
-        int len = _tapeFile.readBytes((uint8_t *)&tapeBlock[0], TAPE_BLOCKSIZE * 2);
+        int len = _tapeFile.read((uint8_t *)&tapeBlock[0], TAPE_BLOCKSIZE * 2);
         if (len < (TAPE_BLOCKSIZE * 2))
             {
-            Serial.printf("End of tape image at block: %06d\n", blkNum);    //  Is this an error message?
+            Serial.printf("End of tape image at block: %06d\n", blkNum);    //  This is an error message? Need to do better at informing user that tape ran off the spool
             }
         blockDirty = false;
         retval = true;
@@ -368,10 +368,10 @@ void Tape::enable(bool enable)
 {
     if (enable == true)
         {
-        ioWriteFuncs[8] = &writeTapeCtrl;
-        ioWriteFuncs[9] = &writeTapeData;
-        ioReadFuncs[8] = &readTapeStatus;
-        ioReadFuncs[9] = &readTapeData;
+        setIOWriteFunc(TAPSTS & 0xff,&writeTapeCtrl);
+        setIOWriteFunc(TAPDAT & 0xff,&writeTapeData);
+        setIOReadFunc(TAPSTS & 0xff,&readTapeStatus);
+        setIOReadFunc(TAPDAT & 0xff,&readTapeData);
         }
     else
         {

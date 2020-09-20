@@ -660,7 +660,7 @@ enum analyzer_state{
 #define MLAD    (0177424)       //  SERIAL P0LL REGISTER
 #define SERPOL  (0177425)       //  MY LISTEN ADDRESS
 #define EXSTAT  (0177426)       //  EXTENDED IO STATUS
-
+#define RSELEC  (0177430)       //  ROM SELECT
 #define HEYEBTKS (0177740)      //  Mailbox alert for AUXROM Functions. ()
 
 //

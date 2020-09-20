@@ -81,7 +81,7 @@ void AUXROM_WROM(void)
   Serial.printf("Target Address(oct): %06O\n", target_address);
   Serial.printf("Bytes to write(dec):     %d\n", transfer_length);
 
-  if(romMap[target_rom] == NULL)            //  romMap is a table of 256 pointers to locations in EBTKS's address space. i.e. 32 bit pointers. Either NULL, or an address. The index is the ROM ID
+  if((dest_ptr = getROMEntry(target_rom)) == NULL)            //  romMap is a table of 256 pointers to locations in EBTKS's address space. i.e. 32 bit pointers. Either NULL, or an address. The index is the ROM ID
   {
     Serial.printf("Selected ROM not loaded\n");
     // return error
@@ -91,11 +91,11 @@ void AUXROM_WROM(void)
     Serial.printf("Selected ROM is not an AUXROM\n");
     // return error
   }
-  if(target_address + transfer_length  > 0100000 )
+  if(target_address + transfer_length  >= 0100000 )
   {
     transfer_length = 0100000 - target_address;	          //  Don't let AUXROM write past end of ROM.  Maybe we should report an error
   }
-  dest_ptr = romMap[target_rom] + (target_address - 060000);
+  dest_ptr = dest_ptr + (target_address - 060000);
   while(transfer_length--)
   {
     *dest_ptr++ = *data_ptr    ++;

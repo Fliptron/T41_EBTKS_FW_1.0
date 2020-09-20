@@ -1,7 +1,10 @@
 
 #include <Arduino.h>
+#include <SdFat.h>
 
-//#include "Inc_Common_Headers.h"
+extern SdFat SD;
+
+extern size_t strlcpy(char , const char , size_t);
 
 enum DISK_TYPE
     {
@@ -154,7 +157,7 @@ class HPDisk
                 }
             else
                 {
-                int len = _diskFile.readBytes(buff, SECTOR_SIZE);
+                int len = _diskFile.read(buff, SECTOR_SIZE);
                 if (len < SECTOR_SIZE)
                     {
                     LOGPRINTF_1MB5("End of disk image at block: %06d\n", _lba);

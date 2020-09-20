@@ -6,10 +6,19 @@
 //              and menu support
 
 #include <Arduino.h>
-#include <setjmp.h>
-#include <string.h>
 
 #include "Inc_Common_Headers.h"
+
+uint8_t vram[8192];                   // Virtual Graphics memory, to avoid needing Read-Modify-Write
+uint8_t Mirror_Video_RAM[8192];       //
+volatile uint8_t crtControl = 0;      //write to status register stored here. bit 7 == 1 is graphics mode, else char mode
+volatile bool writeCRTflag = false;
+
+bool badFlag = false;                 //odd/even flag for Baddr
+uint16_t badAddr = 0;
+
+bool sadFlag = false;                 //odd/even flag for CRT start address
+uint16_t sadAddr = 0;
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////     CRT Mirror Support
 
@@ -101,6 +110,15 @@ void ioWriteCrtDat(uint8_t val)                             //  This function is
   writeCRTflag = true;                                      //  Flag Mirror_Video_RAM has changed
 }
 
+
+void initCrtEmu(void)
+{
+  setIOWriteFunc(4,&ioWriteCrtSad); // Address 0xFF04   CRT controller
+  setIOWriteFunc(5,&ioWriteCrtBad);
+  setIOWriteFunc(6,&ioWriteCrtCtrl);
+  setIOWriteFunc(7,&ioWriteCrtDat);
+}
+
 //
 //  For diagnostics, status, and menu support, put a string on the CRT, but do it "invisibly" to the rest
 //  of the HP85, by maintaining badAddr and sadAddr. If we are in graphics mode, just return.
@@ -110,15 +128,14 @@ void ioWriteCrtDat(uint8_t val)                             //  This function is
 //  Row is 0..15 , Column is 0..31  . Row 0 is top , column 0 is left
 //
 
-void Write_on_CRT_Alpha(uint16_t row, uint16_t column, const char * text)
+void Write_on_CRT_Alpha(uint16_t row, uint16_t column, const char *  text)
 {
   uint16_t        badAddr_restore;
   uint16_t        local_badAddr;
 
   if (crtControl & 0x80)
   {
-    return;     //  CRT is in Graphics mode, so just ignore for now. Maybe later
-                //  we will allow writing text to the Graphics screen (Implies a Character ROM) 
+    return;                     //  CRT is in Graphics mode, so just ignore for now. Maybe later we will allow writing text to the Graphics screen (Implies a Character ROM) 
   }  
 
   badAddr_restore = badAddr;
@@ -130,20 +147,12 @@ void Write_on_CRT_Alpha(uint16_t row, uint16_t column, const char * text)
   //  the 3rd character position, row would be 15, and column would be 2
   //
 
-  local_badAddr = (sadAddr + (column & 0x1F) * 2 + (row & 0x0F) * 64 ) & 0x0FFF;    //  32 x 16 x 4 x 2 = 4096  .  chars/line, lines per screen, screens, nibbles per char
-
-  Serial.printf("Writing to CRT at Row %d   Col %d   sadAddr is %d   badAddr is %d\n", row, column, sadAddr, badAddr);
-  Serial.printf("Basic thinks sadAddr is %d   badAddr is %d\n", DMA_Peek16(CRTRAM), DMA_Peek16(CRTBYT));
-
-  Serial.printf("resolved local badAddr for Text is %d\n", local_badAddr);
-
+  local_badAddr = (sadAddr + (column & 0x1F) * 2 + (row & 0x0F) * 64 ) & 0x0FFF;
   DMA_Poke16(CRTBAD, local_badAddr);
 
   while(*text)
   {
-    while(DMA_Peek8(CRTSTS) & 0x80)
-    {        //  Wait while CRT is Busy
-    }
+    while(DMA_Peek8(CRTSTS) & 0x80) {};     //  Wait while CRT is Busy, wait
     DMA_Poke8 (CRTDAT, *text);
     text++;
   }
