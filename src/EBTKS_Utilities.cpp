@@ -991,6 +991,11 @@ void show_mailboxes_and_usage(void)
     Serial.printf("  %1d   %1d   %4d   %4d     ", i, AUXROM_RAM_Window.as_struct.AR_Mailboxes[i], AUXROM_RAM_Window.as_struct.AR_Usages[i], AUXROM_RAM_Window.as_struct.AR_Lengths[i]);
     HexDump_T41_mem((uint32_t)&AUXROM_RAM_Window.as_struct.AR_Buffer_0[i*256], 8, false, true);
   }
+  Serial.printf("\nBOPTS6\n");
+  for(i = 0 ; i < 8 ; i++)
+  {
+    Serial.printf("%02x ", AUXROM_RAM_Window.as_struct_a.AR_BUF6_OPTS.as_uint8_t[i]);
+  }
   Serial.printf("\n");
 }
 

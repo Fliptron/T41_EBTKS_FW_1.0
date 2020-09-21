@@ -178,20 +178,38 @@ void AUXROM_SDCUR(void)
 //
 //  Always uses Buffer 6 and associated parameters
 //
-//  SDCAT                       does a full directory listing to the CRT IS device (stk=0 bytes)
-//  SDCAT A$,S,F,0              starts a NEW directory listing, putting first entry in A$, size in S, and flags in F (stk=22,27,32 bytes)
-//  SDCAT A$,S,F,1              continues the ACTIVE directory listing, putting next entry in A$, size in S, and flags in F (stk=22,27,32 bytes)
-//  SDCAT fileSpec$             does a full directory listing to the CRT IS device of files matching 'fileSpec$' (stk=4 bytes)
-//  SDCAT A$,S,F,0,fileSpec$    starts a NEW directory listing, putting first entry in A$, size in S, and flags in F (stk=26,31,36 bytes)
-//  SDCAT A$,S,F,1,fileSpec$    continues the ACTIVE directory listing, putting next entry in A$, size in S, and flags in F (stk=26,31,36 bytes)
+//  SDCAT                     does a full directory listing to the CRT IS device (stk=0 bytes)
+//  SDCAT fileSpec$           does a full directory listing to the CRT IS device of files matching 'fileSpec$' (stk=4 bytes)
+//  SDCAT A$,D$,S,0           starts a NEW direcotry listing, putting first name in A$, date in D$, size in S,(stk=24,29 bytes)
+//  SDCAT A$,D$,S,1           continues the ACTIVE directory listing, putting next name in A$, date in D$, size in S (stk=24,29 bytes)
+//  SDCAT A$,D$,S,0,fileSpec$ starts a NEW direcotry listing, putting first name in A$, date in D$, size in S (stk=28,33 bytes)
+//  SDCAT A$,D$,S,1,fileSpec$ continues the ACTIVE direcotry listing, putting next name in A$, date in D$, size in S (stk=28,38 bytes)
+//
+//  A$ is passed from EBTKS to AUXROM in Buf6 starting at byte 0      BLen6 holds the length which will end up in S
+//  D$ is passed from EBTKS to AUXROM in Buf6 starting at byte 256    Fixed length of 16 bytes
+//  S is the size of the filename starting at Buf6[0]
+//  If filespec$ has a trailing slash, it is specifying a subdirectory to be catalogged. Without a slash it is a
+//  file selection filter specification, that may in the future support wildcards
 //
 //  returns AR_Usages[6] = 0 for ok, 1 for finished (and 0 length buf6), 213 for any error
+//  
+//  POSSIBLE ERRORS:
+//    SD ERROR - if disk error occurs OR 'continue' listing before 'start' listing
+//    INVALID PARAM - if "SDCAT x,A$" where 'x' is not 0 or 1
 //
-//  On good return, AR_Buffer_6 has null terminated string, AR_Usages[6] = 0; 
-//     BOPT60-BOP63=file size, BOPT64-BOPT67=file flags/attributes (extra big for AUXROM convenience)
+//  The following is from the Series 80 Emulator, 09/20/2020
+//    A.BUF6     = filename nul-terminated
+//    A.BUF6[256]= formatted nul-terminated file DATE$              currently fixed at 16 characters
+//    A.BLEN6    = len of filename
+//    A.BOPT60-63 = size                                             File Size
+//    A.BOPT64-67 = attributes                                       LSB is set for a SubDirectory, next bit is set for ReadOnly
+//
 //
 //  No current suport for filespec$ variant. Must be "*" for now.
 //
+
+// these need to be re-done
+
 //  Test cases        AR_BUF6_OPTS[0]   AR_BUF6_OPTS[1]  Buffer 6       Notes
 //                    first=0           wildcards=0      match          We don't support wildcards in this revision
 //                    next=1            unique=1         pattern
@@ -213,32 +231,39 @@ void AUXROM_SDCUR(void)
 //
 
 //static int        SDCAT_line_count = 0;
-static bool       SDCAT_First_seen = false;
-static char       dir_line[130];               //  Leave room for a trailing 0x00 (that is not included in the passed max length of PS.get_line)
+static bool       SDCAT_First_seen = false;     //  keeping track of whether we have seen a call for a first line of a SD catalog
+static char       dir_line[130];                //  Leave room for a trailing 0x00 (that is not included in the passed max length of PS.get_line)
 static int32_t    get_line_char_count;
+static char       sdcat_filespec[130];
+static int        sdcat_filespec_length;
+static bool       filespec_is_dir;
 
 void AUXROM_SDCAT(void)
 {
   uint32_t    temp_uint;
-  char        date_time[18];
   char        file_size[12];
+  File        temp_file;
 
   //
   //  Show Parameters
   //
-  //  Serial.printf("\nSDCAT\nAR_BUF6_OPTS[0] = %d\n", AUXROM_RAM_Window.as_struct.AR_BUF6_OPTS[0]);
-  //  Serial.printf("AR_BUF6_OPTS[1] = %d\n", AUXROM_RAM_Window.as_struct.AR_BUF6_OPTS[1]);
-  //  Serial.printf("Buffer 6 [%s]\n", AUXROM_RAM_Window.as_struct.AR_Buffer_6);
+  Serial.printf("\nSDCAT Start next entry\n");
 
   if(AUXROM_RAM_Window.as_struct.AR_BUF6_OPTS[0] == 0)  //  This is a First Call
   {
+
+    ///////  filespec$ would be handled here. if trailing slash, then we are catalogging a subdirectory. need to save it
+    sdcat_filespec_length = strlcpy(sdcat_filespec, AUXROM_RAM_Window.as_struct.AR_Buffer_6, 129);    //  this could be either a pattern match template, or a subdirectory if trailing slash
+    filespec_is_dir = (sdcat_filespec[sdcat_filespec_length-1] == '/');
     if(!LineAtATime_ls_Init())
     {                                                       //  Failed to do a listing of the current directory
       AUXROM_RAM_Window.as_struct.AR_Usages[6]    = 213;    //  Error
       AUXROM_RAM_Window.as_struct.AR_Mailboxes[6] = 0;      //  Indicate we are done
+      Serial.printf("SDCAT Error exit 2.  Failed to do a listing of the current directory\n");
       return;
     }
     SDCAT_First_seen = true;
+    Serial.printf("Initial call, Filespec is %s, and [is a directory] is %s\n", sdcat_filespec, filespec_is_dir ? "true":"false");
   }
   if(!SDCAT_First_seen)
   {
@@ -247,42 +272,49 @@ void AUXROM_SDCAT(void)
     //
     AUXROM_RAM_Window.as_struct.AR_Usages[6]    = 213;    //  Error
     AUXROM_RAM_Window.as_struct.AR_Mailboxes[6] = 0;      //  Indicate we are done
+    Serial.printf("SDCAT Error exit 3.  Missing First call to SDCAT\n");
     return;
   }
   if(!LineAtATime_ls_Next())
   {   //  No more directory lines
-    SDCAT_First_seen = false;                             //  Make sure the enxt call is a starting call
+    SDCAT_First_seen = false;                             //  Make sure the next call is a starting call
     AUXROM_RAM_Window.as_struct.AR_Lengths[6]   = 0;      //  nothing more to return
     AUXROM_RAM_Window.as_struct.AR_Usages[6]    = 1;      //  Success and END
+    Serial.printf("We are done, no more entries\n");
+    show_mailboxes_and_usage();
     AUXROM_RAM_Window.as_struct.AR_Mailboxes[6] = 0;      //  Indicate we are done
     return;
   }
   //
-  //  Got another directory entry. Parse it into little bitz
+  //  Got an initial or another directory entry. Parse it into little bitz
   //
   //  A directory entry looks like this:
   //    2020-09-07 16:24          0 pathtest/
   //    01234567890123456789012345678901234567890     Sub-directories are marked by a trailing slash, otherwise it is a file
   //
-  //  Serial.printf("dir_line   [%s]\n", dir_line);
-  strlcpy(date_time, dir_line, 17);
-  strlcpy(file_size, &dir_line[16], 12);
-  temp_uint = strlcpy(AUXROM_RAM_Window.as_struct.AR_Buffer_6, &dir_line[28], 129);
-  AUXROM_RAM_Window.as_struct.AR_Lengths[6] = temp_uint;
-  temp_uint = atoi(file_size);
+  Serial.printf("dir_line   [%s]\n", dir_line);
+  strlcpy(&AUXROM_RAM_Window.as_struct.AR_Buffer_6[256], dir_line, 17);                 //  The DATE & TIME string is copied to Buffer 6, starting at position 256
+  strlcpy(file_size, &dir_line[16], 12);                                                //  Get the size of the file. Still needs some processing
+  temp_uint = strlcpy(AUXROM_RAM_Window.as_struct.AR_Buffer_6, &dir_line[28], 129);     //  Copy the filename to buffer 6, and get its length
+  AUXROM_RAM_Window.as_struct.AR_Lengths[6] = temp_uint;                                //  Put the filename length in the right place
+  AUXROM_RAM_Window.as_struct_a.AR_BUF6_OPTS.as_uint32_t[1] = (AUXROM_RAM_Window.as_struct.AR_Buffer_6[temp_uint - 1] == '/') ? 1:0;  // record whether the file is actually a directory
+
+  temp_uint = atoi(file_size);                                                          //  Convert the file size to an int
+  AUXROM_RAM_Window.as_struct_a.AR_BUF6_OPTS.as_uint32_t[0] = temp_uint;                //  Return file size in A.BOPT60-63
+  //
+  //  Need to get read-only status, and whether it is a directory
+  //
+  temp_file = SD.open(AUXROM_RAM_Window.as_struct.AR_Buffer_6);                         //  SD.open() does not mind the trailing slash if the name is a directory
+  if(temp_file.isReadOnly())
+  {
+    AUXROM_RAM_Window.as_struct_a.AR_BUF6_OPTS.as_uint32_t[1] |= 0x02;                  //  Indicate the file is read only
+  }
+  temp_file.close();
+
   //Serial.printf("Filename [%s]   Date/time [%s]   Size [%s] = %d\n", AUXROM_RAM_Window.as_struct.AR_Buffer_6, date_time, file_size, temp_uint);
   AUXROM_RAM_Window.as_struct.AR_Usages[6]  = 0;        //  Success
- 
-  // this should just be a casted store
-  AUXROM_RAM_Window.as_struct_a.AR_BUF6_OPTS[0] = temp_uint & 0x000000FFL;
-  AUXROM_RAM_Window.as_struct_a.AR_BUF6_OPTS[1] = (temp_uint >>  8) & 0x000000FFL;
-  AUXROM_RAM_Window.as_struct_a.AR_BUF6_OPTS[2] = (temp_uint >> 16) & 0x000000FFL;
-  AUXROM_RAM_Window.as_struct_a.AR_BUF6_OPTS[3] = (temp_uint >> 24) & 0x000000FFL;
-
-  AUXROM_RAM_Window.as_struct_a.AR_BUF6_OPTS[4] = 0x20;     //  The 32 bit indicates Archive Status
-  AUXROM_RAM_Window.as_struct_a.AR_BUF6_OPTS[5] = 0x00;
-  AUXROM_RAM_Window.as_struct_a.AR_BUF6_OPTS[6] = 0x00;
-  AUXROM_RAM_Window.as_struct_a.AR_BUF6_OPTS[7] = 0x00;
+  Serial.printf("\nSuccess\n");
+  show_mailboxes_and_usage();
   AUXROM_RAM_Window.as_struct.AR_Mailboxes[6] = 0;  //  Indicate we are done
   return;
 }
@@ -471,136 +503,37 @@ bool LineAtATime_ls_Next()
   return false;
 }
 
+//
+//  Create a new directory in the current directory
+//  AUXROM puts the new directory name in Buffer 6, Null terminated
+//  The length in AR_Lengths[6]
+//  Mailbox 6 is used for the handshake
+//
+
+void AUXROM_SDMKDIR(void)
+{
+  bool  mkdir_status;
+  Serial.printf("New directory name   [%s]\n", AUXROM_RAM_Window.as_struct.AR_Buffer_6);
+  show_mailboxes_and_usage();
+  mkdir_status = SD.mkdir(AUXROM_RAM_Window.as_struct.AR_Buffer_6, true);    //  second parameter is to create parent directories if needed
+
+  Serial.printf("mkdir return status [%s]\n", mkdir_status ? "true":"false");
+
+  if(mkdir_status)
+  {
+    AUXROM_RAM_Window.as_struct.AR_Usages[6] = 0;                         //  Indicate Success
+  }
+  else
+  {
+    AUXROM_RAM_Window.as_struct.AR_Usages[6] =  213;                      //  Indicate Failure
+  }
+  AUXROM_RAM_Window.as_struct.AR_Mailboxes[6] = 0;                      //  Release mailbox 6.    Must always be the last thing we do
+  return;
+}      
 
 
 
-////////
-//////////
-//////////  USAGE Codes from the AUXROMs
-//////////
-////////                                            //  BASIC Keyword
-////////#define  AUX_USAGE_WROM          (  1)      //  none                                              Write buffer to AUXROM#/ADDR, re-checksum
-////////#define  AUX_USAGE_SDCD          (  2)      //  SDCD path$                                        Change the current SD directory
-////////#define  AUX_USAGE_SDCUR         (  3)      //  SDCUR$                                            Return the current SD directory
-////////#define  AUX_USAGE_SDCAT         (  4)      //  SDCAT [dst$Var, dstSizeVar, dstAttrVar, 0 | 1]    Get a directory listing entry for the current SD path (A.BOPT60=0 for "find first", =1 for "find next")
-////////#define  AUX_USAGE_SDFLSH        (  5)      //  SDFLUSH file#                                     Flush everything or a specific file#
-////////#define  AUX_USAGE_SDOPEN        (  6)      //  SDOPEN file#, filePath$, mode                     Open an SD file
-////////#define  AUX_USAGE_SDREAD        (  7)      //  SDREAD dst$Var, bytesReadVar, maxBytes, file#     Read an SD file
-////////#define  AUX_USAGE_SDCLOS        (  8)      //  SDCLOSE file#                                     Close an SD file
-////////#define  AUX_USAGE_SDWRIT        (  9)      //  SDWRITE src$, file#                               Write to an SD file
-////////#define  AUX_USAGE_SDSEEK        ( 10)      //  = SDSEEK(origin#, offset#, file#)                 Seek in an SD file
-////////#define  AUX_USAGE_SDDEL         ( 11)      //  SDDEL fileSpec$                                   Check if mounted disk/tape & error, else delete the file
-////////#define  AUX_USAGE_SDMKDIR       ( 12)      //  SDMKDIR folderName$                               Make a folder (only one level at a time, or error)
-////////#define  AUX_USAGE_SDRMDIR       ( 13)      //  SDRMDIR folderName$                               Remove a folder (error if not empty)
-////////#define  AUX_USAGE_3NUM          (256)      //  AUX3NUMS  varN, varN, varN                        Test keyword with 3 numeric values on R12
-////////#define  AUX_USAGE_1SREF         (257)      //  AUX1STRREF var$                                   Test KEYWORD WITH 1 STRING REF ON R12
-////////#define  AUX_USAGE_NFUNC         (258)      //  TESTNUMFUN(varN)                                  Numeric function with 1 numeric arg
-////////#define  AUX_USAGE_SFUNC         (259)      //  TESTSTRFUN$(var$)                                 String function with 1 string arg
-////////
-////////#define  TRACE_TESTNUMFUN          (0)      //  Output logging info to Serial
-////////
-////////
-//////////      These apparent Keywords don't have assigned Usage codes
-//////////
-//////////RSECTOR      STMT - RSECTOR dst$Var, sec#, msus$ {read a sector from a LIF disk, dst$Var must be at least 256 bytes long}
-//////////WSECTOR      STMT - WSECTOR src$, sec#, msus$ {write a sector to a LIF disk, src$ must be 256 bytes}
-//////////AUXCMD       STMT - AUXCMD cmd#, buf#, usage#, buf$ {invokes AUXROM command cmd#, passes other three args to that command, command must not return a value}
-//////////
-//////////                    ROM Label
-//////////                    AUXINT          AUXCMD 0, DC, DC, "DC"             - GENERATE FAKE SPAR1 INT      You probably don't want to do this unless you are debugging interrupts. Will crash HP85
-//////////                    WMAIL           AUXCMD 1, 0, usage, string         - write string and usage to buf#, don't wait. Does generate HEYEBTKS, so I think it can emulate a command that is passed 1 string
-//////////                    GENAUXER        AUXCMD(6, DC, error#, "error msg") - CALL AUXERR WITH error# AND error msg
-//////////
-//////////AUXERRN      FUNC - AUXERRN {return last custom error error#}
-//////////SDATTR       FUNC - a = SDATTR(filePath$) {return bits indicating file attributes, -1 if error}
-//////////SDSIZE       FUNC - s = SDSIZE(filePath$) {return size of file, or -1 if error}
-//////////AUXINP$      FUNC - AUXINP$(cmd#, buf#, usage#, buf$) {invokes AUXROM command cmd#, passes other three args to that command, command must return a string value}
-//////////
-//////////                    ROM Label
-//////////                    WMAILSTR        AUXINP$(2, 0, usage, string)        - write string and usage to buf#, waits, generate HEYEBTKS, so I think it can emulate a function call that is passed 1 string
-//////////                    AUXREV          AUXINP$(4,0,0,"")                   - returns revision for each AUXROM
-//////////                                                                          Test: DISP AUXINP$(4,0,0,"")      Result: "1:3 2:3"
-//////////
-//////////AUXINP       FUNC - AUXINP(cmd#, buf#, usage#, buf$) {invokes AUXROM command cmd#, passes other three args to that command, command must return a numeric value}
-//////////
-//////////                    ROM Label
-//////////                    WMAILNUM        AUXINP(3, 0, usage, string)         - same as WMAIL but waits for returned BUFFER (8-byte number) and BUFLEN==8  and returns that on stack
-//////////                    CMDCSUM         AUXINP(5,0,0,"")                    - return results of AUXROM checksums
-//////////                                                                          Test: DISP AUXINP (5,0,0,"")      Result: 0    (if ok)
-//////////
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-////////
-////////
-//////////
-//////////  Write only 0xFFE0/0177740. AUXROM_Mailbox_has_Changed
-//////////  Relative to the base of the I/O area, this is 0340(8) , 0xE0 , 224(10)
-//////////
-//////////  This write only I/O address will have a Maibox/Buffer number written by the AUXROM when there is
-//////////  a new Keyword/Statement that requires EBTKS services
-//////////
-////////
-////////void ioWriteAuxROM_Alert(uint8_t val)                 //  This function is running within an ISR, keep it short and fast.
-////////{
-////////  new_AUXROM_Alert        = true;                     //  Let the background Polling loop know we have a function to be processed
-////////  Mailbox_to_be_processed = val;
-////////}
-////////
-////////
-////////
-////////void AUXROM_Poll(void)
-////////{
-////////  int32_t     param_number;
-////////  int         i;
-////////  struct      S_HP85_String_Variable * HP85_String_Pointer;
-////////  double      param_1_val;
-////////  int         string_len;
-////////  uint32_t    string_addr;
-////////  //uint32_t    my_R12;
-////////
-////////  if(!new_AUXROM_Alert)
-////////  {
-////////    return;
-////////  }
-////////  //my_R12 = AUXROM_RAM_Window.as_struct.AR_R12_copy;
-////////
-////////  //LOGPRINTF_AUX("AUXROM Function called. Expected Mailbox 0, Got Mailbox # %d\n", Mailbox_to_be_processed);
-////////  //LOGPRINTF_AUX("AUXROM Got Usage %d\n", AUXROM_RAM_Window.as_struct.AR_Usages[Mailbox_to_be_processed]);
-////////  //LOGPRINTF_AUX("R12, got %06o\n", my_R12);
-////////  //Serial.printf("Showing 16 bytes prior to R12 address\n");
-////////  //HexDump_HP85_mem(my_R12 - 16, 16, true, true);
-////////
-////////  switch(AUXROM_RAM_Window.as_struct.AR_Usages[Mailbox_to_be_processed])
-////////  {
-////////
-////////    case AUX_USAGE_WROM:                      ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////  AUX_USAGE_WROM
-////////      break;
-////////    case AUX_USAGE_SDCD:                      ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////  AUX_USAGE_SDCD
-////////      break;
-////////    case AUX_USAGE_SDCUR:                      ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////  AUX_USAGE_SDCUR
-////////      break;
-////////    case AUX_USAGE_SDCAT:                      ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////  AUX_USAGE_SDCAT
-////////      break;
-////////    case AUX_USAGE_SDFLSH:                      ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////  AUX_USAGE_SDFLSH
-////////      break;
-////////    case AUX_USAGE_SDOPEN:                      ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////  AUX_USAGE_SDOPEN
-////////      break;
-////////    case AUX_USAGE_SDREAD:                      ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////  AUX_USAGE_SDREAD
-////////      break;
-////////    case AUX_USAGE_SDCLOS:                      ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////  AUX_USAGE_SDCLOS
-////////      break;
-////////    case AUX_USAGE_SDWRIT:                      ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////  AUX_USAGE_SDWRIT
-////////      break;
-////////    case AUX_USAGE_SDSEEK:                      ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////  AUX_USAGE_SDSEEK
-////////      break;
-////////    case AUX_USAGE_SDDEL:                      ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////  AUX_USAGE_SDDEL
-////////      break;
-////////    case AUX_USAGE_SDMKDIR:                      ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////  AUX_USAGE_SDMKDIR
-////////      break;
-////////    case AUX_USAGE_SDRMDIR:                      ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////  AUX_USAGE_SDRMDIR
-////////      break;
-////////
-////////
-////////
+
 ////////    case AUX_USAGE_3NUM:                      ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////  AUX_USAGE_3NUM
 ////////      //  AUX3NUMS n1, n2, n3
 ////////      //
@@ -765,307 +698,3 @@ bool LineAtATime_ls_Next()
 ////////  show_mailboxes_and_usage();
 ////////
 ////////}
-////////
-//////////
-//////////  Fetch num_bytes for HP-85 memory. Made difficult because they might be in
-//////////  the built-in DRAM (access via DMA) or they might be in RAM that EBTKS
-//////////  supplies (but only for HP85A)
-//////////
-//////////  The efficient solution would be identify the three scenarios:
-//////////    all in built-in DRAM
-//////////    all in EBTKS memory
-//////////    mixed
-//////////  and then write block transfer for each, the last being a total pain
-//////////
-//////////  The expediant (and slower and less bug prone) is just transfer 1 byte at
-//////////  a time and do a test for each. Doing this for now.
-//////////
-////////
-////////void AUXROM_Fetch_Memory(uint8_t * dest, uint32_t src_addr, uint16_t num_bytes)
-////////{
-////////  while(num_bytes--)
-////////  {
-////////    if(config.ram16k)
-////////    {
-////////      //
-////////      //  For HP-85 A, implement 16384 - 256 bytes of RAM, mapped at 0xC000 to 0xFEFF (if enabled)
-////////      //
-////////      if ((src_addr >= HP85A_16K_RAM_module_base_addr) && (src_addr < IO_ADDR))
-////////      {
-////////        *dest++ = HP85A_16K_RAM_module[src_addr++ & 0x3FFFU];   //  Got 85A EBTKS RAM, and address match
-////////        continue;
-////////      }
-////////      //  If we get here, got 85A EBTKS RAM, and address does not match, so must be built-in DRAM,
-////////      //  so just fall into that code
-////////    }
-////////    //
-////////    //  built-in DRAM
-////////    //
-////////    *dest++ = DMA_Peek8(src_addr++);
-////////  }
-////////}
-////////
-//////////
-//////////  Fetch num_bytes for HP-85 memory which are parameters on the R12 stack
-//////////
-//////////  The parameters to be fetched are on the R12 stack with R12 already in
-//////////  AUXROM_RAM_Window.as_struct.AR_R12_copy . This is a growing to higher
-//////////  addresses stack, and R12 is pointing at the first free byte.
-//////////
-////////
-////////void AUXROM_Fetch_Parameters(void * Parameter_Block_XXX , uint16_t num_bytes)
-////////{
-////////  AUXROM_Fetch_Memory(( uint8_t *)Parameter_Block_XXX, AUXROM_RAM_Window.as_struct.AR_R12_copy - num_bytes, num_bytes);
-////////}
-////////
-//////////
-//////////  Process a Real from the R12 stack. 12 digit sign magnitude mantissa, the exponent is 3 digits
-//////////  in 10's complement format exponent is +499 to -499.
-//////////
-//////////  IEEE 754 Double precision starts to run out of steam at 10E308 and 10E-308 . Some de-normalized
-//////////  numbers extend the range out to about E320 and E-320 but you are no longer playing with 12 digits precision
-//////////  Decided to just clip it at E+307/E-307
-//////////
-////////
-////////double cvt_HP85_real_to_IEEE_double(uint8_t number[])
-////////{
-////////  int         exponent;   // 3 digits, 10's complement
-////////  double      result;
-////////  bool        negative_mantisa;
-////////  char        numtext[25];
-////////
-////////  if(number[4] == 0377)
-////////  {   //  We have a Tagged Integer
-////////    return (double)cvt_R12_int_to_int32(number);
-////////  }
-////////
-////////  //
-////////  //  Handle a 12 digit Real, with an exponent between -499 and +499
-////////  //  IEEE Double only supports 10E308 and 10E-308 , so we can't represent all numbers.
-////////  //  Do our best
-////////  //
-////////  exponent =  (((number[0] & 0x0F)     ) * 1.0);
-////////  exponent += (((number[0] & 0xF0) >> 4) * 10.0);
-////////  exponent += (((number[1] & 0xF0) >> 4) * 100.0);
-////////
-////////  //  Serial.printf("10's com exp is %5d ", exponent);      //  Diagnostic
-////////
-////////  if(exponent > 499)
-////////  {
-////////    exponent = exponent - 1000;
-////////  }
-////////
-////////  //
-////////  //  Limit the exponent, even though this makes the conversion less accurate
-////////  //
-////////
-////////  if(exponent > 307) exponent = 307;
-////////  if(exponent < -307) exponent = -307;
-////////
-////////  //  Serial.printf("limit exp is %5d ", exponent);      //  Diagnostic
-////////
-////////  //
-////////  //  Now deal with the mantissa, which is Sign Magnitude, not 10's complement
-////////  //  Not the prettiest solution, but easy to understand. Convert the BCD nibbles
-////////  //  to text and then let sscanf() sort things out
-////////  //
-////////
-////////  negative_mantisa = ((number[1] & 0x0F) == 9);
-////////  numtext[ 0] = negative_mantisa ? '-' : ' ';
-////////
-////////  numtext[ 1] = ((number[7] & 0xF0) >> 4) + '0';
-////////  numtext[ 2] = '.';
-////////  numtext[ 3] = ((number[7] & 0x0F)     ) + '0';
-////////
-////////  numtext[ 4] = ((number[6] & 0xF0) >> 4) + '0';
-////////  numtext[ 5] = ((number[6] & 0x0F)     ) + '0';
-////////
-////////  numtext[ 6] = ((number[5] & 0xF0) >> 4) + '0';
-////////  numtext[ 7] = ((number[5] & 0x0F)     ) + '0';
-////////
-////////  numtext[ 8] = ((number[4] & 0xF0) >> 4) + '0';
-////////  numtext[ 9] = ((number[4] & 0x0F)     ) + '0';
-////////
-////////  numtext[10] = ((number[3] & 0xF0) >> 4) + '0';
-////////  numtext[11] = ((number[3] & 0x0F)     ) + '0';
-////////
-////////  numtext[12] = ((number[2] & 0xF0) >> 4) + '0';
-////////  numtext[13] = ((number[2] & 0x0F)     ) + '0';
-////////
-////////  snprintf(&numtext[14], 6, "E%04d", exponent);    //  fills 14..19, including a trailing 0x00
-////////  //  Serial.printf("numtext is [%s] ", numtext);      //  Diagnostic
-////////  sscanf(numtext , "%lf", &result);
-////////  return result;
-////////}
-////////
-//////////
-//////////  Process a Tagged Integer from the R12 stack -99999 to 99999 in 10's complement format
-//////////
-////////
-////////int32_t cvt_R12_int_to_int32(uint8_t number[])
-////////{
-////////  uint32_t    result;
-////////
-////////  result =  (((number[5] & 0x0F)     ) * 1);
-////////  result += (((number[5] & 0xF0) >> 4) * 10);
-////////
-////////  result += (((number[6] & 0x0F)     ) * 100);
-////////  result += (((number[6] & 0xF0) >> 4) * 1000);
-////////
-////////  result += (((number[7] & 0x0F)     ) * 10000);
-////////  result += (((number[7] & 0xF0) >> 4) * 100000);   //  0 for positive, 9 for 10's complement negative
-////////
-////////  if(result > 99999)
-////////  {
-////////    result = result - 1000000;  //  Minus one million because the sign indicator is a 9, so neg numbers will be 9xxxxx
-////////  }
-////////  return result;
-////////}
-////////
-//////////
-//////////  This function converts a 32 bit integer to a HP Tagged Integer. Tested and then disabled,
-//////////  because I don't think we need it, given the following function. Although, for numbers in
-//////////  the Tagged Integer range, this would be faster, probably
-//////////
-//////////  Dest points to an 8 byte area that can hold a tagged integer
-//////////
-//////////  Examples of how HP85 numbers are encoded
-//////////                  0                           1                          -1
-//////////    00 00 00 00 FF 00 00 00     00 00 00 00 FF 01 00 00     00 00 00 00 FF 99 99 99
-//////////
-//////////                10                         100                        1000
-//////////    00 00 00 00 FF 10 00 00     00 00 00 00 FF 00 01 00     00 00 00 00 FF 00 10 00
-//////////
-//////////                999                         9999                     99999
-//////////    00 00 00 00 FF 99 09 00     00 00 00 00 FF 99 99 00     00 00 00 00 FF 99 99 09
-//////////
-//////////                -10                        -100                       -1000
-//////////    00 00 00 00 FF 90 99 99     00 00 00 00 FF 00 99 99     00 00 00 00 FF 00 90 99
-//////////
-//////////               -999                        -9999                    -99999
-//////////    00 00 00 00 FF 01 90 99     00 00 00 00 FF 01 00 99     00 00 00 00 FF 01 00 90
-//////////    Sign Digit           ^                           ^                           ^
-//////////
-//////////  Format "[%06d]" on ARM
-//////////          0         1        -1
-//////////    [000000]  [000001]  [-00001]
-//////////
-//////////         10       100      1000
-//////////    [000010]  [000100]  [001000]
-//////////
-//////////        999      9999     99999
-//////////    [000999]  [009999]  [099999]
-//////////
-//////////        -10      -100     -1000
-//////////    [-00010]  [-00100]  [-01000]
-//////////
-//////////       -999     -9999    -99999
-//////////    [-00999]  [-09999]  [-99999]
-//////////
-//////////  Tested with all the above values, and they all converted correctly
-//////////
-//////////void cvt_int32_to_HP85_tagged_integer(uint8_t * dest, int val)
-//////////{
-//////////  char  val_chars[20];
-//////////  bool  negative;
-//////////
-//////////  if((val<100000) && (val > -100000))
-//////////  {
-//////////    //
-//////////    //  The result can be formatted as a tagged integer
-//////////    //
-//////////    //  Handle negative numbers in 10's complement format
-//////////    //
-//////////    negative = val < 0;
-//////////    if(negative)
-//////////    {
-//////////      val = 100000 + val;
-//////////    }
-//////////    dest += 4;                            //  We know we are doing a tagged integer, so skip the first 4 bytes
-//////////    *dest++ = 0377;                       //  Tag it as an integer
-//////////    sprintf(val_chars, "%06d", val);      //  Convert to decimal
-//////////    *dest++ = (val_chars[5] & 0x0F) | ((val_chars[4] & 0x0F) << 4);
-//////////    *dest++ = (val_chars[3] & 0x0F) | ((val_chars[2] & 0x0F) << 4);
-//////////    *dest++ = (val_chars[1] & 0x0F) | (negative? 0x90 : 0x00);
-//////////    return;
-//////////  }
-//////////}
-////////
-//////////
-//////////  This function converts a 64 bit IEEE Double to a HP Real.  While some results could be represented
-//////////  with a Tagged Integer, I don't think that it has to do that. Confirmed, no problem returning integers
-//////////  between -99999 and +99999 as 8 byte Reals (non tagged), HP85 is fine with the results.
-//////////
-//////////  Dest points to an 8 byte area that can hold an 8 byte real
-//////////
-//////////  The conversion was helped by a code example here:
-//////////    https://stackoverflow.com/questions/31331723/how-to-control-the-number-of-exponent-digits-after-e-in-c-printf-e
-//////////
-//////////  Tested with all the above values, and they all converted correctly
-//////////
-////////
-//////////                      1 . yyyyyyyyyyy e 0 EEE \0
-//////////                    - 1 . xxxxxxxxxxx e - EEE \0
-////////#define ExpectedSize (1+1+1       +11  +1+1+ 3 + 1)
-////////
-////////void cvt_IEEE_double_to_HP85_number(uint8_t * dest, double val)
-////////{
-////////  bool  negative;
-////////  char  buf[ExpectedSize + 10];
-////////
-////////  if((negative = val < 0))
-////////  {
-////////    val = -val;       //  We only want to format positive numbers
-////////  }
-////////
-////////  snprintf(buf, sizeof buf, "%.11e", val);
-////////  char *e = strchr(buf, 'e');                           // lucky 'e' not in "Infinity" nor "NaN"
-////////  if (e)
-////////  {
-////////    e++;
-////////    int expo = atoi(e);
-////////    //
-////////    //    But nothing is ever easy. The HP85 DECIMAL Exponent is in 10's complement format
-////////    //
-////////    if(expo < 0)
-////////    {
-////////      expo = 1000 + expo;
-////////    }
-////////    snprintf(e, sizeof buf - (e - buf), "%04d", expo);
-////////  }
-////////
-//////////
-//////////  The number is now formatted in buf. See page 3-11 of the HP85 Assembler manual for the Nibble codes
-//////////                      Nibble
-//////////    buf[0 ]   1         M0
-//////////    buf[1 ]   .
-//////////    buf[2 ]   2         M1
-//////////    buf[3 ]   3         M2
-//////////    buf[4 ]   4         M3
-//////////    buf[5 ]   5         M4
-//////////    buf[6 ]   6         M5
-//////////    buf[7 ]   7         M6
-//////////    buf[8 ]   8         M7
-//////////    buf[9 ]   9         M8
-//////////    buf[10]   10        M9
-//////////    buf[11]   11        M10
-//////////    buf[12]   12        M11
-//////////    buf[13]   E
-//////////    buf[14]   - or 0    MS  Mantissa Sign due to above code, always 0 in buf[14]
-//////////    buf[15]   1         E0  most sig digit of exponent, 10's complement format
-//////////    buf[16]   2         E1
-//////////    buf[17]   3         E2  least sig digit of exponent
-//////////    buf[18]
-//////////    buf[19]
-//////////    buf[20]
-//////////
-////////  *dest++ = ((buf[16] & 0x0F) << 4) | (buf[17]        & 0x0F);     //  E1  E2
-////////  *dest++ = ((buf[15] & 0x0F) << 4) | (negative? 0x09 : 0x00);     //  E0  MS
-////////  *dest++ = ((buf[11] & 0x0F) << 4) | (buf[12]        & 0x0F);     //  M10 M11
-////////  *dest++ = ((buf[9]  & 0x0F) << 4) | (buf[10]        & 0x0F);     //  M8  M9
-////////  *dest++ = ((buf[7]  & 0x0F) << 4) | (buf[8]         & 0x0F);     //  M6  M7
-////////  *dest++ = ((buf[5]  & 0x0F) << 4) | (buf[6]         & 0x0F);     //  M4  M5
-////////  *dest++ = ((buf[3]  & 0x0F) << 4) | (buf[4]         & 0x0F);     //  M2  M3
-////////  *dest++ = ((buf[0]  & 0x0F) << 4) | (buf[2]         & 0x0F);     //  M0  M1
-////////}
-////////

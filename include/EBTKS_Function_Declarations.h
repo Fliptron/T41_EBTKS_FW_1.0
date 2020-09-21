@@ -137,6 +137,7 @@ void AUXROM_WROM(void);
 void AUXROM_SDCD(void);
 void AUXROM_SDCUR(void);
 void AUXROM_SDCAT(void);
+void AUXROM_SDMKDIR(void);
 
 
 //

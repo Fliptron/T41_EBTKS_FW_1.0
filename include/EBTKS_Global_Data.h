@@ -81,8 +81,14 @@ struct PACKED AUXROM_RAM_A
                                                     //                                                            BIT 1   =0 if LF eol, =1 if CRLF eol
                                                     //                                                            BITS 2-31 unused
   uint8_t       AR_Pad_2[80];                       //  070240 - 070357     160 -   239
-  uint8_t       AR_BUF6_OPTS[8];                    //  070360 - 070367     240 -   247           A.BOPT60 - A.BOPT67   See 85aux2.lst line 2226 for details. TLDR: used as additional Usage values.
-                                                    //                                                                  Same mailbox constraints on ownership
+
+  union anon1                                       //  This union should hopefully put to bed all the problems with strict-aliasing that keep triggering the
+  {                                                   //  following warnings:   dereferencing type-punned pointer will break strict-aliasing rules [-Wstrict-aliasing]
+   uint8_t       as_uint8_t[8];                       //  070360 - 070367     240 -   247           A.BOPT60 - A.BOPT67
+   char          as_char[8];                          //  See 85aux2.lst line 2269 (approx) for details. TLDR: used as additional Usage values.
+   uint32_t      as_uint32_t[2];
+  } AR_BUF6_OPTS;
+
   uint16_t      AR_BUF0_OPTS[2];                    //  070370 - 070373     248 -   251           A.BOPT00 - A.BOPT01    !!!!!!!!!!!!!!!!  this is the only difference
   uint8_t       AR_BUF1_OPTS[4];                    //  070374 - 070374     252 -   255           A.BOPT10 - A.BOPT13
   uint8_t       AR_Buffer_0[256];                   //  070400 - 070777     256 -   511
