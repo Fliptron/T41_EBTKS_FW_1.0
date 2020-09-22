@@ -1123,8 +1123,8 @@ void no_SD_card_message(void)
   Write_on_CRT_Alpha(5, 0, "installed. Without it, EBTKS");
   Write_on_CRT_Alpha(6, 0, "won't work. No ROMs, Tape,");
   Write_on_CRT_Alpha(7, 0, "Disk or extra RAM (85A only)");
-  Write_on_CRT_Alpha(8, 0, "I suggest a class 10, 16 GB card");
-  Write_on_CRT_Alpha(9, 0, "with the standard EBTKS file set");
+  Write_on_CRT_Alpha(9, 0, "I suggest a class 10, 16 GB card");
+  Write_on_CRT_Alpha(10,0, "with the standard EBTKS file set");
   Serial.printf("\nMessage sent to CRT advising that there is no SD card\n");
 }
     

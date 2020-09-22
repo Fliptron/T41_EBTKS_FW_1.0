@@ -257,8 +257,66 @@ void DMA_Test_5(void)
 
 
 //
-//  Go into DMA mode and for about 1 second, read CRTSTS and copy bit 1 (display time) to the RXD pin for Oscilloscope monitoring and measurement
+//  Go into DMA mode and for about 6 seconds, read CRTSTS and copy bit 1 (display time) to
+//  the RXD pin and bit 7 (busy) to the TXD pin  for Oscilloscope monitoring and measurement
 //
+//  Results:  Bit 1, Display Time is a very simple square wave, 16.67 ms cycle time (59.98 Hz), High for 12.85 ms
+//            and low for 3.818ms
+//
+//            Bit 7, Busy appears to be low if nothing is going on.
+//
+//////  Commented out because I use the function name below for a different investigation of CRT timing
+//void CRT_Timing_Test_1(void)
+//{
+//  int         loops = 1000000;
+//  uint8_t     data;
+//
+//  DMA_Request = true;
+//  while(!DMA_Active){};     // Wait for acknowledgement, and Bus ownership. Also locks out interrupts on EBTKS, so can't do USB serial or SD card stuff
+//  while(loops--)
+//  {
+//    DMA_Read_Block(CRTSTS , &data , 1);
+//    if(data & 0x02)
+//    {
+//      SET_RXD;
+//    }
+//    else
+//    {
+//      CLEAR_RXD;
+//    }
+//
+//    if(data & 0x80)
+//    {
+//      TOGGLE_TXD;           //  While busy, toggle TXD
+//    }
+//    else
+//    {
+//      CLEAR_TXD;
+//    }
+//  }
+//  release_DMA_request();
+//  while(DMA_Active){};      // Wait for release
+//}
+
+//
+//  How fast can we write characters to the CRT ????
+//
+//  Results:    Writing to the screen can start about 920 us before the start of the 3.818ms of retrace time
+//              and extends till 340 us after the end of the retrace time, for a total of 5 ms or a 30%
+//              There are 4 gaps that appear in cosistent places. I bet this is related to horizontal scan time, maybe,
+//              or maybe loading up 32 characters for the display (even though we are in retrace???). Or maybe a badly
+//              designed DRAM refresh.
+//              The Gaps are 100 us wide, and Gap start to Gap start is 1.52 ms.
+//              Within the limit of the DMA base writing which takes a few bus cycles to check the busy bit, and a few to write,
+//              I can write a new character to the screen memory every 13.6 us
+//              So in 1 retrace time of 5 ms, - 4 * 100 us = 4.6 ms , giving approximately best case of 338 characters written
+//              and the full 512 charcters of the screen could be written in 2 retrace times.
+//
+//              Since the idle state of the busy bit is 'not busy' you can initiate a write at any time, but the next write
+//              will be delayed till the start of the retrace time. I will also bet the 5 ms window starts at the beginning of the
+//              vertical front porch and ends with the end of the vertical back porch.
+//
+
 void CRT_Timing_Test_1(void)
 {
   int         loops = 1000000;
@@ -277,10 +335,22 @@ void CRT_Timing_Test_1(void)
     {
       CLEAR_RXD;
     }
+
+    if(data & 0x80)
+    {
+      //  If busy, do nothing
+    }
+    else
+    {
+      //  If not busy, write an 'X' and do a toggle
+      TOGGLE_TXD;
+      DMA_Write_Block(CRTDAT , (uint8_t *)&"X" , 1);      //  Write an 'X' occasionally
+    }
   }
   release_DMA_request();
   while(DMA_Active){};      // Wait for release
 }
+
 
 
 void writePixel(int x, int y, int color)
