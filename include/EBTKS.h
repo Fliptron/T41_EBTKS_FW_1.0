@@ -552,7 +552,7 @@
 #if LOGLEVEL_GEN == LOG_NONE
 #define LOGPRINTF(...) do {} while(0)
 #elif LOGLEVEL_GEN == LOG_SERIAL
-#define LOGPRINTF(...) do {Serial.printf(__VA_ARGS__); } while(0)
+#define LOGPRINTF(...) do {Serial.printf(__VA_ARGS__); Serial.flush(); } while(0)
 #elif LOGLEVEL_GEN == LOG_FILE
 #define  LOGPRINTF(...)  do {sprintf(logfile_temp_text, __VA_ARGS__); append_to_logfile(logfile_temp_text); } while(0)
 #else
@@ -566,7 +566,7 @@
 #endif
 
 #if LOGLEVEL_AUX == LOG_SERIAL
-#define LOGPRINTF_AUX(...) do {Serial.printf(__VA_ARGS__); } while(0)
+#define LOGPRINTF_AUX(...) do {Serial.printf(__VA_ARGS__); Serial.flush(); } while(0)
 #endif
 
 #if LOGLEVEL_AUX == LOG_FILE
@@ -580,7 +580,7 @@
 #endif
 
 #if LOGLEVEL_1MB5 == LOG_SERIAL
-#define LOGPRINTF_1MB5(...) do {Serial.printf(__VA_ARGS__); } while(0)
+#define LOGPRINTF_1MB5(...) do {Serial.printf(__VA_ARGS__); Serial.flush(); } while(0)
 #endif
 
 #if LOGLEVEL_1MB5 == LOG_FILE
@@ -594,7 +594,7 @@
 #endif
 
 #if LOGLEVEL_TAPE == LOG_SERIAL
-#define LOGPRINTF_TAPE(...) do {Serial.printf(__VA_ARGS__); } while(0)
+#define LOGPRINTF_TAPE(...) do {Serial.printf(__VA_ARGS__); Serial.flush(); } while(0)
 #endif
 
 #if LOGLEVEL_TAPE == LOG_FILE

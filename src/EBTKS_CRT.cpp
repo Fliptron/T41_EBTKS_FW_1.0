@@ -139,6 +139,7 @@ void Write_on_CRT_Alpha(uint16_t row, uint16_t column, const char *  text)
   }  
 
   badAddr_restore = badAddr;
+  //Serial.printf("WoCA: R=%2d  C=%2d  badAddr = %04x  timeout %6d\n", row, column, badAddr, timeout);
 
   //
   //  Calculate the byte address for the first character of our string, base on the
@@ -148,18 +149,59 @@ void Write_on_CRT_Alpha(uint16_t row, uint16_t column, const char *  text)
   //
 
   local_badAddr = (sadAddr + (column & 0x1F) * 2 + (row & 0x0F) * 64 ) & 0x0FFF;
+  //  Serial.printf("\nWoCA: local_badAddr %04X   ", local_badAddr);
+
   DMA_Poke16(CRTBAD, local_badAddr);
 
+  //
+  //  This code occasionally fails by putting the last character of a line on the first
+  //  character of the next line. Which is impossible and makes no sense. Or maybe somehow
+  //  CRTSAD is getting corrupted. I could not isolate the problem. Any way among the working
+  //  guesses, is that the multiple going in and out of DMA while polling the Busy bit,
+  //  and then storing the single character into video memory was stressing something.
+  //  So the logically correct code is the next 8 lines of wode that fail randomly.
+  //  The alternate code that follows is functionally identical. but since we are not
+  //  going in and out of DMA (In just once at the start, Out just once at the end),
+  //  the responsiveness is much faster from detecting that the CRT controller is not busy
+  //  to when we write to the CRTDAT register
+  //
+  // while(*text)
+  // {
+  //   Serial.printf("%02X ", *text);
+  //   while(DMA_Peek8(CRTSTS) & 0x80) {};     //  Wait while CRT is Busy, wait
+  //   DMA_Poke8 (CRTDAT, *text);
+  //   text++;
+  // }
+  // DMA_Poke16(CRTBAD, badAddr_restore);         //  Restore the CRTBAD register in the CRT controller
+
+  //  See above comments for how this code is a re-implementation of the above 8 lines of code
+  //  Alternate approach with 1 long DMA block rather than going in and out of DMA for each character
+  //  Do the same as above, but do it directly once in DMA mode. Can't do the Serial.printf() though
+  //
+
+  DMA_Request = true;
+  while(!DMA_Active){};     // Wait for acknowledgement, and Bus ownership
   while(*text)
   {
-    while(DMA_Peek8(CRTSTS) & 0x80) {};     //  Wait while CRT is Busy, wait
-    DMA_Poke8 (CRTDAT, *text);
+    while(1)
+    {
+      uint8_t data;
+      DMA_Read_Block(CRTSTS , &data , 1);
+      if((data & 0x80) == 0)
+      {
+        break;
+      }
+    }
+    //  Busy de-asserted
+    DMA_Write_Block(CRTDAT , (uint8_t *)text , 1);
     text++;
   }
-  DMA_Poke16(CRTBAD, badAddr_restore);         //  Restore the CRTBAD register in the CRT controller
+  DMA_Write_Block(CRTBAD , (uint8_t *)&badAddr_restore , 2);
+  release_DMA_request();
+  while(DMA_Active){};      // Wait for release
+  //  End of alternate code
 
 }
-
 
 static char test_message[] = "The Quick Green EBTKS Jumps over the Slow HP-85";
 
@@ -182,8 +224,64 @@ void DMA_Test_5(void)
     Serial.printf("%c", *message_ptr);
     message_ptr++;
   }
-
 }
+
+//
+//  The purpose of this test is to reverse engineer the timing of the busy flag in the CRT controller
+//  I am assuming that it may be tied to scan line and vertical retrace timing, but it may be more
+//  complex, and dependent also on previous reads or writes to CRT memory
+//
+//  The following is from the Service ROM
+//
+//    CRTSAD (177404, WRITE-ONLY) SETS THE DISP START ADDRESS IN CRT RAM
+//    CRTBAD (177405, WRITE-ONLY) SETS THE "WRITE ADDRESS" FOR WRITING CHARS/BYTES TO CRT RAM
+//    CRTSTS (177406) READ:
+//      BIT0 = 1 WHEN DATA READY (FROM READ REQUEST)
+//      BIT1 = 1 DISPLAY TIME, = 0 RETRACE TIME
+//      BIT2 =
+//      BIT3 =
+//      BIT4 =
+//      BIT5 = ??? (see 67205) ???
+//      BIT6 =
+//      BIT7 = 1 IF BUSY, 0 IF NOT BUSY
+//    CRTSTS (177406) WRITE:
+//      BIT0 = 1 TO ISSUE READ REQUEST (CRT PUTS CHAR IN CRTDAT)
+//      BIT1 = 1 TO WIPE-OUT CRT, = 0 TO UNWIPE CRT
+//      BIT2 = 1 TO POWER-DOWN CRT, = 0 TO POWER-UP CRT
+//      BIT3 =
+//      BIT4 =
+//      BIT5 =
+//      BIT6 =
+//      BIT7 = 1 FOR GRAPHICS, = 0 FOR ALPHA
+//    CRTDAT (177407) READS/WRITES TO ACCESS CRT RAM WHEN CRTSTS-BIT7==0
+
+
+//
+//  Go into DMA mode and for about 1 second, read CRTSTS and copy bit 1 (display time) to the RXD pin for Oscilloscope monitoring and measurement
+//
+void CRT_Timing_Test_1(void)
+{
+  int         loops = 1000000;
+  uint8_t     data;
+
+  DMA_Request = true;
+  while(!DMA_Active){};     // Wait for acknowledgement, and Bus ownership. Also locks out interrupts on EBTKS, so can't do USB serial or SD card stuff
+  while(loops--)
+  {
+    DMA_Read_Block(CRTSTS , &data , 1);
+    if(data & 0x02)
+    {
+      SET_RXD;
+    }
+    else
+    {
+      CLEAR_RXD;
+    }
+  }
+  release_DMA_request();
+  while(DMA_Active){};      // Wait for release
+}
+
 
 void writePixel(int x, int y, int color)
 {

@@ -126,6 +126,7 @@ void DMA_Test_2(void);
 void DMA_Test_3(void);
 void DMA_Test_4(void);
 void DMA_Test_5(void);
+void CRT_Timing_Test_1(void);
 void MEM_Test_1(void);
 void MEM_Test_2(void);
 void MEM_Test_3(void);
@@ -177,6 +178,7 @@ struct S_Command_Entry Command_Table[] =
   {"dma_3",            DMA_Test_3},
   {"dma_4",            DMA_Test_4},
   {"dma_5",            DMA_Test_5},
+  {"crt_1",            CRT_Timing_Test_1},
   {"mem_1",            MEM_Test_1},
   {"mem_2",            MEM_Test_2},
   {"mem_3",            MEM_Test_3},
@@ -705,6 +707,7 @@ void help_5(void)
   Serial.printf("dma_3    Read the following block lengths: 14, 15, 16, 29, 30, 31\n");
   Serial.printf("dma_4    Read/Write of 50 bytes at 0xB000\n");
   Serial.printf("dma_5    DMA Text to the screen\n");
+  Serial.printf("crt_1    Try and understand CRT Busy status timing\n");
   Serial.printf("mem_1    Increment ITCM 1E6\n");
   Serial.printf("mem_2    Increment DMAMEM 1E6\n");
   Serial.printf("mem_3    Fetch DMAMEM 1E6\n");
@@ -1112,12 +1115,14 @@ void jay_pi(void)
 
 void no_SD_card_message(void)
 {
-  Write_on_CRT_Alpha(2, 0, "Hello,,");
+
+  //Write_on_CRT_Alpha(2, 0, "                                ");
+  Write_on_CRT_Alpha(2, 0, "Hello,");
   Write_on_CRT_Alpha(3, 0, "You have installed an EBTKS, but");
   Write_on_CRT_Alpha(4, 0, "it seems to not have an SD card");
   Write_on_CRT_Alpha(5, 0, "installed. Without it, EBTKS");
-  Write_on_CRT_Alpha(6, 0, "won't work. No ROMs, Tape, or");
-  Write_on_CRT_Alpha(7, 0, "Disk");
+  Write_on_CRT_Alpha(6, 0, "won't work. No ROMs, Tape,");
+  Write_on_CRT_Alpha(7, 0, "Disk or extra RAM (85A only)");
   Write_on_CRT_Alpha(8, 0, "I suggest a class 10, 16 GB card");
   Write_on_CRT_Alpha(9, 0, "with the standard EBTKS file set");
   Serial.printf("\nMessage sent to CRT advising that there is no SD card\n");

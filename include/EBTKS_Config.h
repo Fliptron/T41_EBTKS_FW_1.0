@@ -50,7 +50,7 @@
 #define LOG_SERIAL                (1)
 #define LOG_FILE                  (2)
 
-#define LOGLEVEL_GEN              LOG_FILE        //  For General Logging
+#define LOGLEVEL_GEN              LOG_SERIAL        //  For General Logging
 #define LOGLEVEL_AUX              LOG_NONE      //  For AUXROM Logging
 #define LOGLEVEL_1MB5             LOG_NONE        //  For 1MB5 activity
 #define LOGLEVEL_TAPE             LOG_NONE        //  For 1MB5 activity

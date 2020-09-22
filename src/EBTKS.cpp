@@ -448,6 +448,7 @@ void setup()
 
   int   setjmp_reason;
   int   message_count = 0;
+  bool  SD_begin_OK;
   bool  config_success;
 
   setjmp_reason = setjmp(PWO_While_Running);
@@ -585,10 +586,12 @@ void setup()
 
   Serial.printf("Doing SD.begin\n");
   TXD_Pulser(2);  SET_TXD;
+  SD_begin_OK = true;
   if (!SD.begin(SdioConfig(FIFO_SDIO)))          //  This takes about 115 ms.
   {
     CLEAR_TXD; EBTKS_delay_ns(1000);  TXD_Pulser(2);
     Serial.println("SD begin failed");
+    SD_begin_OK = false;
     logfile_active = false;
   }
   else
@@ -613,7 +616,8 @@ void setup()
 
                               //  It took 74 ms to get to here from SD.begin (open logfile, send some stuff, Init HPIB/Disk)
                               //  With 9 ROMs being loaded and JSON parsing of CONFIG.TXT , loadConfiguration()  takes 108ms
-  config_success = loadConfiguration(Config_filename);
+  config_success = loadConfiguration(Config_filename);  //  Reports success even if SD.begin() failed, as it uses default config
+                                                        //  This is probably not a good decission
 
   setupPinChange();           //  Set up the two critical interrupt handlers on Pin Change (rising) on Phi 1 and Phi 2
 
@@ -686,11 +690,13 @@ void setup()
   //  while (!Serial) {};                       //  wait till the Virtual terminal is connected
   //  Serial.begin(9600);                       //  USB Serial Baud value is irrelevant for this serial channel
   Serial.printf("HP-85 EBTKS Board Serial Diagnostics  %-4d\n", message_count++);
+  Serial.printf("Access to SD Card is %s\n", SD_begin_OK     ? "true":"false");
+  Serial.printf("Config Success is %s\n"   , config_success  ? "true":"false");
 
-  delay(200);
-  if(!config_success)
+  Serial.flush();
+  delay(3000);
+  if(!SD_begin_OK)
   {
-    delay(3000);
     no_SD_card_message();
   }
 
