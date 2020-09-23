@@ -1453,5 +1453,39 @@ void str_tolower(char *p)
 
 
 
+///**********************************************************   From Everett, 9/22/2020 , with just formatting changes to conform with the rest of the source code
+/// Checks pT against possbily wild-card-containing pP.                                   and change of case for bool, true, false
+/// Returns TRUE if there's a match, otherwise FALSE.
+/// pT must NOT have any wildcards, just be a valid filename.
+/// pP may or may not have wildcards (* and ?).
+/// * matches 0 or more "any characters"
+/// ? matches exactly one "any character"
+bool MatchesPattern(char *pT, char *pP)
+{
+  if( *pT==0 )
+  {                                                     //  If reached the end of the test string
+    return (*pP==0 || (*pP=='*' && *(pP+1)==0));        //  Return TRUE if reached the end of the pattern string, else FALSE
+  }
+  else if( *pP=='?' )
+  {                                                     //  Pattern matches ANYTHING in the test
+    return MatchesPattern(pT+1, pP+1);
+  }
+  else if( *pP=='*' )
+  {                                                     //  Start with * each 0 characters, then keep advancing pT so * eats more and more characters
+    while( *pT )
+    {
+      if( MatchesPattern(pT, pP+1) ) return true;
+      ++pT;
+    }
+    return ( *(pP+1)==0 );                              //  Return TRUE if reached the end of the pattern string, else FALSE
+  }
+  else if( *pT==*pP )
+  {
+    return MatchesPattern(pT+1, pP+1);
+  }
+  return false;
+}
+
+
 
 

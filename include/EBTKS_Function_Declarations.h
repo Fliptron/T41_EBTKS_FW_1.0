@@ -155,6 +155,7 @@ void serial_string_used(void);
 void Serial_Command_Poll(void);
 
 void str_tolower(char *p);
+bool MatchesPattern(char *pT, char *pP);
 void HexDump_T41_mem (uint32_t start_address, uint32_t count, bool show_addr, bool final_nl);
 void HexDump_HP85_mem(uint32_t start_address, uint32_t count, bool show_addr, bool final_nl);
 void show_mailboxes_and_usage(void);
