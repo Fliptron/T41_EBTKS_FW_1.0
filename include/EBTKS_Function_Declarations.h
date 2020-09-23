@@ -121,6 +121,7 @@ void ioWriteAuxROM_Alert(uint8_t val);
 bool onReadAuxROM_Alert(void);
 void AUXROM_Poll(void);
 void AUXROM_Fetch_Memory(uint8_t * dest, uint32_t src_addr, uint16_t num_bytes);
+void AUXROM_Store_Memory(uint16_t dest_addr, char * source, uint16_t num_bytes);
 void AUXROM_Fetch_Parameters(void * Parameter_Block_XXX , uint16_t num_bytes);
 double cvt_HP85_real_to_IEEE_double(uint8_t number[]);
 int32_t cvt_R12_int_to_int32(uint8_t number[]);

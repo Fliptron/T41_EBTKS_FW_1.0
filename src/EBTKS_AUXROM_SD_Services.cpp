@@ -37,6 +37,10 @@ EXTMEM static char          Current_Path[MAX_SD_PATH_LENGTH  + 2];    //  I don'
 EXTMEM static char          Resolved_Path[MAX_SD_PATH_LENGTH + 2];
 static bool                 Resolved_Path_ends_with_slash;
 
+EXTMEM static char          Transfer_Buffer[65536];                   //  This is for SDREAD and SDWRITE which need a messy function
+                                                                      //  to access HP85 memory. Using this intermediate should cover
+                                                                      //  any possible scenario. Prove me wrong.
+
 //
 //  Support for AUXROM SD Functions
 //
@@ -640,6 +644,44 @@ void AUXROM_SDCLOSE(void)
   return;
 }
 
+//
+//  Read specified number of bytes from an open file, and store directly in HP85 Memory
+//
+//  Check with Everett: We always talked about this read storing to a pre-allocated string. Could it also be
+//  used to store into an 8 byte Real, or an array?
+//
+
+void AUXROM_SDREAD(void)
+{
+  int         file_index;
+  int         bytes_to_read;
+  int         bytes_actually_read;
+  uint16_t    HP85_Mem_Address;
+
+  file_index = AUXROM_RAM_Window.as_struct.AR_BUF6_OPTS[0];               //  File number 1..11
+  bytes_to_read = AUXROM_RAM_Window.as_struct.AR_Lengths[6];              //  Length of read
+  if(!Auxrom_Files[file_index].isOpen())
+  {
+    AUXROM_RAM_Window.as_struct.AR_Usages[6]    = 213;    //  Error
+    AUXROM_RAM_Window.as_struct.AR_Mailboxes[6] = 0;      //  Indicate we are done
+    Serial.printf("SDREAD Error. File not open. File Number %d\n", file_index);
+    return;    
+  }
+  //  following crappy extract because still haven't found a way around
+  //  dereferencing type-punned pointer will break strict-aliasing rules [-Wstrict-aliasing]
+  HP85_Mem_Address = AUXROM_RAM_Window.as_struct.AR_Buffer_6[0] | (AUXROM_RAM_Window.as_struct.AR_Buffer_6[1] << 8);
+
+  bytes_actually_read = Auxrom_Files[file_index].readBytes(Transfer_Buffer, bytes_to_read);
+  Serial.printf("Read file # %2d , requested %d bytes, got %d\n", file_index, bytes_to_read, bytes_actually_read); 
+  AUXROM_Store_Memory(HP85_Mem_Address, Transfer_Buffer, bytes_actually_read);
+  //
+  //  Assume all is good
+  //
+  AUXROM_RAM_Window.as_struct.AR_Lengths[6] = bytes_actually_read;
+  AUXROM_RAM_Window.as_struct.AR_Usages[6]    = 0;     //  SDREAD successful
+  AUXROM_RAM_Window.as_struct.AR_Mailboxes[6] = 0;     //  Indicate we are done
+  return;
+}
 
 //
 //  Create a new directory in the current directory

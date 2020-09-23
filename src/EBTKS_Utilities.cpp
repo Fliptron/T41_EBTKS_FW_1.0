@@ -1067,52 +1067,6 @@ void dump_ram_window(void)      //  dump_ram_window Start(8) Len(8)    dump memo
   }
 }
 
-void jay_pi(void)
-{
-      //
-      //  Jay Hamlin's little Pi calculator Benchmark 08/11/2020
-      //    https://groups.io/g/hpseries80/message/4524
-      //
-      //  Wikipedia Pi is 3.14159265358979323846264338327950288419716939937510
-      //
-      //  with  1,000,000 slices:  jay_pi execution time is  273 ms , answer is 3.14159265 241386
-      //  with 10,000,000 slices:  jay_pi execution time is 2759 ms , answer is 3.1415926535 5335
-      //
-      if(strcmp("jay_pi"  , lc_serial_command) == 0)
-      {
-        double    radius;
-        double    radiusSquared;
-        double    slices;
-        double    index;
-        double    sliceWidth;
-        double    sliceAreaSum;
-        double    y0;
-        double    y1;
-
-        uint32_t  systick_millis_at_start;
-
-        systick_millis_at_start = systick_millis_count;
-        radius        = 1.0000;
-        radiusSquared = 1.0000;
-        slices = 10000000;
-        index = 0;
-        sliceWidth  = (radius / slices);
-        sliceAreaSum = 0.0000;
-
-        y0 = sqrt(radiusSquared - pow(index/slices, 2.0));
-        
-        while(index++ < slices)
-        {
-          y1 = sqrt(radiusSquared - pow(index/slices, 2.0));
-          sliceAreaSum += sliceWidth * (y0+y1)/2.0;
-          y0 = y1;
-        }
-        sliceAreaSum *= 4.0000;
-        Serial.printf("\njay_pi execution time is %d ms , answer is %-16.14f\n", systick_millis_count-systick_millis_at_start, sliceAreaSum);
-      }
-
-}
-
 void no_SD_card_message(void)
 {
 
@@ -1413,6 +1367,53 @@ void Logic_Analyzer_Poll(void)
     }
     Serial.flush();
   }
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+void jay_pi(void)
+{
+      //
+      //  Jay Hamlin's little Pi calculator Benchmark 08/11/2020
+      //    https://groups.io/g/hpseries80/message/4524
+      //
+      //  Wikipedia Pi is 3.14159265358979323846264338327950288419716939937510
+      //
+      //  with  1,000,000 slices:  jay_pi execution time is  273 ms , answer is 3.14159265 241386
+      //  with 10,000,000 slices:  jay_pi execution time is 2759 ms , answer is 3.1415926535 5335
+      //
+      if(strcmp("jay_pi"  , lc_serial_command) == 0)
+      {
+        double    radius;
+        double    radiusSquared;
+        double    slices;
+        double    index;
+        double    sliceWidth;
+        double    sliceAreaSum;
+        double    y0;
+        double    y1;
+
+        uint32_t  systick_millis_at_start;
+
+        systick_millis_at_start = systick_millis_count;
+        radius        = 1.0000;
+        radiusSquared = 1.0000;
+        slices = 10000000;
+        index = 0;
+        sliceWidth  = (radius / slices);
+        sliceAreaSum = 0.0000;
+
+        y0 = sqrt(radiusSquared - pow(index/slices, 2.0));
+        
+        while(index++ < slices)
+        {
+          y1 = sqrt(radiusSquared - pow(index/slices, 2.0));
+          sliceAreaSum += sliceWidth * (y0+y1)/2.0;
+          y0 = y1;
+        }
+        sliceAreaSum *= 4.0000;
+        Serial.printf("\njay_pi execution time is %d ms , answer is %-16.14f\n", systick_millis_count-systick_millis_at_start, sliceAreaSum);
+      }
+
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////  Test writing Graphics

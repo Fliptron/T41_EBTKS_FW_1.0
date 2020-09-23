@@ -156,6 +156,7 @@ void AUXROM_Poll(void)
       AUXROM_SDOPEN();
       break;
     case AUX_USAGE_SDREAD:
+      AUXROM_SDREAD();
       break;
     case AUX_USAGE_SDCLOSE:
       AUXROM_SDCLOSE();
@@ -194,16 +195,15 @@ void AUXROM_Poll(void)
 //    all in built-in DRAM
 //    all in EBTKS memory
 //    mixed
-//  and then write block transfer for each, the last being a total pain
+//  and then write block transfer for each.
 //
 //  The expediant (and slower and less bug prone) is just transfer 1 byte at
 //  a time and do a test for each. Doing this for now.
+//  Actually, probably not that slow, since the overhead here is totally masked by the slow HP85 bus data rate
 //
 //  #################  does not handle ROMs that EBTKS provides
 //  #################  does not handle RAM window in EBTKS ROMs
 //
-
-
 
 void AUXROM_Fetch_Memory(uint8_t * dest, uint32_t src_addr, uint16_t num_bytes)
 {
@@ -228,6 +228,52 @@ void AUXROM_Fetch_Memory(uint8_t * dest, uint32_t src_addr, uint16_t num_bytes)
     *dest++ = DMA_Peek8(src_addr++);
   }
 }
+
+//
+//  Store num_bytes into HP-85 memory. Made difficult because they might be in
+//  the built-in DRAM (access via DMA) or they might be in RAM that EBTKS
+//  supplies (but only for HP85A)
+//
+//  The efficient solution would be identify the three scenarios:
+//    all in built-in DRAM
+//    all in EBTKS memory
+//    mixed
+//  and then write block transfer for each
+//
+//  The expediant (and slower and less bug prone) is just transfer 1 byte at
+//  a time and do a test for each. Doing this for now.
+//  Actually, probably not that slow, since the overhead here is totally masked by the slow HP85 bus data rate
+//
+//  #################  does not handle ROMs that EBTKS provides
+//  #################  does not handle RAM window in EBTKS ROMs
+//
+//  dest_addr is an HP85 memory address. source is a pointer into EBTKS memory
+//
+
+void AUXROM_Store_Memory(uint16_t dest_addr, char * source, uint16_t num_bytes)
+{
+  while(num_bytes--)
+  {
+    if(getHP85RamExp())
+    {
+      //
+      //  For HP-85 A, implement 16384 - 256 bytes of RAM, mapped at 0xC000 to 0xFEFF (if enabled)
+      //
+      if ((dest_addr >= HP85A_16K_RAM_module_base_addr) && (dest_addr < IO_ADDR))
+      {
+        HP85A_16K_RAM_module[dest_addr++ - HP85A_16K_RAM_module_base_addr] = *source++; //  Got 85A EBTKS RAM, and address match
+        continue;
+      }
+      //  If we get here, got 85A EBTKS RAM, and address does not match, so must be built-in DRAM,
+      //  so just fall into that code
+    }
+    //
+    //  built-in DRAM
+    //
+    DMA_Poke8((dest_addr++ - HP85A_16K_RAM_module_base_addr) & 0x0000FFFF , *source++);
+  }
+}
+
 
 //
 //  Fetch num_bytes for HP-85 memory which are parameters on the R12 stack
