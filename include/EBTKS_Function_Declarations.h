@@ -132,12 +132,18 @@ bool Resolve_Path(char *New_Path);
 //  AUXROM Functions/Keywords/Statements
 //
 
-void initialize_Current_Path(void);
+void initialize_SD_functions(void);
 void AUXROM_WROM(void);
 void AUXROM_SDCD(void);
 void AUXROM_SDCUR(void);
 void AUXROM_SDCAT(void);
 void AUXROM_SDMKDIR(void);
+void AUXROM_SDOPEN(void);
+void AUXROM_SDCLOSE(void);
+void AUXROM_SDREAD(void);
+void AUXROM_SDWRITE(void);
+void AUXROM_SDFLUSH(void);
+void AUXROM_SDSEEK(void);
 
 
 //

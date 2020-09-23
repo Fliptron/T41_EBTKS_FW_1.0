@@ -20,10 +20,10 @@
 #define  AUX_USAGE_SDCD          (  2)      //  SDCD path$                                        Change the current SD directory
 #define  AUX_USAGE_SDCUR         (  3)      //  SDCUR$                                            Return the current SD directory
 #define  AUX_USAGE_SDCAT         (  4)      //  SDCAT [dst$Var, dstSizeVar, dstAttrVar, 0 | 1]    Get a directory listing entry for the current SD path (A.BOPT60=0 for "find first", =1 for "find next")
-#define  AUX_USAGE_SDFLSH        (  5)      //  SDFLUSH file#                                     Flush everything or a specific file#
+#define  AUX_USAGE_SDFLUSH       (  5)      //  SDFLUSH file#                                     Flush everything or a specific file#
 #define  AUX_USAGE_SDOPEN        (  6)      //  SDOPEN file#, filePath$, mode                     Open an SD file
 #define  AUX_USAGE_SDREAD        (  7)      //  SDREAD dst$Var, bytesReadVar, maxBytes, file#     Read an SD file
-#define  AUX_USAGE_SDCLOS        (  8)      //  SDCLOSE file#                                     Close an SD file
+#define  AUX_USAGE_SDCLOSE       (  8)      //  SDCLOSE file#                                     Close an SD file
 #define  AUX_USAGE_SDWRIT        (  9)      //  SDWRITE src$, file#                               Write to an SD file
 #define  AUX_USAGE_SDSEEK        ( 10)      //  = SDSEEK(origin#, offset#, file#)                 Seek in an SD file
 #define  AUX_USAGE_SDDEL         ( 11)      //  SDDEL fileSpec$                                   Check if mounted disk/tape & error, else delete the file
@@ -149,13 +149,16 @@ void AUXROM_Poll(void)
     case AUX_USAGE_SDCAT:
       AUXROM_SDCAT();
       break;
-    case AUX_USAGE_SDFLSH:
+    case AUX_USAGE_SDFLUSH:
+      AUXROM_SDFLUSH();
       break;
     case AUX_USAGE_SDOPEN:
+      AUXROM_SDOPEN();
       break;
     case AUX_USAGE_SDREAD:
       break;
-    case AUX_USAGE_SDCLOS:
+    case AUX_USAGE_SDCLOSE:
+      AUXROM_SDCLOSE();
       break;
     case AUX_USAGE_SDWRIT:
       break;

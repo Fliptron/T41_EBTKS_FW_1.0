@@ -608,7 +608,7 @@ void setup()
   LOGPRINTF("Loading configuration...\n");
   flush_logfile();
 
-  initialize_Current_Path();      //  Used by the AUXROM functions
+  initialize_SD_functions();      //  Used by the AUXROM functions
 
   // init devices before we load the configuration
 

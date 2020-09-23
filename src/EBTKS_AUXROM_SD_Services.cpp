@@ -9,6 +9,7 @@
 //                    Resolve_Path() will handle ./ and ../ since the SdFat library does not handle it
 //                    Decided that I will maintain a copy of the path for all current open files
 //                    Directory paths have trailing '/' , File paths do no have a trailing '/'
+//  09/23/2020        Add SDOPEN
 //
 
 /////////////////////On error message / error codes.  Go see email log for this text in context
@@ -37,6 +38,16 @@ EXTMEM static char          Resolved_Path[MAX_SD_PATH_LENGTH + 2];
 static bool                 Resolved_Path_ends_with_slash;
 
 //
+//  Support for AUXROM SD Functions
+//
+#define MAX_AUXROM_SDFILES        (11)
+
+static File Auxrom_Files[MAX_AUXROM_SDFILES+1];                       //  These are the file handles used by the following functions: SDOPEN, SDCLOSE, SDREAD, SDWRITE, SDFLUSH, SDSEEK
+                                                                      //                                      and probably these too: SDEOL,  SDEOL$
+                                                                      //  The plus 1 is so we can work with the BASIC univers that numbers file 1..N, and the reserved file number 11 that
+                                                                      //  is used by some AUXROM internal commands like SDSAVE, SDGET, SDEXPORT(EXPORTLIF?), SDIMPORT (IMPORTLIF ?)
+
+//
 //  SdFat Library discoveries, because the documentation is not clear
 //
 //  SdFat SD;   //  global instantiation of SD
@@ -54,9 +65,15 @@ FatVolume   Fat_Volume;
 File        HP85_file[11];                                          //  10 file handles for the user, and one for Everett
 EXTMEM      char HP85_file_name[11][MAX_SD_PATH_LENGTH + 2];        //  Full path to the file name (the last part)
 
-void initialize_Current_Path(void)
+void initialize_SD_functions(void)
 {
+  int     i;
+
   strcpy(Current_Path,"/");
+  for(i = 0 ; i < (MAX_AUXROM_SDFILES +1) ; i++)
+  {
+    Auxrom_Files[i].close();
+  }
 }
 
 //
@@ -502,6 +519,127 @@ bool LineAtATime_ls_Next()
   //
   return false;
 }
+
+//
+//  Open a file on the SD Card for direct access via the AUXROM functions
+//
+
+void AUXROM_SDOPEN(void)
+{
+  int         file_index;
+  bool        error_occured;
+
+  file_index = AUXROM_RAM_Window.as_struct.AR_BUF6_OPTS[0];               //  File number 1..11
+
+  do
+  {
+    if(Auxrom_Files[file_index].isOpen()) break;                          //  Error, File is already open
+    if(!Resolve_Path(AUXROM_RAM_Window.as_struct.AR_Buffer_6)) break;     //  Error, Parsing problems with path
+    error_occured = false;
+    switch(AUXROM_RAM_Window.as_struct.AR_BUF6_OPTS[0])
+    {
+      case 0:       //  Mode 0 (READ-ONLY), error if the file doesn't exist
+        if(!Auxrom_Files[file_index].open(Resolved_Path , O_RDONLY | O_BINARY)) error_occured = true;
+        break;
+      case 1:       //  Mode 1 (R/W, append)
+        if(!Auxrom_Files[file_index].open(Resolved_Path , O_RDWR | O_APPEND | O_CREAT | O_BINARY)) error_occured = true;
+        break;
+      case 2:       //  Mode 2 (R/W, truncate)
+        if(!Auxrom_Files[file_index].open(Resolved_Path , O_RDWR | O_TRUNC | O_CREAT | O_BINARY)) error_occured = true;
+        break;
+      default:
+        error_occured = true;     //  Unrecognized Open Mode
+        break;
+    }
+    if(error_occured) break;
+    AUXROM_RAM_Window.as_struct.AR_Usages[6]    = 0;     //  File opened successfully
+    AUXROM_RAM_Window.as_struct.AR_Mailboxes[6] = 0;     //  Indicate we are done
+    Serial.printf("SDOPEN Success [%s]\n", Resolved_Path);
+    return;
+  } while (0);
+  //
+  //  This is the shared error exit
+  //
+  AUXROM_RAM_Window.as_struct.AR_Usages[6]    = 213;    //  Error
+  AUXROM_RAM_Window.as_struct.AR_Mailboxes[6] = 0;      //  Indicate we are done
+  Serial.printf("SDOPEN Error. File already open  [%s]\n", Resolved_Path);
+  return;    
+}
+
+//
+//  Flush any pending write data
+//  File number 1..10 are for a single open file
+//  If File number provided is 0, Flush all open files
+//
+
+void AUXROM_SDFLUSH(void)
+{
+  int         file_index;
+  int         i;
+
+  file_index = AUXROM_RAM_Window.as_struct.AR_BUF6_OPTS[0];               //  File number 1..10 , or 0 for all
+  if(file_index == 0)
+  {
+    for(i = 1 ;  i < MAX_AUXROM_SDFILES ; i++)
+    {
+      if(Auxrom_Files[i].isOpen())
+      {
+        Auxrom_Files[i].flush();
+        Serial.printf("Flushing file %2d\n", i);
+        //
+        //  No error exit
+        //
+      }
+    }
+  }
+  else
+  {
+    Auxrom_Files[file_index].flush();
+    Serial.printf("Flushing file %2d\n", file_index);
+  }
+  AUXROM_RAM_Window.as_struct.AR_Usages[6]    = 0;     //  File flush successfully
+  AUXROM_RAM_Window.as_struct.AR_Mailboxes[6] = 0;     //  Indicate we are done
+  return;
+}
+
+//
+//  Close 1..n close specific file. 0 means close all open files
+//
+
+void AUXROM_SDCLOSE(void)
+{
+  int         file_index;
+  int         i;
+  bool        return_status;
+  char        filename[258];
+
+  file_index = AUXROM_RAM_Window.as_struct.AR_BUF6_OPTS[0];               //  File number 1..10 , or 0 for all
+  if(file_index == 0)
+  {
+    for(i = 1 ;  i < MAX_AUXROM_SDFILES ; i++)
+    {
+      if(Auxrom_Files[i].isOpen())
+      {
+        return_status = Auxrom_Files[i].close();
+        Auxrom_Files[i].getName(filename,255);
+        Serial.printf("Close file %2d [%s]  Success status is %s\n", i, filename, return_status ? "true":"false");
+        //
+        //  No error exit
+        //
+      }
+    }
+  }
+  else
+  {
+    return_status = Auxrom_Files[file_index].close();
+    Auxrom_Files[file_index].getName(filename,255);
+    Serial.printf("Close file %2d [%s]  Success status is %s\n", file_index, filename, return_status ? "true":"false");
+  }
+  AUXROM_RAM_Window.as_struct.AR_Usages[6]    = 0;     //  File flush successfully
+  AUXROM_RAM_Window.as_struct.AR_Mailboxes[6] = 0;     //  Indicate we are done
+  return;
+}
+
 
 //
 //  Create a new directory in the current directory

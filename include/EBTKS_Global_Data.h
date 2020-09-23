@@ -44,16 +44,16 @@ struct PACKED AUXROM_RAM
   char          AR_Pad_2[80];                       //  070240 - 070357     160 -   239
   char          AR_BUF6_OPTS[8];                    //  070360 - 070367     240 -   247           A.BOPT60 - A.BOPT67   See 85aux2.lst line 2226 for details. TLDR: used as additional Usage values.
                                                     //                                                                  Same mailbox constraints on ownership
-  char       AR_BUF0_OPTS[4];                       //  070370 - 070373     248 -   251           A.BOPT00 - A.BOPT03
-  char       AR_BUF1_OPTS[4];                       //  070374 - 070374     252 -   255           A.BOPT10 - A.BOPT13
-  char       AR_Buffer_0[256];                      //  070400 - 070777     256 -   511
-  char       AR_Buffer_1[256];                      //  071000 - 070377     512 -   767
-  char       AR_Buffer_2[256];                      //  071400 - 071777     768 -  1023
-  char       AR_Buffer_3[256];                      //  072000 - 072377    1024 -  1279
-  char       AR_Buffer_4[256];                      //  072400 - 072777    1280 -  1535
-  char       AR_Buffer_5[256];                      //  073000 - 073377    1536 -  1791
-  char       AR_Buffer_6[1024];                     //  073400 - 075377    1792 -  2815
-  char       AR_Pad_3[256];                         //  075400 - 075777    2816 -  3071
+  char          AR_BUF0_OPTS[4];                    //  070370 - 070373     248 -   251           A.BOPT00 - A.BOPT03
+  char          AR_BUF1_OPTS[4];                    //  070374 - 070374     252 -   255           A.BOPT10 - A.BOPT13
+  char          AR_Buffer_0[256];                   //  070400 - 070777     256 -   511
+  char          AR_Buffer_1[256];                   //  071000 - 070377     512 -   767
+  char          AR_Buffer_2[256];                   //  071400 - 071777     768 -  1023
+  char          AR_Buffer_3[256];                   //  072000 - 072377    1024 -  1279
+  char          AR_Buffer_4[256];                   //  072400 - 072777    1280 -  1535
+  char          AR_Buffer_5[256];                   //  073000 - 073377    1536 -  1791
+  char          AR_Buffer_6[1024];                  //  073400 - 075377    1792 -  2815
+  char          AR_Pad_3[256];                      //  075400 - 075777    2816 -  3071
 };
 
 //
