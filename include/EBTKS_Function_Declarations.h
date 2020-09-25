@@ -99,7 +99,7 @@ void no_SD_card_message(void);
 void enHP85RamExp(bool en);
 bool getHP85RamExp(void);
 
-bool LineAtATime_ls_Init(void);
+bool LineAtATime_ls_Init(char * path);
 bool LineAtATime_ls_Next(void);
 
 //

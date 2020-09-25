@@ -125,9 +125,8 @@ void AUXROM_Poll(void)
   }
 
   //my_R12 = AUXROM_RAM_Window.as_struct.AR_R12_copy;
-  LOGPRINTF_AUX("AUXROM Function called. Got Mailbox # %d\n", Mailbox_to_be_processed);
-  LOGPRINTF_AUX("AUXROM Got Usage %d\n", AUXROM_RAM_Window.as_struct.AR_Usages[Mailbox_to_be_processed]);
-  LOGPRINTF_AUX("R12, got %06o\n", my_R12);
+  LOGPRINTF_AUX("AUXROM Function called. Got Mailbox # %d  and Usage %d\n", Mailbox_to_be_processed , AUXROM_RAM_Window.as_struct.AR_Usages[Mailbox_to_be_processed]);
+  //LOGPRINTF_AUX("R12, got %06o\n", my_R12);
   //Serial.printf("Showing 16 bytes prior to R12 address\n");
   //HexDump_HP85_mem(my_R12 - 16, 16, true, true);
   //Serial.flush();

@@ -823,7 +823,7 @@ void proc_ddir(void)
   //  SD.ls(PS, "/", LS_R | LS_SIZE | LS_DATE, 3);
   //File root = SD.open("/disks/");
   //printDirectory(root,0);
-  LineAtATime_ls_Init();
+  LineAtATime_ls_Init((char *)"/disks/");
   while(LineAtATime_ls_Next())
   {
     //Serial.printf("%s    end of LineAtATime_ls_Next call %d\n", PS.get_ptr() , call_count++);
@@ -1455,7 +1455,7 @@ void str_tolower(char *p)
 
 
 ///**********************************************************   From Everett, 9/22/2020 , with just formatting changes to conform with the rest of the source code
-/// Checks pT against possbily wild-card-containing pP.                                   and change of case for bool, true, false
+/// Checks pT against possibly wild-card-containing pP.                                   and change of case for bool, true, false
 /// Returns TRUE if there's a match, otherwise FALSE.
 /// pT must NOT have any wildcards, just be a valid filename.
 /// pP may or may not have wildcards (* and ?).

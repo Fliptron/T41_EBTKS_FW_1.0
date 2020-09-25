@@ -693,6 +693,7 @@ void setup()
   Serial.printf("Access to SD Card is %s\n", SD_begin_OK     ? "true":"false");
   Serial.printf("Config Success is %s\n"   , config_success  ? "true":"false");
 
+
   Serial.flush();
   delay(3000);
   if(!SD_begin_OK)
@@ -701,6 +702,8 @@ void setup()
   }
 
 }
+
+
 
 //  Is it possible with Teensy powered by USB for the double LMA to get out of sync?  Scenario: Power cycle HP-85 after first
 //  cycle but before second. Teensy is running in loop() and is un-aware that HP-85 has restarted.
