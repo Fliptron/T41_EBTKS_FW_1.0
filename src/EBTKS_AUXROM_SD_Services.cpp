@@ -10,6 +10,8 @@
 //                    Decided that I will maintain a copy of the path for all current open files
 //                    Directory paths have trailing '/' , File paths do no have a trailing '/'
 //  09/23/2020        Add SDOPEN
+//  09/24/2020        SDCAT support for wild cards, lower case pattern matching, stripping trailing slash for pattern match
+//  09/25/2020        Fix minor bug in SDCAT with RO on subdirectory listings.
 //
 
 /////////////////////On error message / error codes.  Go see email log for this text in context
@@ -201,6 +203,8 @@ void AUXROM_SDCUR(void)
 //
 //  If filespec$ has a trailing slash, it is specifying a subdirectory to be catalogged. Without a slash it is a
 //  file selection filter specification, that may include wild cards * and ?
+//  Pattern matching removes trailing / so that patterns will match both files and subdirectories
+//  Pattern match is case insensitive. Both the filename/directoryname and the match pattern are converted to lower case
 //
 //  SDCAT                     does a full directory listing to the CRT IS device.
 //                            EBTKS never sees this because it gets turned into SDCAT A$,D$,S,0,"*"
@@ -264,13 +268,14 @@ void AUXROM_SDCUR(void)
 //  For pattern matching, alphabetic case is ignored.
 //
 
-//static int        SDCAT_line_count = 0;
-static bool       SDCAT_First_seen = false;     //  keeping track of whether we have seen a call for a first line of a SD catalog
-static char       dir_line[130];                //  Leave room for a trailing 0x00 (that is not included in the passed max length of PS.get_line)
-static int32_t    get_line_char_count;
-static char       sdcat_filespec[130];
-static int        sdcat_filespec_length;
-static bool       filespec_is_dir;
+//static int              SDCAT_line_count = 0;
+static bool               SDCAT_First_seen = false;     //  keeping track of whether we have seen a call for a first line of a SD catalog
+EXTMEM static char        dir_line[258];                //  Leave room for a trailing 0x00 (that is not included in the passed max length of PS.get_line)
+static int32_t            get_line_char_count;
+EXTMEM static char        sdcat_filespec[258];
+static int                sdcat_filespec_length;
+static bool               filespec_is_dir;
+EXTMEM static char        sdcat_dir_path[258];
 
 void AUXROM_SDCAT(void)
 {
@@ -278,6 +283,7 @@ void AUXROM_SDCAT(void)
   char        file_size[12];
   File        temp_file;
   bool        match;
+  char        temp_file_path[258];
 
   //
   //  Show Parameters
@@ -333,7 +339,10 @@ void AUXROM_SDCAT(void)
 
     str_tolower(sdcat_filespec);                            //  Make all pattern matches case insensitive
 
-    if(!LineAtATime_ls_Init(Resolved_Path))                 //  This is where the whole directory is listed into a buffer
+    strcpy(sdcat_dir_path, Resolved_Path);                  //  Save the path of the directory being catalogged, since Resolved_Path could be modified between successive calls
+                                                            //  We need to keep this info so that we can check the Read-Only state when catalogging a subdirectory
+    //Serial.printf("Catalogging directory of [%s]\n", sdcat_dir_path);
+    if(!LineAtATime_ls_Init(sdcat_dir_path))                //  This is where the whole directory is listed into a buffer
     {                                                       //  Failed to do a listing of the current directory
       AUXROM_RAM_Window.as_struct.AR_Usages[6]    = 213;    //  Error
       AUXROM_RAM_Window.as_struct.AR_Mailboxes[6] = 0;      //  Indicate we are done
@@ -379,7 +388,7 @@ void AUXROM_SDCAT(void)
     //
     temp_uint = strlcpy(AUXROM_RAM_Window.as_struct.AR_Buffer_6, &dir_line[28], 129);     //  Copy the filename to buffer 6, and get its length
     AUXROM_RAM_Window.as_struct.AR_Lengths[6] = temp_uint;                                //  Put the filename length in the right place
-    //  Make another copy for matching
+    //  Make another copy for matching, which will be case insensitive
     strcpy(&AUXROM_RAM_Window.as_struct.AR_Buffer_6[256], AUXROM_RAM_Window.as_struct.AR_Buffer_6);
     str_tolower(&AUXROM_RAM_Window.as_struct.AR_Buffer_6[256]);
     //
@@ -415,7 +424,10 @@ void AUXROM_SDCAT(void)
     //
     //  Need to get read-only status
     //
-    temp_file = SD.open(AUXROM_RAM_Window.as_struct.AR_Buffer_6);                         //  SD.open() does not mind the trailing slash if the name is a directory
+    strcpy(temp_file_path, sdcat_dir_path);
+    strcat(temp_file_path, AUXROM_RAM_Window.as_struct.AR_Buffer_6);
+    //Serial.printf("Read only test of %s\n", temp_file_path);
+    temp_file = SD.open(temp_file_path);                                                  //  SD.open() does not mind the trailing slash if the name is a directory
     if(temp_file.isReadOnly())
     {
       AUXROM_RAM_Window.as_struct_a.AR_BUF6_OPTS.as_uint32_t[1] |= 0x02;                  //  Indicate the file is read only
@@ -806,169 +818,3 @@ void AUXROM_SDMKDIR(void)
 }      
 
 
-
-
-////////    case AUX_USAGE_3NUM:                      ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////  AUX_USAGE_3NUM
-////////      //  AUX3NUMS n1, n2, n3
-////////      //
-////////      //  From email with Everett, 8/9/2020 @ 11:33
-////////      //
-////////      //  AUX3NUMS n1, n2, n3
-////////      //  a) When AUX3NUMS runtime gets called, leave the three 8-byte values
-////////      //     on the stack, write the R12 value to A.MBR12.
-////////      //  b) Send a message to EBTKS:
-////////      //      Write "TEST" to BUF0
-////////      //      Write 1 to USAGE0
-////////      //      Write 1 to Mailbox0
-////////      //  b') Write 0 to 177740  (HEYEBTKS)
-////////      //  c) Wait for MailBox0==0
-////////      //  d) If USAGE0==0, throw away 24-bytes from R12, else load R12
-////////      //     from A.MBR12 (assuming EBTKS is "popping the values").
-////////      //
-////////      //LOGPRINTF_AUX("R12, got %06o   ", AUXROM_RAM_Window.as_struct.AR_R12_copy);
-////////      AUXROM_Fetch_Parameters(&Parameter_blocks.Parameter_Block_N_N_N_N_N_N.numbers[0].real_bytes[0] , 3*8);
-////////
-////////      for(param_number = 0 ; param_number < 3 ; param_number++)
-////////      {
-////////        HexDump_T41_mem((uint32_t)&Parameter_blocks.Parameter_Block_N_N_N_N_N_N.numbers[param_number].real_bytes[0], 8, false, false);
-////////        Serial.printf("    ");
-////////      }
-////////      Serial.printf("\n");
-////////
-////////      for(param_number = 0 ; param_number < 3 ; param_number++)
-////////      {
-////////        if(Parameter_blocks.Parameter_Block_N_N_N_N_N_N.numbers[param_number].real_bytes[4] == 0xFF)
-////////        { //  The parameter is a tagged integer
-////////          LOGPRINTF_AUX("Integer %7d       ", cvt_R12_int_to_int32(&Parameter_blocks.Parameter_Block_N_N_N_N_N_N.numbers[param_number].real_bytes[0]));
-////////        }
-////////        else
-////////        {
-////////          LOGPRINTF_AUX("Real %20.14G ", cvt_HP85_real_to_IEEE_double(&Parameter_blocks.Parameter_Block_N_N_N_N_N_N.numbers[param_number].real_bytes[0]));
-////////        }
-////////      }
-////////      LOGPRINTF_AUX("\n");
-////////      AUXROM_RAM_Window.as_struct.AR_Usages[Mailbox_to_be_processed] = 0;         //  Claim success
-////////      break;
-////////    case AUX_USAGE_1SREF:                      ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////  AUX_USAGE_1SREF
-////////      //  AUX1STRREF
-////////      //
-////////      //  From email with Everett, 8/9/2020 @ 11:33
-////////      //
-////////      //  AUX1STRREF A$
-////////      //  a) When AUX1STRREF runtime gets called, leave the string reference
-////////      //    on the stack, write the R12 value to A.MBR12.
-////////      //  b) Send a message to EBTKS:
-////////      //      Write "TEST" to BUF0
-////////      //      Write 2 to USAGE0
-////////      //      Write 1 to Mailbbox0
-////////      //  b') Write 0 to 177740  (HEYEBTKS)
-////////      //  c) Wait for Mailbox==0
-////////      //  d) If USAGE0==0, throw away the strref from R12, else load R12
-////////      //     from A.MBR12.
-////////      //
-////////      //  Discovered: what is passed is the pointer to the text part of the string. There is a header of
-////////      //  8 bytes prior to this point, documented on page 5-32 of the HP-85 Assembler manual. Of these
-////////      //  8 bytes, the last 2 (just before the text area starts) is the Valid Length of the text. For
-////////      //  a string variable like A$, if not dimensioned, 18 bytes are allocated for the text area, and
-////////      //  the 4 bytes prior to the just mentioned Valid Length are two copies of the Max Length, which
-////////      //  is 18 (22 octal). So we will be needing the Valid Length.
-////////      //  Not documented: If the String Variable is un-initialized, its Actual_Length is -1
-////////      //
-////////
-////////      AUXROM_Fetch_Parameters(&Parameter_blocks.Parameter_Block_SREF.string.unuseable_abs_rel_addr , 6);
-////////      LOGPRINTF_AUX("Unuseable Addr %06o   Length %06o  Address Passed %06o\n" ,
-////////                        Parameter_blocks.Parameter_Block_SREF.string.unuseable_abs_rel_addr,
-////////                        Parameter_blocks.Parameter_Block_SREF.string.length,
-////////                        Parameter_blocks.Parameter_Block_SREF.string.address );
-////////      //
-////////      //  Per the above description, we need to collect the string starting 8 bytes lower in memory,
-////////      //  and retrieve 8 more bytes than indicated by the passed length, which is the max length, not
-////////      //  the Valid Length
-////////      //
-////////      AUXROM_Fetch_Memory(&AUXROM_RAM_Window.as_struct.AR_Buffer_6[0], Parameter_blocks.Parameter_Block_SREF.string.address - 8, Parameter_blocks.Parameter_Block_SREF.string.length + 8);
-////////      //
-////////      //  these variables are getting unwieldly. try and make it simple
-////////      //
-////////      HP85_String_Pointer = (struct  S_HP85_String_Variable *)(&AUXROM_RAM_Window.as_struct.AR_Buffer_6[0]);
-////////      LOGPRINTF_AUX("String Header Flags bytes %03o , %03o TotalLen %4d MaxLen %4d Actual Len %5d\n", HP85_String_Pointer->flags_1, HP85_String_Pointer->flags_2,
-////////                    HP85_String_Pointer->Total_Length, HP85_String_Pointer->Max_Length, HP85_String_Pointer->Actual_Length);
-////////      if(HP85_String_Pointer->Actual_Length == -1)
-////////      {
-////////        LOGPRINTF_AUX("String Variable is uninitialized\n");
-////////      }
-////////      else
-////////      {
-////////        LOGPRINTF_AUX("[%.*s]\n", HP85_String_Pointer->Actual_Length, HP85_String_Pointer->text);
-////////        LOGPRINTF_AUX("Dump of Header and Text area\n");
-////////        for(i = 0 ; i < HP85_String_Pointer->Total_Length + 10 ; i++)
-////////        {
-////////          LOGPRINTF_AUX("%02X ", AUXROM_RAM_Window.as_struct.AR_Buffer_6[i]);
-////////          if(i == 7) LOGPRINTF_AUX("\n");        //  a new line after the header portion
-////////        }
-////////        LOGPRINTF_AUX("\n");
-////////      }
-////////      AUXROM_RAM_Window.as_struct.AR_Usages[Mailbox_to_be_processed] = 0;         //  Claim success
-////////      break;
-////////    case AUX_USAGE_NFUNC:                            ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////  AUX_USAGE_NFUNC
-////////      //  HP85 function is TESTNUMFUN(123.456) returns the value after two conversions
-////////      //  Inbound number is on the R12 stack, result goes into Buffer 6 (8 bytes)
-////////      AUXROM_Fetch_Parameters(&Parameter_blocks.Parameter_Block_N_N_N_N_N_N.numbers[0].real_bytes[0] , 8);    //  Get one HP85 Real 8 byte number off the stack
-////////      //
-////////      //  Convert the HP85 number to IEEE Double, and convert it back and put in Buf 6
-////////      //
-////////      param_1_val = cvt_HP85_real_to_IEEE_double(&Parameter_blocks.Parameter_Block_N_N_N_N_N_N.numbers[0].real_bytes[0]);
-////////      cvt_IEEE_double_to_HP85_number(&AUXROM_RAM_Window.as_struct.AR_Buffer_6[0], param_1_val);
-////////
-////////#if TRACE_TESTNUMFUN
-////////      Serial.printf("Input number: ");
-////////      HexDump_T41_mem((uint32_t)&Parameter_blocks.Parameter_Block_N_N_N_N_N_N.numbers[0].real_bytes[0], 8, false, false);
-////////      Serial.printf("     Output number: ");
-////////      HexDump_T41_mem((uint32_t)&AUXROM_RAM_Window.as_struct.AR_Buffer_6[0], 8, false, false);
-////////      Serial.printf("difference  %.11e  ", param_1_val - cvt_HP85_real_to_IEEE_double(&AUXROM_RAM_Window.as_struct.AR_Buffer_6[0]) );
-////////      Serial.printf(" Value %20.14G\n", param_1_val);
-////////#else
-////////      if((param_1_val - cvt_HP85_real_to_IEEE_double(&AUXROM_RAM_Window.as_struct.AR_Buffer_6[0])) != 0)
-////////      {
-////////        Serial.printf("TESTNUMFUN ERROR converting  %20.14G\n", param_1_val);
-////////      }
-////////#endif
-////////
-////////      AUXROM_RAM_Window.as_struct.AR_Usages[Mailbox_to_be_processed] = 0;     //  Success
-////////      AUXROM_RAM_Window.as_struct.AR_Mailboxes[6] = 0;                        //  Release mailbox 6
-////////      break;
-////////    case AUX_USAGE_SFUNC:                            ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////  AUX_USAGE_SFUNC
-////////      //  show_mailboxes_and_usage();
-////////      //  HP85 function is TESTSTRFUN$("Some Text")) returns the string in Buffer 6
-////////      AUXROM_Fetch_Parameters(&Parameter_blocks.Parameter_Block_SVAL.string_val.length , 4);    //  Get one HP85 string_val off the stack
-////////      string_len = Parameter_blocks.Parameter_Block_SVAL.string_val.length;
-////////      string_addr = Parameter_blocks.Parameter_Block_SVAL.string_val.address;
-////////      //  Serial.printf("String Length:  %d\n", string_len);
-////////      //  Serial.printf("String Address: %06o\n", string_addr);
-////////      //  HexDump_HP85_mem(string_addr, 16, true, true);
-////////      AUXROM_Fetch_Memory(AUXROM_RAM_Window.as_struct.AR_Buffer_6, string_addr, string_len);
-////////
-//////////#if TRACE_TESTNUMFUN
-//////////      Serial.printf("Input number: ");
-//////////      HexDump_T41_mem((uint32_t)&Parameter_blocks.Parameter_Block_N_N_N_N_N_N.numbers[0].real_bytes[0], 8, false, false);
-//////////      Serial.printf("     Output number: ");
-//////////      HexDump_T41_mem((uint32_t)&AUXROM_RAM_Window.as_struct.AR_Buffer_6[0], 8, false, false);
-//////////      Serial.printf("difference  %.11e  ", param_1_val - cvt_HP85_real_to_IEEE_double(&AUXROM_RAM_Window.as_struct.AR_Buffer_6[0]) );
-//////////      Serial.printf(" Value %20.14G\n", param_1_val);
-//////////#endif
-////////
-////////      AUXROM_RAM_Window.as_struct.AR_Lengths[6] = string_len;
-////////      AUXROM_RAM_Window.as_struct.AR_Usages[6] = string_len;
-////////
-////////      AUXROM_RAM_Window.as_struct.AR_Usages[Mailbox_to_be_processed] = 0;     //  Success
-////////      AUXROM_RAM_Window.as_struct.AR_Mailboxes[6] = 0;                        //  Release mailbox 6
-////////      break;
-////////
-////////    default:
-////////      AUXROM_RAM_Window.as_struct.AR_Usages[Mailbox_to_be_processed] = 1;     //  Failure, unrecognized Usage code
-////////  }
-////////
-////////  new_AUXROM_Alert = false;
-////////  AUXROM_RAM_Window.as_struct.AR_Mailboxes[Mailbox_to_be_processed] = 0;      //  Relinquish control of the mailbox
-////////  show_mailboxes_and_usage();
-////////
-////////}
