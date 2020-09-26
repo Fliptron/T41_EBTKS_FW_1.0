@@ -161,6 +161,7 @@ void AUXROM_Poll(void)
       AUXROM_SDCLOSE();
       break;
     case AUX_USAGE_SDWRIT:
+      AUXROM_SDWRITE();
       break;
     case AUX_USAGE_SDSEEK:
       break;

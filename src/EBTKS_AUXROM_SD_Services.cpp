@@ -104,8 +104,8 @@ void AUXROM_WROM(void)
   Serial.printf("Target Address(oct): %06O\n", target_address);
   Serial.printf("Bytes to write(dec):     %d\n", transfer_length);
 
-  if((dest_ptr = getROMEntry(target_rom)) == NULL)            //  romMap is a table of 256 pointers to locations in EBTKS's address space. i.e. 32 bit pointers. Either NULL, or an address. The index is the ROM ID
-  {
+  if((dest_ptr = getROMEntry(target_rom)) == NULL)            //  romMap is a table of 256 pointers to locations in EBTKS's address space.
+  {                                                           //  i.e. 32 bit pointers. Either NULL, or an address. The index is the ROM ID
     Serial.printf("Selected ROM not loaded\n");
     // return error
   }
@@ -321,7 +321,9 @@ void AUXROM_SDCAT(void)
     {   //    filespec$ is a subdirectory specification
       if(!Resolve_Path(sdcat_filespec))
       {
-        AUXROM_RAM_Window.as_struct.AR_Usages[6]    = 213;    //  Error
+        //AUXROM_RAM_Window.as_struct.AR_Usages[6]    = 213;    //  Error
+        post_custom_error_message((char *)"Can't resolve path");
+        //show_mailboxes_and_usage();
         AUXROM_RAM_Window.as_struct.AR_Mailboxes[6] = 0;      //  Indicate we are done
         Serial.printf("SDCAT Error exit 1.  Error while resolving subdirectory name\n");
         return;
@@ -789,6 +791,11 @@ void AUXROM_SDREAD(void)
   return;
 }
 
+
+
+
+
+
 //
 //  Create a new directory in the current directory
 //  AUXROM puts the new directory name in Buffer 6, Null terminated
@@ -817,4 +824,69 @@ void AUXROM_SDMKDIR(void)
   return;
 }      
 
+//
+//  Custom Error and Warning Messages
+//
+//  All addresses are AUXROM 1
+//
+//    The custom messages area starts at 060024  EBTKSMSG and extends for
+//    34D bytes the last of which must always have the MSB set. Exactly two
+//    more bytes in this 34 byte area must also have their MSB set and
+//    depends on whether a custom warning or error message is being setup.
+//    
+//    For a custom warning, it starts at 0600024 and is no more than 32
+//    bytes, with the last valid byte MSB set. The 32 bytes can be padded
+//    with spaces. The 33rd byte (at 060064) must have its MSB set, for a
+//    total of 3 bytes having the MSB set: at the end of the custom warning,
+//    at 060064 and 060065
+//    
+//    For a custom error, the byte at 0600024 must have its MSB set. The
+//    error message starts at 0600025 and is no more than 32 bytes, with the
+//    last valid byte MSB set. The 32 bytes can be padded with spaces. The
+//    byte at 060065 must have its MSB set, for a total of 3 bytes having
+//    the MSB set: at 060024, at the end of the custom error, and at 060065
+//
+//    Custom messages are terminated by the kat byte having the MSB set.
+//    Terminating 0x00 is not used
+//
+//  The image of the ROM on the SD card is not modified.
+//  The custom error message is issued by specifying error number 209,
+//  which will appear on the HP85 screen as 109.
+//  For custom warning the warning number 208 is specified, and displays as
+//  warning 108
+//  
+
+
+void post_custom_error_message(char * message)
+{
+  char   * dest_ptr;
+
+  if((dest_ptr = (char *)getROMEntry(0361)) == NULL)            //  romMap is a table of 256 pointers to locations in EBTKS's address space.
+  {                                                             //  i.e. 32 bit pointers. Either NULL, or an address. The index is the ROM ID
+    Serial.printf("ROM 0361 not loaded\n");
+    // return error
+  }
+
+  dest_ptr[024] = 0x80;                                         //  Zero length for warning 8
+  strncpy(&dest_ptr[025], message, 32);                         //  If message is less than 32 characters, strncpy pads the destination with 0x00
+
+  dest_ptr[025 + strlen(message) - 1] |= 0x80;                  //  Mark the end of the custom error message in HP85 style by setting the MSB
+  AUXROM_RAM_Window.as_struct.AR_Usages[6]    = 209;            //  Custom Error
+}
+
+void post_custom_warning_message(char * message)
+{
+  char   * dest_ptr;
+
+  if((dest_ptr = (char *)getROMEntry(0361)) == NULL)            //  romMap is a table of 256 pointers to locations in EBTKS's address space.
+  {                                                             //  i.e. 32 bit pointers. Either NULL, or an address. The index is the ROM ID
+    Serial.printf("ROM 0361 not loaded\n");
+    // return error
+  }
+
+  strncpy(&dest_ptr[024], message, 32);                         //  If message is less than 32 characters, strncpy pads the destination with 0x00
+  dest_ptr[024 + strlen(message) - 1] |= 0x80;                  //  Mark the end of the custom warning message in HP85 style by setting the MSB
+  dest_ptr[064] = 0x80;                                         //  Zero length for error message 9
+  AUXROM_RAM_Window.as_struct.AR_Usages[6]    = 208;            //  Custom Warning
+}
 
