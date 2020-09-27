@@ -86,7 +86,7 @@ void enHP85RamExp(bool en)
   enRam16k = en;
 }
 
-bool getHP85RamExp(void)
+bool getHP85RamExp(void)      //  Report true if HP85A RAM expansion is enabled
 {
   return enRam16k;
 }

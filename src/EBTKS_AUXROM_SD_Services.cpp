@@ -12,6 +12,7 @@
 //  09/23/2020        Add SDOPEN
 //  09/24/2020        SDCAT support for wild cards, lower case pattern matching, stripping trailing slash for pattern match
 //  09/25/2020        Fix minor bug in SDCAT with RO on subdirectory listings.
+//  09/26/2020        SDWRITE
 //
 
 /////////////////////On error message / error codes.  Go see email log for this text in context
@@ -657,8 +658,9 @@ void AUXROM_SDOPEN(void)
         if(!Auxrom_Files[file_index].open(Resolved_Path , O_RDWR | O_APPEND | O_CREAT | O_BINARY)) error_occured = true;
         break;
       case 2:       //  Mode 2 (R/W, truncate)
-        if(!Auxrom_Files[file_index].open(Resolved_Path , O_RDWR | O_TRUNC | O_CREAT | O_BINARY)) error_occured = true;
-        break;
+        //if(!Auxrom_Files[file_index].open(Resolved_Path , O_RDWR | O_TRUNC | O_CREAT | O_BINARY)) error_occured = true;
+        if(!Auxrom_Files[file_index].open(Resolved_Path , FILE_WRITE)) error_occured = true;
+       break;
       default:
         error_occured = true;     //  Unrecognized Open Mode
         break;
@@ -666,7 +668,12 @@ void AUXROM_SDOPEN(void)
     if(error_occured) break;
     AUXROM_RAM_Window.as_struct.AR_Usages[6]    = 0;     //  File opened successfully
     AUXROM_RAM_Window.as_struct.AR_Mailboxes[6] = 0;     //  Indicate we are done
-    Serial.printf("SDOPEN Success [%s]\n", Resolved_Path);
+    Serial.printf("SDOPEN Success [%s]\nHandle status:", Resolved_Path);
+    //Serial.printf("availableForWrite : %s\n", Auxrom_Files[file_index].availableForWrite()  ? "true":"false");
+    Serial.printf("curPosition :       %d\n", Auxrom_Files[file_index].curPosition());
+    Serial.printf("isOpen :            %s\n", Auxrom_Files[file_index].isOpen()  ? "true":"false");
+    Serial.printf("isWritable :        %s\n", Auxrom_Files[file_index].isWritable()  ? "true":"false");
+    Serial.printf("position :          %d\n", Auxrom_Files[file_index].position());
     return;
   } while (0);
   //
@@ -759,7 +766,7 @@ void AUXROM_SDCLOSE(void)
 //  used to store into an 8 byte Real, or an array?
 //
 
-void AUXROM_SDREAD(void)
+void AUXROM_SDREAD(void)                                                 //  UNTESTED  UNTESTED  UNTESTED  UNTESTED  UNTESTED
 {
   int         file_index;
   int         bytes_to_read;
@@ -781,7 +788,10 @@ void AUXROM_SDREAD(void)
 
   bytes_actually_read = Auxrom_Files[file_index].readBytes(Transfer_Buffer, bytes_to_read);
   Serial.printf("Read file # %2d , requested %d bytes, got %d\n", file_index, bytes_to_read, bytes_actually_read); 
+  //Serial.printf("Target address in HP85 memory is %06o  %08X\n", HP85_Mem_Address, HP85_Mem_Address); 
+  //Serial.printf("[%s]\n", Transfer_Buffer);
   AUXROM_Store_Memory(HP85_Mem_Address, Transfer_Buffer, bytes_actually_read);
+
   //
   //  Assume all is good
   //
@@ -791,7 +801,41 @@ void AUXROM_SDREAD(void)
   return;
 }
 
+//
+//  Write the specified number of bytes to an open file
+//
 
+void AUXROM_SDWRITE(void)                                                 //  UNTESTED  UNTESTED  UNTESTED  UNTESTED  UNTESTED
+{
+  int         file_index;
+  int         bytes_to_write;
+  int         bytes_actually_written;
+  uint16_t    HP85_Mem_Address;
+
+  file_index = AUXROM_RAM_Window.as_struct.AR_BUF6_OPTS[0];               //  File number 1..11
+  bytes_to_write = AUXROM_RAM_Window.as_struct.AR_Lengths[6];             //  Length of write
+  if(!Auxrom_Files[file_index].isWritable())
+  {
+    AUXROM_RAM_Window.as_struct.AR_Usages[6]    = 213;    //  Error
+    AUXROM_RAM_Window.as_struct.AR_Mailboxes[6] = 0;      //  Indicate we are done
+    Serial.printf("SDWRITE Error. File not open for write. File Number %d\n", file_index);
+    return;    
+  }
+  //  following crappy extract because still haven't found a way around
+  //  dereferencing type-punned pointer will break strict-aliasing rules [-Wstrict-aliasing]
+  HP85_Mem_Address = AUXROM_RAM_Window.as_struct.AR_Buffer_6[0] | (AUXROM_RAM_Window.as_struct.AR_Buffer_6[1] << 8);
+
+  AUXROM_Fetch_Memory((uint8_t *)Transfer_Buffer, HP85_Mem_Address, bytes_to_write);
+  bytes_actually_written = Auxrom_Files[file_index].write(Transfer_Buffer, bytes_to_write);
+  Serial.printf("Write file # %2d , requested write %d bytes, %d actually written\n", file_index, bytes_to_write, bytes_actually_written); 
+  //
+  //  Assume all is good
+  //
+  AUXROM_RAM_Window.as_struct.AR_Lengths[6] = bytes_actually_written;
+  AUXROM_RAM_Window.as_struct.AR_Usages[6]    = 0;     //  SDWRITE successful
+  AUXROM_RAM_Window.as_struct.AR_Mailboxes[6] = 0;     //  Indicate we are done
+  return;
+}
 
 
 

@@ -270,7 +270,8 @@ void AUXROM_Store_Memory(uint16_t dest_addr, char * source, uint16_t num_bytes)
     //
     //  built-in DRAM
     //
-    DMA_Poke8((dest_addr++ - HP85A_16K_RAM_module_base_addr) & 0x0000FFFF , *source++);
+    //Serial.printf("DestAddr %08X  SrcAddr %08X  byte %02X\n", dest_addr, source, *source);
+    DMA_Poke8((dest_addr++) & 0x0000FFFF , *source++);
   }
 }
 
