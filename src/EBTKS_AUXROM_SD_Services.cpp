@@ -627,6 +627,8 @@ void AUXROM_SDOPEN(void)
 //  Check with Everett: We always talked about this read storing to a pre-allocated string. Could it also be
 //  used to store into an 8 byte Real, or an array?
 //
+//  Position after read is next character to be read
+//
 
 void AUXROM_SDREAD(void)                                                 //  UNTESTED  UNTESTED  UNTESTED  UNTESTED  UNTESTED
 {
@@ -738,9 +740,117 @@ void AUXROM_SDRMDIR(void)
   }
 }
 
+//
+//  Seek to a specific position of the designated file. File position 0 is the first character/byte
+//
+
 void AUXROM_SDSEEK(void)
 {
-  
+  int         file_index;
+  int         seek_mode;
+  int         offset;
+  int         current_position;
+  int         end_position;
+
+  file_index = AUXROM_RAM_Window.as_struct.AR_BUF6_OPTS[0];               //  File number 1..11
+  seek_mode  = AUXROM_RAM_Window.as_struct.AR_BUF6_OPTS[1];               //  0=absolute position, 1=advance from current position, 2=go to end of file
+  offset     = AUXROM_RAM_Window.as_struct_a.AR_BUF6_OPTS.as_uint32_t[1]; //  Fetch the file offset, or absolute position
+  Serial.printf("\nSDSEEK Mode %d   Offset %d\n", seek_mode, offset);
+  //
+  //  check the file is open
+  //
+  if(!Auxrom_Files[file_index].isOpen())
+  {
+    post_custom_error_message((char *)"Seek on file that isn't open", 321);
+    AUXROM_RAM_Window.as_struct.AR_Mailboxes[6] = 0;                      //  Indicate we are done
+    Serial.printf("SDSEEK Error exit 1.  Seek on file that isn't open\n");
+    return;
+  }
+  //
+  //  Get current position
+  //
+  current_position = Auxrom_Files[file_index].curPosition();
+  Serial.printf("SDSEEK: Position prior to seek %d\n", current_position);
+  //
+  //  Get end position
+  //
+  Auxrom_Files[file_index].seekEnd();
+  end_position = Auxrom_Files[file_index].curPosition();
+  //Serial.printf("SDSEEK: file size %d\n", end_position);
+  Auxrom_Files[file_index].seekSet(current_position);                       //  Restore position, in case something goes wrong
+  Serial.printf("SDSEEK: Position after restore is %d\n", Auxrom_Files[file_index].curPosition());
+  switch (seek_mode)
+  {
+  case 0:     //  Seek to absolute position, catch seeks before beginning and end of file
+    if(offset < 0)
+    {
+      post_custom_error_message((char *)"Trying to seek before beginning", 322);
+      AUXROM_RAM_Window.as_struct.AR_Mailboxes[6] = 0;                      //  Indicate we are done
+      Serial.printf("SDSEEK Error exit 2.  Trying to seek past EOF\n");
+      return;
+    }
+    if(offset > end_position)
+    {
+      post_custom_error_message((char *)"Trying to seek past EOF", 323);
+      AUXROM_RAM_Window.as_struct.AR_Mailboxes[6] = 0;                      //  Indicate we are done
+      Serial.printf("SDSEEK Error exit 3.  Trying to seek past EOF\n");
+      return;
+    }
+    if(!Auxrom_Files[file_index].seekSet(offset))
+    {
+      post_custom_error_message((char *)"Seek absolute failed", 324);
+      AUXROM_RAM_Window.as_struct.AR_Mailboxes[6] = 0;                      //  Indicate we are done
+      Serial.printf("SDSEEK Error exit 4.  Seek absolute failed\n");
+      return;
+    }
+    current_position = offset;
+    Serial.printf("SDSEEK: Absolute. New position is %d\n", Auxrom_Files[file_index].curPosition());
+    break;
+  case 1:     //  Seek to relative position, catch seeks before beginning and end of file
+    if(current_position + offset < 0)
+    {
+      post_custom_error_message((char *)"Relative seek before file start", 325);
+      AUXROM_RAM_Window.as_struct.AR_Mailboxes[6] = 0;                      //  Indicate we are done
+      Serial.printf("SDSEEK Error exit 5.  Relative seek before file start\n");
+      return;
+    }
+    if(current_position + offset > end_position)
+    {
+      post_custom_error_message((char *)"Relative seek beyond file end", 326);
+      AUXROM_RAM_Window.as_struct.AR_Mailboxes[6] = 0;                      //  Indicate we are done
+      Serial.printf("SDSEEK Error exit 6.  Relative seek beyond file end\n");
+      return;
+    }
+    if(!Auxrom_Files[file_index].seekCur(offset))
+    {
+      post_custom_error_message((char *)"Seek relative failed", 327);
+      AUXROM_RAM_Window.as_struct.AR_Mailboxes[6] = 0;                      //  Indicate we are done
+      Serial.printf("SDSEEK Error exit 7.  Seek relative failed\n");
+      return;
+    }
+    current_position = Auxrom_Files[file_index].curPosition();
+    Serial.printf("SDSEEK: Relative. New position is %d\n", current_position);
+    break;
+  case 2:     //  Seek to end of file.
+    Auxrom_Files[file_index].seekEnd();
+    current_position = end_position;
+    Serial.printf("SDSEEK: Go to end. New position is %d\n", Auxrom_Files[file_index].curPosition());
+    break;
+  default:
+    {
+      post_custom_error_message((char *)"Unknown Seek mode", 328);
+      AUXROM_RAM_Window.as_struct.AR_Mailboxes[6] = 0;                      //  Indicate we are done
+      Serial.printf("SDSEEK Error exit 8.  Unknown Seek mode\n");
+      return;
+    }
+  }
+  //
+  //  Seek Successs
+  //
+  AUXROM_RAM_Window.as_struct_a.AR_BUF6_OPTS.as_uint32_t[1] = current_position;
+  AUXROM_RAM_Window.as_struct.AR_Usages[6]    = 0;     //  SDSEEK successful
+  AUXROM_RAM_Window.as_struct.AR_Mailboxes[6] = 0;     //  Indicate we are done
+  return;
 }
 
 //
