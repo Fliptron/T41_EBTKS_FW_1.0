@@ -84,122 +84,6 @@ void initialize_SD_functions(void)
 }
 
 //
-//  WROM overwrites AUXROMs. This is quite dangerous, so be careful
-//
-//  WROM COMMAND: FOR THE E.WROM COMMAND: A.BOPT00 = TARGET ROM#, A.BOPT01 = 0, A.BOPT02-03 = TARGET ADDRESS
-//
-//  Always uses Buffer 0 and associated usage locations etc.
-//
-//  Target ROM must be between 0361 and 0376 (241 to 254)
-
-void AUXROM_WROM(void)
-{
-  uint8_t     target_rom      = AUXROM_RAM_Window.as_struct.AR_BUF0_OPTS[0];
-  uint16_t    target_address  = AUXROM_RAM_Window.as_struct_a.AR_BUF0_OPTS[1];                      //  address is in the range 060000 to 0100000
-                                                                                                    //  NOTE: This uses as_struct_a to avoid a compiler warning. See EBTKS_Global_Data.h
-  uint16_t    transfer_length = AUXROM_RAM_Window.as_struct.AR_Lengths[0];
-  uint8_t   * data_ptr        = &AUXROM_RAM_Window.as_struct_a.AR_Buffer_0[0];
-  uint8_t   * dest_ptr;
-
-  Serial.printf("Target ROM ID(oct):     %03O\n", target_rom);
-  Serial.printf("Target Address(oct): %06O\n", target_address);
-  Serial.printf("Bytes to write(dec):     %d\n", transfer_length);
-
-  if((dest_ptr = getROMEntry(target_rom)) == NULL)            //  romMap is a table of 256 pointers to locations in EBTKS's address space.
-  {                                                           //  i.e. 32 bit pointers. Either NULL, or an address. The index is the ROM ID
-    Serial.printf("Selected ROM not loaded\n");
-    // return error
-  }
-  if((target_rom < 0361) || (target_rom > 254))
-  {
-    Serial.printf("Selected ROM is not an AUXROM\n");
-    // return error
-  }
-  if(target_address + transfer_length  >= 0100000 )
-  {
-    transfer_length = 0100000 - target_address;	          //  Don't let AUXROM write past end of ROM.  Maybe we should report an error
-  }
-  dest_ptr = dest_ptr + (target_address - 060000);
-  while(transfer_length--)
-  {
-    *dest_ptr++ = *data_ptr    ++;
-  }
-}
-
-//
-//  Update the Current Path with the provided path. Most of the hard work happens in Resolve_Path()
-//  See its documentation
-//
-//  AUXROM puts the update path in Buffer 6, and the length in AR_Lengths[6]
-//  Mailbox 6 is used for the handshake
-//
-
-void AUXROM_SDCD(void)
-{
-  //Serial.printf("Current Path before SDCD [%s]\n", Current_Path);
-  //Serial.printf("Update Path via AUXROM   [%s]\n", AUXROM_RAM_Window.as_struct.AR_Buffer_6);
-  //show_mailboxes_and_usage();
-  do
-  {
-    if(Resolve_Path((char *)AUXROM_RAM_Window.as_struct.AR_Buffer_6))       //  Returns true if no parsing problems
-    {
-      if((file = SD.open(Resolved_Path)) == 0)
-      {
-        Serial.printf("AUXROM_SDCD: Failed SD.open return value %08X\n", (uint32_t)file);
-        break;                      //  Unable to open directory
-      }
-      if(!file.isDir())
-      {
-        Serial.printf("AUXROM_SDCD: Failed file.isDir\n");
-        break;                      //  Valid path, but not a directory
-      }
-      file.close();
-      if(!SD.chdir(Resolved_Path))
-      {
-        Serial.printf("AUXROM_SDCD: Failed SD.chdir\n");
-        break;                      //  Failed to change to new path
-      }
-      //
-      //  Parsed ok, opened ok, is a directory, successfully changed directory, so update the Current path, and make it the current directory
-      //
-      strlcpy(Current_Path, Resolved_Path, MAX_SD_PATH_LENGTH + 1);
-      if(!Resolved_Path_ends_with_slash)
-      {
-        strlcat(Current_Path,"/", MAX_SD_PATH_LENGTH + 1);
-      }
-      AUXROM_RAM_Window.as_struct.AR_Usages[6] = 0;                         //  Indicate Success
-      //  Serial.printf("Success. Current Path is now [%s]\n", Current_Path);
-      //  show_mailboxes_and_usage();
-      //  Serial.printf("\nSetting Mailbox 6 to 0 and then returning\n");
-      AUXROM_RAM_Window.as_struct.AR_Mailboxes[6] = 0;                      //  Release mailbox 6.    Must always be the last thing we do
-      return;
-    }
-  } while(0);
-  //
-  //  Something went wrong. 
-  //
-  Serial.printf("AUXROM_SDCD: Resolve_Path had a problem. Failure to update Current Path\n");
-  AUXROM_RAM_Window.as_struct.AR_Usages[6] = 213;                           //  Indicate Failure
-  //  show_mailboxes_and_usage();
-  AUXROM_RAM_Window.as_struct.AR_Mailboxes[6] = 0;                          //  Release mailbox 6.    Must always be the last thing we do
-  return;
-}
-
-//
-//  Return in the designated buffer the current path and its length
-//
-
-void AUXROM_SDCUR(void)
-{
-  uint16_t    copy_length;
-  copy_length = strlcpy((char *)(&AUXROM_RAM_Window.as_struct.AR_Buffer_0[Mailbox_to_be_processed*256]), Current_Path, 256);
-  AUXROM_RAM_Window.as_struct.AR_Lengths[Mailbox_to_be_processed] = copy_length;
-  AUXROM_RAM_Window.as_struct.AR_Usages[Mailbox_to_be_processed] = 0;                         //  Indicate Success
-  show_mailboxes_and_usage();
-  AUXROM_RAM_Window.as_struct.AR_Mailboxes[Mailbox_to_be_processed] = 0;                      //  Release mailbox.    Must always be the last thing we do
-}
-
-//
 //  Always uses Buffer 6 and associated parameters
 //
 //  If filespec$ has a trailing slash, it is specifying a subdirectory to be catalogged. Without a slash it is a
@@ -278,6 +162,8 @@ static int                sdcat_filespec_length;
 static bool               filespec_is_dir;
 EXTMEM static char        sdcat_dir_path[258];
 
+#define TRACE_SDCAT       (0)
+
 void AUXROM_SDCAT(void)
 {
   uint32_t    temp_uint;
@@ -293,6 +179,9 @@ void AUXROM_SDCAT(void)
 
   if(AUXROM_RAM_Window.as_struct.AR_BUF6_OPTS[0] == 0)  //  This is a First Call
   {
+#if TRACE_SDCAT
+    Serial.printf("SDCAT 1\n");
+#endif
     //
     //  Filespec$ is captured here on the first call.
     //  If it has a trailing slash, then we are catalogging a subdirectory, and the assumed match pattern is "*"
@@ -320,10 +209,16 @@ void AUXROM_SDCAT(void)
     //
     if((filespec_is_dir = (sdcat_filespec[sdcat_filespec_length-1] == '/')))
     {   //    filespec$ is a subdirectory specification
+#if TRACE_SDCAT
+      Serial.printf("SDCAT 2\n");
+#endif
       if(!Resolve_Path(sdcat_filespec))
       {
+#if TRACE_SDCAT
+        Serial.printf("SDCAT 3\n");
+#endif
         //AUXROM_RAM_Window.as_struct.AR_Usages[6]    = 213;    //  Error
-        post_custom_error_message((char *)"Can't resolve path");
+        post_custom_error_message((char *)"Can't resolve path", 301);
         //show_mailboxes_and_usage();
         AUXROM_RAM_Window.as_struct.AR_Mailboxes[6] = 0;      //  Indicate we are done
         Serial.printf("SDCAT Error exit 1.  Error while resolving subdirectory name\n");
@@ -332,14 +227,22 @@ void AUXROM_SDCAT(void)
       //
       //  Set the match pattern to the default, "*"
       //
+#if TRACE_SDCAT
+      Serial.printf("SDCAT 4\n");
+#endif
       strcpy(sdcat_filespec, "*");
       sdcat_filespec_length = 1;
     }
     else
     {   //    filespec$ is a Pattern to be matched. Do a directory of the current directory
+#if TRACE_SDCAT
+      Serial.printf("SDCAT 5\n");
+#endif
       strcpy(Resolved_Path, Current_Path);
     }
-
+#if TRACE_SDCAT
+    Serial.printf("SDCAT 6\n");
+#endif
     str_tolower(sdcat_filespec);                            //  Make all pattern matches case insensitive
 
     strcpy(sdcat_dir_path, Resolved_Path);                  //  Save the path of the directory being catalogged, since Resolved_Path could be modified between successive calls
@@ -347,17 +250,26 @@ void AUXROM_SDCAT(void)
     //Serial.printf("Catalogging directory of [%s]\n", sdcat_dir_path);
     if(!LineAtATime_ls_Init(sdcat_dir_path))                //  This is where the whole directory is listed into a buffer
     {                                                       //  Failed to do a listing of the current directory
+#if TRACE_SDCAT
+      Serial.printf("SDCAT 7\n");
+#endif
       AUXROM_RAM_Window.as_struct.AR_Usages[6]    = 213;    //  Error
       AUXROM_RAM_Window.as_struct.AR_Mailboxes[6] = 0;      //  Indicate we are done
       Serial.printf("SDCAT Error exit 2.  Failed to do a listing of the directory [%s]\n", Resolved_Path);
       return;
     }
+#if TRACE_SDCAT
+    Serial.printf("SDCAT 8\n");
+#endif
     SDCAT_First_seen = true;
     //Serial.printf("SDCAT Initial call, Pattern is [%s], directory is [%s]\n", sdcat_filespec, Resolved_Path);
   }
 
   if(!SDCAT_First_seen)
   {
+#if TRACE_SDCAT
+    Serial.printf("SDCAT 9\n");
+#endif
     //
     //  Either we haven't done a first call, or a previous call reported we were at the end of the directory
     //
@@ -369,8 +281,14 @@ void AUXROM_SDCAT(void)
 
   while(1)  //  keep looping till we run out of entries or we get a match between a directory entry and the match pattern
   {
+#if TRACE_SDCAT
+    Serial.printf("SDCAT 10\n");
+#endif
     if(!LineAtATime_ls_Next())
     {   //  No more directory lines
+#if TRACE_SDCAT
+      Serial.printf("SDCAT 11\n");
+#endif
       SDCAT_First_seen = false;                             //  Make sure the next call is a starting call
       AUXROM_RAM_Window.as_struct.AR_Lengths[6]   = 0;      //  nothing more to return
       AUXROM_RAM_Window.as_struct.AR_Usages[6]    = 1;      //  Success and END
@@ -389,6 +307,9 @@ void AUXROM_SDCAT(void)
     //Serial.printf("dir_line   [%s]\n", dir_line);
     //
     //
+#if TRACE_SDCAT
+    Serial.printf("SDCAT 12\n");
+#endif
     temp_uint = strlcpy(AUXROM_RAM_Window.as_struct.AR_Buffer_6, &dir_line[28], 129);     //  Copy the filename to buffer 6, and get its length
     AUXROM_RAM_Window.as_struct.AR_Lengths[6] = temp_uint;                                //  Put the filename length in the right place
     //  Make another copy for matching, which will be case insensitive
@@ -399,17 +320,29 @@ void AUXROM_SDCAT(void)
     //
     if(AUXROM_RAM_Window.as_struct.AR_Buffer_6[temp_uint - 1] == '/')
     {   //  Entry is a subdirectory
+#if TRACE_SDCAT
+      Serial.printf("SDCAT 13\n");
+#endif
       AUXROM_RAM_Window.as_struct.AR_Buffer_6[temp_uint - 1 + 256] = 0x00;                //  Remove the '/' for pattern match
       AUXROM_RAM_Window.as_struct_a.AR_BUF6_OPTS.as_uint32_t[1] = 1;                      //  Record that the file is actually a directory
     }
     else
     {   //  Entry is a file name
-       AUXROM_RAM_Window.as_struct_a.AR_BUF6_OPTS.as_uint32_t[1] = 0;                      //  Record that the file is not a directory
+#if TRACE_SDCAT
+      Serial.printf("SDCAT 14\n");
+#endif
+      AUXROM_RAM_Window.as_struct_a.AR_BUF6_OPTS.as_uint32_t[1] = 0;                      //  Record that the file is not a directory
     }
+#if TRACE_SDCAT
+    Serial.printf("SDCAT 15\n");
+#endif
     match = MatchesPattern(&AUXROM_RAM_Window.as_struct.AR_Buffer_6[256], sdcat_filespec);    //  See if we have a match
 
     if(!match)
     {
+#if TRACE_SDCAT
+      Serial.printf("SDCAT 16\n");
+#endif
       continue;                                                                           //  See if the next entry is a match
     }
     //
@@ -420,6 +353,9 @@ void AUXROM_SDCAT(void)
     //
     //  Now finish things
     //
+#if TRACE_SDCAT
+    Serial.printf("SDCAT 17\n");
+#endif
     strlcpy(&AUXROM_RAM_Window.as_struct.AR_Buffer_6[256], dir_line, 17);                 //  The DATE & TIME string is copied to Buffer 6, starting at position 256
     strlcpy(file_size, &dir_line[16], 12);                                                //  Get the size of the file. Still needs some processing
     temp_uint = atoi(file_size);                                                          //  Convert the file size to an int
@@ -433,8 +369,14 @@ void AUXROM_SDCAT(void)
     temp_file = SD.open(temp_file_path);                                                  //  SD.open() does not mind the trailing slash if the name is a directory
     if(temp_file.isReadOnly())
     {
+#if TRACE_SDCAT
+      Serial.printf("SDCAT 18\n");
+#endif
       AUXROM_RAM_Window.as_struct_a.AR_BUF6_OPTS.as_uint32_t[1] |= 0x02;                  //  Indicate the file is read only
     }
+#if TRACE_SDCAT
+    Serial.printf("SDCAT 19\n");
+#endif
     temp_file.close();
 //    Serial.printf("Filename [%s]   Date/time [%s]   Size [%s] = %d  DIR&RO status %d\n\n",  AUXROM_RAM_Window.as_struct.AR_Buffer_6,
 //                                                                                            &AUXROM_RAM_Window.as_struct.AR_Buffer_6[256],
@@ -446,6 +388,442 @@ void AUXROM_SDCAT(void)
     return;
   }
 }
+
+//
+//  Update the Current Path with the provided path. Most of the hard work happens in Resolve_Path()
+//  See its documentation
+//
+//  AUXROM puts the update path in Buffer 6, and the length in AR_Lengths[6]
+//  Mailbox 6 is used for the handshake
+//
+
+void AUXROM_SDCD(void)
+{
+  //Serial.printf("Current Path before SDCD [%s]\n", Current_Path);
+  //Serial.printf("Update Path via AUXROM   [%s]\n", AUXROM_RAM_Window.as_struct.AR_Buffer_6);
+  //show_mailboxes_and_usage();
+  do
+  {
+    if(Resolve_Path((char *)AUXROM_RAM_Window.as_struct.AR_Buffer_6))       //  Returns true if no parsing problems
+    {
+      if((file = SD.open(Resolved_Path)) == 0)
+      {
+        Serial.printf("AUXROM_SDCD: Failed SD.open return value %08X\n", (uint32_t)file);
+        break;                      //  Unable to open directory
+      }
+      if(!file.isDir())
+      {
+        Serial.printf("AUXROM_SDCD: Failed file.isDir\n");
+        break;                      //  Valid path, but not a directory
+      }
+      file.close();
+      if(!SD.chdir(Resolved_Path))
+      {
+        Serial.printf("AUXROM_SDCD: Failed SD.chdir\n");
+        break;                      //  Failed to change to new path
+      }
+      //
+      //  Parsed ok, opened ok, is a directory, successfully changed directory, so update the Current path, and make it the current directory
+      //
+      strlcpy(Current_Path, Resolved_Path, MAX_SD_PATH_LENGTH + 1);
+      if(!Resolved_Path_ends_with_slash)
+      {
+        strlcat(Current_Path,"/", MAX_SD_PATH_LENGTH + 1);
+      }
+      AUXROM_RAM_Window.as_struct.AR_Usages[6] = 0;                         //  Indicate Success
+      //  Serial.printf("Success. Current Path is now [%s]\n", Current_Path);
+      //  show_mailboxes_and_usage();
+      //  Serial.printf("\nSetting Mailbox 6 to 0 and then returning\n");
+      AUXROM_RAM_Window.as_struct.AR_Mailboxes[6] = 0;                      //  Release mailbox 6.    Must always be the last thing we do
+      return;
+    }
+  } while(0);
+  //
+  //  Something went wrong. 
+  //
+  Serial.printf("AUXROM_SDCD: Resolve_Path had a problem. Failure to update Current Path\n");
+  AUXROM_RAM_Window.as_struct.AR_Usages[6] = 213;                           //  Indicate Failure
+  //  show_mailboxes_and_usage();
+  AUXROM_RAM_Window.as_struct.AR_Mailboxes[6] = 0;                          //  Release mailbox 6.    Must always be the last thing we do
+  return;
+}
+
+//
+//  Close 1..n close specific file. 0 means close all open files
+//
+
+void AUXROM_SDCLOSE(void)
+{
+  int         file_index;
+  int         i;
+  bool        return_status;
+  char        filename[258];
+
+  file_index = AUXROM_RAM_Window.as_struct.AR_BUF6_OPTS[0];               //  File number 1..10 , or 0 for all
+  if(file_index == 0)
+  {
+    for(i = 1 ;  i < MAX_AUXROM_SDFILES ; i++)
+    {
+      if(Auxrom_Files[i].isOpen())
+      {
+        return_status = Auxrom_Files[i].close();
+        Auxrom_Files[i].getName(filename,255);
+        Serial.printf("Close file %2d [%s]  Success status is %s\n", i, filename, return_status ? "true":"false");
+        //
+        //  No error exit
+        //
+      }
+    }
+  }
+  else
+  {
+    return_status = Auxrom_Files[file_index].close();
+    Auxrom_Files[file_index].getName(filename,255);
+    Serial.printf("Close file %2d [%s]  Success status is %s\n", file_index, filename, return_status ? "true":"false");
+  }
+  AUXROM_RAM_Window.as_struct.AR_Usages[6]    = 0;     //  File flush successfully
+  AUXROM_RAM_Window.as_struct.AR_Mailboxes[6] = 0;     //  Indicate we are done
+  return;
+}
+
+//
+//  Return in the designated buffer the current path and its length
+//
+
+void AUXROM_SDCUR(void)
+{
+  uint16_t    copy_length;
+  copy_length = strlcpy((char *)(&AUXROM_RAM_Window.as_struct.AR_Buffer_0[Mailbox_to_be_processed*256]), Current_Path, 256);
+  AUXROM_RAM_Window.as_struct.AR_Lengths[Mailbox_to_be_processed] = copy_length;
+  AUXROM_RAM_Window.as_struct.AR_Usages[Mailbox_to_be_processed] = 0;                         //  Indicate Success
+  //  show_mailboxes_and_usage();
+  AUXROM_RAM_Window.as_struct.AR_Mailboxes[Mailbox_to_be_processed] = 0;                      //  Release mailbox.    Must always be the last thing we do
+}
+
+void AUXROM_SDDEL(void)
+{
+  
+}
+
+//
+//  Flush any pending write data
+//  File number 1..10 are for a single open file
+//  If File number provided is 0, Flush all open files
+//
+
+void AUXROM_SDFLUSH(void)
+{
+  int         file_index;
+  int         i;
+
+  file_index = AUXROM_RAM_Window.as_struct.AR_BUF6_OPTS[0];               //  File number 1..10 , or 0 for all
+  if(file_index == 0)
+  {
+    for(i = 1 ;  i < MAX_AUXROM_SDFILES ; i++)
+    {
+      if(Auxrom_Files[i].isOpen())
+      {
+        Auxrom_Files[i].flush();
+        Serial.printf("Flushing file %2d\n", i);
+        //
+        //  No error exit
+        //
+      }
+    }
+  }
+  else
+  {
+    Auxrom_Files[file_index].flush();
+    Serial.printf("Flushing file %2d\n", file_index);
+  }
+  AUXROM_RAM_Window.as_struct.AR_Usages[6]    = 0;     //  File flush successfully
+  AUXROM_RAM_Window.as_struct.AR_Mailboxes[6] = 0;     //  Indicate we are done
+  return;
+}
+
+//
+//  Create a new directory in the current directory
+//  AUXROM puts the new directory name in Buffer 6, Null terminated
+//  The length in AR_Lengths[6]
+//  Mailbox 6 is used for the handshake
+//
+
+void AUXROM_SDMKDIR(void)
+{
+  bool  mkdir_status;
+  Serial.printf("New directory name   [%s]\n", AUXROM_RAM_Window.as_struct.AR_Buffer_6);
+  //  show_mailboxes_and_usage();
+  mkdir_status = SD.mkdir(AUXROM_RAM_Window.as_struct.AR_Buffer_6, true);    //  second parameter is to create parent directories if needed
+
+  Serial.printf("mkdir return status [%s]\n", mkdir_status ? "true":"false");
+
+  if(mkdir_status)
+  {
+    AUXROM_RAM_Window.as_struct.AR_Usages[6] = 0;                         //  Indicate Success
+  }
+  else
+  {
+    AUXROM_RAM_Window.as_struct.AR_Usages[6] =  213;                      //  Indicate Failure
+  }
+  AUXROM_RAM_Window.as_struct.AR_Mailboxes[6] = 0;                      //  Release mailbox 6.    Must always be the last thing we do
+  return;
+}
+
+//
+//  Open a file on the SD Card for direct access via the AUXROM functions
+//
+
+void AUXROM_SDOPEN(void)
+{
+  int         file_index;
+  bool        error_occured;
+
+  file_index = AUXROM_RAM_Window.as_struct.AR_BUF6_OPTS[0];               //  File number 1..11
+
+  do
+  {
+    if(Auxrom_Files[file_index].isOpen()) break;                          //  Error, File is already open
+    if(!Resolve_Path(AUXROM_RAM_Window.as_struct.AR_Buffer_6)) break;     //  Error, Parsing problems with path
+    error_occured = false;
+    switch(AUXROM_RAM_Window.as_struct.AR_BUF6_OPTS[0])
+    {
+      case 0:       //  Mode 0 (READ-ONLY), error if the file doesn't exist
+        if(!Auxrom_Files[file_index].open(Resolved_Path , O_RDONLY | O_BINARY)) error_occured = true;
+        break;
+      case 1:       //  Mode 1 (R/W, append)
+        if(!Auxrom_Files[file_index].open(Resolved_Path , O_RDWR | O_APPEND | O_CREAT | O_BINARY)) error_occured = true;
+        break;
+      case 2:       //  Mode 2 (R/W, truncate)
+        //if(!Auxrom_Files[file_index].open(Resolved_Path , O_RDWR | O_TRUNC | O_CREAT | O_BINARY)) error_occured = true;
+        if(!Auxrom_Files[file_index].open(Resolved_Path , FILE_WRITE)) error_occured = true;
+       break;
+      default:
+        error_occured = true;     //  Unrecognized Open Mode
+        break;
+    }
+    if(error_occured) break;
+    AUXROM_RAM_Window.as_struct.AR_Usages[6]    = 0;     //  File opened successfully
+    AUXROM_RAM_Window.as_struct.AR_Mailboxes[6] = 0;     //  Indicate we are done
+    Serial.printf("SDOPEN Success [%s]\nHandle status:", Resolved_Path);
+    //Serial.printf("availableForWrite : %s\n", Auxrom_Files[file_index].availableForWrite()  ? "true":"false");
+    Serial.printf("curPosition :       %d\n", Auxrom_Files[file_index].curPosition());
+    Serial.printf("isOpen :            %s\n", Auxrom_Files[file_index].isOpen()  ? "true":"false");
+    Serial.printf("isWritable :        %s\n", Auxrom_Files[file_index].isWritable()  ? "true":"false");
+    Serial.printf("position :          %d\n", Auxrom_Files[file_index].position());
+    return;
+  } while (0);
+  //
+  //  This is the shared error exit
+  //
+  AUXROM_RAM_Window.as_struct.AR_Usages[6]    = 213;    //  Error
+  AUXROM_RAM_Window.as_struct.AR_Mailboxes[6] = 0;      //  Indicate we are done
+  Serial.printf("SDOPEN Error. File already open  [%s]\n", Resolved_Path);
+  return;    
+}
+
+//
+//  Read specified number of bytes from an open file, and store directly in HP85 Memory
+//
+//  Check with Everett: We always talked about this read storing to a pre-allocated string. Could it also be
+//  used to store into an 8 byte Real, or an array?
+//
+
+void AUXROM_SDREAD(void)                                                 //  UNTESTED  UNTESTED  UNTESTED  UNTESTED  UNTESTED
+{
+  int         file_index;
+  int         bytes_to_read;
+  int         bytes_actually_read;
+  uint16_t    HP85_Mem_Address;
+
+  file_index = AUXROM_RAM_Window.as_struct.AR_BUF6_OPTS[0];               //  File number 1..11
+  bytes_to_read = AUXROM_RAM_Window.as_struct.AR_Lengths[6];              //  Length of read
+  if(!Auxrom_Files[file_index].isOpen())
+  {
+    AUXROM_RAM_Window.as_struct.AR_Usages[6]    = 213;    //  Error
+    AUXROM_RAM_Window.as_struct.AR_Mailboxes[6] = 0;      //  Indicate we are done
+    Serial.printf("SDREAD Error. File not open. File Number %d\n", file_index);
+    return;    
+  }
+  //  following crappy extract because still haven't found a way around
+  //  dereferencing type-punned pointer will break strict-aliasing rules [-Wstrict-aliasing]
+  HP85_Mem_Address = AUXROM_RAM_Window.as_struct.AR_Buffer_6[0] | (AUXROM_RAM_Window.as_struct.AR_Buffer_6[1] << 8);
+
+  bytes_actually_read = Auxrom_Files[file_index].readBytes(Transfer_Buffer, bytes_to_read);
+  Serial.printf("Read file # %2d , requested %d bytes, got %d\n", file_index, bytes_to_read, bytes_actually_read); 
+  //Serial.printf("Target address in HP85 memory is %06o  %08X\n", HP85_Mem_Address, HP85_Mem_Address); 
+  //Serial.printf("[%s]\n", Transfer_Buffer);
+  AUXROM_Store_Memory(HP85_Mem_Address, Transfer_Buffer, bytes_actually_read);
+
+  //
+  //  Assume all is good
+  //
+  AUXROM_RAM_Window.as_struct.AR_Lengths[6] = bytes_actually_read;
+  AUXROM_RAM_Window.as_struct.AR_Usages[6]    = 0;     //  SDREAD successful
+  AUXROM_RAM_Window.as_struct.AR_Mailboxes[6] = 0;     //  Indicate we are done
+  return;
+}
+
+//
+//  Delete a directory but only if it is empty
+//  AUXROM puts the directory to be deleted in Buffer 6, Null terminated , apply Resolve_Path()
+//  The length in AR_Lengths[6]
+//  Mailbox 6 is used for the handshake
+//
+
+void AUXROM_SDRMDIR(void)
+{
+  bool  rmdir_status;
+  File  dirfile;
+  File  file;
+  int   file_count;
+
+  if(!Resolve_Path((char *)AUXROM_RAM_Window.as_struct.AR_Buffer_6))
+  {
+    post_custom_error_message((char *)"Can't resolve path", 310);
+    AUXROM_RAM_Window.as_struct.AR_Mailboxes[6] = 0;                      //  Indicate we are done
+    Serial.printf("SDRMDIR Error exit 1.  Error while resolving subdirectory name\n");
+    return;
+  }
+  Serial.printf("Deleting directory [%s]\n", Resolved_Path);
+  if((dirfile.open(Resolved_Path)) == 0)
+  {
+    Serial.printf("SDRMDIR: Failed SD.open return value %08X\n", (uint32_t)file);
+    post_custom_error_message((char *)"Can't open subdirectory", 311);
+    AUXROM_RAM_Window.as_struct.AR_Mailboxes[6] = 0;                      //  Indicate we are done
+    return;
+  }
+  if(!dirfile.isDir())
+  {
+    Serial.printf("SDRMDIR: Failed file.isDir  Path is not a directory\n");
+    post_custom_error_message((char *)"Path is not a directory", 312);
+    dirfile.close();
+    AUXROM_RAM_Window.as_struct.AR_Mailboxes[6] = 0;                      //  Indicate we are done
+    return;
+  }
+  file_count = 0;
+  dirfile.rewind();
+  while(file.openNext(&dirfile, O_RDONLY))
+  {
+    file_count++;
+    file.close();
+  }
+  Serial.printf("SDRMDIR directory has %d files\n", file_count);
+  if(file_count != 0)
+  {
+    Serial.printf("SDRMDIR: Directory is not empty. found %d files\n", file_count);
+    post_custom_error_message((char *)"Directory not empty", 313);
+    dirfile.close();
+    AUXROM_RAM_Window.as_struct.AR_Mailboxes[6] = 0;                      //  Indicate we are done
+    return;
+  }
+  //
+  //  Specified path is a directory that is empty, so ok to delete
+  //
+  Serial.printf("SDRMDIR: Deleting directory %s\n", Resolved_Path);
+  rmdir_status = dirfile.rmdir();
+  Serial.printf("SDRMDIR: Delete status is %s\n", rmdir_status? "true":"false");
+  if(rmdir_status)
+  {
+    AUXROM_RAM_Window.as_struct.AR_Usages[6] = 0;                         //  Indicate Success
+    AUXROM_RAM_Window.as_struct.AR_Mailboxes[6] = 0;                      //  Release mailbox 6.    Must always be the last thing we do
+    return;
+  }
+  else
+  {
+    Serial.printf("SDRMDIR: Delete directory failed\n");
+    post_custom_error_message((char *)"Directory delete failed", 314);
+    dirfile.close();
+    AUXROM_RAM_Window.as_struct.AR_Mailboxes[6] = 0;                      //  Indicate we are done
+    return;
+  }
+}
+
+void AUXROM_SDSEEK(void)
+{
+  
+}
+
+//
+//  Write the specified number of bytes to an open file
+//
+
+void AUXROM_SDWRITE(void)                                                 //  UNTESTED  UNTESTED  UNTESTED  UNTESTED  UNTESTED
+{
+  int         file_index;
+  int         bytes_to_write;
+  int         bytes_actually_written;
+  uint16_t    HP85_Mem_Address;
+
+  file_index = AUXROM_RAM_Window.as_struct.AR_BUF6_OPTS[0];               //  File number 1..11
+  bytes_to_write = AUXROM_RAM_Window.as_struct.AR_Lengths[6];             //  Length of write
+  if(!Auxrom_Files[file_index].isWritable())
+  {
+    AUXROM_RAM_Window.as_struct.AR_Usages[6]    = 213;    //  Error
+    AUXROM_RAM_Window.as_struct.AR_Mailboxes[6] = 0;      //  Indicate we are done
+    Serial.printf("SDWRITE Error. File not open for write. File Number %d\n", file_index);
+    return;    
+  }
+  //  following crappy extract because still haven't found a way around
+  //  dereferencing type-punned pointer will break strict-aliasing rules [-Wstrict-aliasing]
+  HP85_Mem_Address = AUXROM_RAM_Window.as_struct.AR_Buffer_6[0] | (AUXROM_RAM_Window.as_struct.AR_Buffer_6[1] << 8);
+
+  AUXROM_Fetch_Memory((uint8_t *)Transfer_Buffer, HP85_Mem_Address, bytes_to_write);
+  bytes_actually_written = Auxrom_Files[file_index].write(Transfer_Buffer, bytes_to_write);
+  Serial.printf("Write file # %2d , requested write %d bytes, %d actually written\n", file_index, bytes_to_write, bytes_actually_written); 
+  //
+  //  Assume all is good
+  //
+  AUXROM_RAM_Window.as_struct.AR_Lengths[6] = bytes_actually_written;
+  AUXROM_RAM_Window.as_struct.AR_Usages[6]    = 0;     //  SDWRITE successful
+  AUXROM_RAM_Window.as_struct.AR_Mailboxes[6] = 0;     //  Indicate we are done
+  return;
+}
+
+//
+//  WROM overwrites AUXROMs. This is quite dangerous, so be careful
+//
+//  WROM COMMAND: FOR THE E.WROM COMMAND: A.BOPT00 = TARGET ROM#, A.BOPT01 = 0, A.BOPT02-03 = TARGET ADDRESS
+//
+//  Always uses Buffer 0 and associated usage locations etc.
+//
+//  Target ROM must be between 0361 and 0376 (241 to 254)
+
+void AUXROM_WROM(void)
+{
+  uint8_t     target_rom      = AUXROM_RAM_Window.as_struct.AR_BUF0_OPTS[0];
+  uint16_t    target_address  = AUXROM_RAM_Window.as_struct_a.AR_BUF0_OPTS[1];                      //  address is in the range 060000 to 0100000
+                                                                                                    //  NOTE: This uses as_struct_a to avoid a compiler warning. See EBTKS_Global_Data.h
+  uint16_t    transfer_length = AUXROM_RAM_Window.as_struct.AR_Lengths[0];
+  uint8_t   * data_ptr        = &AUXROM_RAM_Window.as_struct_a.AR_Buffer_0[0];
+  uint8_t   * dest_ptr;
+
+  Serial.printf("Target ROM ID(oct):     %03O\n", target_rom);
+  Serial.printf("Target Address(oct): %06O\n", target_address);
+  Serial.printf("Bytes to write(dec):     %d\n", transfer_length);
+
+  if((dest_ptr = getROMEntry(target_rom)) == NULL)            //  romMap is a table of 256 pointers to locations in EBTKS's address space.
+  {                                                           //  i.e. 32 bit pointers. Either NULL, or an address. The index is the ROM ID
+    Serial.printf("Selected ROM not loaded\n");
+    // return error
+  }
+  if((target_rom < 0361) || (target_rom > 254))
+  {
+    Serial.printf("Selected ROM is not an AUXROM\n");
+    // return error
+  }
+  if(target_address + transfer_length  >= 0100000 )
+  {
+    transfer_length = 0100000 - target_address;	          //  Don't let AUXROM write past end of ROM.  Maybe we should report an error
+  }
+  dest_ptr = dest_ptr + (target_address - 060000);
+  while(transfer_length--)
+  {
+    *dest_ptr++ = *data_ptr    ++;
+  }
+}
+
+
+
 
 //
 //  This function takes New_Path and appends it to Current_Path (if it is a relative path) and
@@ -463,6 +841,7 @@ bool Resolve_Path(char *New_Path)
   char *    dest_ptr;                                         //  Points to the trailing 0x00 of the new path we are creating
   char *    dest_ptr2;                                        //  Used while processing ../
   char *    src_ptr;                                          //  Points to next character in New_Path to be processed
+  bool      back_up_1_level;
 
   if(New_Path[0] == '/')
 	{
@@ -505,6 +884,7 @@ bool Resolve_Path(char *New_Path)
     //  If next char is "/" it is an error
     //  If next 2 chars are "./" just strip them
     //  If next 3 chars are "../" remove a path segment from the path under construction. Do not remove the first '/'. If nothing to remove, it is an error
+    //  If next 2 chars are ".."  AND it is at the end of the string, remove a path segment from the path under construction. Do not remove the first '/'. If nothing to remove, it is an error
     //  Collect characters upto and including the next '/' and append to the path under construction.
     //
     if(src_ptr[0] == 0x00)
@@ -520,9 +900,19 @@ bool Resolve_Path(char *New_Path)
       src_ptr += 2;                                   //  Found "./" which has no use, so just delete it
       continue;
     }
+    back_up_1_level = false;
     if(src_ptr[0] == '.' && src_ptr[1] == '.' && src_ptr[2] == '/')
     {
+      back_up_1_level = true;
       src_ptr += 3;                                   //  Found "../" which means up 1 directory, so need to delete a path segment
+    }
+    if(src_ptr[0] == '.' && src_ptr[1] == '.' && src_ptr[2] == 0x00)
+    {
+      back_up_1_level = true;
+      src_ptr += 2;                                   //  Found ".." at end of src, which means up 1 directory, so need to delete a path segment
+    }
+    if(back_up_1_level)
+    {
       if(strlen(Resolved_Path) <= 2)                  //  The minimal Resolved_Path that could have a directory to be removed is 3 characters"/x/"
       {                                               //    This could have been done with dest_ptr - Resolved_Path, strlen is clearer and less bug prone.
         return false;                                 //  The built path does not have a trailing directory to be removed
@@ -633,240 +1023,11 @@ bool LineAtATime_ls_Next()
   return false;
 }
 
-//
-//  Open a file on the SD Card for direct access via the AUXROM functions
-//
-
-void AUXROM_SDOPEN(void)
-{
-  int         file_index;
-  bool        error_occured;
-
-  file_index = AUXROM_RAM_Window.as_struct.AR_BUF6_OPTS[0];               //  File number 1..11
-
-  do
-  {
-    if(Auxrom_Files[file_index].isOpen()) break;                          //  Error, File is already open
-    if(!Resolve_Path(AUXROM_RAM_Window.as_struct.AR_Buffer_6)) break;     //  Error, Parsing problems with path
-    error_occured = false;
-    switch(AUXROM_RAM_Window.as_struct.AR_BUF6_OPTS[0])
-    {
-      case 0:       //  Mode 0 (READ-ONLY), error if the file doesn't exist
-        if(!Auxrom_Files[file_index].open(Resolved_Path , O_RDONLY | O_BINARY)) error_occured = true;
-        break;
-      case 1:       //  Mode 1 (R/W, append)
-        if(!Auxrom_Files[file_index].open(Resolved_Path , O_RDWR | O_APPEND | O_CREAT | O_BINARY)) error_occured = true;
-        break;
-      case 2:       //  Mode 2 (R/W, truncate)
-        //if(!Auxrom_Files[file_index].open(Resolved_Path , O_RDWR | O_TRUNC | O_CREAT | O_BINARY)) error_occured = true;
-        if(!Auxrom_Files[file_index].open(Resolved_Path , FILE_WRITE)) error_occured = true;
-       break;
-      default:
-        error_occured = true;     //  Unrecognized Open Mode
-        break;
-    }
-    if(error_occured) break;
-    AUXROM_RAM_Window.as_struct.AR_Usages[6]    = 0;     //  File opened successfully
-    AUXROM_RAM_Window.as_struct.AR_Mailboxes[6] = 0;     //  Indicate we are done
-    Serial.printf("SDOPEN Success [%s]\nHandle status:", Resolved_Path);
-    //Serial.printf("availableForWrite : %s\n", Auxrom_Files[file_index].availableForWrite()  ? "true":"false");
-    Serial.printf("curPosition :       %d\n", Auxrom_Files[file_index].curPosition());
-    Serial.printf("isOpen :            %s\n", Auxrom_Files[file_index].isOpen()  ? "true":"false");
-    Serial.printf("isWritable :        %s\n", Auxrom_Files[file_index].isWritable()  ? "true":"false");
-    Serial.printf("position :          %d\n", Auxrom_Files[file_index].position());
-    return;
-  } while (0);
-  //
-  //  This is the shared error exit
-  //
-  AUXROM_RAM_Window.as_struct.AR_Usages[6]    = 213;    //  Error
-  AUXROM_RAM_Window.as_struct.AR_Mailboxes[6] = 0;      //  Indicate we are done
-  Serial.printf("SDOPEN Error. File already open  [%s]\n", Resolved_Path);
-  return;    
-}
-
-//
-//  Flush any pending write data
-//  File number 1..10 are for a single open file
-//  If File number provided is 0, Flush all open files
-//
-
-void AUXROM_SDFLUSH(void)
-{
-  int         file_index;
-  int         i;
-
-  file_index = AUXROM_RAM_Window.as_struct.AR_BUF6_OPTS[0];               //  File number 1..10 , or 0 for all
-  if(file_index == 0)
-  {
-    for(i = 1 ;  i < MAX_AUXROM_SDFILES ; i++)
-    {
-      if(Auxrom_Files[i].isOpen())
-      {
-        Auxrom_Files[i].flush();
-        Serial.printf("Flushing file %2d\n", i);
-        //
-        //  No error exit
-        //
-      }
-    }
-  }
-  else
-  {
-    Auxrom_Files[file_index].flush();
-    Serial.printf("Flushing file %2d\n", file_index);
-  }
-  AUXROM_RAM_Window.as_struct.AR_Usages[6]    = 0;     //  File flush successfully
-  AUXROM_RAM_Window.as_struct.AR_Mailboxes[6] = 0;     //  Indicate we are done
-  return;
-}
-
-//
-//  Close 1..n close specific file. 0 means close all open files
-//
-
-void AUXROM_SDCLOSE(void)
-{
-  int         file_index;
-  int         i;
-  bool        return_status;
-  char        filename[258];
-
-  file_index = AUXROM_RAM_Window.as_struct.AR_BUF6_OPTS[0];               //  File number 1..10 , or 0 for all
-  if(file_index == 0)
-  {
-    for(i = 1 ;  i < MAX_AUXROM_SDFILES ; i++)
-    {
-      if(Auxrom_Files[i].isOpen())
-      {
-        return_status = Auxrom_Files[i].close();
-        Auxrom_Files[i].getName(filename,255);
-        Serial.printf("Close file %2d [%s]  Success status is %s\n", i, filename, return_status ? "true":"false");
-        //
-        //  No error exit
-        //
-      }
-    }
-  }
-  else
-  {
-    return_status = Auxrom_Files[file_index].close();
-    Auxrom_Files[file_index].getName(filename,255);
-    Serial.printf("Close file %2d [%s]  Success status is %s\n", file_index, filename, return_status ? "true":"false");
-  }
-  AUXROM_RAM_Window.as_struct.AR_Usages[6]    = 0;     //  File flush successfully
-  AUXROM_RAM_Window.as_struct.AR_Mailboxes[6] = 0;     //  Indicate we are done
-  return;
-}
-
-//
-//  Read specified number of bytes from an open file, and store directly in HP85 Memory
-//
-//  Check with Everett: We always talked about this read storing to a pre-allocated string. Could it also be
-//  used to store into an 8 byte Real, or an array?
-//
-
-void AUXROM_SDREAD(void)                                                 //  UNTESTED  UNTESTED  UNTESTED  UNTESTED  UNTESTED
-{
-  int         file_index;
-  int         bytes_to_read;
-  int         bytes_actually_read;
-  uint16_t    HP85_Mem_Address;
-
-  file_index = AUXROM_RAM_Window.as_struct.AR_BUF6_OPTS[0];               //  File number 1..11
-  bytes_to_read = AUXROM_RAM_Window.as_struct.AR_Lengths[6];              //  Length of read
-  if(!Auxrom_Files[file_index].isOpen())
-  {
-    AUXROM_RAM_Window.as_struct.AR_Usages[6]    = 213;    //  Error
-    AUXROM_RAM_Window.as_struct.AR_Mailboxes[6] = 0;      //  Indicate we are done
-    Serial.printf("SDREAD Error. File not open. File Number %d\n", file_index);
-    return;    
-  }
-  //  following crappy extract because still haven't found a way around
-  //  dereferencing type-punned pointer will break strict-aliasing rules [-Wstrict-aliasing]
-  HP85_Mem_Address = AUXROM_RAM_Window.as_struct.AR_Buffer_6[0] | (AUXROM_RAM_Window.as_struct.AR_Buffer_6[1] << 8);
-
-  bytes_actually_read = Auxrom_Files[file_index].readBytes(Transfer_Buffer, bytes_to_read);
-  Serial.printf("Read file # %2d , requested %d bytes, got %d\n", file_index, bytes_to_read, bytes_actually_read); 
-  //Serial.printf("Target address in HP85 memory is %06o  %08X\n", HP85_Mem_Address, HP85_Mem_Address); 
-  //Serial.printf("[%s]\n", Transfer_Buffer);
-  AUXROM_Store_Memory(HP85_Mem_Address, Transfer_Buffer, bytes_actually_read);
-
-  //
-  //  Assume all is good
-  //
-  AUXROM_RAM_Window.as_struct.AR_Lengths[6] = bytes_actually_read;
-  AUXROM_RAM_Window.as_struct.AR_Usages[6]    = 0;     //  SDREAD successful
-  AUXROM_RAM_Window.as_struct.AR_Mailboxes[6] = 0;     //  Indicate we are done
-  return;
-}
-
-//
-//  Write the specified number of bytes to an open file
-//
-
-void AUXROM_SDWRITE(void)                                                 //  UNTESTED  UNTESTED  UNTESTED  UNTESTED  UNTESTED
-{
-  int         file_index;
-  int         bytes_to_write;
-  int         bytes_actually_written;
-  uint16_t    HP85_Mem_Address;
-
-  file_index = AUXROM_RAM_Window.as_struct.AR_BUF6_OPTS[0];               //  File number 1..11
-  bytes_to_write = AUXROM_RAM_Window.as_struct.AR_Lengths[6];             //  Length of write
-  if(!Auxrom_Files[file_index].isWritable())
-  {
-    AUXROM_RAM_Window.as_struct.AR_Usages[6]    = 213;    //  Error
-    AUXROM_RAM_Window.as_struct.AR_Mailboxes[6] = 0;      //  Indicate we are done
-    Serial.printf("SDWRITE Error. File not open for write. File Number %d\n", file_index);
-    return;    
-  }
-  //  following crappy extract because still haven't found a way around
-  //  dereferencing type-punned pointer will break strict-aliasing rules [-Wstrict-aliasing]
-  HP85_Mem_Address = AUXROM_RAM_Window.as_struct.AR_Buffer_6[0] | (AUXROM_RAM_Window.as_struct.AR_Buffer_6[1] << 8);
-
-  AUXROM_Fetch_Memory((uint8_t *)Transfer_Buffer, HP85_Mem_Address, bytes_to_write);
-  bytes_actually_written = Auxrom_Files[file_index].write(Transfer_Buffer, bytes_to_write);
-  Serial.printf("Write file # %2d , requested write %d bytes, %d actually written\n", file_index, bytes_to_write, bytes_actually_written); 
-  //
-  //  Assume all is good
-  //
-  AUXROM_RAM_Window.as_struct.AR_Lengths[6] = bytes_actually_written;
-  AUXROM_RAM_Window.as_struct.AR_Usages[6]    = 0;     //  SDWRITE successful
-  AUXROM_RAM_Window.as_struct.AR_Mailboxes[6] = 0;     //  Indicate we are done
-  return;
-}
 
 
 
 
-//
-//  Create a new directory in the current directory
-//  AUXROM puts the new directory name in Buffer 6, Null terminated
-//  The length in AR_Lengths[6]
-//  Mailbox 6 is used for the handshake
-//
 
-void AUXROM_SDMKDIR(void)
-{
-  bool  mkdir_status;
-  Serial.printf("New directory name   [%s]\n", AUXROM_RAM_Window.as_struct.AR_Buffer_6);
-  show_mailboxes_and_usage();
-  mkdir_status = SD.mkdir(AUXROM_RAM_Window.as_struct.AR_Buffer_6, true);    //  second parameter is to create parent directories if needed
-
-  Serial.printf("mkdir return status [%s]\n", mkdir_status ? "true":"false");
-
-  if(mkdir_status)
-  {
-    AUXROM_RAM_Window.as_struct.AR_Usages[6] = 0;                         //  Indicate Success
-  }
-  else
-  {
-    AUXROM_RAM_Window.as_struct.AR_Usages[6] =  213;                      //  Indicate Failure
-  }
-  AUXROM_RAM_Window.as_struct.AR_Mailboxes[6] = 0;                      //  Release mailbox 6.    Must always be the last thing we do
-  return;
-}      
 
 //
 //  Custom Error and Warning Messages
@@ -901,7 +1062,7 @@ void AUXROM_SDMKDIR(void)
 //  
 
 
-void post_custom_error_message(char * message)
+void post_custom_error_message(char * message, uint16_t error_number)
 {
   char   * dest_ptr;
 
@@ -916,9 +1077,10 @@ void post_custom_error_message(char * message)
 
   dest_ptr[025 + strlen(message) - 1] |= 0x80;                  //  Mark the end of the custom error message in HP85 style by setting the MSB
   AUXROM_RAM_Window.as_struct.AR_Usages[6]    = 209;            //  Custom Error
+  AUXROM_RAM_Window.as_struct.AR_ERR_NUM      = error_number;   //  AUXERRN
 }
 
-void post_custom_warning_message(char * message)
+void post_custom_warning_message(char * message, uint16_t error_number)
 {
   char   * dest_ptr;
 
@@ -932,5 +1094,6 @@ void post_custom_warning_message(char * message)
   dest_ptr[024 + strlen(message) - 1] |= 0x80;                  //  Mark the end of the custom warning message in HP85 style by setting the MSB
   dest_ptr[064] = 0x80;                                         //  Zero length for error message 9
   AUXROM_RAM_Window.as_struct.AR_Usages[6]    = 208;            //  Custom Warning
+  AUXROM_RAM_Window.as_struct.AR_ERR_NUM      = error_number;   //  AUXERRN
 }
 

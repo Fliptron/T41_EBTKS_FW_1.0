@@ -128,25 +128,28 @@ int32_t cvt_R12_int_to_int32(uint8_t number[]);
 //void cvt_int32_to_HP85_tagged_integer(uint8_t * dest, int val);
 void cvt_IEEE_double_to_HP85_number(uint8_t * dest, double val);
 bool Resolve_Path(char *New_Path);
-void post_custom_error_message(char * message);
-void post_custom_warning_message(char * message);
+void post_custom_error_message(char * message, uint16_t error_number);
+void post_custom_warning_message(char * message, uint16_t error_number);
 
 //
 //  AUXROM Functions/Keywords/Statements
 //
 
 void initialize_SD_functions(void);
-void AUXROM_WROM(void);
-void AUXROM_SDCD(void);
-void AUXROM_SDCUR(void);
+
 void AUXROM_SDCAT(void);
+void AUXROM_SDCD(void);
+void AUXROM_SDCLOSE(void);
+void AUXROM_SDCUR(void);
+void AUXROM_SDDEL(void);
+void AUXROM_SDFLUSH(void);
 void AUXROM_SDMKDIR(void);
 void AUXROM_SDOPEN(void);
-void AUXROM_SDCLOSE(void);
 void AUXROM_SDREAD(void);
-void AUXROM_SDWRITE(void);
-void AUXROM_SDFLUSH(void);
+void AUXROM_SDRMDIR(void);
 void AUXROM_SDSEEK(void);
+void AUXROM_SDWRITE(void);
+void AUXROM_WROM(void);
 
 
 //

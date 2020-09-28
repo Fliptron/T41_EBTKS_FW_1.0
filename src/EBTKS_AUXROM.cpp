@@ -164,13 +164,16 @@ void AUXROM_Poll(void)
       AUXROM_SDWRITE();
       break;
     case AUX_USAGE_SDSEEK:
+      AUXROM_SDSEEK();
       break;
     case AUX_USAGE_SDDEL:
+      AUXROM_SDDEL();
       break;
     case AUX_USAGE_SDMKDIR:
       AUXROM_SDMKDIR();
       break;
     case AUX_USAGE_SDRMDIR:
+      AUXROM_SDRMDIR();
       break;
 
 
