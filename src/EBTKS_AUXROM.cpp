@@ -33,6 +33,11 @@
 #define  AUX_USAGE_MOUNT         ( 15)      //  MOUNT                                             mount a disk/tape in a unit
 #define  AUX_USAGE_UNMNT         ( 16)      //  UNMNT                                             remove a disk/tape from a unit
 #define  AUX_USAGE_FLAGS         ( 17)      //  FLAGS                                             save A.FLAGS to config file
+#define  AUX_USAGE_SDREN         ( 18)      //  SDREN                                             Rename a file
+#define  AUX_USAGE_CLOCK         ( 19)      //  CLOCK                                             Return Real Time Clock
+#define  AUX_USAGE_HELP          ( 20)      //  HELP                                              Provides help
+#define  AUX_USAGE_SDMEDIA       ( 21)      //  MEDIA$                                            Returns the file name of the mounted media on a drive
+
 //#define  AUX_USAGE_RDSTR         ( 18)      //  RDSTR                                             read a LF or CR/LF terminated string from an SD file
 
 
@@ -134,51 +139,71 @@ void AUXROM_Poll(void)
 
   switch(AUXROM_RAM_Window.as_struct.AR_Usages[Mailbox_to_be_processed])
   {
-    case AUX_USAGE_WROM:
-      AUXROM_WROM();
+    case AUX_USAGE_CLOCK:
+      AUXROM_CLOCK();
+      break;
+    case AUX_USAGE_FLAGS:
+      AUXROM_FLAGS();
+      break;
+    case AUX_USAGE_HELP:
+      AUXROM_HELP();
+      break;
+    case AUX_USAGE_SDCAT:
+      AUXROM_SDCAT();
       break;
     case AUX_USAGE_SDCD:
       //Serial.printf("Found SDCD\n");
       //show_mailboxes_and_usage();
       AUXROM_SDCD();
       break;
-    case AUX_USAGE_SDCUR:
-      AUXROM_SDCUR();
-      break;
-    case AUX_USAGE_SDCAT:
-      AUXROM_SDCAT();
-      break;
-    case AUX_USAGE_SDFLUSH:
-      AUXROM_SDFLUSH();
-      break;
-    case AUX_USAGE_SDOPEN:
-      AUXROM_SDOPEN();
-      break;
-    case AUX_USAGE_SDREAD:
-      AUXROM_SDREAD();
-      break;
     case AUX_USAGE_SDCLOSE:
       AUXROM_SDCLOSE();
       break;
-    case AUX_USAGE_SDWRIT:
-      AUXROM_SDWRITE();
-      break;
-    case AUX_USAGE_SDSEEK:
-      AUXROM_SDSEEK();
+    case AUX_USAGE_SDCUR:
+      AUXROM_SDCUR();
       break;
     case AUX_USAGE_SDDEL:
       AUXROM_SDDEL();
       break;
+    case AUX_USAGE_SDFLUSH:
+      AUXROM_SDFLUSH();
+      break;
+    case AUX_USAGE_SDMEDIA:
+      AUXROM_SDFLUSH();
+      break;
     case AUX_USAGE_SDMKDIR:
       AUXROM_SDMKDIR();
+      break;
+    case AUX_USAGE_MOUNT:
+      AUXROM_MOUNT();
+      break;
+    case AUX_USAGE_SDOPEN:
+      AUXROM_SDOPEN();
+      break;
+    case AUX_USAGE_SPF:
+      AUXROM_SPF();
+      break;
+    case AUX_USAGE_SDREAD:
+      AUXROM_SDREAD();
+      break;
+    case AUX_USAGE_SDREN:
+      AUXROM_SDREN();
       break;
     case AUX_USAGE_SDRMDIR:
       AUXROM_SDRMDIR();
       break;
-
-
-
-
+    case AUX_USAGE_SDSEEK:
+      AUXROM_SDSEEK();
+      break;
+    case AUX_USAGE_SDWRIT:
+      AUXROM_SDWRITE();
+      break;
+    case AUX_USAGE_UNMNT:
+      AUXROM_UNMNT();
+      break;
+    case AUX_USAGE_WROM:
+      AUXROM_WROM();
+      break;
     default:
       AUXROM_RAM_Window.as_struct.AR_Usages[Mailbox_to_be_processed] = 1;     //  Failure, unrecognized Usage code
   }

@@ -83,6 +83,21 @@ void initialize_SD_functions(void)
   }
 }
 
+void AUXROM_CLOCK(void)
+{
+
+}
+
+void AUXROM_FLAGS(void)
+{
+
+}
+
+void AUXROM_HELP(void)
+{
+
+}
+
 //
 //  Always uses Buffer 6 and associated parameters
 //
@@ -118,7 +133,7 @@ void initialize_SD_functions(void)
 //    D$ is passed from EBTKS to AUXROM in Buf6 starting at byte 256    Fixed length of 16 bytes
 //
 //  returns AR_Usages[6] = 0 for ok, 1 for finished (and 0 length buf6), 213 for any error
-//  
+//
 //  POSSIBLE ERRORS:
 //    SD ERROR - if disk error occurs OR 'continue' listing before 'start' listing
 //    INVALID PARAM - if "SDCAT A$, D$, x [,fileSpec$], " where 'x' is not 0 or 1
@@ -190,7 +205,7 @@ void AUXROM_SDCAT(void)
     sdcat_filespec_length = strlcpy(sdcat_filespec, AUXROM_RAM_Window.as_struct.AR_Buffer_6, 129);    //  this could be either a pattern match template, or a subdirectory if trailing slash
     //
     //  Since this is a first call, initialize by reading the whole directory into a buffer (curently 64K)
-    //  This conveniently uses the ls() member function.  Alternatively, I could investigate using the built in 
+    //  This conveniently uses the ls() member function.  Alternatively, I could investigate using the built in
     //  SdFat openNext() function.
     //
     //  See EBTKS_Function_and_Keyword_List_2020_09_03.xlsx   for list of functions,  or  G:/PlatformIO_Projects/Teensy_V4.1/T41_EBTKS_FW_1.0/.pio/libdeps/teensy41/SdFat/extras/html/class_fat_file.html
@@ -439,7 +454,7 @@ void AUXROM_SDCD(void)
     }
   } while(0);
   //
-  //  Something went wrong. 
+  //  Something went wrong.
   //
   Serial.printf("AUXROM_SDCD: Resolve_Path had a problem. Failure to update Current Path\n");
   AUXROM_RAM_Window.as_struct.AR_Usages[6] = 213;                           //  Indicate Failure
@@ -502,7 +517,7 @@ void AUXROM_SDCUR(void)
 
 void AUXROM_SDDEL(void)
 {
-  
+
 }
 
 //
@@ -542,6 +557,17 @@ void AUXROM_SDFLUSH(void)
 }
 
 //
+//
+//
+
+void AUXROM_SDMEDIA(void)
+{
+
+}
+
+
+
+//
 //  Create a new directory in the current directory
 //  AUXROM puts the new directory name in Buffer 6, Null terminated
 //  The length in AR_Lengths[6]
@@ -567,6 +593,11 @@ void AUXROM_SDMKDIR(void)
   }
   AUXROM_RAM_Window.as_struct.AR_Mailboxes[6] = 0;                      //  Release mailbox 6.    Must always be the last thing we do
   return;
+}
+
+void AUXROM_MOUNT(void)
+{
+
 }
 
 //
@@ -618,8 +649,14 @@ void AUXROM_SDOPEN(void)
   AUXROM_RAM_Window.as_struct.AR_Usages[6]    = 213;    //  Error
   AUXROM_RAM_Window.as_struct.AR_Mailboxes[6] = 0;      //  Indicate we are done
   Serial.printf("SDOPEN Error. File already open  [%s]\n", Resolved_Path);
-  return;    
+  return;
 }
+
+void AUXROM_SPF(void)
+{
+
+}
+
 
 //
 //  Read specified number of bytes from an open file, and store directly in HP85 Memory
@@ -644,15 +681,15 @@ void AUXROM_SDREAD(void)                                                 //  UNT
     AUXROM_RAM_Window.as_struct.AR_Usages[6]    = 213;    //  Error
     AUXROM_RAM_Window.as_struct.AR_Mailboxes[6] = 0;      //  Indicate we are done
     Serial.printf("SDREAD Error. File not open. File Number %d\n", file_index);
-    return;    
+    return;
   }
   //  following crappy extract because still haven't found a way around
   //  dereferencing type-punned pointer will break strict-aliasing rules [-Wstrict-aliasing]
   HP85_Mem_Address = AUXROM_RAM_Window.as_struct.AR_Buffer_6[0] | (AUXROM_RAM_Window.as_struct.AR_Buffer_6[1] << 8);
 
   bytes_actually_read = Auxrom_Files[file_index].readBytes(Transfer_Buffer, bytes_to_read);
-  Serial.printf("Read file # %2d , requested %d bytes, got %d\n", file_index, bytes_to_read, bytes_actually_read); 
-  //Serial.printf("Target address in HP85 memory is %06o  %08X\n", HP85_Mem_Address, HP85_Mem_Address); 
+  Serial.printf("Read file # %2d , requested %d bytes, got %d\n", file_index, bytes_to_read, bytes_actually_read);
+  //Serial.printf("Target address in HP85 memory is %06o  %08X\n", HP85_Mem_Address, HP85_Mem_Address);
   //Serial.printf("[%s]\n", Transfer_Buffer);
   AUXROM_Store_Memory(HP85_Mem_Address, Transfer_Buffer, bytes_actually_read);
 
@@ -663,6 +700,11 @@ void AUXROM_SDREAD(void)                                                 //  UNT
   AUXROM_RAM_Window.as_struct.AR_Usages[6]    = 0;     //  SDREAD successful
   AUXROM_RAM_Window.as_struct.AR_Mailboxes[6] = 0;     //  Indicate we are done
   return;
+}
+
+void AUXROM_SDREN(void)
+{
+
 }
 
 //
@@ -743,6 +785,11 @@ void AUXROM_SDRMDIR(void)
 //
 //  Seek to a specific position of the designated file. File position 0 is the first character/byte
 //
+//  Mode      Offset
+//  0         Absolute position.            Offset must be 0, or positive
+//  1         Offset from current position. Offset could be positive or negative
+//  2         Offset from end of file.      Offset must be 0, or negative
+//
 
 void AUXROM_SDSEEK(void)
 {
@@ -751,6 +798,7 @@ void AUXROM_SDSEEK(void)
   int         offset;
   int         current_position;
   int         end_position;
+  int         target_position;
 
   file_index = AUXROM_RAM_Window.as_struct.AR_BUF6_OPTS[0];               //  File number 1..11
   seek_mode  = AUXROM_RAM_Window.as_struct.AR_BUF6_OPTS[1];               //  0=absolute position, 1=advance from current position, 2=go to end of file
@@ -774,79 +822,42 @@ void AUXROM_SDSEEK(void)
   //
   //  Get end position
   //
-  Auxrom_Files[file_index].seekEnd();
+  Auxrom_Files[file_index].seekEnd(0);
   end_position = Auxrom_Files[file_index].curPosition();
   //Serial.printf("SDSEEK: file size %d\n", end_position);
   Auxrom_Files[file_index].seekSet(current_position);                       //  Restore position, in case something goes wrong
-  Serial.printf("SDSEEK: Position after restore is %d\n", Auxrom_Files[file_index].curPosition());
-  switch (seek_mode)
+  //Serial.printf("SDSEEK: Position after restore is %d\n", Auxrom_Files[file_index].curPosition());
+  if(seek_mode == 0)
   {
-  case 0:     //  Seek to absolute position, catch seeks before beginning and end of file
-    if(offset < 0)
-    {
-      post_custom_error_message((char *)"Trying to seek before beginning", 322);
-      AUXROM_RAM_Window.as_struct.AR_Mailboxes[6] = 0;                      //  Indicate we are done
-      Serial.printf("SDSEEK Error exit 2.  Trying to seek past EOF\n");
-      return;
-    }
-    if(offset > end_position)
-    {
-      post_custom_error_message((char *)"Trying to seek past EOF", 323);
-      AUXROM_RAM_Window.as_struct.AR_Mailboxes[6] = 0;                      //  Indicate we are done
-      Serial.printf("SDSEEK Error exit 3.  Trying to seek past EOF\n");
-      return;
-    }
-    if(!Auxrom_Files[file_index].seekSet(offset))
-    {
-      post_custom_error_message((char *)"Seek absolute failed", 324);
-      AUXROM_RAM_Window.as_struct.AR_Mailboxes[6] = 0;                      //  Indicate we are done
-      Serial.printf("SDSEEK Error exit 4.  Seek absolute failed\n");
-      return;
-    }
-    current_position = offset;
-    Serial.printf("SDSEEK: Absolute. New position is %d\n", Auxrom_Files[file_index].curPosition());
-    break;
-  case 1:     //  Seek to relative position, catch seeks before beginning and end of file
-    if(current_position + offset < 0)
-    {
-      post_custom_error_message((char *)"Relative seek before file start", 325);
-      AUXROM_RAM_Window.as_struct.AR_Mailboxes[6] = 0;                      //  Indicate we are done
-      Serial.printf("SDSEEK Error exit 5.  Relative seek before file start\n");
-      return;
-    }
-    if(current_position + offset > end_position)
-    {
-      post_custom_error_message((char *)"Relative seek beyond file end", 326);
-      AUXROM_RAM_Window.as_struct.AR_Mailboxes[6] = 0;                      //  Indicate we are done
-      Serial.printf("SDSEEK Error exit 6.  Relative seek beyond file end\n");
-      return;
-    }
-    if(!Auxrom_Files[file_index].seekCur(offset))
-    {
-      post_custom_error_message((char *)"Seek relative failed", 327);
-      AUXROM_RAM_Window.as_struct.AR_Mailboxes[6] = 0;                      //  Indicate we are done
-      Serial.printf("SDSEEK Error exit 7.  Seek relative failed\n");
-      return;
-    }
-    current_position = Auxrom_Files[file_index].curPosition();
-    Serial.printf("SDSEEK: Relative. New position is %d\n", current_position);
-    break;
-  case 2:     //  Seek to end of file.
-    Auxrom_Files[file_index].seekEnd();
-    current_position = end_position;
-    Serial.printf("SDSEEK: Go to end. New position is %d\n", Auxrom_Files[file_index].curPosition());
-    break;
-  default:
-    {
-      post_custom_error_message((char *)"Unknown Seek mode", 328);
-      AUXROM_RAM_Window.as_struct.AR_Mailboxes[6] = 0;                      //  Indicate we are done
-      Serial.printf("SDSEEK Error exit 8.  Unknown Seek mode\n");
-      return;
-    }
+    target_position = offset;
+  }
+	else if(seek_mode == 1)
+	{
+	  target_position = current_position + offset;
+	}
+  else                                                                      //  Trust that AUXROM never passes a mode other than 0, 1, 2
+  {
+    target_position = end_position + offset;
   }
   //
-  //  Seek Successs
+  //  Check that seek is within file
   //
+  if(target_position < 0)
+  {
+    post_custom_error_message((char *)"Trying to seek before beginning", 322);
+    AUXROM_RAM_Window.as_struct.AR_Mailboxes[6] = 0;                      //  Indicate we are done
+    Serial.printf("SDSEEK Error exit 2.  Trying to seek past EOF\n");
+    return;
+  }
+  if(target_position > end_position)
+  {
+    post_custom_error_message((char *)"Trying to seek past EOF", 323);
+    AUXROM_RAM_Window.as_struct.AR_Mailboxes[6] = 0;                      //  Indicate we are done
+    Serial.printf("SDSEEK Error exit 3.  Trying to seek past EOF\n");
+    return;
+  }
+  Auxrom_Files[file_index].seekSet(target_position);
+  Serial.printf("SDSEEK: New position is %d\n", (current_position = Auxrom_Files[file_index].curPosition()) );
   AUXROM_RAM_Window.as_struct_a.AR_BUF6_OPTS.as_uint32_t[1] = current_position;
   AUXROM_RAM_Window.as_struct.AR_Usages[6]    = 0;     //  SDSEEK successful
   AUXROM_RAM_Window.as_struct.AR_Mailboxes[6] = 0;     //  Indicate we are done
@@ -871,7 +882,7 @@ void AUXROM_SDWRITE(void)                                                 //  UN
     AUXROM_RAM_Window.as_struct.AR_Usages[6]    = 213;    //  Error
     AUXROM_RAM_Window.as_struct.AR_Mailboxes[6] = 0;      //  Indicate we are done
     Serial.printf("SDWRITE Error. File not open for write. File Number %d\n", file_index);
-    return;    
+    return;
   }
   //  following crappy extract because still haven't found a way around
   //  dereferencing type-punned pointer will break strict-aliasing rules [-Wstrict-aliasing]
@@ -879,7 +890,7 @@ void AUXROM_SDWRITE(void)                                                 //  UN
 
   AUXROM_Fetch_Memory((uint8_t *)Transfer_Buffer, HP85_Mem_Address, bytes_to_write);
   bytes_actually_written = Auxrom_Files[file_index].write(Transfer_Buffer, bytes_to_write);
-  Serial.printf("Write file # %2d , requested write %d bytes, %d actually written\n", file_index, bytes_to_write, bytes_actually_written); 
+  Serial.printf("Write file # %2d , requested write %d bytes, %d actually written\n", file_index, bytes_to_write, bytes_actually_written);
   //
   //  Assume all is good
   //
@@ -887,6 +898,11 @@ void AUXROM_SDWRITE(void)                                                 //  UN
   AUXROM_RAM_Window.as_struct.AR_Usages[6]    = 0;     //  SDWRITE successful
   AUXROM_RAM_Window.as_struct.AR_Mailboxes[6] = 0;     //  Indicate we are done
   return;
+}
+
+void AUXROM_UNMNT(void)
+{
+
 }
 
 //
@@ -1148,13 +1164,13 @@ bool LineAtATime_ls_Next()
 //    34D bytes the last of which must always have the MSB set. Exactly two
 //    more bytes in this 34 byte area must also have their MSB set and
 //    depends on whether a custom warning or error message is being setup.
-//    
+//
 //    For a custom warning, it starts at 0600024 and is no more than 32
 //    bytes, with the last valid byte MSB set. The 32 bytes can be padded
 //    with spaces. The 33rd byte (at 060064) must have its MSB set, for a
 //    total of 3 bytes having the MSB set: at the end of the custom warning,
 //    at 060064 and 060065
-//    
+//
 //    For a custom error, the byte at 0600024 must have its MSB set. The
 //    error message starts at 0600025 and is no more than 32 bytes, with the
 //    last valid byte MSB set. The 32 bytes can be padded with spaces. The
@@ -1169,7 +1185,7 @@ bool LineAtATime_ls_Next()
 //  which will appear on the HP85 screen as 109.
 //  For custom warning the warning number 208 is specified, and displays as
 //  warning 108
-//  
+//
 
 
 void post_custom_error_message(char * message, uint16_t error_number)

@@ -137,20 +137,27 @@ void post_custom_warning_message(char * message, uint16_t error_number);
 
 void initialize_SD_functions(void);
 
+          void AUXROM_CLOCK(void);
+          void AUXROM_FLAGS(void);
+          void AUXROM_HELP(void);
 void AUXROM_SDCAT(void);
 void AUXROM_SDCD(void);
 void AUXROM_SDCLOSE(void);
 void AUXROM_SDCUR(void);
-void AUXROM_SDDEL(void);
+          void AUXROM_SDDEL(void);
 void AUXROM_SDFLUSH(void);
+          void AUXROM_SDMEDIA(void);
 void AUXROM_SDMKDIR(void);
+          void AUXROM_MOUNT(void);
 void AUXROM_SDOPEN(void);
+          void AUXROM_SPF(void);
 void AUXROM_SDREAD(void);
+          void AUXROM_SDREN(void);
 void AUXROM_SDRMDIR(void);
 void AUXROM_SDSEEK(void);
 void AUXROM_SDWRITE(void);
+          void AUXROM_UNMNT(void);
 void AUXROM_WROM(void);
-
 
 //
 //  Utility Functions
