@@ -38,6 +38,10 @@
 //        320..329      AUXROM_HELP
 //        330..339      AUXROM_SDCAT
 //        340..349      AUXROM_SDCD
+//                                          340       Unable to open directory
+//                                          341       Target path is not a directory
+//                                          342       Couldn't change directory
+//                                          343       Couldn't resolve path
 //        350..359      AUXROM_SDCLOSE
 //        360..369      AUXROM_SDCUR
 //        370..379      AUXROM_SDDEL
@@ -51,6 +55,7 @@
 //                                          422       Open failed Mode 0
 //                                          423       Open failed Mode 1
 //                                          424       Open failed Mode 2
+//                                          425       Open failedIllegal Mode
 //        430..439      AUXROM_SPF
 //        440..449      AUXROM_SDREAD
 //        450..459      AUXROM_SDREN
@@ -85,7 +90,7 @@ EXTMEM static char          Transfer_Buffer[65536];                   //  This i
 //
 //  Support for AUXROM SD Functions
 //
-#define MAX_AUXROM_SDFILES        (11)
+#define MAX_AUXROM_SDFILES        (11)                                //  Usage is 1 through 11, so add 1 when allocating (see next line)
 
 static File Auxrom_Files[MAX_AUXROM_SDFILES+1];                       //  These are the file handles used by the following functions: SDOPEN, SDCLOSE, SDREAD, SDWRITE, SDFLUSH, SDSEEK
                                                                       //                                      and probably these too: SDEOL,  SDEOL$
@@ -452,27 +457,34 @@ void AUXROM_SDCAT(void)
 
 void AUXROM_SDCD(void)
 {
-  //Serial.printf("Current Path before SDCD [%s]\n", Current_Path);
-  //Serial.printf("Update Path via AUXROM   [%s]\n", AUXROM_RAM_Window.as_struct.AR_Buffer_6);
+  int         error_number = 0;
+  char        error_message[33];
+
+#if VERBOSE_KEYWORDS
+  Serial.printf("Current Path before SDCD [%s]\n", Current_Path);
+  Serial.printf("Update Path via AUXROM   [%s]\n", AUXROM_RAM_Window.as_struct.AR_Buffer_6);
   //show_mailboxes_and_usage();
+#endif
+
   do
   {
     if(Resolve_Path((char *)AUXROM_RAM_Window.as_struct.AR_Buffer_6))       //  Returns true if no parsing problems
     {
       if((file = SD.open(Resolved_Path)) == 0)
       {
-        Serial.printf("AUXROM_SDCD: Failed SD.open return value %08X\n", (uint32_t)file);
+        error_number = 340;   strlcpy(error_message,"Unable to open directory", 32);
         break;                      //  Unable to open directory
       }
       if(!file.isDir())
       {
-        Serial.printf("AUXROM_SDCD: Failed file.isDir\n");
+        file.close();
+        error_number = 341;   strlcpy(error_message,"Target path is not a directory", 32);
         break;                      //  Valid path, but not a directory
       }
       file.close();
       if(!SD.chdir(Resolved_Path))
       {
-        Serial.printf("AUXROM_SDCD: Failed SD.chdir\n");
+        error_number = 342;   strlcpy(error_message,"Couldn't change directory", 32);
         break;                      //  Failed to change to new path
       }
       //
@@ -484,20 +496,28 @@ void AUXROM_SDCD(void)
         strlcat(Current_Path,"/", MAX_SD_PATH_LENGTH + 1);
       }
       AUXROM_RAM_Window.as_struct.AR_Usages[6] = 0;                         //  Indicate Success
-      //  Serial.printf("Success. Current Path is now [%s]\n", Current_Path);
-      //  show_mailboxes_and_usage();
-      //  Serial.printf("\nSetting Mailbox 6 to 0 and then returning\n");
+
+#if VERBOSE_KEYWORDS
+      Serial.printf("Success. Current Path is now [%s]\n", Current_Path);
+      //show_mailboxes_and_usage();
+      //Serial.printf("\nSetting Mailbox 6 to 0 and then returning\n");
+#endif
+
       AUXROM_RAM_Window.as_struct.AR_Mailboxes[6] = 0;                      //  Release mailbox 6.    Must always be the last thing we do
       return;
     }
+    error_number = 343;   strlcpy(error_message,"Couldn't resolve path", 32);
   } while(0);
   //
-  //  Something went wrong.
+  //  This is the shared error exit
   //
-  Serial.printf("AUXROM_SDCD: Resolve_Path had a problem. Failure to update Current Path\n");
-  AUXROM_RAM_Window.as_struct.AR_Usages[6] = 213;                           //  Indicate Failure
-  //  show_mailboxes_and_usage();
-  AUXROM_RAM_Window.as_struct.AR_Mailboxes[6] = 0;                          //  Release mailbox 6.    Must always be the last thing we do
+
+#if VERBOSE_KEYWORDS
+    Serial.printf("SDCD failed Message [%s]  error_number %d\n", error_message, error_number);
+#endif
+
+  post_custom_error_message(error_message, error_number);
+  AUXROM_RAM_Window.as_struct.AR_Mailboxes[6] = 0;      //  Indicate we are done
   return;
 }
 
@@ -653,7 +673,7 @@ void AUXROM_SDOPEN(void)
 
 #if VERBOSE_KEYWORDS
   Serial.printf("SDOPEN Name: [%s]  Mode %d  File # %d\n", AUXROM_RAM_Window.as_struct.AR_Buffer_6,
-                                                            AUXROM_RAM_Window.as_struct.AR_BUF6_OPTS[0],
+                                                            AUXROM_RAM_Window.as_struct.AR_BUF6_OPTS[1],
                                                             file_index);
 #endif
 
@@ -664,7 +684,7 @@ void AUXROM_SDOPEN(void)
     error_number = 421;   strlcpy(error_message,"Parsing problems with path", 32);
     if(!Resolve_Path(AUXROM_RAM_Window.as_struct.AR_Buffer_6)) break;     //  Error, Parsing problems with path
     error_occured = false;
-    switch(AUXROM_RAM_Window.as_struct.AR_BUF6_OPTS[0])
+    switch(AUXROM_RAM_Window.as_struct.AR_BUF6_OPTS[1])
     {
       case 0:       //  Mode 0 (READ-ONLY), error if the file doesn't exist
         error_number = 422;   strlcpy(error_message,"Open failed Mode 0", 32);
@@ -680,8 +700,8 @@ void AUXROM_SDOPEN(void)
         if(!Auxrom_Files[file_index].open(Resolved_Path , FILE_WRITE)) error_occured = true;
        break;
       default:
-//        error_number = 42x;   strlcpy(error_message,"Open failed Mode unknown", 32);        // This should never happen because AUXROM checks Mode is 0,1,2
-//        error_occured = true;     //  Unrecognized Open Mode
+        error_number = 425;   strlcpy(error_message,"Open failed, Illegal Mode", 32);        // This should never happen because AUXROM checks Mode is 0,1,2
+        error_occured = true;                                                              //  And yet, we have seen it due to a bug in AUXROM code
         break;
     }
     if(error_occured) break;
@@ -695,14 +715,17 @@ void AUXROM_SDOPEN(void)
     Serial.printf("isWritable :        %s\n", Auxrom_Files[file_index].isWritable()  ? "true":"false");
     Serial.printf("position :          %d\n", Auxrom_Files[file_index].position());
 #endif
+
     return;
   } while (0);
   //
   //  This is the shared error exit
   //
+
 #if VERBOSE_KEYWORDS
     Serial.printf("SDOPEN failed Message [%s]  error_number %d\n", error_message, error_number);
 #endif
+
   post_custom_error_message(error_message, error_number);
   AUXROM_RAM_Window.as_struct.AR_Mailboxes[6] = 0;      //  Indicate we are done
   return;
