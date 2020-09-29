@@ -26,6 +26,42 @@
 //        200-299       subtract 200 and index the AUXROM error table. 8 is custom warning, 209 is custom error, 211..N are fixed messages
 //                      use AUXERRN to get number
 //
+////////////////////
+//
+//        AUX ERROR Numbers returned with AUXERRN for Custom error messages (error 209)
+//            Note: many of these numbers won't be used, but pre-allocating them here so we don't get confused later
+//                  If just a range is shown, that means none have actually been assigned a specific meaning
+//
+//
+//        300..309      AUXROM_CLOCK
+//        310..319      AUXROM_FLAGS
+//        320..329      AUXROM_HELP
+//        330..339      AUXROM_SDCAT
+//        340..349      AUXROM_SDCD
+//        350..359      AUXROM_SDCLOSE
+//        360..369      AUXROM_SDCUR
+//        370..379      AUXROM_SDDEL
+//        380..389      AUXROM_SDFLUSH
+//        390..399      AUXROM_SDFLUSH
+//        400..409      AUXROM_SDMKDIR
+//        410..419      AUXROM_MOUNT
+//        420..429      AUXROM_SDOPEN
+//                                          420       File is already open
+//                                          421       Parsing problems with path
+//                                          422       Open failed Mode 0
+//                                          423       Open failed Mode 1
+//                                          424       Open failed Mode 2
+//        430..439      AUXROM_SPF
+//        440..449      AUXROM_SDREAD
+//        450..459      AUXROM_SDREN
+//        460..469      AUXROM_SDRMDIR
+//        470..479      AUXROM_SDSEEK
+//                                          470       Seek on file that isn't open
+//                                          471       Trying to seek before beginning
+//                                          472       Trying to seek past EOF
+//        480..489      AUXROM_SDWRITE
+//        490..499      AUXROM_UNMNT
+//        500..509      AUXROM_WROM
 
 #include <Arduino.h>
 #include <string.h>
@@ -33,6 +69,8 @@
 #include <stdlib.h>
 
 #include "Inc_Common_Headers.h"
+
+#define   VERBOSE_KEYWORDS          (1)
 
 #define MAX_SD_PATH_LENGTH          (256)
 
@@ -608,47 +646,65 @@ void AUXROM_SDOPEN(void)
 {
   int         file_index;
   bool        error_occured;
+  int         error_number;
+  char        error_message[33];
 
   file_index = AUXROM_RAM_Window.as_struct.AR_BUF6_OPTS[0];               //  File number 1..11
 
+#if VERBOSE_KEYWORDS
+  Serial.printf("SDOPEN Name: [%s]  Mode %d  File # %d\n", AUXROM_RAM_Window.as_struct.AR_Buffer_6,
+                                                            AUXROM_RAM_Window.as_struct.AR_BUF6_OPTS[0],
+                                                            file_index);
+#endif
+
   do
   {
+    error_number = 420;   strlcpy(error_message,"File is already open", 32);
     if(Auxrom_Files[file_index].isOpen()) break;                          //  Error, File is already open
+    error_number = 421;   strlcpy(error_message,"Parsing problems with path", 32);
     if(!Resolve_Path(AUXROM_RAM_Window.as_struct.AR_Buffer_6)) break;     //  Error, Parsing problems with path
     error_occured = false;
     switch(AUXROM_RAM_Window.as_struct.AR_BUF6_OPTS[0])
     {
       case 0:       //  Mode 0 (READ-ONLY), error if the file doesn't exist
+        error_number = 422;   strlcpy(error_message,"Open failed Mode 0", 32);
         if(!Auxrom_Files[file_index].open(Resolved_Path , O_RDONLY | O_BINARY)) error_occured = true;
         break;
       case 1:       //  Mode 1 (R/W, append)
+        error_number = 423;   strlcpy(error_message,"Open failed Mode 1", 32);
         if(!Auxrom_Files[file_index].open(Resolved_Path , O_RDWR | O_APPEND | O_CREAT | O_BINARY)) error_occured = true;
         break;
       case 2:       //  Mode 2 (R/W, truncate)
+        error_number = 424;   strlcpy(error_message,"Open failed Mode 2", 32);
         //if(!Auxrom_Files[file_index].open(Resolved_Path , O_RDWR | O_TRUNC | O_CREAT | O_BINARY)) error_occured = true;
         if(!Auxrom_Files[file_index].open(Resolved_Path , FILE_WRITE)) error_occured = true;
        break;
       default:
-        error_occured = true;     //  Unrecognized Open Mode
+//        error_number = 42x;   strlcpy(error_message,"Open failed Mode unknown", 32);        // This should never happen because AUXROM checks Mode is 0,1,2
+//        error_occured = true;     //  Unrecognized Open Mode
         break;
     }
     if(error_occured) break;
     AUXROM_RAM_Window.as_struct.AR_Usages[6]    = 0;     //  File opened successfully
     AUXROM_RAM_Window.as_struct.AR_Mailboxes[6] = 0;     //  Indicate we are done
+
+#if VERBOSE_KEYWORDS
     Serial.printf("SDOPEN Success [%s]\nHandle status:", Resolved_Path);
-    //Serial.printf("availableForWrite : %s\n", Auxrom_Files[file_index].availableForWrite()  ? "true":"false");
     Serial.printf("curPosition :       %d\n", Auxrom_Files[file_index].curPosition());
     Serial.printf("isOpen :            %s\n", Auxrom_Files[file_index].isOpen()  ? "true":"false");
     Serial.printf("isWritable :        %s\n", Auxrom_Files[file_index].isWritable()  ? "true":"false");
     Serial.printf("position :          %d\n", Auxrom_Files[file_index].position());
+#endif
     return;
   } while (0);
   //
   //  This is the shared error exit
   //
-  AUXROM_RAM_Window.as_struct.AR_Usages[6]    = 213;    //  Error
+#if VERBOSE_KEYWORDS
+    Serial.printf("SDOPEN failed Message [%s]  error_number %d\n", error_message, error_number);
+#endif
+  post_custom_error_message(error_message, error_number);
   AUXROM_RAM_Window.as_struct.AR_Mailboxes[6] = 0;      //  Indicate we are done
-  Serial.printf("SDOPEN Error. File already open  [%s]\n", Resolved_Path);
   return;
 }
 
@@ -809,9 +865,9 @@ void AUXROM_SDSEEK(void)
   //
   if(!Auxrom_Files[file_index].isOpen())
   {
-    post_custom_error_message((char *)"Seek on file that isn't open", 321);
+    post_custom_error_message((char *)"Seek on file that isn't open", 470);
     AUXROM_RAM_Window.as_struct.AR_Mailboxes[6] = 0;                      //  Indicate we are done
-    Serial.printf("SDSEEK Error exit 1.  Seek on file that isn't open\n");
+    Serial.printf("SDSEEK Error exit 470.  Seek on file that isn't open\n");
     return;
   }
   //
@@ -844,16 +900,16 @@ void AUXROM_SDSEEK(void)
   //
   if(target_position < 0)
   {
-    post_custom_error_message((char *)"Trying to seek before beginning", 322);
+    post_custom_error_message((char *)"Trying to seek before beginning", 471);
     AUXROM_RAM_Window.as_struct.AR_Mailboxes[6] = 0;                      //  Indicate we are done
-    Serial.printf("SDSEEK Error exit 2.  Trying to seek past EOF\n");
+    Serial.printf("SDSEEK Error exit 471.  Trying to seek past EOF\n");
     return;
   }
   if(target_position > end_position)
   {
-    post_custom_error_message((char *)"Trying to seek past EOF", 323);
+    post_custom_error_message((char *)"Trying to seek past EOF", 472);
     AUXROM_RAM_Window.as_struct.AR_Mailboxes[6] = 0;                      //  Indicate we are done
-    Serial.printf("SDSEEK Error exit 3.  Trying to seek past EOF\n");
+    Serial.printf("SDSEEK Error exit 472.  Trying to seek past EOF\n");
     return;
   }
   Auxrom_Files[file_index].seekSet(target_position);
