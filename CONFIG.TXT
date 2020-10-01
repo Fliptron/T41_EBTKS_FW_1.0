@@ -1,0 +1,89 @@
+{
+  "machineName": "HP85A",
+  "flags": 173368985,
+  "ram16k": true,
+  "screenEmu": false,
+  "tape": {
+    "enable": true,
+    "filename": "tape1.tap",
+    "directory": "/tapes/"
+  },
+  "optionRoms": {
+    "directory": "/roms/",
+    "roms": [
+      {
+        "description": "Service ROM 340 AUXROM Aware",
+        "filename": "340aux.bin",
+        "enable": true
+      },
+      {
+        "description": "Assembler ROM",
+        "filename": "rom050",
+        "enable": true
+      },
+      {
+        "description": "I/O ROM",
+        "filename": "rom300B",
+        "enable": true
+      },
+      {
+        "description": "Extended Mass Storage ROM 85B variant",
+        "filename": "ROM317.85B",
+        "enable": true
+      },
+      {
+        "description": "Mass Storage",
+        "filename": "320RevB.bin",
+        "enable": true
+      },
+      {
+        "description": "EDisk",
+        "filename": "rom321B",
+        "enable": true
+      },
+      {
+        "description": "Advanced Programming",
+        "filename": "rom350",
+        "enable": true
+      },
+      {
+        "description": "AUXROM Primary 2020_09_28",
+        "filename": "85aux1.bin",
+        "enable": true
+      },
+      {
+        "description": "AUXROM Secondary 1 2020_09_28",
+        "filename": "85aux2.bin",
+        "enable": true
+      },
+      {
+        "description": "AUXROM Secondary 2 2020_09_28",
+        "filename": "85aux3.bin",
+        "enable": true
+      }
+    ]
+  },
+  "hpib": [
+    {
+      "select": 3,
+      "type": 0,
+      "device": 0,
+      "directory": "/disks/",
+      "enable": true,
+      "drives": [
+        {
+          "unit": 0,
+          "filename": "85Games1.dsk",
+          "writeProtect": false,
+          "enable": true
+        },
+        {
+          "unit": 1,
+          "filename": "85Games2.dsk",
+          "writeProtect": false,
+          "enable": true
+        }
+      ]
+    }
+  ]
+}
