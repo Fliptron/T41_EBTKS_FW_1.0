@@ -18,6 +18,11 @@
 
 #define PACKED __attribute__((__packed__))
 
+//
+//  machine type enumerations. the corresponding string table in EBTKS_SD.cpp needs to follow this
+//
+enum { MACH_HP85A = 0 , MACH_HP85B , MACH_HP86 , MACH_HP87 , MACH_NUM }; //always ensure MACH_NUM is the last enumeration
+
 ///////////////////////////////////////////////////  Uninitialized Globals. Actually initialized to 0x00000000  /////////////////////////////////////////
 
 //  These depend on the automatic initialization to Zero (NULL for pointers , false for bool)

@@ -152,6 +152,14 @@ public:
                 setCursor(0, 0);
                 break;
 
+            case '{':
+                used = 0x80 | '(';  //translate squiggly brace to normal brace with underline (hp85 doesn't have  squiggly braces)
+                break;
+
+            case '}':
+                used = 0x80 | ')'; 
+                break;
+
             case 0x7f: //DEL
                 break;
             }

@@ -5,7 +5,7 @@
 //
 //  1MB5/disk functions
 //
-void initTranslator(void);
+void initTranslator(int selectNum);
 void loopTranslator(void);
 //
 //  bank rom functions
@@ -191,6 +191,11 @@ bool is_HP85_idle(void);
 bool Three_Shift_Clicks_Poll(void);
 #endif
 
+//
+//  various configuration stuff
+//
+int getMachineNum(void);
+uint32_t getFlags(void);
 //
 //  Functions that Visual Studio Code can't find, but are in the Arduino library.
 //  So this is to just shut up some warning messages

@@ -610,9 +610,7 @@ void setup()
 
   initialize_SD_functions();      //  Used by the AUXROM functions
 
-  // init devices before we load the configuration
-
-  initTranslator();           //  Init hpib/disk code
+  // the configuration will init the required devices in most cases.....
 
                               //  It took 74 ms to get to here from SD.begin (open logfile, send some stuff, Init HPIB/Disk)
                               //  With 9 ROMs being loaded and JSON parsing of CONFIG.TXT , loadConfiguration()  takes 108ms

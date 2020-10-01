@@ -38,6 +38,10 @@
 //
 // the cp/m card uses a 'special' 1mb5. the addresses are: 0xff46/7
 
+#define HPIB_IF_BASE_ADDR 0x50      //only need the lower 8 bits. We already know it's in the i/o address space of 0xffxx
+
+
+
 // The CCR is read-only to us
 #define CCR_INT (1 << 0)
 #define CCR_COM (1 << 1)
@@ -82,6 +86,8 @@ volatile uint32_t readPSRCount;
 volatile uint32_t writeCCRCount;
 volatile uint32_t intCount;
 volatile uint8_t intReason;
+
+volatile uint8_t selectCode;
 
 void HPIBOutput(uint8_t val, uint8_t ccr);
 void HPIBAtnOut(uint8_t val, uint8_t ccr);
@@ -200,7 +206,7 @@ void onWriteInterrupt(uint8_t val)
 bool onReadInterrupt(void)
     {
     intCount++;
-    readData = 0x58; //assume device select #7 for the moment
+    readData = selectCode;
 
     //switch (intReason)
     //{
@@ -297,8 +303,32 @@ void requestInterrupt(uint8_t reason)
     interruptReq = true;
     }
 
-void initTranslator(void)
+/*
+ *
+ *  We get passed the select number which translates to the dipswitches on the HP82937A HPIB interface
+ *  The HP 'official' select code begins at 3. ie: select code 7 is actually 7 - 3 = 4;
+ * 
+ * 
+ */
+void initTranslator(int selectNum)
 {
+  //  1MB5 select #7 - 3 /hpib/disk interface
+
+  if ((selectNum < 3) || (selectNum > 10))
+    {
+        selectNum = 4;      //default to select code 7 if an illegal value is passed
+    }
+  int addr = HPIB_IF_BASE_ADDR + ((selectNum - 3) * 2);  //form the base address of the 1MB5
+
+// map our i/o handlers in the required addresses
+  setIOReadFunc(addr,&onReadStatus);
+  setIOReadFunc(addr + 1,&onReadIB);
+  setIOWriteFunc(addr,&onWriteCCR);
+  setIOWriteFunc(addr + 1,&onWriteOb);
+  setIOWriteFunc(0x40,&onWriteInterrupt);
+  setIOReadFunc(0x40,&onReadInterrupt);
+
+  selectCode = addr; //the lower address is also the response value when the global 1MB5 register at 0xff40 (0177500) is read
 
   SR[0] = 1;    //hpib board ID
   SR[1] = 0;    //interrupt cause
@@ -311,7 +341,7 @@ void initTranslator(void)
   CR[16] = 2;
   CR[17] = 0x0d;
   CR[18] = 0x0a;
-  Serial.printf("HPIB init\n");
+  Serial.printf("HPIB init select code:%d\n",selectNum);
   devices[0] = new HpibDisk(0);     //define one disk system as device #0
   //devices[1] = new HpibDisk(1);    //test multiple devices
   //devices[1]->addDisk(DISK_TYPE_5Q);
@@ -319,13 +349,7 @@ void initTranslator(void)
   //devices[1]->setFile(0, (char *)"/disks/85Games2.dsk", false);
   //devices[1]->setFile(1, (char *)"/disks/85Games1.dsk", false);
 
-//  1MB5 device #7 /hpib/disk interface
-  setIOReadFunc(0x58,&onReadStatus);
-  setIOReadFunc(0x59,&onReadIB);
-  setIOWriteFunc(0x58,&onWriteCCR);
-  setIOWriteFunc(0x59,&onWriteOb);
-  setIOWriteFunc(0x40,&onWriteInterrupt);
-  setIOReadFunc(0x40,&onReadInterrupt);
+
 }
 
 void loopTranslator(void)

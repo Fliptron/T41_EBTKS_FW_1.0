@@ -11,6 +11,9 @@
 
 extern HpibDisk *devices[];
 
+int machineNum = 0;
+uint32_t secretFlags;
+
 bool loadRom(const char *fname, int slotNum, const char * description)
 {
   uint8_t header[10];       //  Why is this 10?  I think it should be 2
@@ -230,6 +233,19 @@ void saveConfiguration(const char *filename)
 }
 
 //
+//  returns the enumeration of the machine name selected in the config file
+//
+int getMachineNum(void)
+{
+  return machineNum;
+}
+
+uint32_t getFlags(void)
+{
+  return secretFlags;
+}
+
+//
 //  Loads the configuration from a file, return true if successful
 //
 
@@ -260,6 +276,27 @@ bool loadConfiguration(const char *filename)
     LOGPRINTF("Failed to read file, using default configuration\n");
   }
   
+  secretFlags = doc["flags"] | 0;
+
+  // read machineType string
+  // valid strings are:
+  const char * machineNames[] = {"HP85A","HP85B","HP86","HP87"};
+
+  const char * machineType = doc["machineName"] | "HP85A";
+  //
+  //  look through table to find a match to enumerate the machineType
+  // 
+
+    machineNum = 0;
+    while (machineNum < MACH_NUM)
+    {
+      if (strcmp(machineNames[machineNum],machineType ) == 0)
+      {
+        break; //found it!
+      }
+      machineNum++;
+    }
+
   enHP85RamExp(doc["ram16k"] | false);
   //bool enScreenEmu = doc["screenEmu"] | false;
   bool tapeEn = doc["tape"]["enable"] | false;
@@ -316,18 +353,20 @@ bool loadConfiguration(const char *filename)
   }
   LOGPRINTF("\n");
   //
-  // configure the disk drives. currently we only handle one hpib interface at SC 7 (the default)
+  // configure the disk drives. currently we only handle one hpib interface
   //
 
   for (JsonVariant hpibDevice : doc["hpib"].as <JsonArray>()) //iterate hpib devices on a bus
   {
-    int type = hpibDevice["type"] | 0;         //disk drive type 0 = 5 1/4"
+    int select = hpibDevice["select"] | 7;       //1MB5 select code (3..10). 7 is the default
+    int type = hpibDevice["type"] | 0;           //disk drive type 0 = 5 1/4"
     int device = hpibDevice["device"] | 0;       //hpib device number 0..31
     const char *diskDir = hpibDevice["directory"] | "/disk/";    //disk image folder/directory
     bool enable = hpibDevice["enable"] | false;   //are we enabled?
 
     if (enable == true)
     {
+      initTranslator(select);
       //iterate disk drives - we can have up to 4 drive units per device
       for (JsonVariant unit: hpibDevice["drives"].as<JsonArray>())
       {
