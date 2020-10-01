@@ -12,7 +12,7 @@
 extern HpibDisk *devices[];
 
 int machineNum = 0;
-uint32_t secretFlags;
+uint32_t Config_Flag_word;
 
 bool loadRom(const char *fname, int slotNum, const char * description)
 {
@@ -128,15 +128,30 @@ void saveConfiguration(const char *filename)
     return;
   }
 
-  // Allocate a temporary JsonDocument
-  // Don't forget to change the capacity to match your requirements.
-  // Use arduinojson.org/assistant to compute the capacity.
+  //
+  //  Allocate a temporary JsonDocument
+  //  Don't forget to change the capacity to match your requirements.
+  //  Use arduinojson.org/assistant to compute the capacity.
+  //
+  //  On 10/1/2020, report is 1720
+  //
+  
   StaticJsonDocument<3000> doc;
 
+  Serial.printf("\n\nError reading CONFIG.TXT   Recreating default Configuration\n\n");
+
   // Set the values in the document
-  doc["ram16k"] = false;
-  doc["screenEmu"] = false;
-  
+  doc["machineName"]      = "HP85A";
+  doc["flags"]      = 173368985;    //  0x0A556699    Hex constants are not allowed with this SdFat library
+  doc["ram16k"]     = false;        //  For safety, since we don't know what machine we are plugged into
+  doc["screenEmu"]  = false;
+
+  // tape drive
+
+  JsonObject tape = doc.createNestedObject("tape");
+  tape["enable"] = false;           //  For safety, since we don't know what machine we are plugged into
+  tape["filename"] = "tape1.tap";
+  tape["directory"] = "/tapes/";
 
   // option roms
 
@@ -147,78 +162,78 @@ void saveConfiguration(const char *filename)
   // add roms
 
   JsonObject rom0 = romx.createNestedObject();
-  rom0["description"] = "service rom 340";
-  rom0["filename"] = "rom340";
+  rom0["description"] = "Service ROM 340 AUXROM Aware";
+  rom0["filename"] = "340aux.bin";
   rom0["enable"] = true;
 
   JsonObject rom1 = romx.createNestedObject();
-  rom1["description"] = "assembler";
+  rom1["description"] = "Assembler ROM";
   rom1["filename"] = "rom050";
   rom1["enable"] = true;
 
   JsonObject rom2 = romx.createNestedObject();
-  rom2["description"] = "i/o rom";
+  rom2["description"] = "I/O ROM";
   rom2["filename"] = "rom300B";
   rom2["enable"] = true;
 
   JsonObject rom3 = romx.createNestedObject();
-  rom3["description"] = "extended mass storage";
-  rom3["filename"] = "rom317";
+  rom3["description"] = "Extended Mass Storage ROM 85B variant";
+  rom3["filename"] = "ROM317.85B";
   rom3["enable"] = true;
 
   JsonObject rom4 = romx.createNestedObject();
-  rom4["description"] = "mass storage";
-  rom4["filename"] = "rom320B";
+  rom4["description"] = "Mass Storage";
+  rom4["filename"] = "320RevB.bin";
   rom4["enable"] = true;
 
   JsonObject rom5 = romx.createNestedObject();
-  rom5["description"] = "Edisk methinks";
+  rom5["description"] = "EDisk";
   rom5["filename"] = "rom321B";
   rom5["enable"] = true;
 
   JsonObject rom6 = romx.createNestedObject();
-  rom6["description"] = "advanced programming";
+  rom6["description"] = "Advanced Programming";
   rom6["filename"] = "rom350";
   rom6["enable"] = true;
 
   JsonObject rom7 = romx.createNestedObject();
-  rom7["description"] = "EBTKS AUXROM 1";
+  rom7["description"] = "AUXROM Primary 2020_09_28";
   rom7["filename"] = "85aux1.bin";
   rom7["enable"] = true;
 
   JsonObject rom8 = romx.createNestedObject();
-  rom8["description"] = "EBTKS AUXROM 2";
+  rom8["description"] = "AUXROM Secondary 1 2020_09_28";
   rom8["filename"] = "85aux2.bin";
   rom8["enable"] = true;
+
+  JsonObject rom9 = romx.createNestedObject();
+  rom9["description"] = "AUXROM Secondary 2 2020_09_28";
+  rom9["filename"] = "85aux3.bin";
+  rom9["enable"] = true;
 
   // hpib devices
 
   JsonArray hpib = doc.createNestedArray("hpib");
   JsonObject device = hpib.createNestedObject();
-  device["type"] = 0;   //disk type - currently an enumeration
-  device["device"] = 0; //first device 0..31
+  device["select"]    = 3;          //  HPIB Select code
+  device["type"]      = 0;          //  Disk type - currently an enumeration
+  device["device"]    = 0;          //  First device 0..31
   device["directory"] = "/disks/";
-  device["enable"] = true;
+  device["enable"]    = true;
 
   JsonArray drives = device.createNestedArray("drives");
 
   JsonObject drive0 = drives.createNestedObject();
   drive0["unit"] = 0;
   drive0["filename"] = "85Games1.dsk";
-  drive0["enable"] = true;
   drive0["writeProtect"] = false;
+  drive0["enable"] = true;
 
   JsonObject drive1 = drives.createNestedObject();
   drive1["unit"] = 1;
   drive1["filename"] = "85Games2.dsk";
-  drive1["enable"] = true;
   drive1["writeProtect"] = false;
-
-  // tape drive
-  JsonObject tape = doc.createNestedObject("tape");
-  tape["filename"] = "tape1.tap";
-  tape["enable"] = true;
-  tape["directory"] = "/tapes/";
+  drive1["enable"] = true;
 
   serializeJsonPretty(doc, Serial);
 
@@ -229,6 +244,7 @@ void saveConfiguration(const char *filename)
                                               //  what is the probability that Log File stuff is working?
   }
   // Close the file
+  Serial.printf("\n\n");
   file.close();
 }
 
@@ -242,7 +258,7 @@ int getMachineNum(void)
 
 uint32_t getFlags(void)
 {
-  return secretFlags;
+  return Config_Flag_word;
 }
 
 //
@@ -272,11 +288,23 @@ bool loadConfiguration(const char *filename)
   DeserializationError error = deserializeJson(doc, file);
   if (error)
   {
+    file.close();
     saveConfiguration(filename);
     LOGPRINTF("Failed to read file, using default configuration\n");
+    //
+    //  Try number 2:  Read the file we hopefully just wrote
+    //
+    file = SD.open(filename);
+    DeserializationError error = deserializeJson(doc, file);
+    if(error)
+    {   //  Failed a second time, give up
+      LOGPRINTF("Failed to read (or write) the default configuration. Giving up\n");
+      return false;
+    }
+    //  else fall into the normal config processing with the defaults we just created
   }
   
-  secretFlags = doc["flags"] | 0;
+  Config_Flag_word = doc["flags"] | 0;
 
   // read machineType string
   // valid strings are:

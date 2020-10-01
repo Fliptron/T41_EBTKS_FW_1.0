@@ -45,6 +45,8 @@
 //        350..359      AUXROM_SDCLOSE
 //        360..369      AUXROM_SDCUR
 //        370..379      AUXROM_SDDEL
+//                                          370       Parsing problems with path
+//                                          371       Parsing problems with path
 //        380..389      AUXROM_SDFLUSH
 //        390..399      AUXROM_SDFLUSH
 //        400..409      AUXROM_SDMKDIR
@@ -575,7 +577,21 @@ void AUXROM_SDCUR(void)
 
 void AUXROM_SDDEL(void)
 {
-
+  if(!Resolve_Path(AUXROM_RAM_Window.as_struct.AR_Buffer_6))
+  {   //  Error, Parsing problems with path
+    post_custom_error_message((char *)"Parsing problems with path", 370);
+    AUXROM_RAM_Window.as_struct.AR_Mailboxes[6] = 0;      //  Indicate we are done
+    return;
+  }
+  if(!SD.remove(Resolved_Path))
+  {
+    post_custom_error_message((char *)"Couldn't delete file", 371);
+    AUXROM_RAM_Window.as_struct.AR_Mailboxes[6] = 0;      //  Indicate we are done
+    return;
+  }
+  AUXROM_RAM_Window.as_struct.AR_Usages[6] = 0;           //  Success, file deleted
+  AUXROM_RAM_Window.as_struct.AR_Mailboxes[6] = 0;      //  Indicate we are done
+  return;
 }
 
 //
