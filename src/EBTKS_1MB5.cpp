@@ -63,6 +63,7 @@ volatile uint8_t statusReg, ib, ob, ccr;
 volatile bool obf, ibf;
 bool prevReset;
 bool prevInt;
+bool globalIntEnable = false;
 //
 //  ioTranslator vars
 //
@@ -112,6 +113,19 @@ HpibDisk *devices[NUM_DEVICES];
 //
 // emulated registers - note these run under the interrupt context - keep them short n sweet!
 //
+
+void onWriteGIE(uint8_t val)
+{
+  (void)val;
+  globalIntEnable = true;
+}
+
+void onWriteGID(uint8_t val)
+{
+  (void)val;
+  globalIntEnable = false;
+}
+
 bool onReadStatus(void)
     {
     uint8_t result;
@@ -204,30 +218,24 @@ void onWriteInterrupt(uint8_t val)
 //   consider this the interrupt acknowledge function. Note: isr context!
 //
 bool onReadInterrupt(void)
-    {
-    intCount++;
-    readData = selectCode;
+{
 
-    //switch (intReason)
-    //{
-    //case 0: // burst out termination
-    //    break;
-    //case 1: // burst in termination
-    //    readBuff[0] = intReason;
-    //    readBuff[1] = intReason;
-    //    loadReadBuff(2);
-    //    break;
-    //case 3: // reset
-    //case 4: // input interrupt
-    //}
-    readBuff[0] = intReason;
-    readBuff[1] = intReason;
-    readIndex = 0;
-    readCount = 2;
-    statusReg = 0;
-    ibf = true;
-    return true;
+    if (globalIntAck == true)  
+    {  
+      intCount++;
+      readData = selectCode;
+
+      readBuff[0] = intReason;
+      readBuff[1] = intReason;
+      readIndex = 0;
+      readCount = 2;
+      statusReg = 0;
+      globalIntAck = false;   //  This a one shot
+      ibf = true;
+      return true;
     }
+  return false;
+}
 // these are the mainline functions for register access
 
 bool readOb(uint8_t *val)
@@ -300,6 +308,7 @@ void requestInterrupt(uint8_t reason)
     intReason = reason;
     interruptVector = 0x10;   //  Interrupt vector for the 1MB5
     ASSERT_INT;
+    ASSERT_INTPRI;
     interruptReq = true;
     }
 
@@ -316,7 +325,7 @@ void initTranslator(int selectNum)
 
   if ((selectNum < 3) || (selectNum > 10))
     {
-        selectNum = 4;      //default to select code 7 if an illegal value is passed
+        selectNum = 7;      //default to select code 7 if an illegal value is passed
     }
   int addr = HPIB_IF_BASE_ADDR + ((selectNum - 3) * 2);  //form the base address of the 1MB5
 
@@ -327,6 +336,10 @@ void initTranslator(int selectNum)
   setIOWriteFunc(addr + 1,&onWriteOb);
   setIOWriteFunc(0x40,&onWriteInterrupt);
   setIOReadFunc(0x40,&onReadInterrupt);
+
+  setIOWriteFunc(0,&onWriteGIE);            //global interrupt enable
+  setIOWriteFunc(1,&onWriteGID);            //global interrupt disable
+
 
   selectCode = addr; //the lower address is also the response value when the global 1MB5 register at 0xff40 (0177500) is read
 
@@ -385,6 +398,7 @@ void loopTranslator(void)
             intReason = 3;
             interruptVector = 0x10; //int vector for the 1MB5
             ASSERT_INT;
+            ASSERT_INTPRI;
             interruptReq = true;
             }
         prevReset = false;

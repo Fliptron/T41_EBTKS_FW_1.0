@@ -325,11 +325,13 @@ inline void onPhi_2_Rise(void)                                  //  This functio
 
  if (Interrupt_Acknowledge)
   {
-    if (interruptReq == true)
+    if ((interruptReq == true) && (!IS_IPRIH_IN_LO)) //PRIH is high and we're interrupt - must be our turn
     {
+      globalIntAck = true;  //set when we've been the interrupter
       readData = interruptVector;      
       interruptReq = false; //clear request
       RELEASE_INT;
+      RELEASE_INTPRI;
       HP85_Read_Us = true;
     }
   }

@@ -481,6 +481,9 @@
 #define ASSERT_PWO_OUT          (GPIO_DR_SET_PWO_O   = BIT_MASK_PWO_O)
 #define RELEASE_PWO_OUT         (GPIO_DR_CLEAR_PWO_O = BIT_MASK_PWO_O)
 
+#define ASSERT_INTPRI           (GPIO_DR_SET_INTPRI   = BIT_MASK_INTPRI)
+#define RELEASE_INTPRI          (GPIO_DR_CLEAR_INTPRI = BIT_MASK_INTPRI)
+
 //
 //    On EBTKS V2.0 , with Teensy 4.1, the 8 bit data bus is GPIO 6
 //    The bits are contiguous, with LSB being bit 16
@@ -514,6 +517,7 @@
 #define IS_PHI_2_LOW                 ((GPIO_PAD_STATUS_REG_PHASE2 & BIT_MASK_PHASE2) == 0)
 #define WAIT_WHILE_PHI_2_HIGH        while(IS_PHI_2_HIGH) {}
 #define WAIT_WHILE_PHI_2_LOW         while(IS_PHI_2_LOW) {}
+#define IS_IPRIH_IN_LO               ((GPIO_PAD_STATUS_REG_IPRIH_IN & BIT_MASK_IPRIH_IN) == 0)
 
 #define PHI_1_and_2_IMR              (GPIO6_IMR)
 #define PHI_1_and_2_ISR              (GPIO6_ISR)
