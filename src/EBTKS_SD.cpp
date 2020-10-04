@@ -1,7 +1,6 @@
 //
 //	06/27/2020	All this wonderful code came from Russell.
 //
-//
 
 #include <Arduino.h>
 #include <ArduinoJson.h>
@@ -216,7 +215,7 @@ void saveConfiguration(const char *filename)
 
   JsonArray hpib = doc.createNestedArray("hpib");
   JsonObject device = hpib.createNestedObject();
-  device["select"]    = 3;          //  HPIB Select code
+  device["select"]    = 7;          //  HPIB Select code
   device["type"]      = 0;          //  Disk type - currently an enumeration
   device["device"]    = 0;          //  First device 0..31
   device["directory"] = "/disks/";
@@ -340,8 +339,12 @@ bool loadConfiguration(const char *filename)
 
   const char *tapeFname=  doc["tape"]["filename"] | "tape1.tap";
   const char *path = doc["tape"]["directory"] | "/tapes/";
-  tape.setPath(path);
-  tape.setFile(tapeFname);
+
+  if (tapeEn)     //only set the path/filename if the tape subsystem is enabled
+    {
+    tape.setPath(path);
+    tape.setFile(tapeFname);
+    }
   tape.enable(tapeEn);
   LOGPRINTF("Tape file: %s%s enabled is: %s\n", path, tapeFname, tapeEn ? "Active" : "Inactive");  
   

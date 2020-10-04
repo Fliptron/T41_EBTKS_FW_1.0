@@ -28,6 +28,7 @@ class Tape
     uint32_t _tick;
     uint8_t _prevCtrl;
     uint32_t _downCount;
+    bool _enabled;
 
     bool blockRead(uint32_t blkNum);
     void blockWrite(int blkNum);

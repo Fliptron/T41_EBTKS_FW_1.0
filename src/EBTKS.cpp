@@ -388,7 +388,7 @@ GPIO9   33         7           CORE_PIN33_PORTREG
 #elif LOGLEVEL_GEN == LOG_SERIAL
 #define LOGLEVEL_GEN_MESSAGE      "LOGLEVEL_GEN is Serial via USB\n"
 #else
-#define LOGLEVEL_GEN_MESSAGE      "LOGLEVEL_GEN is unknows\n"
+#define LOGLEVEL_GEN_MESSAGE      "LOGLEVEL_GEN is unknown\n"
 #endif
 
 #if LOGLEVEL_AUX == LOG_NONE
@@ -398,7 +398,7 @@ GPIO9   33         7           CORE_PIN33_PORTREG
 #elif LOGLEVEL_AUX == LOG_SERIAL
 #define LOGLEVEL_AUX_MESSAGE      "LOGLEVEL_AUX is Serial via USB\n"
 #else
-#define LOGLEVEL_AUX_MESSAGE      "LOGLEVEL_AUX is unknows\n"
+#define LOGLEVEL_AUX_MESSAGE      "LOGLEVEL_AUX is unknown\n"
 #endif
 
 #if LOGLEVEL_1MB5 == LOG_NONE
@@ -408,7 +408,7 @@ GPIO9   33         7           CORE_PIN33_PORTREG
 #elif LOGLEVEL_1MB5 == LOG_SERIAL
 #define LOGLEVEL_1MB5_MESSAGE      "LOGLEVEL_1MB5 is Serial via USB\n"
 #else
-#define LOGLEVEL_1MB5_MESSAGE      "LOGLEVEL_1MB5 is unknows\n"
+#define LOGLEVEL_1MB5_MESSAGE      "LOGLEVEL_1MB5 is unknown\n"
 #endif
 
 #if LOGLEVEL_TAPE == LOG_NONE

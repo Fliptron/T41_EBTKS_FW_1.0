@@ -271,6 +271,7 @@ Tape::Tape()
 {
     _tick = millis();
     _downCount = 0;
+    _enabled = false;
 }
 
 bool Tape::setFile(const char *fname)
@@ -378,10 +379,16 @@ void Tape::enable(bool enable)
         close();
         }   
 
-    TAPPOS = 528 + 2048; //position to the right of the first hole
-    uint32_t blk = TAPPOS / TAPE_BLOCKSIZE;
-    blockRead(blk);
-    currBlockNum = blk; 
+
+    if ((_enabled == true ) && (enable == false))       //on disable -> enable
+        {
+        TAPPOS = 528 + 2048; //position to the right of the first hole
+        uint32_t blk = TAPPOS / TAPE_BLOCKSIZE;
+        blockRead(blk);
+        currBlockNum = blk;
+        }
+
+    _enabled = enable;
 }
 
 void Tape::poll(void)
