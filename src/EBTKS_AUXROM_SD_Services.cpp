@@ -215,7 +215,6 @@ void AUXROM_HELP(void)
 
 //static int              SDCAT_line_count = 0;
 static bool               SDCAT_First_seen = false;     //  keeping track of whether we have seen a call for a first line of a SD catalog
-EXTMEM static char        dir_line[258];                //  Leave room for a trailing 0x00 (that is not included in the passed max length of PS.get_line)
 static int32_t            get_line_char_count;
 EXTMEM static char        sdcat_filespec[258];
 static int                sdcat_filespec_length;

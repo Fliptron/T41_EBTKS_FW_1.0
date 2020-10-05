@@ -13,8 +13,6 @@
 #include "Inc_Common_Headers.h"
 
 
-
-
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////  Diagnostic Pulse Generation
 //
 //  TXD_Pulser generates the specified number of pulses by Toggling the TXD pin
@@ -110,7 +108,6 @@ void EBTKS_delay_ns(int32_t count)
 
 
 void help_0(void);
-void help_0(void);
 void help_1(void);
 void help_2(void);
 void help_3(void);
@@ -120,16 +117,7 @@ void help_6(void);
 void help_7(void);
 void tape_handle_command_flush(void);
 void tape_handle_command_load(void);
-void proc_tdir(void);
-void DMA_Test_1(void);
-void DMA_Test_2(void);
-void DMA_Test_3(void);
-void DMA_Test_4(void);
-void DMA_Test_5(void);
 void CRT_Timing_Test_1(void);
-void MEM_Test_1(void);
-void MEM_Test_2(void);
-void MEM_Test_3(void);
 void Setup_Logic_analyzer(void);
 void Logic_analyzer_go(void);
 void Simple_Graphics_Test(void);
@@ -143,8 +131,10 @@ void pulse_PWO(void);
 void dump_ram_window(void);
 void jay_pi(void);
 void ulisp(void);
-void proc_ddir(void);
-void proc_rdir(void);
+void diag_dir_tapes(void);
+void diag_dir_disks(void);
+void diag_dir_roms(void);
+void diag_dir_root(void);
 
 
 
@@ -172,16 +162,7 @@ struct S_Command_Entry Command_Table[] =
   {"7",                help_7},
   {"tflush",           tape_handle_command_flush},
   {"tload",            tape_handle_command_load},
-  {"tdir",             proc_tdir},
-  {"dma_1",            DMA_Test_1},
-  {"dma_2",            DMA_Test_2},
-  {"dma_3",            DMA_Test_3},
-  {"dma_4",            DMA_Test_4},
-  {"dma_5",            DMA_Test_5},
   {"crt_1",            CRT_Timing_Test_1},
-  {"mem_1",            MEM_Test_1},
-  {"mem_2",            MEM_Test_2},
-  {"mem_3",            MEM_Test_3},
   {"la_setup",         Setup_Logic_Analyzer},
   {"la_go",            Logic_analyzer_go},
   {"graphics_test",    Simple_Graphics_Test},
@@ -195,8 +176,10 @@ struct S_Command_Entry Command_Table[] =
   {"dump_ram_window",  dump_ram_window},
   {"jay_pi",           jay_pi},
   {"ulisp",            ulisp},
-  {"ddir",             proc_ddir},
-  {"rdir",             proc_rdir},
+  {"dir tapes",        diag_dir_tapes},
+  {"dir disks",        diag_dir_disks},
+  {"dir roms",         diag_dir_roms},
+  {"dir root",         diag_dir_root},
   {"TABLE_END",        help_0}
 };
 
@@ -657,30 +640,31 @@ void help_0(void)
 void help_1(void)
 {
   Serial.printf("Commands for the Tape Drive\n");
-  Serial.printf("tflush   Force a tape flush and reload\n");
-  Serial.printf("tload    Load a new tape image from SD\n");
-  Serial.printf("tdir     Directory of available tapes\n");
-  Serial.printf("twhich   #Which tape is currently loaded\n");
+  Serial.printf("tflush        Force a tape flush and reload\n");
+  Serial.printf("tload         Load a new tape image from SD\n");
+  Serial.printf("dir tapes     Directory of available tapes\n");
+  Serial.printf("twhich        #Which tape is currently loaded\n");
   Serial.printf("\n");
 }
 
 void help_2(void)
 {
   Serial.printf("Commands for the Disk Drive\n");
-  Serial.printf("dflush   #Force a disk flush and reload\n");     //  Not yet Implemented
-  Serial.printf("dload    #Load a new disk image from SD\n");     //  Not yet Implemented
-  Serial.printf("ddir     Directory of available disks\n");
-  Serial.printf("dwhich   #Which disk(s) is(are) currently loaded\n");
+  Serial.printf("dflush        #Force a disk flush and reload\n");     //  Not yet Implemented
+  Serial.printf("dload         #Load a new disk image from SD\n");     //  Not yet Implemented
+  Serial.printf("dir disks     Directory of available disks\n");
+  Serial.printf("dwhich        #Which disk(s) is(are) currently loaded\n");
   Serial.printf("\n");
 }
 
 void help_3(void)
 {
   Serial.printf("Commands for the Configuration\n");
-  Serial.printf("cfgrom     #Select active roms\n");      //  Not yet Implemented
-  Serial.printf("rdir       Directory of available ROMs\n");
-  Serial.printf("screen     #Screen emulation\n");        //  Not yet Implemented
-  Serial.printf("keyboard   #Keyboard emulation\n");      //  Not yet Implemented
+  Serial.printf("cfgrom         #Select active roms\n");      //  Not yet Implemented
+  Serial.printf("dir roms       Directory of available ROMs\n");
+  Serial.printf("dir root       Directory of available ROMs\n");
+  Serial.printf("screen         #Screen emulation\n");        //  Not yet Implemented
+  Serial.printf("keyboard       #Keyboard emulation\n");      //  Not yet Implemented
   Serial.printf("\n");
 }
 
@@ -688,7 +672,7 @@ void help_4(void)
 {
   Serial.printf("Comands for Auxiliary programs\n");
   Serial.printf("cpm         #CP/M operating system\n");                           //  Not yet Implemented
-  Serial.printf("ulisp       uLisp interpreter\n");
+  Serial.printf("ulisp       #uLisp interpreter\n");
   Serial.printf("python      #uPython\n");                                         //  Not yet Implemented
   Serial.printf("pdp8-os8    #PDP-8E inc Fortran-II and IV, Basic, Focal\n");      //  Not yet Implemented
   Serial.printf("cobol       #COBOL\n");                                           //  Not yet Implemented
@@ -702,15 +686,7 @@ void help_5(void)
   //uint16_t    i;
 
   Serial.printf("Commands for Diagnostic\n");
-  Serial.printf("dma_1    Read 50 bytes from ROM, 1,000,000 times\n");
-  Serial.printf("dma_2    Write 50 bytes to  ROM, 1,000,000 times\n");
-  Serial.printf("dma_3    Read the following block lengths: 14, 15, 16, 29, 30, 31\n");
-  Serial.printf("dma_4    Read/Write of 50 bytes at 0xB000\n");
-  Serial.printf("dma_5    DMA Text to the screen\n");
   Serial.printf("crt_1    Try and understand CRT Busy status timing\n");
-  Serial.printf("mem_1    Increment ITCM 1E6\n");
-  Serial.printf("mem_2    Increment DMAMEM 1E6\n");
-  Serial.printf("mem_3    Fetch DMAMEM 1E6\n");
   Serial.printf("\n");
   //
   //  test code
@@ -759,194 +735,50 @@ void help_7(void)
   Serial.printf("\n");
 }
 
-
-//bool LineAtATime_ls_Init(const char* path, uint8_t flags, uint8_t indent)
-//{
-//  dir_flags  = flags;
-//  dir_indent = indent;
-//  if(dir)
-//  {
-//    dir.close();
-//  }
-//  return dir.open(path, O_RDONLY);
-//}
-
-
-//bool LineAtATime_ls_Next()
-//{
-//  File file;
-//
-//  PS.flush();
-//  if(file.openNext(&dir, O_RDONLY))
-//  {
-//    // indent for dir level
-//    if (!file.isHidden() || (dir_flags & LS_A))
-//    {
-//      for (uint8_t i = 0; i < dir_indent; i++)
-//      {
-//        PS.write(' ');
-//      }
-//      if (dir_flags & LS_DATE) {
-//        file.printModifyDateTime(&PS);
-//        PS.write(' ');
-//      }
-//      if (dir_flags & LS_SIZE) {
-//        file.printFileSize(&PS);
-//        PS.write(' ');
-//      }
-//      file.printName(&PS);
-//      if (file.isDir()) {
-//        PS.write('/');
-//      }
-//      PS.write('\n');
-//      if ((dir_flags & LS_R) && file.isDir()) {
-//        file.ls(&PS, dir_flags, dir_indent + 2);
-//      }
-//      Serial.printf("XXXXX");
-//    }
-//    file.close();
-//    return true;
-//  }
-//  dir.close();
-//  return false;
-//}
-
-void proc_tdir(void)
+void diag_dir_path(const char * path)
 {
-  File root = SD.open("/tapes/");
-  printDirectory(root,0);
+  char      date[20], file_size[20];
+  uint32_t  temp_uint;
+
+  if(!LineAtATime_ls_Init((char *)path))                    //  This is where the whole directory is listed into a buffer
+  {                                                         //  Failed to do a listing of the current directory
+    Serial.printf("Couldn't initialize read directory /tapes/ on SD card\n");
+  }
+  while(1)                                                  //  keep looping till we run out of entries
+  {
+    if(!LineAtATime_ls_Next())
+    {   //  No more directory lines
+      Serial.printf("\n");
+      return;
+    }
+    strlcpy(date, dir_line, 17);
+    strlcpy(file_size, &dir_line[16], 12);                                                //  Get the size of the file. Still needs some processing
+    temp_uint = atoi(file_size);
+    Serial.printf("%-20s   %d   %s\n", &dir_line[28], temp_uint, date);                      //  filename,  size,  date & time
+  }
+  
 }
 
-void proc_ddir(void)
+void diag_dir_tapes(void)
 {
-  //  SD.ls("/disks/", LS_R | LS_SIZE | LS_DATE);
-  //  SD.ls(PS, "/", LS_R | LS_SIZE | LS_DATE, 3);
-  //File root = SD.open("/disks/");
-  //printDirectory(root,0);
-  LineAtATime_ls_Init((char *)"/disks/");
-  while(LineAtATime_ls_Next())
-  {
-    //Serial.printf("%s    end of LineAtATime_ls_Next call %d\n", PS.get_ptr() , call_count++);
-  }
+  diag_dir_path("/tapes/");
 }
 
-void proc_rdir(void)
+void diag_dir_root(void)
 {
-  File root = SD.open("/roms/");
-  printDirectory(root,0);
+  diag_dir_path("/");
 }
 
-FASTRUN   volatile uint32_t test_mem_FASTRUN;
-
-void MEM_Test_1(void)
+void diag_dir_disks(void)
 {
-
-  uint32_t  loop;
-
-  Serial.printf("Increment ITCM 1E6, Monitor TXD\n");
-
-  SET_TXD;
-  for(loop = 0 ; loop < 1E5 ; loop++)     //  This loop takes 3248 us == 32.48 ns per iteration
-  {
-    //  Null loop
-  }
-  CLEAR_TXD;
-
-  EBTKS_delay_ns(1000000);    //  1 ms
-
-  SET_TXD;
-  for(loop = 0 ; loop < 1E5 ; loop++)     //  This loop takes 16470 us. Loop overhead is 3248 us, so the remainder is 13222 us
-  {
-    test_mem_FASTRUN++;                   //  Need 10 instances, because single gets hidden due to pipelining
-    test_mem_FASTRUN++;                   //  This is not nearly as precise measurement as I had hoped.
-    test_mem_FASTRUN++;                   //  So, 1E5 * 10 increments takes 13222 us -> 13.22 ns per increment
-    test_mem_FASTRUN++;
-    test_mem_FASTRUN++;
-    test_mem_FASTRUN++;
-    test_mem_FASTRUN++;
-    test_mem_FASTRUN++;
-    test_mem_FASTRUN++;
-    test_mem_FASTRUN++;
-  }
-  CLEAR_TXD;
+  diag_dir_path("/disks/");
 }
 
-DMAMEM   volatile uint32_t test_mem_DMAMEM;
-
-void MEM_Test_2(void)
+void diag_dir_roms(void)
 {
-  uint32_t  loop;
-
-  Serial.printf("Increment DMAMEM 1E6, Monitor TXD\n");
-
-  SET_TXD;
-  for(loop = 0 ; loop < 1E5 ; loop++)     //  This loop takes 3248 us == 32.48 ns per iteration
-  {
-    //  Null loop
-  }
-  CLEAR_TXD;
-
-  EBTKS_delay_ns(1000000);    //  1 ms
-
-  SET_TXD;
-  for(loop = 0 ; loop < 1E5 ; loop++)     //  This loop takes 9528 us. Loop overhead is 3248 us, so the remainder is 6280 us
-  {
-    test_mem_DMAMEM++;                    //  Need 10 instances, because single gets hidden due to pipelining
-    test_mem_DMAMEM++;                    //  This is not nearly as precise measurement as I had hoped.
-    test_mem_DMAMEM++;                    //  So, 1E5 * 10 increments takes 6280 us -> 6.280 ns per increment
-    test_mem_DMAMEM++;                    //  Somehow ??? DMAMEM is faster than ITCM ???
-    test_mem_DMAMEM++;
-    test_mem_DMAMEM++;
-    test_mem_DMAMEM++;
-    test_mem_DMAMEM++;
-    test_mem_DMAMEM++;
-    test_mem_DMAMEM++;
-  }
-  CLEAR_TXD;
+  diag_dir_path("/roms/");
 }
 
-FASTRUN   volatile uint32_t FASTRUN_1, FASTRUN_2;
-
-void MEM_Test_3(void)
-{
-  uint32_t  loop;
-
-  Serial.printf("Copy DMAMEM 1E6, Monitor TXD\n");
-
-  SET_TXD;
-  for(loop = 0 ; loop < 1E5 ; loop++)     //  This loop takes 7440 us ==> 4.1 ns per copy (subtract loop overhead seen in prior tests
-  {
-    FASTRUN_1 = FASTRUN_2;
-    FASTRUN_1 = FASTRUN_2;
-    FASTRUN_1 = FASTRUN_2;
-    FASTRUN_1 = FASTRUN_2;
-    FASTRUN_1 = FASTRUN_2;
-    FASTRUN_1 = FASTRUN_2;
-    FASTRUN_1 = FASTRUN_2;
-    FASTRUN_1 = FASTRUN_2;
-    FASTRUN_1 = FASTRUN_2;
-    FASTRUN_1 = FASTRUN_2;
-  }
-  CLEAR_TXD;
-
-  EBTKS_delay_ns(1000000);    //  1 ms
-
-  SET_TXD;
-  for(loop = 0 ; loop < 1E5 ; loop++)     //  This loop takes 5492 us. Loop overhead 3248, leaving 2181 us
-  {
-    FASTRUN_1 = test_mem_DMAMEM;          //  Need 10 instances, because single gets hidden due to pipelining
-    FASTRUN_1 = test_mem_DMAMEM;          //  
-    FASTRUN_1 = test_mem_DMAMEM;          //  So, 1E5 * 10 increments takes 2181 after subtracting known loop overhead of 3248
-    FASTRUN_1 = test_mem_DMAMEM;          //  so each read/write between two different memory regions is 2.18ns
-    FASTRUN_1 = test_mem_DMAMEM;
-    FASTRUN_1 = test_mem_DMAMEM;
-    FASTRUN_1 = test_mem_DMAMEM;
-    FASTRUN_1 = test_mem_DMAMEM;
-    FASTRUN_1 = test_mem_DMAMEM;
-    FASTRUN_1 = test_mem_DMAMEM;
-  }
-  CLEAR_TXD;
-}
 
 void proc_addr(void)
 {

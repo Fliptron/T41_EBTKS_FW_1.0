@@ -261,6 +261,9 @@ EXTERN  EXTMEM char Directory_Listing_Buffer[DIRECTORY_LISTING_BUFFER_SIZE];    
                                                                                 //  know if the EXTMEM can be done within a class, and we certainly
                                                                                 //  don't want this buffer to be dynamically allocated on heap either.
 
+EXTERN  EXTMEM char dir_line[258];                                              //  Leave room for a trailing 0x00 (that is not included in the passed max length of PS.get_line)
+
+
 ///////////////////////////////////////////////////  Initialized Globals.  /////////////////////////////////////////////////////////////////
 
 //   Initialized Globals can't use EXTERN (as used above) because initialization over-rides extern

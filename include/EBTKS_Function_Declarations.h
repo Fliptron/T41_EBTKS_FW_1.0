@@ -34,19 +34,6 @@ uint16_t DMA_Peek16(uint32_t address);
 void    DMA_Poke8 (uint32_t address, uint8_t  val);
 void    DMA_Poke16(uint32_t address, uint16_t val);
 
-void    DMA_Test_1(void);
-void    DMA_Test_2(void);
-void    DMA_Test_3(void);
-void    DMA_Test_4(void);
-void    DMA_Test_5(void);
-
-//
-//  Memory Performance tests
-//
-
-void    MEM_Test_1(void);
-void    MEM_Test_2(void);
-void    MEM_Test_3(void);
 
 //
 //  CRT Functions
