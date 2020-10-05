@@ -224,6 +224,7 @@ typedef bool (*ioReadFuncPtr_t)(void);
 //  Log file support
 //
 
+EXTERN  File logfile;
 EXTERN  bool logfile_active;
 EXTERN  char logfile_temp_text[200];    //  That should be enough, bad news as no checking is done.
 

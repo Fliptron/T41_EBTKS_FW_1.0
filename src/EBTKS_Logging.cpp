@@ -9,8 +9,6 @@
 
 //  #include "SdFat.h"         included by EBTKS_Function_Declarations.h
 
-static File logfile;
-
 //
 //  Open (or create)the  Log file in SD card root directory
 //
@@ -36,7 +34,9 @@ void append_to_logfile(const char * text)
 {
   if(logfile_active)
   {
-    logfile.print(text);    //  leave the new lines to the caller
+    logfile.print(text);    //  Leave the new lines to the caller
+    //  logfile.flush();    //  This slows things down too much if tracing 1MB5, so add this
+                            //  to the polling loop to be run once per second.
   }
 }
 

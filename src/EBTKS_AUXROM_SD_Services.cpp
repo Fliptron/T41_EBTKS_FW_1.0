@@ -231,6 +231,8 @@ void AUXROM_SDCAT(void)
   bool        match;
   char        temp_file_path[258];
 
+  SD.cacheClear();
+
   //
   //  Show Parameters
   //

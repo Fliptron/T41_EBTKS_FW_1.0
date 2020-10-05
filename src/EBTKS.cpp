@@ -19,11 +19,6 @@ KeyboardController keyboard2(myusb);
 
 
 
-
-
-
-
-
 //
 //  These includes are only needed in this file
 //
@@ -443,6 +438,8 @@ GPIO9   33         7           CORE_PIN33_PORTREG
 //
 //
 
+static uint32_t   one_second_timer = 0;
+
 void setup()
 {
 
@@ -723,6 +720,7 @@ void setup()
 static int  loop_count = 0;
 
 
+
 void loop()
 {
   if(IS_PWO_LOW)                    //  Not sure if this works. Needed to be tested
@@ -777,7 +775,17 @@ void loop()
   }
 #endif          //  ENABLE_THREE_SHIFT_DETECTION
 
+  //
+  //  Here are things we do no more than once per second
+  //
+
+  if(one_second_timer < (systick_millis_count + 1000))
+  {
+    logfile.flush();
+    one_second_timer = systick_millis_count;
+  }
 
   loop_count++;
 }
+
 
