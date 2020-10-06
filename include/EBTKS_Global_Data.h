@@ -234,10 +234,13 @@ EXTERN  char logfile_temp_text[200];    //  That should be enough, bad news as n
 
 EXTERN  enum analyzer_state Logic_Analyzer_State;
 
-EXTERN  uint32_t  Logic_Analyzer_Channel_A[LOGIC_ANALYZER_BUFFER_SIZE];
-EXTERN  uint32_t  Logic_Analyzer_Channel_A_index;
-EXTERN  uint32_t  Logic_Analyzer_Trigger_Mask;
-EXTERN  uint32_t  Logic_Analyzer_Trigger_Value;
+EXTERN  uint32_t  Logic_Analyzer_Data_1[LOGIC_ANALYZER_BUFFER_SIZE];      //  See EBTKS_Bus_Interface_ISR.cpp for bit field layout
+EXTERN  uint32_t  Logic_Analyzer_Data_2[LOGIC_ANALYZER_BUFFER_SIZE];      //  See EBTKS_Bus_Interface_ISR.cpp for bit field layout
+EXTERN  uint32_t  Logic_Analyzer_Data_index;
+EXTERN  uint32_t  Logic_Analyzer_Trigger_Mask_1;
+EXTERN  uint32_t  Logic_Analyzer_Trigger_Mask_2;
+EXTERN  uint32_t  Logic_Analyzer_Trigger_Value_1;
+EXTERN  uint32_t  Logic_Analyzer_Trigger_Value_2;
 EXTERN  bool      Logic_Analyzer_Triggered;
 EXTERN  uint32_t  Logic_Analyzer_Pre_Trigger_Samples;
 EXTERN  int32_t   Logic_Analyzer_Event_Count_Init;
@@ -248,9 +251,11 @@ EXTERN  uint32_t  Logic_Analyzer_current_bus_cycle_state_LA;
 EXTERN  uint32_t  Logic_Analyzer_Valid_Samples;
 EXTERN  uint32_t  Logic_Analyzer_Current_Buffer_Length;
 EXTERN  uint32_t  Logic_Analyzer_Current_Index_Mask;
+EXTERN  uint32_t  Logic_Analyzer_Valid_Samples_1_second_ago;
 
 
-EXTERN  volatile uint32_t  Logic_Analyzer_sample;
+EXTERN  volatile uint32_t  Logic_Analyzer_main_sample;
+EXTERN  volatile uint32_t  Logic_Analyzer_aux_sample;
 
 EXTERN  Tape tape;
 

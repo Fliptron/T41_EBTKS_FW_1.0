@@ -692,6 +692,7 @@ void setup()
   Serial.printf("Access to SD Card is %s\n", SD_begin_OK     ? "true":"false");
   Serial.printf("Config Success is %s\n"   , config_success  ? "true":"false");
 
+  Logic_Analyzer_Event_Count_Init = -1000;      // Use this to indicate the Logic analyzer has no default values.
 
   Serial.flush();
   delay(3000);

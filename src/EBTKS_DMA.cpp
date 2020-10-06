@@ -43,6 +43,9 @@
 //
 //      07/14/2020      Re do all the timing tweaks, and get oscilloscope pics as needed
 //
+//      10/05/2020      Add DMA tracking to the Logic Analyzer.
+//                      WE DO NOT TRACE THE DMA LMA Cycles, or the Refresh Cycles. We do not support triggering on DMA
+//
 
 
 #include <Arduino.h>
@@ -52,6 +55,10 @@
 static void DMA_Preamble(uint16_t DMA_Target_Address);
 static int32_t DMA_Read_Burst(uint8_t buffer[], uint32_t bytecount);           //  This function is only called by DMA_Read_Block()
 static int32_t DMA_Write_Burst(uint8_t buffer[], uint32_t bytecount);          //  This function is only called by DMA_Write_Block()
+
+static void DMA_Logic_Analyzer_Support(uint8_t buffer[], uint32_t bytecount, int mode);
+
+static uint32_t   DMA_Addr_for_Logic_Analyzer;
 
 #define OUTPUT_DATA_HOLD_TWEAK               EBTKS_delay_ns(90)                //  Adjusts the Hold time after the Falling edge of Phi 1 for Address bytes and Write data. Goal is 100 ns
 #define CTRL_START_LMA_1_TWEAK               EBTKS_delay_for_LMA_start()       //  Adjusts the start time of /LMAX, /RDX, and /WRX after Phi 1 Rising edge. Goal is 130 ns after Phi 1 Rising
@@ -105,7 +112,7 @@ void EBTKS_delay_for_LMA_start(void)
 //
 //  By the time these routines are called,
 //    DMA bus ownership has been negotiated.
-//    All interupts have been disabled
+//    All interupts have been disabled                                                    ?????  need to review. If this were true why is there a __disable_irq() in DMA_Read_Block()
 //    The 3 control lines are Outputs, and they are all driving High
 //    The control signal buffer/level shifter (U3) has the direction set to
 //      take the control signals from the Teensy outputs and drive them on
@@ -172,6 +179,7 @@ int32_t DMA_Read_Block(uint32_t DMA_Target_Address, uint8_t buffer[], uint32_t b
                      //  This means that if we want delays, we need to have our own EBTKS_delay_ns()
                      //  All interrupts are re-enabled at the end of release_DMA_request()
 
+  DMA_Addr_for_Logic_Analyzer = DMA_Target_Address;
   DMA_Preamble(DMA_Target_Address);
   //  /LMAX has just been deasserted, and time is about mid to late Phi 21
   //  /RC is still asserted, and the High byte of the address is on the bus
@@ -438,6 +446,12 @@ static int32_t DMA_Read_Burst(uint8_t buffer[], uint32_t bytecount)
     data_from_IO_bus = (GPIO_PAD_STATUS_REG_DB0 >> BIT_POSITION_DB0) & 0x000000FFU;     //  Requires that data bits are contiguous and in the right order
     buffer[buffer_index++] = data_from_IO_bus;     //  Save the data that has just been read
   }
+
+  if(Logic_Analyzer_State == ANALYZER_ACQUIRING)
+  {
+    DMA_Logic_Analyzer_Support(buffer, bytecount, 0);
+  }
+
   return buffer_index;
 }
 
@@ -460,6 +474,7 @@ int32_t DMA_Write_Block(uint32_t DMA_Target_Address, uint8_t buffer[], uint32_t 
                      //  This means that if we want delays, we need to have our own EBTKS_delay_ns()
                      //  All interrupts are re-enabled at the end of release_DMA_request()
 
+  DMA_Addr_for_Logic_Analyzer = DMA_Target_Address;
   DMA_Preamble(DMA_Target_Address);
   //  /LMAX has just been deasserted, and time is about mid to late Phi 21
   //  /RC is still asserted, and the High byte of the address is on the bus
@@ -610,6 +625,12 @@ static int32_t DMA_Write_Burst(uint8_t buffer[], uint32_t bytecount)
   //  On exit, we are just after the falling edge of Phi 1, /WRX is not asserted,
   //  /RC is asserted and the last data byte to be written is on the data bus
   //
+
+  if(Logic_Analyzer_State == ANALYZER_ACQUIRING)
+  {
+    DMA_Logic_Analyzer_Support(buffer, bytecount, 1);
+  }
+
   return buffer_index;
 }
 
@@ -720,3 +741,48 @@ void release_DMA_request(void)
 }
 
 
+//
+//  While DMA is running, all interrupts are disabled, so the normal Logic Analyzer updates that happen during onPhi_1_Rise()
+//  are not going to happen. The timing is pretty scary around DMA, so the strategy is that after the DMA is complete, but before
+//  DMA is released, the DMA transfers are repeated, but into the logic analyzer.
+//
+//  Mode is 0 for read, 1 for write
+//
+//  WE DO NOT TRACE THE DMA LMA Cycles, or the Refresh Cycles. We do not support triggering on DMA
+//
+static void DMA_Logic_Analyzer_Support(uint8_t buffer[], uint32_t bytecount, int mode)
+{
+  uint32_t    index;
+
+  index = 0;
+
+  if(Logic_Analyzer_Triggered && (Logic_Analyzer_State == ANALYZER_ACQUIRING))
+  {
+    while(index < bytecount)
+    {
+      Logic_Analyzer_main_sample = (DMA_Addr_for_Logic_Analyzer++ << 8) | buffer[index++];
+      if(mode == 0)
+      {   //    Read
+        Logic_Analyzer_main_sample |= 0x0D000000;
+      }
+      else
+      {   //    Write
+        Logic_Analyzer_main_sample |= 0x0B000000;
+      }
+      Logic_Analyzer_aux_sample  =  getRselec() & 0x000000FF;
+
+      Logic_Analyzer_Data_1[Logic_Analyzer_Data_index  ] = Logic_Analyzer_main_sample;
+      Logic_Analyzer_Data_2[Logic_Analyzer_Data_index++] = Logic_Analyzer_aux_sample;
+
+      Logic_Analyzer_Data_index &= Logic_Analyzer_Current_Index_Mask;          //  Modulo addressing of sample buffer. Requires buffer length to be a power of two
+      Logic_Analyzer_Valid_Samples++;   //  This could theoretically over flow if we didn't see a trigger in 7000 seconds (1.9 hours). Saturating is not worth the overhead
+      if(Logic_Analyzer_Triggered)
+      {
+        if(--Logic_Analyzer_Samples_Till_Done == 0)
+        {
+          Logic_Analyzer_State = ANALYZER_ACQUISITION_DONE;
+        }
+      }
+    }
+  }
+}

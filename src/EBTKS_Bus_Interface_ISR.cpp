@@ -17,6 +17,8 @@
 //      07/30/2020      Fine tune all bus timing, mostly /RC and buffer enables
 //      08/10/2020      More timing fine tuning, catch the ones I missed the first time through
 //
+//      10/05/2020      First attempt ot trace DMA with the logic analyzer
+//
 
 //
 //  HP85 bus emulation
@@ -159,23 +161,31 @@ inline void onPhi_1_Rise(void)                  //  This function is running wit
 //      #define BIT_POSITION_LMA          (24)
 //      #define BIT_POSITION_RD           (25)
 //
-//  Logic_Analyzer_sample layout is:
+//  Logic_Analyzer_main_sample layout is:
 //  Bits          Content
-//  31 .. 27      Currently always 00000
+//  31 .. 28      Currently always 0000
+//  27            Set if this was a DMA cycle
 //  26            /WRX    recorded at the prior Phi 2
 //  25            /RDX    recorded at the prior Phi 2
 //  24            /LMA    recorded at the prior Phi 2
 //  23 ..  8      Current Address
 //   7 ..  0      Data Bus
 //
-//  We use Logic_Analyzer_sample in the Logic analyzer, and also anywhere where we want to watch out for specific addresses occuring
+//  Logic_Analyzer_aux_sample layout is:
+//  Bits          Content
+//  31 ..  8      Currently always 0000 0000 0000 0000 0000 0000
+//   7 ..  0      RSELEC
+
+//
+//  We use Logic_Analyzer_main_sample in the Logic analyzer, and also anywhere where we want to watch out for specific addresses occuring
 //  such as recognizing that the HP85 is in the IDLE state
 //
 
-  Logic_Analyzer_sample = data_from_IO_bus |                            //  See above for constraints for this to work.
-                          (addReg << 8)    |                            //  because we are very fast, it is ok to take
-                          Logic_Analyzer_current_bus_cycle_state_LA;    //  data on Phi 1 Rising edge, unlike HP-85 that
-                                                                        //  uses the falling edge.
+  Logic_Analyzer_main_sample =  data_from_IO_bus |                            //  See above for constraints for this to work.
+                                (addReg << 8)    |                            //  because we are very fast, it is ok to take
+                                Logic_Analyzer_current_bus_cycle_state_LA;    //  data on Phi 1 Rising edge, unlike HP-85 that
+                                                                              //  uses the falling edge.
+  Logic_Analyzer_aux_sample  =  getRselec() & 0x000000FF;                     //  Get the Bank switched ROM select code
 
   if(Logic_Analyzer_State == ANALYZER_ACQUIRING)
   {
@@ -190,18 +200,21 @@ inline void onPhi_1_Rise(void)                  //  This function is running wit
     {
       if(Logic_Analyzer_Valid_Samples >= Logic_Analyzer_Pre_Trigger_Samples)
       { //  Triggering is allowed
-        if((Logic_Analyzer_sample & Logic_Analyzer_Trigger_Mask) == Logic_Analyzer_Trigger_Value)
+        if(   ((Logic_Analyzer_main_sample & Logic_Analyzer_Trigger_Mask_1) == Logic_Analyzer_Trigger_Value_1) &&
+              ((Logic_Analyzer_aux_sample  & Logic_Analyzer_Trigger_Mask_2) == Logic_Analyzer_Trigger_Value_2)    )
         {   //  Trigger pattern has been matched
           if(--Logic_Analyzer_Event_Count <= 0)                             //  Event Count is how many match events needed to trigger
           {
             Logic_Analyzer_Triggered = true;
-            Logic_Analyzer_Index_of_Trigger = Logic_Analyzer_Channel_A_index;   //  Record the buffer index at time of trigger
+            Logic_Analyzer_Index_of_Trigger = Logic_Analyzer_Data_index;   //  Record the buffer index at time of trigger
           }
         }
       }
     }
-    Logic_Analyzer_Channel_A[Logic_Analyzer_Channel_A_index++] = Logic_Analyzer_sample;
-    Logic_Analyzer_Channel_A_index &= Logic_Analyzer_Current_Index_Mask;          //  Modulo addressing of sample buffer. Requires buffer length to be a power of two
+    Logic_Analyzer_Data_1[Logic_Analyzer_Data_index  ] = Logic_Analyzer_main_sample;
+    Logic_Analyzer_Data_2[Logic_Analyzer_Data_index++] = Logic_Analyzer_aux_sample;
+
+    Logic_Analyzer_Data_index &= Logic_Analyzer_Current_Index_Mask;          //  Modulo addressing of sample buffer. Requires buffer length to be a power of two
     Logic_Analyzer_Valid_Samples++;   //  This could theoretically over flow if we didn't see a trigger in 7000 seconds (1.9 hours). Saturating is not worth the overhead
     if(Logic_Analyzer_Triggered)
     {
