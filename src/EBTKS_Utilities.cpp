@@ -6,6 +6,9 @@
 //  07/25/2020  There has been continuous playing with the menus
 //              Got Logic Analyzer to work
 //
+//  09/12/2020  Solved mysterious Serial input bug that randomly corrupted every 8th character, sometimes.
+//              See:  FASTRUN void pinChange_isr(void)   __attribute__ ((interrupt ("IRQ")));         in EBTKS_Function_Declarations.h
+//                    Teensy_4.0_Notes.txt , look for    __attribute__ ((interrupt ("IRQ")))
 //
 //
 

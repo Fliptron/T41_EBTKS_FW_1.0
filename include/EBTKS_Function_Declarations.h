@@ -63,7 +63,8 @@ void release_DMA_request(void);
 inline void onPhi_1_Rise(void);
 inline void onWriteData(uint16_t addr, uint8_t data) __attribute__((always_inline, unused));
 inline void onPhi_1_Fall(void);
-FASTRUN void pinChange_isr(void) __attribute__ ((interrupt ("IRQ")));
+FASTRUN void pinChange_isr(void) __attribute__ ((interrupt ("IRQ")));     //  This fixed the keyboard random errors, which was caused by unsaved registers on interrupt
+                                                                          //  not being saved by normal function entry
 void setupPinChange(void);
 void mySystick_isr(void);
 void initIOfuncTable(void);
