@@ -246,7 +246,7 @@ EXTERN  uint32_t  Logic_Analyzer_Pre_Trigger_Samples;
 EXTERN  int32_t   Logic_Analyzer_Event_Count_Init;
 EXTERN  int32_t   Logic_Analyzer_Event_Count;
 EXTERN  uint32_t  Logic_Analyzer_Samples_Till_Done;
-EXTERN  uint32_t  Logic_Analyzer_Index_of_Trigger;
+EXTERN  int16_t   Logic_Analyzer_Index_of_Trigger;
 EXTERN  uint32_t  Logic_Analyzer_current_bus_cycle_state_LA;
 EXTERN  uint32_t  Logic_Analyzer_Valid_Samples;
 EXTERN  uint32_t  Logic_Analyzer_Current_Buffer_Length;

@@ -463,26 +463,33 @@
 //
 
 
-#define ENABLE_BUS_BUFFER_U2    (GPIO_DR_CLEAR_BUFEN = BIT_MASK_BUFEN)
-#define DISABLE_BUS_BUFFER_U2   (GPIO_DR_SET_BUFEN   = BIT_MASK_BUFEN)
+#define ENABLE_BUS_BUFFER_U2          (GPIO_DR_CLEAR_BUFEN = BIT_MASK_BUFEN)
+#define DISABLE_BUS_BUFFER_U2         (GPIO_DR_SET_BUFEN   = BIT_MASK_BUFEN)
+#define GET_DISABLE_BUS_BUFFER_U2     ((GPIO_DR_BUFEN >> BIT_POSITION_BUFEN) & 0x01)
 
-#define BUS_DIR_TO_HP           (GPIO_DR_SET_DIR_RC   = BIT_MASK_DIR_RC)
-#define BUS_DIR_FROM_HP         (GPIO_DR_CLEAR_DIR_RC = BIT_MASK_DIR_RC)
+#define BUS_DIR_TO_HP                 (GPIO_DR_SET_DIR_RC   = BIT_MASK_DIR_RC)
+#define BUS_DIR_FROM_HP               (GPIO_DR_CLEAR_DIR_RC = BIT_MASK_DIR_RC)
+#define GET_BUS_DIR_TO_HP             ((GPIO_DR_DIR_RC >> BIT_POSITION_DIR_RC) & 0x01)
 
-#define CTRL_DIR_TO_HP          (GPIO_DR_SET_CTRL_DIR   = BIT_MASK_CTRL_DIR)
-#define CTRL_DIR_FROM_HP        (GPIO_DR_CLEAR_CTRL_DIR = BIT_MASK_CTRL_DIR)
+#define CTRL_DIR_TO_HP                (GPIO_DR_SET_CTRL_DIR   = BIT_MASK_CTRL_DIR)
+#define CTRL_DIR_FROM_HP              (GPIO_DR_CLEAR_CTRL_DIR = BIT_MASK_CTRL_DIR)
+#define GET_CTRL_DIR_TO_HP            ((GPIO_DR_CTRL_DIR >> BIT_POSITION_CTRL_DIR) & 0x01)
 
-#define ASSERT_INT              (GPIO_DR_SET_INTERRUPT   = BIT_MASK_INTERRUPT)
-#define RELEASE_INT             (GPIO_DR_CLEAR_INTERRUPT = BIT_MASK_INTERRUPT)
+#define ASSERT_INT                    (GPIO_DR_SET_INTERRUPT   = BIT_MASK_INTERRUPT)
+#define RELEASE_INT                   (GPIO_DR_CLEAR_INTERRUPT = BIT_MASK_INTERRUPT)
+#define GET_ASSERT_INT                ((GPIO_DR_INTERRUPT >> BIT_POSITION_INTERRUPT) & 0x01)
 
-#define ASSERT_HALT             (GPIO_DR_SET_HALTX   = BIT_MASK_HALTX)                   // Teensy pin goes high, transistor is on,  /HALTX is driven low
-#define RELEASE_HALT            (GPIO_DR_CLEAR_HALTX = BIT_MASK_HALTX)                   // Teensy pin goes low,  transistor is off, external pull-up pulls /HALTX high
+#define ASSERT_HALT                   (GPIO_DR_SET_HALTX   = BIT_MASK_HALTX)                   // Teensy pin goes high, transistor is on,  /HALTX is driven low
+#define RELEASE_HALT                  (GPIO_DR_CLEAR_HALTX = BIT_MASK_HALTX)                   // Teensy pin goes low,  transistor is off, external pull-up pulls /HALTX high
+#define GET_ASSERT_HALT               ((GPIO_DR_HALTX >> BIT_POSITION_HALTX) & 0x01)
 
-#define ASSERT_PWO_OUT          (GPIO_DR_SET_PWO_O   = BIT_MASK_PWO_O)
-#define RELEASE_PWO_OUT         (GPIO_DR_CLEAR_PWO_O = BIT_MASK_PWO_O)
+#define ASSERT_PWO_OUT                (GPIO_DR_SET_PWO_O   = BIT_MASK_PWO_O)
+#define RELEASE_PWO_OUT               (GPIO_DR_CLEAR_PWO_O = BIT_MASK_PWO_O)
+#define GET_ASSERT_PWO_OUT            ((GPIO_DR_PWO_O >> BIT_POSITION_PWO_O) & 0x01)
 
-#define ASSERT_INTPRI           (GPIO_DR_SET_INTPRI   = BIT_MASK_INTPRI)
-#define RELEASE_INTPRI          (GPIO_DR_CLEAR_INTPRI = BIT_MASK_INTPRI)
+#define ASSERT_INTPRI                 (GPIO_DR_SET_INTPRI   = BIT_MASK_INTPRI)
+#define RELEASE_INTPRI                (GPIO_DR_CLEAR_INTPRI = BIT_MASK_INTPRI)
+#define GET_ASSERT_INTPRI             ((GPIO_DR_INTPRI >> BIT_POSITION_INTPRI) & 0x01)
 
 //
 //    On EBTKS V2.0 , with Teensy 4.1, the 8 bit data bus is GPIO 6
@@ -840,7 +847,7 @@ enum analyzer_state{
 #define IMCLEN  (0101146)       //  IMAGE CURRENT LEN
 #define IMCADR  (0101150)       //  IMAGE CURRENT ADDR
 #define IMWADR  (0101152)       //  IMAGE WRAP ADDR
-#define TYPC    (0101154)       // 
+#define TYPC    (0101154)       //
 #define INCRC   (0101155)       //
 #define TRCFLG  (0101157)       //
 #define LOADAD  (0101170)       //  2 BYTES TAPES

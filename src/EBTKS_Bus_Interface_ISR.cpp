@@ -214,8 +214,8 @@ inline void onPhi_1_Rise(void)                  //  This function is running wit
     Logic_Analyzer_Data_1[Logic_Analyzer_Data_index  ] = Logic_Analyzer_main_sample;
     Logic_Analyzer_Data_2[Logic_Analyzer_Data_index++] = Logic_Analyzer_aux_sample;
 
-    Logic_Analyzer_Data_index &= Logic_Analyzer_Current_Index_Mask;          //  Modulo addressing of sample buffer. Requires buffer length to be a power of two
-    Logic_Analyzer_Valid_Samples++;   //  This could theoretically over flow if we didn't see a trigger in 7000 seconds (1.9 hours). Saturating is not worth the overhead
+    Logic_Analyzer_Data_index &= Logic_Analyzer_Current_Index_Mask;           //  Modulo addressing of sample buffer. Requires buffer length to be a power of two
+    Logic_Analyzer_Valid_Samples++;                                           //  This could theoretically over flow if we didn't see a trigger in 7000 seconds (1.9 hours). Saturating is not worth the overhead
     if(Logic_Analyzer_Triggered)
     {
       if(--Logic_Analyzer_Samples_Till_Done == 0)

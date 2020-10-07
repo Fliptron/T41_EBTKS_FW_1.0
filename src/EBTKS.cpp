@@ -525,7 +525,7 @@ void setup()
   pinMode(CORE_PIN_INTERRUPT, OUTPUT);  //  INT inverted by hardware
   RELEASE_INT;
 
-  pinMode(CORE_PIN_IPRIH_IN, INPUT);    //PRIH input - interrupt priority chain input. low if someone above us is interrupting
+  pinMode(CORE_PIN_IPRIH_IN, INPUT);    //PRIH input - interrupt priority chain input. Low if someone above us is interrupting
   pinMode(CORE_PIN_INTPRI,OUTPUT);
   RELEASE_INTPRI;
 
@@ -568,11 +568,11 @@ void setup()
   //  Wait till the Virtual terminal is connected
   //
   while (!Serial) {  };                                               //  Stall startup until the serial terminal is attached. Do this if we need to see startup messages
+#else
+  delay(2000);                //  Give me a chance to turn the terminal emulator on, after I hear the USB enumeration Bing.
 #endif
 
   Serial.begin(115200);       //  USB Serial Baud value is irrelevant for this serial channel
-
-  delay(2000);                //  Give me a chance to turn the terminal emulator on, after I hear the USB enumeration Bing.
 
   Serial.printf("HP-85 EBTKS Board Serial Diagnostics  %-4d\n", message_count++);
   TXD_Pulser(3);

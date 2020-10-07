@@ -697,7 +697,7 @@ void proc_addr(void)
   Logic_Analyzer_Trigger_Value_2 = 0;
   Logic_Analyzer_Trigger_Mask_1  = 0;   //  trigger on anything
   Logic_Analyzer_Trigger_Mask_2  = 0;   //  trigger on anything
-  Logic_Analyzer_Index_of_Trigger= 1;   //  Just give it a safe value
+  Logic_Analyzer_Index_of_Trigger= -1;                             //  A negative value means that if we display the buffer without a trigger event (time out) we won't display the Trigger message
   Logic_Analyzer_Event_Count_Init= 1;
   Logic_Analyzer_Event_Count     = 1;
   Logic_Analyzer_Triggered       = false;
@@ -882,7 +882,7 @@ void Setup_Logic_Analyzer(void)
   Logic_Analyzer_State = ANALYZER_IDLE;
   Logic_Analyzer_Data_index             = 0;
   Logic_Analyzer_Valid_Samples          = 0;
-  Logic_Analyzer_Index_of_Trigger       = 1;          //  Just give it a safe value
+  Logic_Analyzer_Index_of_Trigger       = -1;                             //  A negative value means that if we display the buffer without a trigger event (time out) we won't display the Trigger message
   Logic_Analyzer_Event_Count            = Logic_Analyzer_Event_Count_Init;
   Logic_Analyzer_Triggered              = false;
   Logic_Analyzer_Samples_Till_Done      = Logic_Analyzer_Current_Buffer_Length - Logic_Analyzer_Pre_Trigger_Samples;
@@ -892,7 +892,7 @@ void Setup_Logic_Analyzer(void)
   //
 
   Serial.printf("Logic Analyzer Setup\n");
-  Serial.printf("\n\n\nHey Everett, this interface has changed, typing enter will use the prior value\ndisplayed inside [square brackets].   ^C to escape setup menu\n\n");
+  Serial.printf("Typing enter will use the prior value displayed inside [square brackets].   ^C to escape setup menu\n\n");
   Serial.printf("First enter the match pattern, then the mask (set bits to enable match).\n");
   Serial.printf("Order is control signals (3), Address (16), data (8) ROM Select (octal)\n");
 
@@ -971,6 +971,10 @@ redo_address_pattern:
   serial_string_used();
 
 redo_address_mask:
+  if((Logic_Analyzer_Trigger_Value_1 & 0x00FFFF00) && ((Logic_Analyzer_Trigger_Mask_1 & 0x00FFFF00) == 0))
+  {   //  We have an address value and the current mask is 0x0000
+    Logic_Analyzer_Trigger_Mask_1 |= 0x00FFFF00;          //  for this situation, default the mask to 0xFFFF  (0177777)
+  }
   Serial.printf("Address mask is 6 octal digits[%06o]:", (Logic_Analyzer_Trigger_Mask_1 >> 8) & 0x0000FFFF);
   if(!wait_for_serial_string())
   {
@@ -1003,6 +1007,10 @@ redo_data_pattern:
   serial_string_used();
 
 redo_data_mask:
+  if((Logic_Analyzer_Trigger_Value_1 & 0x000000FF) && ((Logic_Analyzer_Trigger_Mask_1 & 0x000000FF) == 0))
+  {   //  We have a data value and the current mask is 0x00
+    Logic_Analyzer_Trigger_Mask_1 |= 0x000000FF;          //  for this situation, default the mask to 0xFF  (0377)
+  }
   Serial.printf("Data mask is 3 octal digits[%03o]:", Logic_Analyzer_Trigger_Mask_1 & 0x000000FF);
   if(!wait_for_serial_string())
   {
@@ -1035,6 +1043,10 @@ redo_rselec_pattern:
   serial_string_used();
 
 redo_rselec_mask:
+  if((Logic_Analyzer_Trigger_Value_2 & 0x000000FF) && ((Logic_Analyzer_Trigger_Mask_2 & 0x000000FF) == 0))
+  {   //  We have a RSELEC value and the current mask is 0x00
+    Logic_Analyzer_Trigger_Mask_2 |= 0x000000FF;          //  for this situation, default the mask to 0xFF  (0377)
+  }
   Serial.printf("RSELEC mask is 3 octal digits[%03o]:", Logic_Analyzer_Trigger_Mask_2 & 0x000000FF);
   if(!wait_for_serial_string())
   {
@@ -1170,7 +1182,7 @@ void Logic_analyzer_go(void)
   memset(Logic_Analyzer_Data_2, 0, 1024);
   Logic_Analyzer_Data_index         = 0;
   Logic_Analyzer_Valid_Samples      = 0;
-  Logic_Analyzer_Index_of_Trigger   = 1;          //  Just give it a safe value
+  Logic_Analyzer_Index_of_Trigger   = -1;                             //  A negative value means that if we display the buffer without a trigger event (time out) we won't display the Trigger message
   Logic_Analyzer_Triggered          = false;
   Logic_Analyzer_Event_Count        = Logic_Analyzer_Event_Count_Init;
   Logic_Analyzer_Samples_Till_Done  = Logic_Analyzer_Current_Buffer_Length - Logic_Analyzer_Pre_Trigger_Samples;
@@ -1181,8 +1193,11 @@ void Logic_analyzer_go(void)
 
 void Logic_Analyzer_Poll(void)
 {
-  uint32_t      i, j, temp;
+  uint32_t      temp;
   int16_t       sample_number_relative_to_trigger;
+  int16_t       i, j;
+  int16_t       Samples_to_display;
+  int16_t       Display_starting_index;
 
   if(Logic_Analyzer_State == ANALYZER_IDLE)
   {
@@ -1203,34 +1218,80 @@ void Logic_Analyzer_Poll(void)
     //show_mailboxes_and_usage();
 
     //
-    //  Logic Analyzer can timeout if maybe gets stuck in DMA, Or maybe something else. Very hard to test this code
+    //  Logic Analyzer can timeout if maybe it gets stuck in DMA, Or maybe something else. Very hard to test this code
+    //  Not even sure what we are looking for. This code is motivated by weird interaction between a real HPIB interface and EBTKS.
     //
-    if(Logic_Analyzer_Valid_Samples_1_second_ago == Logic_Analyzer_Valid_Samples)         //  If something crashes (interrupts dead???)
+    if((Logic_Analyzer_Valid_Samples_1_second_ago == Logic_Analyzer_Valid_Samples) || Ctrl_C_seen)           //  If something crashes (interrupts dead???) , or any keyboard activity
     {
-      Logic_Analyzer_State = ANALYZER_ACQUISITION_DONE;       //  Force termination, stops acquisition
-      Serial.printf("\n\nThe Logic Analyzer seems to have stalled, failed to collect %d samples\n", Logic_Analyzer_Samples_Till_Done);
-      Serial.printf("Logic_Analyzer_Valid_Samples_1_second_ago is  %10d\n", Logic_Analyzer_Valid_Samples_1_second_ago);
-      Serial.printf("Displaying what we have\n\n");
-      //
-      //  Zero out stuff in the ring buffers that are not valid
-      //
-      while(Logic_Analyzer_Samples_Till_Done--)
-      {
-        Logic_Analyzer_Data_1[Logic_Analyzer_Data_index  ] = 0;
-        Logic_Analyzer_Data_2[Logic_Analyzer_Data_index++] = 0;
-        Logic_Analyzer_Data_index &= Logic_Analyzer_Current_Index_Mask;          //  Modulo addressing of sample buffer. Requires buffer length to be a power of two
+      if(Logic_Analyzer_Valid_Samples < Logic_Analyzer_Current_Buffer_Length)             //  This should never happen
+      {                                                                                   //  So, we didn't even manage to fill the LA buffer
+        Samples_to_display = Logic_Analyzer_Valid_Samples;
+        Display_starting_index = 0;
       }
+      else
+      {                                                                                   //  Still timed out but the buffer is full
+        Samples_to_display = Logic_Analyzer_Current_Buffer_Length;
+        Display_starting_index = Logic_Analyzer_Data_index;                               //  This is where the next sample would have gone
+      }
+
+      Logic_Analyzer_State = ANALYZER_ACQUISITION_DONE;                                   //  Force termination, stops acquisition
+      Serial.printf("\n\nThe Logic Analyzer seems to have stalled, failed to collect %d samples surrounding trigger\n", Logic_Analyzer_Samples_Till_Done);
+      Serial.printf("Logic_Analyzer_Valid_Samples_1_second_ago is  %10d\n", Logic_Analyzer_Valid_Samples_1_second_ago);
+      Serial.printf("Displaying %5d samples, starting from buffer position %5d\n\n", Samples_to_display, Display_starting_index);
+      Serial.printf("The LA was triggered: %s and the trigger index is %5d\n", Logic_Analyzer_Triggered ? "true":"false" , Logic_Analyzer_Index_of_Trigger);
+      Serial.printf("ENABLE_BUS_BUFFER_U2 = %d\n", GET_DISABLE_BUS_BUFFER_U2);
+      Serial.printf("BUS_DIR_TO_HP        = %d\n", GET_BUS_DIR_TO_HP);
+      Serial.printf("CTRL_DIR_TO_HP       = %d\n", GET_CTRL_DIR_TO_HP);
+      Serial.printf("ASSERT_INT           = %d\n", GET_ASSERT_INT);
+      Serial.printf("ASSERT_HALT          = %d\n", GET_ASSERT_HALT);
+      Serial.printf("ASSERT_PWO_OUT       = %d\n", GET_ASSERT_PWO_OUT);
+      Serial.printf("ASSERT_INTPRI        = %d\n", GET_ASSERT_INTPRI);
+      //
+      //  ARMv7-M_Architecture_Reference_Manual___DDI0403E_B.pdf      page 655 documents CPUID (0xE000ED00) and ICSR (0xE000ED04)
+      //                                                              Macros in imxrt.h at line 9077
+      //
+      Serial.printf("ICSR (p655)          = %08X\n", SCB_ICSR);
+      //
+      //  ARMv7-M_Architecture_Reference_Manual___DDI0403E_B.pdf      page 575 documents PRIMASK which appears to be where the
+      //                                                              Global Interrupt Enable/Disable is stored in the LSB
+      //                                                              Macros __disable_irq() and __enable_irq() execute "CPSID i"
+      //                                                              and "CPSIE i" respectively, which set or clear the PRIMASK bit
+      //                                                              "CPSID i" sets PRIMASK LSB to 1 which disables all interrupts
+      //                                                              PRIMASK does not live in normal address space. Access it with
+      //                                                              the Special Register instructions MRS (read) and MSR (write).
+      //                                                              PRIMASK is Special Register 0b00010 (i.e. reg 2)
+      //
+      __asm__ volatile("MRS %[t],PRIMASK":[t] "=r" (temp));
+      Serial.printf("PRIMASK expect 0     = %08X\n", temp);           //  It will be a real surprise if this works. Expect LSB to be 0
+      //test
+      __disable_irq();
+      __asm__ volatile("MRS %[t],PRIMASK":[t] "=r" (temp));
+      __enable_irq();
+      Serial.printf("PRIMASK Expect 1     = %08X\n", temp);           //  It will be a real surprise if this works. Expect LSB to be 1
+
+
+      Serial.printf("\n\n");
+      
+//      //
+//      //  Zero out stuff in the ring buffers that are not valid
+//      //
+//      while(Logic_Analyzer_Samples_Till_Done--)
+//      {
+//        Logic_Analyzer_Data_1[Logic_Analyzer_Data_index  ] = 0;
+//        Logic_Analyzer_Data_2[Logic_Analyzer_Data_index++] = 0;
+//        Logic_Analyzer_Data_index &= Logic_Analyzer_Current_Index_Mask;          //  Modulo addressing of sample buffer. Requires buffer length to be a power of two
+//      }
       goto la_display_results;
     }
     Logic_Analyzer_Valid_Samples_1_second_ago = Logic_Analyzer_Valid_Samples;
     LA_Heartbeat_Timer = systick_millis_count + 1000;
   }
-  if(Ctrl_C_seen)                           //  Need to do better clean up of this I think. Really need to re-do all serial I/O
-  {                                         //  Type any character to abort    
-    Logic_Analyzer_State = ANALYZER_IDLE;
-    Serial.printf("LA Abort\n");
-    return;
-  }
+//  if(Ctrl_C_seen)                           //  Need to do better clean up of this I think. Really need to re-do all serial I/O
+//  {                                         //  Type any character to abort    
+//    Logic_Analyzer_State = ANALYZER_IDLE;
+//    Serial.printf("LA Abort\n");
+//    return;
+//  }
   if(Logic_Analyzer_State == ANALYZER_ACQUIRING)
   {
     return;
@@ -1238,6 +1299,10 @@ void Logic_Analyzer_Poll(void)
   //
   //  Logic analyzer has completed acquisition
   //
+
+  Samples_to_display = Logic_Analyzer_Current_Buffer_Length;  
+  Display_starting_index = Logic_Analyzer_Index_of_Trigger - Logic_Analyzer_Pre_Trigger_Samples;          //  This is where the next sample would have been written,
+                                                                                                          //  except we finished acquisition. This value needs to be masked
 
 la_display_results:
 
@@ -1250,9 +1315,9 @@ la_display_results:
   Serial.printf("                             WRL\n");
   sample_number_relative_to_trigger = - Logic_Analyzer_Pre_Trigger_Samples;
 
-  for(i = 0 ; i < Logic_Analyzer_Current_Buffer_Length ; i++)
+  for(i = 0 ; i < Samples_to_display ; i++)
   {
-    j = (i + Logic_Analyzer_Index_of_Trigger - Logic_Analyzer_Pre_Trigger_Samples) & Logic_Analyzer_Current_Index_Mask;
+    j = (i + Display_starting_index) & Logic_Analyzer_Current_Index_Mask;
     temp = Logic_Analyzer_Data_1[j];
     if((temp & (BIT_MASK_LMA | BIT_MASK_RD | BIT_MASK_WR)) == (BIT_MASK_LMA | BIT_MASK_RD | BIT_MASK_WR))
     { //  All 3 control lines are high (not asserted, so data bus is junque)
