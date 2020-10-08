@@ -175,9 +175,6 @@ void Simple_Graphics_Test(void);
 
 bool is_HP85_idle(void);
 
-#if ENABLE_THREE_SHIFT_DETECTION
-bool Three_Shift_Clicks_Poll(void);
-#endif
 
 //
 //  various configuration stuff

@@ -98,7 +98,7 @@ static int          ident_string_index = 0;
 bool onReadAuxROM_Alert(void)
 {
   readData = identification_string[ident_string_index++];
-  if(!readData)
+  if (!readData)
   {
     ident_string_index = 0;
   }
@@ -115,7 +115,7 @@ void AUXROM_Poll(void)
   //uint32_t    string_addr;
   //uint32_t    my_R12;
 
-  if(!new_AUXROM_Alert)
+  if (!new_AUXROM_Alert)
   {
     return;
   }
@@ -128,7 +128,7 @@ void AUXROM_Poll(void)
   //Serial.flush();
   //delay(500);
 
-  switch(AUXROM_RAM_Window.as_struct.AR_Usages[Mailbox_to_be_processed])
+  switch (AUXROM_RAM_Window.as_struct.AR_Usages[Mailbox_to_be_processed])
   {
     case AUX_USAGE_CLOCK:
       AUXROM_CLOCK();
@@ -228,7 +228,7 @@ void AUXROM_Fetch_Memory(uint8_t * dest, uint32_t src_addr, uint16_t num_bytes)
 {
   while(num_bytes--)
   {
-    if(getHP85RamExp())
+    if (getHP85RamExp())
     {
       //
       //  For HP-85 A, implement 16384 - 256 bytes of RAM, mapped at 0xC000 to 0xFEFF (if enabled)
@@ -273,7 +273,7 @@ void AUXROM_Store_Memory(uint16_t dest_addr, char * source, uint16_t num_bytes)
 {
   while(num_bytes--)
   {
-    if(getHP85RamExp())
+    if (getHP85RamExp())
     {
       //
       //  For HP-85 A, implement 16384 - 256 bytes of RAM, mapped at 0xC000 to 0xFEFF (if enabled)
@@ -324,7 +324,7 @@ double cvt_HP85_real_to_IEEE_double(uint8_t number[])
   bool        negative_mantisa;
   char        numtext[25];
 
-  if(number[4] == 0377)
+  if (number[4] == 0377)
   {   //  We have a Tagged Integer
     return (double)cvt_R12_int_to_int32(number);
   }
@@ -340,7 +340,7 @@ double cvt_HP85_real_to_IEEE_double(uint8_t number[])
 
   //  Serial.printf("10's com exp is %5d ", exponent);      //  Diagnostic
 
-  if(exponent > 499)
+  if (exponent > 499)
   {
     exponent = exponent - 1000;
   }
@@ -349,8 +349,8 @@ double cvt_HP85_real_to_IEEE_double(uint8_t number[])
   //  Limit the exponent, even though this makes the conversion less accurate
   //
 
-  if(exponent > 307) exponent = 307;
-  if(exponent < -307) exponent = -307;
+  if (exponent > 307) exponent = 307;
+  if (exponent < -307) exponent = -307;
 
   //  Serial.printf("limit exp is %5d ", exponent);      //  Diagnostic
 
@@ -405,7 +405,7 @@ int32_t cvt_R12_int_to_int32(uint8_t number[])
   result += (((number[7] & 0x0F)     ) * 10000);
   result += (((number[7] & 0xF0) >> 4) * 100000);   //  0 for positive, 9 for 10's complement negative
 
-  if(result > 99999)
+  if (result > 99999)
   {
     result = result - 1000000;  //  Minus one million because the sign indicator is a 9, so neg numbers will be 9xxxxx
   }
@@ -459,7 +459,7 @@ int32_t cvt_R12_int_to_int32(uint8_t number[])
 //  char  val_chars[20];
 //  bool  negative;
 //
-//  if((val<100000) && (val > -100000))
+//  if ((val<100000) && (val > -100000))
 //  {
 //    //
 //    //  The result can be formatted as a tagged integer
@@ -467,7 +467,7 @@ int32_t cvt_R12_int_to_int32(uint8_t number[])
 //    //  Handle negative numbers in 10's complement format
 //    //
 //    negative = val < 0;
-//    if(negative)
+//    if (negative)
 //    {
 //      val = 100000 + val;
 //    }
@@ -503,7 +503,7 @@ void cvt_IEEE_double_to_HP85_number(uint8_t * dest, double val)
   bool  negative;
   char  buf[ExpectedSize + 10];
 
-  if((negative = val < 0))
+  if ((negative = val < 0))
   {
     val = -val;       //  We only want to format positive numbers
   }
@@ -517,7 +517,7 @@ void cvt_IEEE_double_to_HP85_number(uint8_t * dest, double val)
     //
     //    But nothing is ever easy. The HP85 DECIMAL Exponent is in 10's complement format
     //
-    if(expo < 0)
+    if (expo < 0)
     {
       expo = 1000 + expo;
     }

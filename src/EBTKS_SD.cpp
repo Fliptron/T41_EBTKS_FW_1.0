@@ -72,12 +72,12 @@ bool loadRom(const char *fname, int slotNum, const char * description)
   //
   //  No special ROM loading for Primary AUXROM at 0361.  This code handles the Secondaries from 0362 to 0375
   //
-  if((id >= AUXROM_SECONDARY_ID_START) && (id <= AUXROM_SECONDARY_ID_END))   //  Note, not testing Primary AUXROM at ID = 361
+  if ((id >= AUXROM_SECONDARY_ID_START) && (id <= AUXROM_SECONDARY_ID_END))   //  Note, not testing Primary AUXROM at ID = 361
   {
     //
     //  Special check for the the non-primary AUXROMs.  Note that these are not recognized by the HP-85 at boot time scan (by design)
     //
-    if(header[1] != ((uint8_t)(~id) | (uint8_t)0360))   //  1's complement for 85 A/B.  No current support for 86/87
+    if (header[1] != ((uint8_t)(~id) | (uint8_t)0360))   //  1's complement for 85 A/B.  No current support for 86/87
     {
       LOGPRINTF("Secondary AUXROM file header error %02X %02X\n", id, (uint8_t)header[1]);
       rfile.close();
@@ -296,7 +296,7 @@ bool loadConfiguration(const char *filename)
     //
     file = SD.open(filename);
     DeserializationError error = deserializeJson(doc, file);
-    if(error)
+    if (error)
     {   //  Failed a second time, give up
       LOGPRINTF("Failed to read (or write) the default configuration. Giving up\n");
       return false;

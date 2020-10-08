@@ -376,7 +376,8 @@ void loopTranslator(void)
         if (prevInt == false)
             {
             LOGPRINTF_1MB5("HP85 interrupted us\n");    //  This happens the least significant bit of the CCR register in the 1MB5 is set
-            writeStatus(PSR_PACK);                      //  In real hardware this would be an interrupt sent to the 8049 microprocessor
+            writeStatus(statusReg ^ PSR_PACK);          //  In real hardware this would be an interrupt sent to the 8049 microprocessor
+                                                        //  Everett and Philip added the xor with statusReg  2020_10_08
             }
         prevInt = true;
         }

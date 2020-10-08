@@ -179,6 +179,30 @@ KeyboardController keyboard2(myusb);
 //      GND_2                      34
 //      GND_3                      47
 //
+//      Logic Analyzer Configuration 5    Watch all the control signals in/out of Teensy
+//
+//      Channel         Signal     Physical Teensy 4.1 Pin
+//                                 1..24, 25..48
+//      00              Phi_1      43
+//      01              /LMA       44
+//      02              /RD        45
+//      03              /WR        42
+//      04              DIR/RC     19
+//      05              /HALT      20
+//      06              BUFEN       2
+//      07              CTRL_DIR    3
+//      08              CTRLEN     21
+//      09              PRIH       22
+//      10              INTPRI      5
+//      11              INTERRUPT  29
+//      12              
+//      13              
+//      14              RXD        10
+//      15              TXD        9
+//      GND_1                      1
+//      GND_2                      34
+//      GND_3                      47
+
 //
 //
 //
@@ -449,7 +473,7 @@ void setup()
   bool  config_success;
 
   setjmp_reason = setjmp(PWO_While_Running);
-  if(setjmp_reason == 99)
+  if (setjmp_reason == 99)
   {
     //
     //  We are here from a PWO while running. Someone has the covers off, and is forcing a restart.
@@ -568,9 +592,9 @@ void setup()
   //  Wait till the Virtual terminal is connected
   //
   while (!Serial) {  };                                               //  Stall startup until the serial terminal is attached. Do this if we need to see startup messages
-#else
-  delay(2000);                //  Give me a chance to turn the terminal emulator on, after I hear the USB enumeration Bing.
 #endif
+
+  delay(2000);                //  Give me a chance to turn the terminal emulator on, after I hear the USB enumeration Bing.
 
   Serial.begin(115200);       //  USB Serial Baud value is irrelevant for this serial channel
 
@@ -654,7 +678,7 @@ void setup()
   //  up to the falling edge of Phi 2
   //
 
-  if(IS_PHI_2_HIGH)
+  if (IS_PHI_2_HIGH)
   {
     WAIT_WHILE_PHI_2_HIGH;
   }
@@ -681,7 +705,7 @@ void setup()
 
   delay(10);                                //  Wait 10 ms before falling into loop()  This might be BAD. What if a device op occurs while we are waiting?
                                             //  Seems there are some issues of loop functions interfering with the Service ROM initial sanity check,
-                                            //  Specifically the call to Three_Shift_Clicks_Poll() which does DMA every 10 ms
+                                            //  Specifically the call to Three_Shift_Clicks_Poll() which does DMA every 10 ms  (code currently moved to Deprecated_Code.cpp)
 
   //
   //  We won't get to this point in the code if the HP-85 is not running with valid clocks and PWO
@@ -695,8 +719,8 @@ void setup()
   Logic_Analyzer_Event_Count_Init = -1000;      // Use this to indicate the Logic analyzer has no default values.
 
   Serial.flush();
-  delay(3000);
-  if(!SD_begin_OK)
+  delay(1000);
+  if (!SD_begin_OK)
   {
     no_SD_card_message();
   }
@@ -724,7 +748,8 @@ static int  loop_count = 0;
 
 void loop()
 {
-  if(IS_PWO_LOW)                    //  Not sure if this works. Needed to be tested
+
+  if (IS_PWO_LOW)                    //  Not sure if this works. Needed to be tested
   {
     longjmp(PWO_While_Running, 99);
   }
@@ -733,7 +758,7 @@ void loop()
 //  This code is disabled until I think it through better. The problem it is trying to solve is if while working
 //  on the HP-85, I pulse PWO Low to reset it. Teensy does not get reset, and this is bad
 //
-//  if(IS_PWO_LOW)    // if PWO is low, reset Teensy 4.0      I think this need to be moved into the Phi 1 interrupt handler, so that we can reset immediately
+//  if (IS_PWO_LOW)    // if PWO is low, reset Teensy 4.0      I think this need to be moved into the Phi 1 interrupt handler, so that we can reset immediately
 //                    //                                      but it will probably need some guarding code in setup() that looks at the reset reason register
 //  { // See Teensy 4.0 Notes about this magic
 //    SCB_AIRCR = 0x05FA0004;
@@ -769,18 +794,12 @@ void loop()
   loopTranslator();     //  1MB5 / HPIB / DISK poll
   //myusb.Task();
 
-#if ENABLE_THREE_SHIFT_DETECTION
-  if(Three_Shift_Clicks_Poll())
-  {
-    Serial.printf("Got 3 shift clicks\n");
-  }
-#endif          //  ENABLE_THREE_SHIFT_DETECTION
 
   //
   //  Here are things we do no more than once per second
   //
 
-  if(one_second_timer < (systick_millis_count + 1000))
+  if (one_second_timer < (systick_millis_count + 1000))
   {
     logfile.flush();
     one_second_timer = systick_millis_count;

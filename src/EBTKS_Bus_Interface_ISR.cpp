@@ -187,7 +187,7 @@ inline void onPhi_1_Rise(void)                  //  This function is running wit
                                                                               //  uses the falling edge.
   Logic_Analyzer_aux_sample  =  getRselec() & 0x000000FF;                     //  Get the Bank switched ROM select code
 
-  if(Logic_Analyzer_State == ANALYZER_ACQUIRING)
+  if (Logic_Analyzer_State == ANALYZER_ACQUIRING)
   {
     //
     //  Check for trigger pattern
@@ -196,14 +196,14 @@ inline void onPhi_1_Rise(void)                  //  This function is running wit
     //  Once triggered, count down till we have collected al post-trigger samples
     //
 
-    if(!Logic_Analyzer_Triggered)
+    if (!Logic_Analyzer_Triggered)
     {
-      if(Logic_Analyzer_Valid_Samples >= Logic_Analyzer_Pre_Trigger_Samples)
+      if (Logic_Analyzer_Valid_Samples >= Logic_Analyzer_Pre_Trigger_Samples)
       { //  Triggering is allowed
-        if(   ((Logic_Analyzer_main_sample & Logic_Analyzer_Trigger_Mask_1) == Logic_Analyzer_Trigger_Value_1) &&
+        if (   ((Logic_Analyzer_main_sample & Logic_Analyzer_Trigger_Mask_1) == Logic_Analyzer_Trigger_Value_1) &&
               ((Logic_Analyzer_aux_sample  & Logic_Analyzer_Trigger_Mask_2) == Logic_Analyzer_Trigger_Value_2)    )
         {   //  Trigger pattern has been matched
-          if(--Logic_Analyzer_Event_Count <= 0)                             //  Event Count is how many match events needed to trigger
+          if (--Logic_Analyzer_Event_Count <= 0)                             //  Event Count is how many match events needed to trigger
           {
             Logic_Analyzer_Triggered = true;
             Logic_Analyzer_Index_of_Trigger = Logic_Analyzer_Data_index;   //  Record the buffer index at time of trigger
@@ -216,9 +216,9 @@ inline void onPhi_1_Rise(void)                  //  This function is running wit
 
     Logic_Analyzer_Data_index &= Logic_Analyzer_Current_Index_Mask;           //  Modulo addressing of sample buffer. Requires buffer length to be a power of two
     Logic_Analyzer_Valid_Samples++;                                           //  This could theoretically over flow if we didn't see a trigger in 7000 seconds (1.9 hours). Saturating is not worth the overhead
-    if(Logic_Analyzer_Triggered)
+    if (Logic_Analyzer_Triggered)
     {
-      if(--Logic_Analyzer_Samples_Till_Done == 0)
+      if (--Logic_Analyzer_Samples_Till_Done == 0)
       {
         Logic_Analyzer_State = ANALYZER_ACQUISITION_DONE;
       }
@@ -326,7 +326,7 @@ inline void onPhi_2_Rise(void)                                  //  This functio
     HP85_Read_Us = onReadData(addReg);
   }
 
-//  if(HP85_Read_Us && just_once)
+//  if (HP85_Read_Us && just_once)
 //  {
 //    SET_TXD;
 //    Serial.printf("The address register is %06o\n", addReg);
@@ -338,6 +338,7 @@ inline void onPhi_2_Rise(void)                                  //  This functio
 
  if (Interrupt_Acknowledge)
   {
+    TOGGLE_TXD;
     if ((interruptReq == true) && (!IS_IPRIH_IN_LO)) //PRIH is high and we're interrupt - must be our turn
     {
       globalIntAck = true;  //set when we've been the interrupter
@@ -395,35 +396,39 @@ inline void onPhi_2_Rise(void)                                  //  This functio
   }
 
   //
+  //  ALL DMA requests are handled here
   //  DMA is asserted 200 ns after the falling edge of Phi 2
   //
   
   if (DMA_Request)
   {
-    //WAIT_WHILE_PHI_2_HIGH;      //  While Phi_2 is high, just hang around
-    // delayNanoseconds(130);     //  There is 70 ns overhead, so this puts the earliest version at 200 ns after falling Phi 2
-                                  //  The latest is about 300 ns , so 100 ns jitter, probably due to arrival at the above wait while Phi 2 is high.
+    //WAIT_WHILE_PHI_2_HIGH;              //  While Phi_2 is high, just hang around
+    // delayNanoseconds(130);             //  There is 70 ns overhead, so this puts the earliest version at 200 ns after falling Phi 2
+                                          //  The latest is about 300 ns , so 100 ns jitter, probably due to arrival at the above wait while Phi 2 is high.
     ASSERT_HALT;
 
-    DMA_Request = false;    // Only request once
+    DMA_Request = false;                  //  Only request once
+    DMA_has_been_Requested = true;        //  Record that a request has occured on the bus, but has not yet been acknowledged
   }
 
-  if (DMA_Acknowledge)
+  if (DMA_Acknowledge && DMA_has_been_Requested)
   {
+    DMA_has_been_Requested = false;       //  Bus DMA request is no longer pending
+    //
     //  Although we are in an interrupt handler, we are about to turn interrupts off
     //  (for the Phi 1 and 2 pin interrupts), so we can spend extra time here to get
     //  everything done. When we exit from this handler, it will be an ISR exit
     //  (actually one up in the call stack)
     //
-    NVIC_DISABLE_IRQ(IRQ_GPIO6789);      //  Turn off Phi 1 and Phi 2 interrupts. We are on our own for now.
-                                         //  Need to wait for Phi 1 rising before we drive the control lines high
-    PHI_1_and_2_IMR = 0;                 //  Block any interrupts while DMA is happening. This assumes that the ONLY
-                                         //  interrupts that can happen in this GPIO group is Phi 1 and Phi 2 rising edge
-    PHI_1_and_2_ISR = PHI_1_and_2_ISR;   //  Clear any set bits (should be none)
-    NVIC_CLEAR_PENDING(IRQ_GPIO6789);    //  Even though we just masked GPIO interrupts, the NVIC can still
-                                         //  have pending interrupts. It shouldn't at this point, but clear
-                                         //  them, just to be safe. We will need to do this again, just
-                                         //  before ending the DMA activity.
+    NVIC_DISABLE_IRQ(IRQ_GPIO6789);       //  Turn off Phi 1 and Phi 2 interrupts. We are on our own for now.
+                                          //  Need to wait for Phi 1 rising before we drive the control lines high
+    PHI_1_and_2_IMR = 0;                  //  Block any interrupts while DMA is happening. This assumes that the ONLY
+                                          //  interrupts that can happen in this GPIO group is Phi 1 and Phi 2 rising edge
+    PHI_1_and_2_ISR = PHI_1_and_2_ISR;    //  Clear any set bits (should be none)
+    NVIC_CLEAR_PENDING(IRQ_GPIO6789);     //  Even though we just masked GPIO interrupts, the NVIC can still
+                                          //  have pending interrupts. It shouldn't at this point, but clear
+                                          //  them, just to be safe. We will need to do this again, just
+                                          //  before ending the DMA activity.
     //
     //  Don't rush to get started, let the Acknowledge cycle finish.
     //  The Acknowledge starts during Phi 1, but here we are in the
@@ -489,6 +494,10 @@ inline void onPhi_2_Rise(void)                                  //  This functio
   __disable_irq();  //  Disable all interrupts for duration of DMA. No USB activity, no Serial via USB, no SysTick
                     //  We need to do this to get precise timing for /LMA /RD /WR /RC
 
+  //
+  //  The matching release of DMA is in EBTKS_DMA.cpp at release_DMA_request()
+  //
+
   }
   //EBTKS_delay_ns(120);    //  We seem to be exiting so fast that the external logic analyzer is missing this ISR
 }
@@ -523,7 +532,7 @@ inline bool onReadData(uint16_t Current_Read_Address)                  //  This 
                                                         //  This function knows about the AUXROM RAM Window, and handles these reads as well
   }
 
-  if(enRam16k)
+  if (enRam16k)
   {
     //
     //  For HP-85 A, implement 16384 - 256 bytes of RAM, mapped at 0xC000 to 0xFEFF (if enabled)
@@ -577,7 +586,7 @@ inline void onWriteData(uint16_t addr, uint8_t data)
     return;
   }
 
-  if(enRam16k)
+  if (enRam16k)
   {
     //
     //  For HP-85 A, implement 16384 - 256 bytes of RAM, mapped at 0xC000 to 0xFEFF (if enabled)
@@ -594,9 +603,9 @@ inline void onWriteData(uint16_t addr, uint8_t data)
   //  Handle special RAM window in the AUXROM(s)
   //
 
-  if((getRselec() >= AUXROM_PRIMARY_ID) && (getRselec() <= AUXROM_SECONDARY_ID_END))      //  Testing for Primary AUXROM and all secondaries
+  if ((getRselec() >= AUXROM_PRIMARY_ID) && (getRselec() <= AUXROM_SECONDARY_ID_END))      //  Testing for Primary AUXROM and all secondaries
   {
-    if((addr >= (AUXROM_RAM_WINDOW_START + 060000)) && (addr <= (AUXROM_RAM_WINDOW_LAST + 060000)))     //  Write AUXROM shared RAM window
+    if ((addr >= (AUXROM_RAM_WINDOW_START + 060000)) && (addr <= (AUXROM_RAM_WINDOW_LAST + 060000)))     //  Write AUXROM shared RAM window
     {
       AUXROM_RAM_Window.as_bytes[addr - AUXROM_RAM_WINDOW_START - 060000] = data;
       return;
@@ -649,7 +658,7 @@ inline void onPhi_1_Fall(void)
     addReg++;
   }
 
-  pending_address_low_byte = data_from_IO_bus;    // Load this every cycle, in case we need it, avoiding an if()
+  pending_address_low_byte = data_from_IO_bus;    // Load this every cycle, in case we need it, avoiding an if ()
 
   //  CLEAR_TXD;
 }

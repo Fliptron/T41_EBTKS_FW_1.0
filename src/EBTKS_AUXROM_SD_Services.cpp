@@ -103,8 +103,8 @@ static File Auxrom_Files[MAX_AUXROM_SDFILES+1];                       //  These 
 //  SdFat Library discoveries, because the documentation is not clear
 //
 //  SdFat SD;   //  global instantiation of SD
-//  1) Must initialize with something like: if(!SD.begin(SdioConfig(FIFO_SDIO))) { //  failure to open SD Card.  }
-//  2) If(SD.exists("Folder1"))    for folders returns true with/without trailing slash
+//  1) Must initialize with something like: if (!SD.begin(SdioConfig(FIFO_SDIO))) { //  failure to open SD Card.  }
+//  2) if (SD.exists("Folder1"))    for folders returns true with/without trailing slash
 //  3) Does not support wildcards
 //  4) Does not support ./  and  ../  for path navigation
 //  5) No apparent way to access the Volume working durectory (vwd) or Current Working Directory (cwd)
@@ -122,7 +122,7 @@ void initialize_SD_functions(void)
   int     i;
 
   strcpy(Current_Path,"/");
-  for(i = 0 ; i < (MAX_AUXROM_SDFILES +1) ; i++)
+  for (i = 0 ; i < (MAX_AUXROM_SDFILES +1) ; i++)
   {
     Auxrom_Files[i].close();
   }
@@ -238,7 +238,7 @@ void AUXROM_SDCAT(void)
   //
   //Serial.printf("\nSDCAT Start next entry\n");
 
-  if(AUXROM_RAM_Window.as_struct.AR_BUF6_OPTS[0] == 0)  //  This is a First Call
+  if (AUXROM_RAM_Window.as_struct.AR_BUF6_OPTS[0] == 0)  //  This is a First Call
   {
 #if TRACE_SDCAT
     Serial.printf("SDCAT 1\n");
@@ -258,7 +258,7 @@ void AUXROM_SDCAT(void)
     //    For later reference, it seems the approach it to open the directory     THIS MAY BE WRONG
     //      File dir;
     //      File entry;
-    //      if(!dir.open(Current_Path, O_RDONLY))  ....
+    //      if (!dir.open(Current_Path, O_RDONLY))  ....
     //    then do a rewind
     //      dir.rewind();
     //    then open files in that directory, and extract info about them
@@ -268,12 +268,12 @@ void AUXROM_SDCAT(void)
     //          I think the issue is that this works, but maybe there is info that can't be retrieved that the ls() does retrieve  ????
     //  Come back to this another day, and see if we can avoid the 64K buffer
     //
-    if((filespec_is_dir = (sdcat_filespec[sdcat_filespec_length-1] == '/')))
+    if ((filespec_is_dir = (sdcat_filespec[sdcat_filespec_length-1] == '/')))
     {   //    filespec$ is a subdirectory specification
 #if TRACE_SDCAT
       Serial.printf("SDCAT 2\n");
 #endif
-      if(!Resolve_Path(sdcat_filespec))
+      if (!Resolve_Path(sdcat_filespec))
       {
 #if TRACE_SDCAT
         Serial.printf("SDCAT 3\n");
@@ -309,7 +309,7 @@ void AUXROM_SDCAT(void)
     strcpy(sdcat_dir_path, Resolved_Path);                  //  Save the path of the directory being catalogged, since Resolved_Path could be modified between successive calls
                                                             //  We need to keep this info so that we can check the Read-Only state when catalogging a subdirectory
     //Serial.printf("Catalogging directory of [%s]\n", sdcat_dir_path);
-    if(!LineAtATime_ls_Init(sdcat_dir_path))                //  This is where the whole directory is listed into a buffer
+    if (!LineAtATime_ls_Init(sdcat_dir_path))                //  This is where the whole directory is listed into a buffer
     {                                                       //  Failed to do a listing of the current directory
 #if TRACE_SDCAT
       Serial.printf("SDCAT 7\n");
@@ -326,7 +326,7 @@ void AUXROM_SDCAT(void)
     //Serial.printf("SDCAT Initial call, Pattern is [%s], directory is [%s]\n", sdcat_filespec, Resolved_Path);
   }
 
-  if(!SDCAT_First_seen)
+  if (!SDCAT_First_seen)
   {
 #if TRACE_SDCAT
     Serial.printf("SDCAT 9\n");
@@ -345,7 +345,7 @@ void AUXROM_SDCAT(void)
 #if TRACE_SDCAT
     Serial.printf("SDCAT 10\n");
 #endif
-    if(!LineAtATime_ls_Next())
+    if (!LineAtATime_ls_Next())
     {   //  No more directory lines
 #if TRACE_SDCAT
       Serial.printf("SDCAT 11\n");
@@ -379,7 +379,7 @@ void AUXROM_SDCAT(void)
     //
     //  Not part of the spec, but I think I want to strip the trailing slash for the pattern match
     //
-    if(AUXROM_RAM_Window.as_struct.AR_Buffer_6[temp_uint - 1] == '/')
+    if (AUXROM_RAM_Window.as_struct.AR_Buffer_6[temp_uint - 1] == '/')
     {   //  Entry is a subdirectory
 #if TRACE_SDCAT
       Serial.printf("SDCAT 13\n");
@@ -399,7 +399,7 @@ void AUXROM_SDCAT(void)
 #endif
     match = MatchesPattern(&AUXROM_RAM_Window.as_struct.AR_Buffer_6[256], sdcat_filespec);    //  See if we have a match
 
-    if(!match)
+    if (!match)
     {
 #if TRACE_SDCAT
       Serial.printf("SDCAT 16\n");
@@ -428,7 +428,7 @@ void AUXROM_SDCAT(void)
     strcat(temp_file_path, AUXROM_RAM_Window.as_struct.AR_Buffer_6);
     //Serial.printf("Read only test of %s\n", temp_file_path);
     temp_file = SD.open(temp_file_path);                                                  //  SD.open() does not mind the trailing slash if the name is a directory
-    if(temp_file.isReadOnly())
+    if (temp_file.isReadOnly())
     {
 #if TRACE_SDCAT
       Serial.printf("SDCAT 18\n");
@@ -471,21 +471,21 @@ void AUXROM_SDCD(void)
 
   do
   {
-    if(Resolve_Path((char *)AUXROM_RAM_Window.as_struct.AR_Buffer_6))       //  Returns true if no parsing problems
+    if (Resolve_Path((char *)AUXROM_RAM_Window.as_struct.AR_Buffer_6))       //  Returns true if no parsing problems
     {
-      if((file = SD.open(Resolved_Path)) == 0)
+      if ((file = SD.open(Resolved_Path)) == 0)
       {
         error_number = 340;   strlcpy(error_message,"Unable to open directory", 32);
         break;                      //  Unable to open directory
       }
-      if(!file.isDir())
+      if (!file.isDir())
       {
         file.close();
         error_number = 341;   strlcpy(error_message,"Target path is not a directory", 32);
         break;                      //  Valid path, but not a directory
       }
       file.close();
-      if(!SD.chdir(Resolved_Path))
+      if (!SD.chdir(Resolved_Path))
       {
         error_number = 342;   strlcpy(error_message,"Couldn't change directory", 32);
         break;                      //  Failed to change to new path
@@ -494,7 +494,7 @@ void AUXROM_SDCD(void)
       //  Parsed ok, opened ok, is a directory, successfully changed directory, so update the Current path, and make it the current directory
       //
       strlcpy(Current_Path, Resolved_Path, MAX_SD_PATH_LENGTH + 1);
-      if(!Resolved_Path_ends_with_slash)
+      if (!Resolved_Path_ends_with_slash)
       {
         strlcat(Current_Path,"/", MAX_SD_PATH_LENGTH + 1);
       }
@@ -536,11 +536,11 @@ void AUXROM_SDCLOSE(void)
   char        filename[258];
 
   file_index = AUXROM_RAM_Window.as_struct.AR_BUF6_OPTS[0];               //  File number 1..10 , or 0 for all
-  if(file_index == 0)
+  if (file_index == 0)
   {
-    for(i = 1 ;  i < MAX_AUXROM_SDFILES ; i++)
+    for (i = 1 ;  i < MAX_AUXROM_SDFILES ; i++)
     {
-      if(Auxrom_Files[i].isOpen())
+      if (Auxrom_Files[i].isOpen())
       {
         return_status = Auxrom_Files[i].close();
         Auxrom_Files[i].getName(filename,255);
@@ -578,13 +578,13 @@ void AUXROM_SDCUR(void)
 
 void AUXROM_SDDEL(void)
 {
-  if(!Resolve_Path(AUXROM_RAM_Window.as_struct.AR_Buffer_6))
+  if (!Resolve_Path(AUXROM_RAM_Window.as_struct.AR_Buffer_6))
   {   //  Error, Parsing problems with path
     post_custom_error_message((char *)"Parsing problems with path", 370);
     AUXROM_RAM_Window.as_struct.AR_Mailboxes[6] = 0;      //  Indicate we are done
     return;
   }
-  if(!SD.remove(Resolved_Path))
+  if (!SD.remove(Resolved_Path))
   {
     post_custom_error_message((char *)"Couldn't delete file", 371);
     AUXROM_RAM_Window.as_struct.AR_Mailboxes[6] = 0;      //  Indicate we are done
@@ -607,11 +607,11 @@ void AUXROM_SDFLUSH(void)
   int         i;
 
   file_index = AUXROM_RAM_Window.as_struct.AR_BUF6_OPTS[0];               //  File number 1..10 , or 0 for all
-  if(file_index == 0)
+  if (file_index == 0)
   {
-    for(i = 1 ;  i < MAX_AUXROM_SDFILES ; i++)
+    for (i = 1 ;  i < MAX_AUXROM_SDFILES ; i++)
     {
-      if(Auxrom_Files[i].isOpen())
+      if (Auxrom_Files[i].isOpen())
       {
         Auxrom_Files[i].flush();
         Serial.printf("Flushing file %2d\n", i);
@@ -658,7 +658,7 @@ void AUXROM_SDMKDIR(void)
 
   Serial.printf("mkdir return status [%s]\n", mkdir_status ? "true":"false");
 
-  if(mkdir_status)
+  if (mkdir_status)
   {
     AUXROM_RAM_Window.as_struct.AR_Usages[6] = 0;                         //  Indicate Success
   }
@@ -697,31 +697,31 @@ void AUXROM_SDOPEN(void)
   do
   {
     error_number = 420;   strlcpy(error_message,"File is already open", 32);
-    if(Auxrom_Files[file_index].isOpen()) break;                          //  Error, File is already open
+    if (Auxrom_Files[file_index].isOpen()) break;                          //  Error, File is already open
     error_number = 421;   strlcpy(error_message,"Parsing problems with path", 32);
-    if(!Resolve_Path(AUXROM_RAM_Window.as_struct.AR_Buffer_6)) break;     //  Error, Parsing problems with path
+    if (!Resolve_Path(AUXROM_RAM_Window.as_struct.AR_Buffer_6)) break;     //  Error, Parsing problems with path
     error_occured = false;
-    switch(AUXROM_RAM_Window.as_struct.AR_BUF6_OPTS[1])
+    switch (AUXROM_RAM_Window.as_struct.AR_BUF6_OPTS[1])
     {
       case 0:       //  Mode 0 (READ-ONLY), error if the file doesn't exist
         error_number = 422;   strlcpy(error_message,"Open failed Mode 0", 32);
-        if(!Auxrom_Files[file_index].open(Resolved_Path , O_RDONLY | O_BINARY)) error_occured = true;
+        if (!Auxrom_Files[file_index].open(Resolved_Path , O_RDONLY | O_BINARY)) error_occured = true;
         break;
       case 1:       //  Mode 1 (R/W, append)
         error_number = 423;   strlcpy(error_message,"Open failed Mode 1", 32);
-        if(!Auxrom_Files[file_index].open(Resolved_Path , O_RDWR | O_APPEND | O_CREAT | O_BINARY)) error_occured = true;
+        if (!Auxrom_Files[file_index].open(Resolved_Path , O_RDWR | O_APPEND | O_CREAT | O_BINARY)) error_occured = true;
         break;
       case 2:       //  Mode 2 (R/W, truncate)
         error_number = 424;   strlcpy(error_message,"Open failed Mode 2", 32);
-        //if(!Auxrom_Files[file_index].open(Resolved_Path , O_RDWR | O_TRUNC | O_CREAT | O_BINARY)) error_occured = true;
-        if(!Auxrom_Files[file_index].open(Resolved_Path , FILE_WRITE)) error_occured = true;
+        //if (!Auxrom_Files[file_index].open(Resolved_Path , O_RDWR | O_TRUNC | O_CREAT | O_BINARY)) error_occured = true;
+        if (!Auxrom_Files[file_index].open(Resolved_Path , FILE_WRITE)) error_occured = true;
        break;
       default:
         error_number = 425;   strlcpy(error_message,"Open failed, Illegal Mode", 32);        // This should never happen because AUXROM checks Mode is 0,1,2
         error_occured = true;                                                              //  And yet, we have seen it due to a bug in AUXROM code
         break;
     }
-    if(error_occured) break;
+    if (error_occured) break;
     AUXROM_RAM_Window.as_struct.AR_Usages[6]    = 0;     //  File opened successfully
     AUXROM_RAM_Window.as_struct.AR_Mailboxes[6] = 0;     //  Indicate we are done
 
@@ -772,7 +772,7 @@ void AUXROM_SDREAD(void)                                                 //  UNT
 
   file_index = AUXROM_RAM_Window.as_struct.AR_BUF6_OPTS[0];               //  File number 1..11
   bytes_to_read = AUXROM_RAM_Window.as_struct.AR_Lengths[6];              //  Length of read
-  if(!Auxrom_Files[file_index].isOpen())
+  if (!Auxrom_Files[file_index].isOpen())
   {
     AUXROM_RAM_Window.as_struct.AR_Usages[6]    = 213;    //  Error
     AUXROM_RAM_Window.as_struct.AR_Mailboxes[6] = 0;      //  Indicate we are done
@@ -817,7 +817,7 @@ void AUXROM_SDRMDIR(void)
   File  file;
   int   file_count;
 
-  if(!Resolve_Path((char *)AUXROM_RAM_Window.as_struct.AR_Buffer_6))
+  if (!Resolve_Path((char *)AUXROM_RAM_Window.as_struct.AR_Buffer_6))
   {
     post_custom_error_message((char *)"Can't resolve path", 310);
     AUXROM_RAM_Window.as_struct.AR_Mailboxes[6] = 0;                      //  Indicate we are done
@@ -825,14 +825,14 @@ void AUXROM_SDRMDIR(void)
     return;
   }
   Serial.printf("Deleting directory [%s]\n", Resolved_Path);
-  if((dirfile.open(Resolved_Path)) == 0)
+  if ((dirfile.open(Resolved_Path)) == 0)
   {
     Serial.printf("SDRMDIR: Failed SD.open return value %08X\n", (uint32_t)file);
     post_custom_error_message((char *)"Can't open subdirectory", 311);
     AUXROM_RAM_Window.as_struct.AR_Mailboxes[6] = 0;                      //  Indicate we are done
     return;
   }
-  if(!dirfile.isDir())
+  if (!dirfile.isDir())
   {
     Serial.printf("SDRMDIR: Failed file.isDir  Path is not a directory\n");
     post_custom_error_message((char *)"Path is not a directory", 312);
@@ -848,7 +848,7 @@ void AUXROM_SDRMDIR(void)
     file.close();
   }
   Serial.printf("SDRMDIR directory has %d files\n", file_count);
-  if(file_count != 0)
+  if (file_count != 0)
   {
     Serial.printf("SDRMDIR: Directory is not empty. found %d files\n", file_count);
     post_custom_error_message((char *)"Directory not empty", 313);
@@ -862,7 +862,7 @@ void AUXROM_SDRMDIR(void)
   Serial.printf("SDRMDIR: Deleting directory %s\n", Resolved_Path);
   rmdir_status = dirfile.rmdir();
   Serial.printf("SDRMDIR: Delete status is %s\n", rmdir_status? "true":"false");
-  if(rmdir_status)
+  if (rmdir_status)
   {
     AUXROM_RAM_Window.as_struct.AR_Usages[6] = 0;                         //  Indicate Success
     AUXROM_RAM_Window.as_struct.AR_Mailboxes[6] = 0;                      //  Release mailbox 6.    Must always be the last thing we do
@@ -903,7 +903,7 @@ void AUXROM_SDSEEK(void)
   //
   //  check the file is open
   //
-  if(!Auxrom_Files[file_index].isOpen())
+  if (!Auxrom_Files[file_index].isOpen())
   {
     post_custom_error_message((char *)"Seek on file that isn't open", 470);
     AUXROM_RAM_Window.as_struct.AR_Mailboxes[6] = 0;                      //  Indicate we are done
@@ -923,11 +923,11 @@ void AUXROM_SDSEEK(void)
   //Serial.printf("SDSEEK: file size %d\n", end_position);
   Auxrom_Files[file_index].seekSet(current_position);                       //  Restore position, in case something goes wrong
   //Serial.printf("SDSEEK: Position after restore is %d\n", Auxrom_Files[file_index].curPosition());
-  if(seek_mode == 0)
+  if (seek_mode == 0)
   {
     target_position = offset;
   }
-	else if(seek_mode == 1)
+	else if (seek_mode == 1)
 	{
 	  target_position = current_position + offset;
 	}
@@ -938,14 +938,14 @@ void AUXROM_SDSEEK(void)
   //
   //  Check that seek is within file
   //
-  if(target_position < 0)
+  if (target_position < 0)
   {
     post_custom_error_message((char *)"Trying to seek before beginning", 471);
     AUXROM_RAM_Window.as_struct.AR_Mailboxes[6] = 0;                      //  Indicate we are done
     Serial.printf("SDSEEK Error exit 471.  Trying to seek past EOF\n");
     return;
   }
-  if(target_position > end_position)
+  if (target_position > end_position)
   {
     post_custom_error_message((char *)"Trying to seek past EOF", 472);
     AUXROM_RAM_Window.as_struct.AR_Mailboxes[6] = 0;                      //  Indicate we are done
@@ -973,7 +973,7 @@ void AUXROM_SDWRITE(void)                                                 //  UN
 
   file_index = AUXROM_RAM_Window.as_struct.AR_BUF6_OPTS[0];               //  File number 1..11
   bytes_to_write = AUXROM_RAM_Window.as_struct.AR_Lengths[6];             //  Length of write
-  if(!Auxrom_Files[file_index].isWritable())
+  if (!Auxrom_Files[file_index].isWritable())
   {
     AUXROM_RAM_Window.as_struct.AR_Usages[6]    = 213;    //  Error
     AUXROM_RAM_Window.as_struct.AR_Mailboxes[6] = 0;      //  Indicate we are done
@@ -1023,17 +1023,17 @@ void AUXROM_WROM(void)
   Serial.printf("Target Address(oct): %06O\n", target_address);
   Serial.printf("Bytes to write(dec):     %d\n", transfer_length);
 
-  if((dest_ptr = getROMEntry(target_rom)) == NULL)            //  romMap is a table of 256 pointers to locations in EBTKS's address space.
+  if ((dest_ptr = getROMEntry(target_rom)) == NULL)            //  romMap is a table of 256 pointers to locations in EBTKS's address space.
   {                                                           //  i.e. 32 bit pointers. Either NULL, or an address. The index is the ROM ID
     Serial.printf("Selected ROM not loaded\n");
     // return error
   }
-  if((target_rom < 0361) || (target_rom > 254))
+  if ((target_rom < 0361) || (target_rom > 254))
   {
     Serial.printf("Selected ROM is not an AUXROM\n");
     // return error
   }
-  if(target_address + transfer_length  >= 0100000 )
+  if (target_address + transfer_length  >= 0100000 )
   {
     transfer_length = 0100000 - target_address;	          //  Don't let AUXROM write past end of ROM.  Maybe we should report an error
   }
@@ -1065,7 +1065,7 @@ bool Resolve_Path(char *New_Path)
   char *    src_ptr;                                          //  Points to next character in New_Path to be processed
   bool      back_up_1_level;
 
-  if(New_Path[0] == '/')
+  if (New_Path[0] == '/')
 	{
 	  Resolved_Path[0] = '/';                                   //  Handle an absolute path
 	  Resolved_Path[1] = 0x00;
@@ -1078,11 +1078,11 @@ bool Resolve_Path(char *New_Path)
 	                                                            //  Also, since Current_Path is a directory path, it has both leading and trailing '/' (if root, just one '/')
 	  dest_ptr = Resolved_Path + strlen(Resolved_Path);
 	  src_ptr = New_Path;
-	  if(Resolved_Path[0] != '/')
+	  if (Resolved_Path[0] != '/')
 	  {
 	    return false;                                           //  make sure that the first character of the path we are building is a '/'
 	  }
-	  if(dest_ptr[-1] != '/')
+	  if (dest_ptr[-1] != '/')
 	  {
 	    return false;                                           //  make sure that the last character of the path we are building is a '/'
 	  }
@@ -1109,38 +1109,38 @@ bool Resolve_Path(char *New_Path)
     //  If next 2 chars are ".."  AND it is at the end of the string, remove a path segment from the path under construction. Do not remove the first '/'. If nothing to remove, it is an error
     //  Collect characters upto and including the next '/' and append to the path under construction.
     //
-    if(src_ptr[0] == 0x00)
+    if (src_ptr[0] == 0x00)
     {
       break;                                          //  At end of the New_Path
     }
-    if(src_ptr[0] == '/')
+    if (src_ptr[0] == '/')
     {
       return false;                                   //  Can't have an embedded //. We would have picked the first one when copying a path segment
     }
-    if(src_ptr[0] == '.' && src_ptr[1] == '/')
+    if (src_ptr[0] == '.' && src_ptr[1] == '/')
     {
       src_ptr += 2;                                   //  Found "./" which has no use, so just delete it
       continue;
     }
     back_up_1_level = false;
-    if(src_ptr[0] == '.' && src_ptr[1] == '.' && src_ptr[2] == '/')
+    if (src_ptr[0] == '.' && src_ptr[1] == '.' && src_ptr[2] == '/')
     {
       back_up_1_level = true;
       src_ptr += 3;                                   //  Found "../" which means up 1 directory, so need to delete a path segment
     }
-    if(src_ptr[0] == '.' && src_ptr[1] == '.' && src_ptr[2] == 0x00)
+    if (src_ptr[0] == '.' && src_ptr[1] == '.' && src_ptr[2] == 0x00)
     {
       back_up_1_level = true;
       src_ptr += 2;                                   //  Found ".." at end of src, which means up 1 directory, so need to delete a path segment
     }
-    if(back_up_1_level)
+    if (back_up_1_level)
     {
-      if(strlen(Resolved_Path) <= 2)                  //  The minimal Resolved_Path that could have a directory to be removed is 3 characters"/x/"
+      if (strlen(Resolved_Path) <= 2)                  //  The minimal Resolved_Path that could have a directory to be removed is 3 characters"/x/"
       {                                               //    This could have been done with dest_ptr - Resolved_Path, strlen is clearer and less bug prone.
         return false;                                 //  The built path does not have a trailing directory to be removed
       }
       dest_ptr2 = dest_ptr - 1;                       //  Point at the last character of the path built so far. Should be a '/'
-      if(dest_ptr2[0] != '/')
+      if (dest_ptr2[0] != '/')
       {
         return false;                                 //  The built path must have a trailing '/'. This would indicate a bug somewhere in this function
       }
@@ -1162,13 +1162,13 @@ bool Resolve_Path(char *New_Path)
     //
     while(1)
     {
-      if(src_ptr[0] == '/')                           //  This should not match on the first pass through this while(1) loop, as we have already checked for a leading '/'
+      if (src_ptr[0] == '/')                           //  This should not match on the first pass through this while(1) loop, as we have already checked for a leading '/'
       {
         *dest_ptr++ = *src_ptr++;                     //  Copy the '/' and we are done for this path segment
         *dest_ptr = 0x00;                             //  Mark the new end of the string, probably redundant
         break;
       }
-      if(src_ptr[0] == 0x00)
+      if (src_ptr[0] == 0x00)
       {                                               //  Finished processing charcters from New_Path. We already have a trailing 0x00, so just exit while loop
         break;
       }
@@ -1214,11 +1214,11 @@ bool LineAtATime_ls_Init(char * path)
   char      dir_name[51];
 
   Listing_Buffer_Index  = 0;
-  if(dir)
+  if (dir)
   {
     dir.close();
   }
-  if(!dir.open(path, O_RDONLY))
+  if (!dir.open(path, O_RDONLY))
   {
     return false;
   }
@@ -1234,7 +1234,7 @@ bool LineAtATime_ls_Next()
 {
   get_line_char_count = PS.get_line(dir_line, 128);
 
-  if(get_line_char_count >= 0)
+  if (get_line_char_count >= 0)
   {
     //Serial.printf("%s\n", dir_line);
     return true;
@@ -1288,7 +1288,7 @@ void post_custom_error_message(char * message, uint16_t error_number)
 {
   char   * dest_ptr;
 
-  if((dest_ptr = (char *)getROMEntry(0361)) == NULL)            //  romMap is a table of 256 pointers to locations in EBTKS's address space.
+  if ((dest_ptr = (char *)getROMEntry(0361)) == NULL)            //  romMap is a table of 256 pointers to locations in EBTKS's address space.
   {                                                             //  i.e. 32 bit pointers. Either NULL, or an address. The index is the ROM ID
     Serial.printf("ROM 0361 not loaded\n");
     // return error
@@ -1306,7 +1306,7 @@ void post_custom_warning_message(char * message, uint16_t error_number)
 {
   char   * dest_ptr;
 
-  if((dest_ptr = (char *)getROMEntry(0361)) == NULL)            //  romMap is a table of 256 pointers to locations in EBTKS's address space.
+  if ((dest_ptr = (char *)getROMEntry(0361)) == NULL)            //  romMap is a table of 256 pointers to locations in EBTKS's address space.
   {                                                             //  i.e. 32 bit pointers. Either NULL, or an address. The index is the ROM ID
     Serial.printf("ROM 0361 not loaded\n");
     // return error

@@ -52,10 +52,8 @@
 
 #define LOGLEVEL_GEN              LOG_FILE        //  For General Logging
 #define LOGLEVEL_AUX              LOG_NONE        //  For AUXROM Logging
-#define LOGLEVEL_1MB5             LOG_FILE        //  For 1MB5 activity
+#define LOGLEVEL_1MB5             LOG_NONE      //  For 1MB5 activity
 #define LOGLEVEL_TAPE             LOG_NONE        //  For 1MB5 activity
-
-#define ENABLE_THREE_SHIFT_DETECTION    (0)       //  This seems to be the cause of crashes, if the general keyboard keys are pressed when the computer is busy
 
 //
 //      Enable if we decide to use LISP as a scripting language
@@ -124,5 +122,9 @@
 
 #define LOGIC_ANALYZER_BUFFER_SIZE        (1024)
 #define LOGIC_ANALYZER_INDEX_MASK         (0x000003FFU)
+// #define LOGIC_ANALYZER_BUFFER_SIZE        (8192)
+// #define LOGIC_ANALYZER_INDEX_MASK         (0x00001FFFU)
+
+
 
 #define DIRECTORY_LISTING_BUFFER_SIZE    (65536)

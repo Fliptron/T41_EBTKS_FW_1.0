@@ -18,7 +18,7 @@
 bool open_logfile(void)
 {
   logfile = SD.open("/EBTKSLog.log", FILE_WRITE);
-  if(logfile)
+  if (logfile)
   {
     logfile_active = true;
     return true;
@@ -32,7 +32,7 @@ bool open_logfile(void)
 
 void append_to_logfile(const char * text)
 {
-  if(logfile_active)
+  if (logfile_active)
   {
     logfile.print(text);    //  Leave the new lines to the caller
     //  logfile.flush();    //  This slows things down too much if tracing 1MB5, so add this
@@ -42,7 +42,7 @@ void append_to_logfile(const char * text)
 
 void flush_logfile(void)
 {
-  if(logfile_active)
+  if (logfile_active)
   {
     logfile.flush();
   }
@@ -50,7 +50,7 @@ void flush_logfile(void)
 
 void close_logfile(void)
 {
-  if(logfile_active)
+  if (logfile_active)
   {
     logfile.close();
     logfile_active = false;
@@ -62,7 +62,7 @@ void show_logfile(void)
   int   size;
   char  next_char;
 
-  if(logfile_active)
+  if (logfile_active)
   {
     logfile.flush();
     Serial.printf("Log file size:   %d\n", size = logfile.size());
@@ -81,11 +81,11 @@ void show_logfile(void)
 
 void clean_logfile(void)
 {
-  if(logfile_active)
+  if (logfile_active)
   {
     logfile.close();
     SD.remove("/EBTKSLog.log");
-    if((logfile_active = open_logfile()))   //  The extra parentheses tells the compiler "I know what I am doing with that single '=' "
+    if ((logfile_active = open_logfile()))   //  The extra parentheses tells the compiler "I know what I am doing with that single '=' "
     {
       Serial.printf("Log file deleted and recreated\n");
     }

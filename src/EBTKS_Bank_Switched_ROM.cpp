@@ -55,9 +55,9 @@ bool readBankRom(uint16_t addr)                   //  This function is running w
   //  Check for the special RAM window in the AUXROMs
   //
 
-  if((rselec >= AUXROM_PRIMARY_ID) && (rselec <= AUXROM_SECONDARY_ID_END))      //  Testing for Primary AUXROM and all secondaries
+  if ((rselec >= AUXROM_PRIMARY_ID) && (rselec <= AUXROM_SECONDARY_ID_END))      //  Testing for Primary AUXROM and all secondaries
   {
-    if((addr >= AUXROM_RAM_WINDOW_START) && (addr <= AUXROM_RAM_WINDOW_LAST))   //  Read AUXROM shared RAM window
+    if ((addr >= AUXROM_RAM_WINDOW_START) && (addr <= AUXROM_RAM_WINDOW_LAST))   //  Read AUXROM shared RAM window
     {
       readData = AUXROM_RAM_Window.as_bytes[addr - AUXROM_RAM_WINDOW_START];
       return true;

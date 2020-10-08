@@ -38,7 +38,7 @@ void TXD_Pulser(uint8_t count)
   while(count--)
   {
     TOGGLE_TXD;
-    for(timer = 0 ; timer < 333 ; timer++)
+    for (timer = 0 ; timer < 333 ; timer++)
     {
       //  Do nothing. With timer, itterations, it takes 5 us. So 15 ns per itteration.
     }
@@ -68,7 +68,7 @@ void EBTKS_delay_ns(int32_t count)
 
   local_count = count - FIXED_OVERHEAD;
   local_count /= SCALE_FACTOR;
-  if(local_count <= 0)
+  if (local_count <= 0)
   {
     return;
   }
@@ -207,7 +207,7 @@ bool wait_for_serial_string(void)
   while (!serial_string_available)
   {
     get_serial_string_poll();
-    if(Ctrl_C_seen)
+    if (Ctrl_C_seen)
     {
       return false;
     }
@@ -219,21 +219,21 @@ void get_serial_string_poll(void)
 {
   char  current_char;
 
-  if(serial_string_available)
+  if (serial_string_available)
   {
     LOGPRINTF("Error: get_serial_string_poll() called, but serial_string_available is true\n");
     Ctrl_C_seen = true;     //  Not really a Ctrl-C , but treat it this way to error out of whatever is calling this
     return;
   }
 
-  if(!Serial.available()) return;       //  No new characters available
+  if (!Serial.available()) return;       //  No new characters available
 
   while(1)    //  Got at least 1 new character
   {
     //  Serial.printf("\nget_serial_string diag: available chars %2d  current string length %2d  current string [%s]\n%s", Serial.available(), serial_string_length, serial_string, serial_string);
     //  Serial.printf("[%02X]",current_char );    //  Use this to see what scan codes (as seen by VSCode) or escape sequences as seen by SecureCRT for special PC keys.
     current_char = Serial.read();
-    switch(current_char)
+    switch (current_char)
     {
     //
     //  These characters are valid, even if the buffer is full
@@ -265,7 +265,7 @@ void get_serial_string_poll(void)
         Serial.printf("\n%s", serial_string);
         break;
       default:                                              //  If buffer is full, the characteris ignored
-        if(serial_string_length >= SERIAL_STRING_MAX_LENGTH)
+        if (serial_string_length >= SERIAL_STRING_MAX_LENGTH)
         {
           break;    //  Ignore character, no room for it
         }
@@ -273,7 +273,7 @@ void get_serial_string_poll(void)
         serial_string[serial_string_length] = '\0';
         Serial.printf("%c", current_char);
     }
-  if(!Serial.available()) return;                           //  No new characters available
+  if (!Serial.available()) return;                           //  No new characters available
   }
 }
 
@@ -292,7 +292,7 @@ void Serial_Command_Poll(void)
   int   command_index;
 
   get_serial_string_poll();
-  if(!serial_string_available) return;          //  Don't hang around here if there isn't a command to be processed
+  if (!serial_string_available) return;          //  Don't hang around here if there isn't a command to be processed
 
   //  Serial.printf("\nSerial_Command_Poll diag: serial_string_available %1d\n", serial_string_available);
   //  Serial.printf(  "                          serial_string_length    %2d  serial_string [%s]   ", serial_string_length, serial_string);
@@ -301,18 +301,18 @@ void Serial_Command_Poll(void)
   str_tolower(lc_serial_command);               //  Lower case version for easier command matching. Mixed case still available in serial_command
   serial_string_used();                         //  Throw away the mixed case version
   //  Serial.printf("lower case command [%s]\n", lc_serial_command);
-  if(strlen(lc_serial_command) == 0) return;    //  Not interested in zero length commands
+  if (strlen(lc_serial_command) == 0) return;    //  Not interested in zero length commands
 
   command_index = 0;
   while(1)
   {
     //  Serial.printf("1"); delay(100);
-    if(strcmp(Command_Table[command_index].command_name , "TABLE_END") == 0)
+    if (strcmp(Command_Table[command_index].command_name , "TABLE_END") == 0)
     {
       Serial.printf("\nUnrecognized Command [%s].  Flushing command\n", lc_serial_command);
       return;
     }
-    if(strcmp(Command_Table[command_index].command_name , lc_serial_command) == 0)
+    if (strcmp(Command_Table[command_index].command_name , lc_serial_command) == 0)
     {
       (* Command_Table[command_index].f_ptr)();
       return;
@@ -329,19 +329,19 @@ void Serial_Command_Poll(void)
 
 void HexDump_T41_mem(uint32_t start_address, uint32_t count, bool show_addr, bool final_nl)
 {
-  if(show_addr)
+  if (show_addr)
   {
     Serial.printf("%08X: ", start_address);  
   }
   while(count--)
   {
     Serial.printf("%02X ", *(uint8_t *)start_address++);
-    if(((start_address % 16) == 0) && show_addr)
+    if (((start_address % 16) == 0) && show_addr)
     {
       Serial.printf("\n%08X: ", start_address);
     }
   }
-  if(final_nl)
+  if (final_nl)
   {
     Serial.printf("\n");
   }
@@ -350,7 +350,7 @@ void HexDump_T41_mem(uint32_t start_address, uint32_t count, bool show_addr, boo
 void HexDump_HP85_mem(uint32_t start_address, uint32_t count, bool show_addr, bool final_nl)
 {
   uint8_t       temp;
-  if(show_addr)
+  if (show_addr)
   {
     Serial.printf("%08X: ", start_address);  
   }
@@ -358,12 +358,12 @@ void HexDump_HP85_mem(uint32_t start_address, uint32_t count, bool show_addr, bo
   {
     AUXROM_Fetch_Memory(&temp, start_address++, 1);
     Serial.printf("%02X ", temp);
-    if(((start_address % 16) == 0) && show_addr)
+    if (((start_address % 16) == 0) && show_addr)
     {
       Serial.printf("\n%08X: ", start_address);
     }
   }
-  if(final_nl)
+  if (final_nl)
   {
     Serial.printf("\n");
   }
@@ -404,7 +404,7 @@ bool is_HP85_idle(void)
   //
   while(loops--)
   {
-    if((Logic_Analyzer_main_sample & 0x00FFFF00U) == (RMIDLE << 8))
+    if ((Logic_Analyzer_main_sample & 0x00FFFF00U) == (RMIDLE << 8))
     {
       return true;
     }
@@ -412,113 +412,6 @@ bool is_HP85_idle(void)
   return false;
 }
 
-#if ENABLE_THREE_SHIFT_DETECTION
-int             shift_pressed_duration = 0;         // in units of 10 ms
-bool            click_seq_in_progress = false;
-uint8_t         clicks_so_far = 0;
-uint32_t        systick_millis_count_last_visit = 0;
-uint32_t        time_at_first_click;
-uint32_t        time_at_third_click;
-
-//
-//  This function is called from the main loop to detect three clicks of the shift key
-//  while the HP-85 is in the keboard idle loop. To minimize the amount of interference,
-//  we only check the IDLE and keyboard shift key status every 10 SysTicks (should be every 10 milliseconds)
-//  Each click is between 40 ms and 300 ms, and the three clicks must be completed in
-//  under 2 seconds
-//
-
-static void reset_three_clicks(void)
-{
-  shift_pressed_duration    = 0;
-  click_seq_in_progress     = false;
-  clicks_so_far             = 0;
-  systick_millis_count_last_visit = systick_millis_count;
-}
-
-bool Three_Shift_Clicks_Poll(void)
-{
-  if((systick_millis_count_last_visit + 10) > systick_millis_count)
-  {   //  Only test every 10+ milliseconds
-    return false;
-  }
-
-  systick_millis_count_last_visit = systick_millis_count;
-  //  TOGGLE_TXD;
-
-  //  Check for timeout
-
-  if(click_seq_in_progress && ((time_at_first_click + 2000) < systick_millis_count))
-  {   //  Time out. Need to see three clicks/clicks in under 2 seconds
-    reset_three_clicks();
-    //  Serial.printf("e");
-    return false;
-  }
-
-  if(!is_HP85_idle())         //  This takes 100 us or less, depending on whether HP85 is idle
-  {
-    return false;
-  }
-
-  if(DMA_Peek8(KEYSTS) & 0x08)
-  {
-    shift_pressed_duration++;     //  Each increment is 10 ms
-    return false;
-  }
-
-  if(shift_pressed_duration == 0)
-  {
-    return false;
-  }
-
-  //
-  //  If we get here, we have waited at leats 10 ms, Shift key is not currently pressed, but it was
-  //
-  //  Serial.printf("a %d ", shift_pressed_duration);   //  Typical click is around 12
-
-  if(shift_pressed_duration < 4)
-  {   //  click too short, maybe contact bounce. Just ignore it, but still continue to look for three clicks
-    shift_pressed_duration = 0;
-    //  Serial.printf("b");
-    return false;
-  }
-
-  if(shift_pressed_duration > 30)
-  {   //  click is too long. throw it away, and any progress towards three clicks
-    reset_three_clicks();
-    //  Serial.printf("c");
-    return false;
-  }
-
-  //  Looks like we have a shift key click, that is not too short, and not too long. Just right
-
-  if(!click_seq_in_progress)
-  {   //  This is the first click, we want 3 within 2 seconds
-    click_seq_in_progress = true;
-    clicks_so_far = 1;
-    time_at_first_click = systick_millis_count;   //  Will use this for timeout
-    shift_pressed_duration = 0;
-    //  Serial.printf("d");
-    return false;
-  }
-
-  //  Not the first click
-
-  clicks_so_far++;
-  shift_pressed_duration = 0;
-  
-  if(clicks_so_far >= 3)
-  {
-    reset_three_clicks();
-    time_at_third_click = systick_millis_count;
-    //  Serial.printf("Three clicks. Time after first click: %d, Time after last click: %d\n", time_at_first_click, time_at_third_click);
-    return true;
-  }
-  //  Serial.printf("f");
-  return false;   //  we exit here after the second click.
-}
-
-#endif        //  ENABLE_THREE_SHIFT_DETECTION
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////  All the simple commands
 
@@ -596,10 +489,10 @@ void help_5(void)
   //
   // nxtmem = DMA_Peek16(NXTMEM);
   // Serial.printf("NXTMEM is:  %06o\n", nxtmem);
-  // for(i = 0 ; i < 32 ; i++)
+  // for (i = 0 ; i < 32 ; i++)
   // {
   //   Serial.printf("%03O  ", DMA_Peek8(nxtmem++));
-  //   if((i%16) == 15)
+  //   if ((i%16) == 15)
   //   {
   //     Serial.printf("\n");
   //   }
@@ -630,7 +523,7 @@ void help_6(void)
 void help_7(void)
 {
   Serial.printf("ROM commands\n");
-  Serial.printf("rdir     List ROMs\n");
+  Serial.printf("dir roms     List ROMs\n");
   Serial.printf("\n");
 }
 
@@ -639,13 +532,13 @@ void diag_dir_path(const char * path)
   char      date[20], file_size[20];
   uint32_t  temp_uint;
 
-  if(!LineAtATime_ls_Init((char *)path))                    //  This is where the whole directory is listed into a buffer
+  if (!LineAtATime_ls_Init((char *)path))                    //  This is where the whole directory is listed into a buffer
   {                                                         //  Failed to do a listing of the current directory
     Serial.printf("Couldn't initialize read directory /tapes/ on SD card\n");
   }
   while(1)                                                  //  keep looping till we run out of entries
   {
-    if(!LineAtATime_ls_Next())
+    if (!LineAtATime_ls_Next())
     {   //  No more directory lines
       Serial.printf("\n");
       return;
@@ -724,13 +617,13 @@ void show_mailboxes_and_usage(void)
   int     i;
 
   Serial.printf("First 8 mailboxes, usages, lengths, and some buffer\n  #  MB    Usage  Length  Buffer\n");
-  for(i = 0 ; i < 8 ; i++)
+  for (i = 0 ; i < 8 ; i++)
   {
     Serial.printf("  %1d   %1d   %4d   %4d     ", i, AUXROM_RAM_Window.as_struct.AR_Mailboxes[i], AUXROM_RAM_Window.as_struct.AR_Usages[i], AUXROM_RAM_Window.as_struct.AR_Lengths[i]);
     HexDump_T41_mem((uint32_t)&AUXROM_RAM_Window.as_struct.AR_Buffer_0[i*256], 8, false, true);
   }
   Serial.printf("\nBOPTS6\n");
-  for(i = 0 ; i < 8 ; i++)
+  for (i = 0 ; i < 8 ; i++)
   {
     Serial.printf("%02x ", AUXROM_RAM_Window.as_struct_a.AR_BUF6_OPTS.as_uint8_t[i]);
   }
@@ -739,7 +632,7 @@ void show_mailboxes_and_usage(void)
 
 void just_once_func(void)
 {
-  if(just_once) return;
+  if (just_once) return;
 
   just_once = 1;
 
@@ -790,12 +683,12 @@ void dump_ram_window(void)      //  dump_ram_window Start(8) Len(8)    dump memo
   while(1)
   {
     Serial.printf("%03o ", AUXROM_RAM_Window.as_bytes[dump_start++]);
-    if((--dump_len) == 0)
+    if ((--dump_len) == 0)
     {
       Serial.printf("\n");
       break;
     }
-    if((dump_start % 16) == 0)
+    if ((dump_start % 16) == 0)
     {
       Serial.printf("\n%04o: ", dump_start);
     }
@@ -820,7 +713,7 @@ void no_SD_card_message(void)
 void ulisp(void)
 {
 #if ENABLE_LISP
-  if(strcmp("ulisp"  , lc_serial_command) == 0)
+  if (strcmp("ulisp"  , lc_serial_command) == 0)
   {
     lisp_setup();
     while(1)
@@ -864,7 +757,7 @@ void Setup_Logic_Analyzer(void)
   //  Not all of these initializations are needed, but this makes sure I've got all these
   //  values to something reasonable
   //
-  if(Logic_Analyzer_Event_Count_Init == -1000)        // Use this to indicate the Logic analyzer has no default values. Set to -1000 in setup()
+  if (Logic_Analyzer_Event_Count_Init == -1000)        // Use this to indicate the Logic analyzer has no default values. Set to -1000 in setup()
   {
     Logic_Analyzer_Trigger_Value_1        = 0;
     Logic_Analyzer_Trigger_Value_2        = 0;
@@ -902,24 +795,24 @@ redo_bus_control:
                     (Logic_Analyzer_Trigger_Value_1 & BIT_MASK_WR)  ? '1' : '0',
                     (Logic_Analyzer_Trigger_Value_1 & BIT_MASK_RD)  ? '1' : '0',
                     (Logic_Analyzer_Trigger_Value_1 & BIT_MASK_LMA) ? '1' : '0'           );
-  if(!wait_for_serial_string())
+  if (!wait_for_serial_string())
   {
     return;                                           //  Got a Ctrl-C , so abort command
   }
 
-  if(strlen(serial_string) == 0) {Serial.printf("Using prior value\n"); serial_string_used(); goto redo_bus_control_mask;}      //  Keep existing value
-  if(strlen(serial_string) != 3)
+  if (strlen(serial_string) == 0) {Serial.printf("Using prior value\n"); serial_string_used(); goto redo_bus_control_mask;}      //  Keep existing value
+  if (strlen(serial_string) != 3)
   { Serial.printf("Please enter a 3 digit number, /WR /RD /LMA, only use 0 and 1\n\n"); serial_string_used(); goto redo_bus_control; }
 
-  if(serial_string[0] == '1') Logic_Analyzer_Trigger_Value_1 |= BIT_MASK_WR;
+  if (serial_string[0] == '1') Logic_Analyzer_Trigger_Value_1 |= BIT_MASK_WR;
   else if (serial_string[0] == '0') {Logic_Analyzer_Trigger_Value_1 &= ~BIT_MASK_WR;}
   else { Serial.printf("Only 0 or 1\n\n"); serial_string_used(); goto redo_bus_control; }
 
-  if(serial_string[1] == '1') Logic_Analyzer_Trigger_Value_1 |= BIT_MASK_RD;
+  if (serial_string[1] == '1') Logic_Analyzer_Trigger_Value_1 |= BIT_MASK_RD;
   else if (serial_string[1] == '0') {Logic_Analyzer_Trigger_Value_1 &= ~BIT_MASK_RD;}
   else { Serial.printf("Only 0 or 1\n\n"); serial_string_used(); goto redo_bus_control; }
 
-  if(serial_string[2] == '1') Logic_Analyzer_Trigger_Value_1 |= BIT_MASK_LMA;
+  if (serial_string[2] == '1') Logic_Analyzer_Trigger_Value_1 |= BIT_MASK_LMA;
   else if (serial_string[2] == '0') {Logic_Analyzer_Trigger_Value_1 &= ~BIT_MASK_LMA;}
   else { Serial.printf("Only 0 or 1\n\n"); serial_string_used(); goto redo_bus_control; }
 
@@ -931,24 +824,24 @@ redo_bus_control_mask:
                     (Logic_Analyzer_Trigger_Mask_1 & BIT_MASK_RD)  ? '1' : '0',
                     (Logic_Analyzer_Trigger_Mask_1 & BIT_MASK_LMA) ? '1' : '0'           );
 
-  if(!wait_for_serial_string())
+  if (!wait_for_serial_string())
   {
     Ctrl_C_seen = false; return;                           //  Got a Ctrl-C , so abort command
   }
 
-  if(strlen(serial_string) == 0) {Serial.printf("Using prior value\n"); serial_string_used(); goto redo_address_pattern;}      //  Keep existing value
-  if(strlen(serial_string) != 3)
+  if (strlen(serial_string) == 0) {Serial.printf("Using prior value\n"); serial_string_used(); goto redo_address_pattern;}      //  Keep existing value
+  if (strlen(serial_string) != 3)
   { Serial.printf("Please enter a 3 digit number, only use 0 and 1\n\n"); serial_string_used(); goto redo_bus_control_mask; }
 
-  if(serial_string[0] == '1') Logic_Analyzer_Trigger_Mask_1 |= BIT_MASK_WR;
+  if (serial_string[0] == '1') Logic_Analyzer_Trigger_Mask_1 |= BIT_MASK_WR;
   else if (serial_string[0] == '0') {Logic_Analyzer_Trigger_Mask_1 &= ~BIT_MASK_WR;}
   else { Serial.printf("Only 0 or 1\n\n"); serial_string_used(); goto redo_bus_control_mask; }
 
-  if(serial_string[1] == '1') Logic_Analyzer_Trigger_Mask_1 |= BIT_MASK_RD;
+  if (serial_string[1] == '1') Logic_Analyzer_Trigger_Mask_1 |= BIT_MASK_RD;
   else if (serial_string[1] == '0') {Logic_Analyzer_Trigger_Mask_1 &= ~BIT_MASK_RD;}
   else { Serial.printf("Only 0 or 1\n\n"); serial_string_used(); goto redo_bus_control_mask; }
 
-  if(serial_string[2] == '1') Logic_Analyzer_Trigger_Mask_1 |= BIT_MASK_LMA;
+  if (serial_string[2] == '1') Logic_Analyzer_Trigger_Mask_1 |= BIT_MASK_LMA;
   else if (serial_string[2] == '0') {Logic_Analyzer_Trigger_Mask_1 &= ~BIT_MASK_LMA;}
   else { Serial.printf("Only 0 or 1\n\n"); serial_string_used(); goto redo_bus_control_mask; }
 
@@ -956,13 +849,13 @@ redo_bus_control_mask:
 
 redo_address_pattern:
   Serial.printf("Address pattern is 6 octal digits[%06o]:", (Logic_Analyzer_Trigger_Value_1 >> 8) & 0x0000FFFF);
-  if(!wait_for_serial_string())
+  if (!wait_for_serial_string())
   {
     Ctrl_C_seen = false; return;                           //  Got a Ctrl-C , so abort command
   }
 
-  if(strlen(serial_string) == 0) {Serial.printf("Using prior value\n"); serial_string_used(); goto redo_address_mask;}      //  Keep existing value
-  if(strlen(serial_string) != 6)
+  if (strlen(serial_string) == 0) {Serial.printf("Using prior value\n"); serial_string_used(); goto redo_address_mask;}      //  Keep existing value
+  if (strlen(serial_string) != 6)
   { Serial.printf("Please enter a 6 octal digits, only use 0 through 7\n\n"); serial_string_used(); goto redo_address_pattern; }
   sscanf(serial_string, "%o", &address);
   address &= 0x0000FFFF;
@@ -971,18 +864,18 @@ redo_address_pattern:
   serial_string_used();
 
 redo_address_mask:
-  if((Logic_Analyzer_Trigger_Value_1 & 0x00FFFF00) && ((Logic_Analyzer_Trigger_Mask_1 & 0x00FFFF00) == 0))
+  if ((Logic_Analyzer_Trigger_Value_1 & 0x00FFFF00) && ((Logic_Analyzer_Trigger_Mask_1 & 0x00FFFF00) == 0))
   {   //  We have an address value and the current mask is 0x0000
     Logic_Analyzer_Trigger_Mask_1 |= 0x00FFFF00;          //  for this situation, default the mask to 0xFFFF  (0177777)
   }
   Serial.printf("Address mask is 6 octal digits[%06o]:", (Logic_Analyzer_Trigger_Mask_1 >> 8) & 0x0000FFFF);
-  if(!wait_for_serial_string())
+  if (!wait_for_serial_string())
   {
     Ctrl_C_seen = false; return;                           //  Got a Ctrl-C , so abort command
   }
 
-  if(strlen(serial_string) == 0) {Serial.printf("Using prior value\n"); serial_string_used(); goto redo_data_pattern;}      //  Keep existing value
-  if(strlen(serial_string) != 6)
+  if (strlen(serial_string) == 0) {Serial.printf("Using prior value\n"); serial_string_used(); goto redo_data_pattern;}      //  Keep existing value
+  if (strlen(serial_string) != 6)
   { Serial.printf("Please enter a 6 octal digits, only use 0 through 7 (1 bits enable match)\n\n"); serial_string_used(); goto redo_address_mask; }
   sscanf(serial_string, "%o", &address);                  //  reuse address for the mask value, as this is just temporary
   address &= 0x0000FFFF;
@@ -992,13 +885,13 @@ redo_address_mask:
 
 redo_data_pattern:
   Serial.printf("Data pattern is 3 octal digits[%03o]:", Logic_Analyzer_Trigger_Value_1 & 0x000000FF);
-  if(!wait_for_serial_string())
+  if (!wait_for_serial_string())
   {
     Ctrl_C_seen = false; return;                           //  Got a Ctrl-C , so abort command
   }
 
-  if(strlen(serial_string) == 0) {Serial.printf("Using prior value\n"); serial_string_used(); goto redo_data_mask;}      //  Keep existing value
-  if(strlen(serial_string) != 3)
+  if (strlen(serial_string) == 0) {Serial.printf("Using prior value\n"); serial_string_used(); goto redo_data_mask;}      //  Keep existing value
+  if (strlen(serial_string) != 3)
   { Serial.printf("Please enter a 3 octal digits, only use 0 through 7\n\n"); serial_string_used(); goto redo_data_pattern; }
   sscanf(serial_string, "%o", &data);
   data &= 0x000000FF;
@@ -1007,18 +900,18 @@ redo_data_pattern:
   serial_string_used();
 
 redo_data_mask:
-  if((Logic_Analyzer_Trigger_Value_1 & 0x000000FF) && ((Logic_Analyzer_Trigger_Mask_1 & 0x000000FF) == 0))
+  if ((Logic_Analyzer_Trigger_Value_1 & 0x000000FF) && ((Logic_Analyzer_Trigger_Mask_1 & 0x000000FF) == 0))
   {   //  We have a data value and the current mask is 0x00
     Logic_Analyzer_Trigger_Mask_1 |= 0x000000FF;          //  for this situation, default the mask to 0xFF  (0377)
   }
   Serial.printf("Data mask is 3 octal digits[%03o]:", Logic_Analyzer_Trigger_Mask_1 & 0x000000FF);
-  if(!wait_for_serial_string())
+  if (!wait_for_serial_string())
   {
     Ctrl_C_seen = false; return;                           //  Got a Ctrl-C , so abort command
   }
 
-  if(strlen(serial_string) == 0) {Serial.printf("Using prior value\n"); serial_string_used(); goto redo_rselec_pattern;}      //  Keep existing value
-  if(strlen(serial_string) != 3)
+  if (strlen(serial_string) == 0) {Serial.printf("Using prior value\n"); serial_string_used(); goto redo_rselec_pattern;}      //  Keep existing value
+  if (strlen(serial_string) != 3)
   { Serial.printf("Please enter a 3 octal digits, only use 0 through 7 (1 bits enable match)\n\n"); serial_string_used(); goto redo_data_mask; }
   sscanf(serial_string, "%o", &data);
   data &= 0x000000FF;
@@ -1028,13 +921,13 @@ redo_data_mask:
 
 redo_rselec_pattern:
   Serial.printf("RSELEC is 3 octal digits[%03o]:", Logic_Analyzer_Trigger_Value_2 & 0x000000FF);
-  if(!wait_for_serial_string())
+  if (!wait_for_serial_string())
   {
     Ctrl_C_seen = false; return;                           //  Got a Ctrl-C , so abort command
   }
 
-  if(strlen(serial_string) == 0) {Serial.printf("Using prior value\n"); serial_string_used(); goto redo_rselec_mask;}      //  Keep existing value
-  if(strlen(serial_string) != 3)
+  if (strlen(serial_string) == 0) {Serial.printf("Using prior value\n"); serial_string_used(); goto redo_rselec_mask;}      //  Keep existing value
+  if (strlen(serial_string) != 3)
   { Serial.printf("Please enter a 3 octal digits, only use 0 through 7\n\n"); serial_string_used(); goto redo_rselec_pattern; }
   sscanf(serial_string, "%o", &data);
   data &= 0x000000FF;
@@ -1043,18 +936,18 @@ redo_rselec_pattern:
   serial_string_used();
 
 redo_rselec_mask:
-  if((Logic_Analyzer_Trigger_Value_2 & 0x000000FF) && ((Logic_Analyzer_Trigger_Mask_2 & 0x000000FF) == 0))
+  if ((Logic_Analyzer_Trigger_Value_2 & 0x000000FF) && ((Logic_Analyzer_Trigger_Mask_2 & 0x000000FF) == 0))
   {   //  We have a RSELEC value and the current mask is 0x00
     Logic_Analyzer_Trigger_Mask_2 |= 0x000000FF;          //  for this situation, default the mask to 0xFF  (0377)
   }
   Serial.printf("RSELEC mask is 3 octal digits[%03o]:", Logic_Analyzer_Trigger_Mask_2 & 0x000000FF);
-  if(!wait_for_serial_string())
+  if (!wait_for_serial_string())
   {
     Ctrl_C_seen = false; return;                           //  Got a Ctrl-C , so abort command
   }
 
-  if(strlen(serial_string) == 0) {Serial.printf("Using prior value\n"); serial_string_used(); goto rselec_mask_done;}      //  Keep existing value
-  if(strlen(serial_string) != 3)
+  if (strlen(serial_string) == 0) {Serial.printf("Using prior value\n"); serial_string_used(); goto rselec_mask_done;}      //  Keep existing value
+  if (strlen(serial_string) != 3)
   { Serial.printf("Please enter a 3 octal digits, only use 0 through 7 (1 bits enable match)\n\n"); serial_string_used(); goto redo_rselec_mask; }
   sscanf(serial_string, "%o", &data);
   data &= 0x000000FF;
@@ -1084,18 +977,18 @@ rselec_mask_done:
 //  Set the buffer length 32 .. 1024 , must be power of 2
 //
 
-#if LOGIC_ANALYZER_BUFFER_SIZE != 1024
+#if LOGIC_ANALYZER_BUFFER_SIZE > 8192
 #error This code needs to be modified for the changed LOGIC_ANALYZER_BUFFER_SIZE
 #endif
 
 redo_buffer_length:
-  Serial.printf("Set the buffer length 32 .. 1024 , must be power of 2)[%d]:", Logic_Analyzer_Current_Buffer_Length);
-  if(!wait_for_serial_string())
+  Serial.printf("Set the buffer length 32 .. %d , must be power of 2)[%d]:", LOGIC_ANALYZER_BUFFER_SIZE, Logic_Analyzer_Current_Buffer_Length);
+  if (!wait_for_serial_string())
   {
     Ctrl_C_seen = false; return;                           //  Got a Ctrl-C , so abort command
   }
 
-  if(strlen(serial_string) == 0)
+  if (strlen(serial_string) == 0)
   {      //  Keep existing value
     Serial.printf("Using prior value\n");
   }
@@ -1104,12 +997,15 @@ redo_buffer_length:
     sscanf(serial_string, "%d", (int *)&Logic_Analyzer_Current_Buffer_Length);
   }
   serial_string_used();
-  if((Logic_Analyzer_Current_Buffer_Length !=   32) &&
+  if ((Logic_Analyzer_Current_Buffer_Length !=   32) &&
      (Logic_Analyzer_Current_Buffer_Length !=   64) &&
      (Logic_Analyzer_Current_Buffer_Length !=  128) &&
      (Logic_Analyzer_Current_Buffer_Length !=  256) &&
      (Logic_Analyzer_Current_Buffer_Length !=  512) &&
-     (Logic_Analyzer_Current_Buffer_Length != 1024)   )
+     (Logic_Analyzer_Current_Buffer_Length != 1024) &&
+     (Logic_Analyzer_Current_Buffer_Length != 2048) &&
+     (Logic_Analyzer_Current_Buffer_Length != 4096) &&
+     (Logic_Analyzer_Current_Buffer_Length != 8192)    )
   {
     goto redo_buffer_length;
   }
@@ -1120,18 +1016,18 @@ redo_buffer_length:
 //  Should not be an issue, since buffers are likely to be greater than 32 entries, and there is no need to start
 //  or end right at the limits of the buffer
 //
-  if(Logic_Analyzer_Pre_Trigger_Samples > (Logic_Analyzer_Current_Buffer_Length - 2))
+  if (Logic_Analyzer_Pre_Trigger_Samples > (Logic_Analyzer_Current_Buffer_Length - 2))
   {
     Logic_Analyzer_Pre_Trigger_Samples = Logic_Analyzer_Current_Buffer_Length/2;
   }
 
   Serial.printf("Pretrigger samples (2 to %d)[%d]:", Logic_Analyzer_Current_Buffer_Length - 2, Logic_Analyzer_Pre_Trigger_Samples);
-  if(!wait_for_serial_string())
+  if (!wait_for_serial_string())
   {
     Ctrl_C_seen = false; return;                           //  Got a Ctrl-C , so abort command
   }
 
-  if(strlen(serial_string) == 0)
+  if (strlen(serial_string) == 0)
   {      //  Keep existing value
     Serial.printf("Using prior value\n");
   }
@@ -1140,8 +1036,8 @@ redo_buffer_length:
     sscanf(serial_string, "%d", (int *)&Logic_Analyzer_Pre_Trigger_Samples);
   }
   serial_string_used();
-  if(Logic_Analyzer_Pre_Trigger_Samples < 2) Logic_Analyzer_Pre_Trigger_Samples = 2;
-  if(Logic_Analyzer_Pre_Trigger_Samples > Logic_Analyzer_Current_Buffer_Length-2)
+  if (Logic_Analyzer_Pre_Trigger_Samples < 2) Logic_Analyzer_Pre_Trigger_Samples = 2;
+  if (Logic_Analyzer_Pre_Trigger_Samples > Logic_Analyzer_Current_Buffer_Length-2)
   {
     Logic_Analyzer_Pre_Trigger_Samples = Logic_Analyzer_Current_Buffer_Length-2;
   }
@@ -1150,12 +1046,12 @@ redo_buffer_length:
 //  Set the number of occurences of the pattern match to cause a trigger
 //
   Serial.printf("Event Count 1..N[%d]:", Logic_Analyzer_Event_Count_Init);
-  if(!wait_for_serial_string())
+  if (!wait_for_serial_string())
   {
     Ctrl_C_seen = false; return;                           //  Got a Ctrl-C , so abort command
   }
 
-  if(strlen(serial_string) == 0)
+  if (strlen(serial_string) == 0)
   {      //  Keep existing value
     Serial.printf("Using prior value\n");
   }
@@ -1199,12 +1095,12 @@ void Logic_Analyzer_Poll(void)
   int16_t       Samples_to_display;
   int16_t       Display_starting_index;
 
-  if(Logic_Analyzer_State == ANALYZER_IDLE)
+  if (Logic_Analyzer_State == ANALYZER_IDLE)
   {
     return;
   }
 
-  if(LA_Heartbeat_Timer < systick_millis_count)
+  if (LA_Heartbeat_Timer < systick_millis_count)
   {
     Serial.printf("Heartbeat Timer %10d    systick_millis_count %10d\n", LA_Heartbeat_Timer, systick_millis_count);
     Serial.printf("waiting... Valid Samples:%4d Samples till done:%d\n", Logic_Analyzer_Valid_Samples, Logic_Analyzer_Samples_Till_Done);
@@ -1221,9 +1117,9 @@ void Logic_Analyzer_Poll(void)
     //  Logic Analyzer can timeout if maybe it gets stuck in DMA, Or maybe something else. Very hard to test this code
     //  Not even sure what we are looking for. This code is motivated by weird interaction between a real HPIB interface and EBTKS.
     //
-    if((Logic_Analyzer_Valid_Samples_1_second_ago == Logic_Analyzer_Valid_Samples) || Ctrl_C_seen)           //  If something crashes (interrupts dead???) , or any keyboard activity
+    if ((Logic_Analyzer_Valid_Samples_1_second_ago == Logic_Analyzer_Valid_Samples) || Ctrl_C_seen)           //  If something crashes (interrupts dead???) , or Ctrl-C activity
     {
-      if(Logic_Analyzer_Valid_Samples < Logic_Analyzer_Current_Buffer_Length)             //  This should never happen
+      if (Logic_Analyzer_Valid_Samples < Logic_Analyzer_Current_Buffer_Length)             //  This should never happen
       {                                                                                   //  So, we didn't even manage to fill the LA buffer
         Samples_to_display = Logic_Analyzer_Valid_Samples;
         Display_starting_index = 0;
@@ -1233,66 +1129,24 @@ void Logic_Analyzer_Poll(void)
         Samples_to_display = Logic_Analyzer_Current_Buffer_Length;
         Display_starting_index = Logic_Analyzer_Data_index;                               //  This is where the next sample would have gone
       }
-
-      Logic_Analyzer_State = ANALYZER_ACQUISITION_DONE;                                   //  Force termination, stops acquisition
       Serial.printf("\n\nThe Logic Analyzer seems to have stalled, failed to collect %d samples surrounding trigger\n", Logic_Analyzer_Samples_Till_Done);
       Serial.printf("Logic_Analyzer_Valid_Samples_1_second_ago is  %10d\n", Logic_Analyzer_Valid_Samples_1_second_ago);
       Serial.printf("Displaying %5d samples, starting from buffer position %5d\n\n", Samples_to_display, Display_starting_index);
-      Serial.printf("The LA was triggered: %s and the trigger index is %5d\n", Logic_Analyzer_Triggered ? "true":"false" , Logic_Analyzer_Index_of_Trigger);
-      Serial.printf("ENABLE_BUS_BUFFER_U2 = %d\n", GET_DISABLE_BUS_BUFFER_U2);
-      Serial.printf("BUS_DIR_TO_HP        = %d\n", GET_BUS_DIR_TO_HP);
-      Serial.printf("CTRL_DIR_TO_HP       = %d\n", GET_CTRL_DIR_TO_HP);
-      Serial.printf("ASSERT_INT           = %d\n", GET_ASSERT_INT);
-      Serial.printf("ASSERT_HALT          = %d\n", GET_ASSERT_HALT);
-      Serial.printf("ASSERT_PWO_OUT       = %d\n", GET_ASSERT_PWO_OUT);
-      Serial.printf("ASSERT_INTPRI        = %d\n", GET_ASSERT_INTPRI);
-      //
-      //  ARMv7-M_Architecture_Reference_Manual___DDI0403E_B.pdf      page 655 documents CPUID (0xE000ED00) and ICSR (0xE000ED04)
-      //                                                              Macros in imxrt.h at line 9077
-      //
-      Serial.printf("ICSR (p655)          = %08X\n", SCB_ICSR);
-      //
-      //  ARMv7-M_Architecture_Reference_Manual___DDI0403E_B.pdf      page 575 documents PRIMASK which appears to be where the
-      //                                                              Global Interrupt Enable/Disable is stored in the LSB
-      //                                                              Macros __disable_irq() and __enable_irq() execute "CPSID i"
-      //                                                              and "CPSIE i" respectively, which set or clear the PRIMASK bit
-      //                                                              "CPSID i" sets PRIMASK LSB to 1 which disables all interrupts
-      //                                                              PRIMASK does not live in normal address space. Access it with
-      //                                                              the Special Register instructions MRS (read) and MSR (write).
-      //                                                              PRIMASK is Special Register 0b00010 (i.e. reg 2)
-      //
-      __asm__ volatile("MRS %[t],PRIMASK":[t] "=r" (temp));
-      Serial.printf("PRIMASK expect 0     = %08X\n", temp);           //  It will be a real surprise if this works. Expect LSB to be 0
-      //test
-      __disable_irq();
-      __asm__ volatile("MRS %[t],PRIMASK":[t] "=r" (temp));
-      __enable_irq();
-      Serial.printf("PRIMASK Expect 1     = %08X\n", temp);           //  It will be a real surprise if this works. Expect LSB to be 1
 
-
-      Serial.printf("\n\n");
+      Logic_Analyzer_State = ANALYZER_ACQUISITION_DONE;                                   //  Force termination, stops acquisition
       
-//      //
-//      //  Zero out stuff in the ring buffers that are not valid
-//      //
-//      while(Logic_Analyzer_Samples_Till_Done--)
-//      {
-//        Logic_Analyzer_Data_1[Logic_Analyzer_Data_index  ] = 0;
-//        Logic_Analyzer_Data_2[Logic_Analyzer_Data_index++] = 0;
-//        Logic_Analyzer_Data_index &= Logic_Analyzer_Current_Index_Mask;          //  Modulo addressing of sample buffer. Requires buffer length to be a power of two
-//      }
       goto la_display_results;
     }
     Logic_Analyzer_Valid_Samples_1_second_ago = Logic_Analyzer_Valid_Samples;
     LA_Heartbeat_Timer = systick_millis_count + 1000;
   }
-//  if(Ctrl_C_seen)                           //  Need to do better clean up of this I think. Really need to re-do all serial I/O
+//  if (Ctrl_C_seen)                           //  Need to do better clean up of this I think. Really need to re-do all serial I/O
 //  {                                         //  Type any character to abort    
 //    Logic_Analyzer_State = ANALYZER_IDLE;
 //    Serial.printf("LA Abort\n");
 //    return;
 //  }
-  if(Logic_Analyzer_State == ANALYZER_ACQUIRING)
+  if (Logic_Analyzer_State == ANALYZER_ACQUIRING)
   {
     return;
   }
@@ -1311,15 +1165,47 @@ la_display_results:
   Serial.printf("Buffer Length %d  Address Mask  %d\n" , Logic_Analyzer_Current_Buffer_Length, Logic_Analyzer_Current_Index_Mask);
   Serial.printf("Trigger Index %d  Pre Trigger Samples %d\n\n", Logic_Analyzer_Index_of_Trigger, Logic_Analyzer_Pre_Trigger_Samples);
   show_mailboxes_and_usage();
+  Serial.printf("The LA was triggered: %s and the trigger index is %5d\n", Logic_Analyzer_Triggered ? "true":"false" , Logic_Analyzer_Index_of_Trigger);
+  Serial.printf("ENABLE_BUS_BUFFER_U2 = %d\n", GET_DISABLE_BUS_BUFFER_U2);
+  Serial.printf("BUS_DIR_TO_HP        = %d\n", GET_BUS_DIR_TO_HP);
+  Serial.printf("CTRL_DIR_TO_HP       = %d\n", GET_CTRL_DIR_TO_HP);
+  Serial.printf("ASSERT_INT           = %d\n", GET_ASSERT_INT);
+  Serial.printf("ASSERT_HALT          = %d\n", GET_ASSERT_HALT);
+  Serial.printf("ASSERT_PWO_OUT       = %d\n", GET_ASSERT_PWO_OUT);
+  Serial.printf("ASSERT_INTPRI        = %d\n", GET_ASSERT_INTPRI);
+  //
+  //  ARMv7-M_Architecture_Reference_Manual___DDI0403E_B.pdf      page 655 documents CPUID (0xE000ED00) and ICSR (0xE000ED04)
+  //                                                              Macros in imxrt.h at line 9077
+  //
+  Serial.printf("ICSR (p655)          = %08X\n", SCB_ICSR);
+  //
+  //  ARMv7-M_Architecture_Reference_Manual___DDI0403E_B.pdf      page 575 documents PRIMASK which appears to be where the
+  //                                                              Global Interrupt Enable/Disable is stored in the LSB
+  //                                                              Macros __disable_irq() and __enable_irq() execute "CPSID i"
+  //                                                              and "CPSIE i" respectively, which set or clear the PRIMASK bit
+  //                                                              "CPSID i" sets PRIMASK LSB to 1 which disables all interrupts
+  //                                                              PRIMASK does not live in normal address space. Access it with
+  //                                                              the Special Register instructions MRS (read) and MSR (write).
+  //                                                              PRIMASK is Special Register 0b00010 (i.e. reg 2)
+  //
+  __asm__ volatile("MRS %[t],PRIMASK":[t] "=r" (temp));
+  Serial.printf("PRIMASK              = %08X   LSB 0 indicates Global Interrupts enabled in Teensy\n", temp);           //  It will be a real surprise if this works. Expect LSB to be 0. Tested, It works and shows Global Interrupt enable
+  // //test
+  // __disable_irq();
+  // __asm__ volatile("MRS %[t],PRIMASK":[t] "=r" (temp));
+  // __enable_irq();
+  // Serial.printf("PRIMASK Expect 1     = %08X\n", temp);           //  It will be a real surprise if this works. Expect LSB to be 1. Tested, It works and shows Global Interrupt enable
+  Serial.printf("\n\n");
+
   Serial.printf("Sample  Address      Data    Cycle  RSELEC\n");
   Serial.printf("                             WRL\n");
   sample_number_relative_to_trigger = - Logic_Analyzer_Pre_Trigger_Samples;
 
-  for(i = 0 ; i < Samples_to_display ; i++)
+  for (i = 0 ; i < Samples_to_display ; i++)
   {
     j = (i + Display_starting_index) & Logic_Analyzer_Current_Index_Mask;
     temp = Logic_Analyzer_Data_1[j];
-    if((temp & (BIT_MASK_LMA | BIT_MASK_RD | BIT_MASK_WR)) == (BIT_MASK_LMA | BIT_MASK_RD | BIT_MASK_WR))
+    if ((temp & (BIT_MASK_LMA | BIT_MASK_RD | BIT_MASK_WR)) == (BIT_MASK_LMA | BIT_MASK_RD | BIT_MASK_WR))
     { //  All 3 control lines are high (not asserted, so data bus is junque)
       Serial.printf("   %-4d %06o/%04X  xxx/xx  ", sample_number_relative_to_trigger++, (temp >> 8) & 0x0000FFFFU,
                                                              (temp >> 8) & 0x0000FFFFU );
@@ -1336,11 +1222,11 @@ la_display_results:
     Serial.printf("%c", (temp & BIT_MASK_LMA) ? '-' : 'L');
     Serial.printf("    %03o", Logic_Analyzer_Data_2[j] & 0x000000FF);
 
-    if(j == Logic_Analyzer_Index_of_Trigger)
+    if (j == Logic_Analyzer_Index_of_Trigger)
     {
       Serial.printf("  Trigger\n");
     }
-    else if(temp & 0x08000000)                                //  See if the DMA bit is set
+    else if (temp & 0x08000000)                                //  See if the DMA bit is set
     {                                                         //  WE DO NOT TRACE THE DMA LMA Cycles, or the Refresh Cycles. We do not support triggering on DMA
       Serial.printf("  DMA\n");
     }
@@ -1365,7 +1251,7 @@ void jay_pi(void)
       //  with  1,000,000 slices:  jay_pi execution time is  273 ms , answer is 3.14159265 241386
       //  with 10,000,000 slices:  jay_pi execution time is 2759 ms , answer is 3.1415926535 5335
       //
-      if(strcmp("jay_pi"  , lc_serial_command) == 0)
+      if (strcmp("jay_pi"  , lc_serial_command) == 0)
       {
         double    radius;
         double    radiusSquared;
@@ -1418,7 +1304,7 @@ void Simple_Graphics_Test(void)
   f_y0 = 0;
   f_y1 = 0;
 
-  for(f_x0 = 0 ; f_x0 < 256 ; f_x0 += 5.12)
+  for (f_x0 = 0 ; f_x0 < 256 ; f_x0 += 5.12)
   {
     x0 = f_x0;
     y0 = f_y0;
@@ -1433,7 +1319,7 @@ void Simple_Graphics_Test(void)
 
 void str_tolower(char *p)
 {
-  for(  ; *p ; ++p) *p = ((*p > 0x40) && (*p < 0x5b)) ? (*p | 0x60) : *p;
+  for (  ; *p ; ++p) *p = ((*p > 0x40) && (*p < 0x5b)) ? (*p | 0x60) : *p;
 }
 
 
@@ -1447,24 +1333,24 @@ void str_tolower(char *p)
 /// ? matches exactly one "any character"
 bool MatchesPattern(char *pT, char *pP)
 {
-  if( *pT==0 )
+  if ( *pT==0 )
   {                                                     //  If reached the end of the test string
     return (*pP==0 || (*pP=='*' && *(pP+1)==0));        //  Return TRUE if reached the end of the pattern string, else FALSE
   }
-  else if( *pP=='?' )
+  else if ( *pP=='?' )
   {                                                     //  Pattern matches ANYTHING in the test
     return MatchesPattern(pT+1, pP+1);
   }
-  else if( *pP=='*' )
+  else if ( *pP=='*' )
   {                                                     //  Start with * each 0 characters, then keep advancing pT so * eats more and more characters
     while( *pT )
     {
-      if( MatchesPattern(pT, pP+1) ) return true;
+      if ( MatchesPattern(pT, pP+1) ) return true;
       ++pT;
     }
     return ( *(pP+1)==0 );                              //  Return TRUE if reached the end of the pattern string, else FALSE
   }
-  else if( *pT==*pP )
+  else if ( *pT==*pP )
   {
     return MatchesPattern(pT+1, pP+1);
   }

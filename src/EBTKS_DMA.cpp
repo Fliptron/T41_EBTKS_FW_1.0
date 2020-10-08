@@ -44,7 +44,14 @@
 //      07/14/2020      Re do all the timing tweaks, and get oscilloscope pics as needed
 //
 //      10/05/2020      Add DMA tracking to the Logic Analyzer.
-//                      WE DO NOT TRACE THE DMA LMA Cycles, or the Refresh Cycles. We do not support triggering on DMA
+//                      WE DO NOT TRACE THE
+//                          DMA Acknowledge (but could)
+//                          DMA LMA Cycles  (but could)
+//                          DMA breaks for Refresh Cycles  (but could)
+//                      We do not support triggering on DMA start (but could)   Could trigger on any DMA Acknowledge, or only ones we generate
+//                      There is no prioritization for DMA Requests, but this is not an issue for REAL DMA transfers, since EBTKS is the ONLY card that does it
+//                      BUT, DMA is initialized by 1MB5 chips in various modules to implement FHS (Fast HandShake transfer mode). Standard ROMs only support
+//                      one 1MB5 at a time using this capability, but that means we need to not interfere
 //
 
 
@@ -170,11 +177,12 @@ int32_t DMA_Read_Block(uint32_t DMA_Target_Address, uint8_t buffer[], uint32_t b
   uint32_t               buffer_index;
   uint8_t                refresh_count;
 
-  if((bytecount == 0) || (buffer == NULL) || (!DMA_Active))
+  if ((bytecount == 0) || (buffer == NULL) || (!DMA_Active))
   {
     return 0;   //  Pointless or dangerous call
   }
-
+                     //                                                                                This has been reviewed, and __disable_irq() has already been done "DMA_Acknowledge" part of the
+                     //                                                                                EBTKS_Bus_Interface_ISR.cpp  .  So this should be removed, and tested
   __disable_irq();   //  Disable all interrupts while DMA is happening. In particular the Systick stuff.
                      //  This means that if we want delays, we need to have our own EBTKS_delay_ns()
                      //  All interrupts are re-enabled at the end of release_DMA_request()
@@ -218,7 +226,7 @@ int32_t DMA_Read_Block(uint32_t DMA_Target_Address, uint8_t buffer[], uint32_t b
   {                                  //  We have more than the max burst length still to be completed
     DMA_Read_Burst(&buffer[buffer_index], MAX_DMA_BURST_LENGTH);
     buffer_index += MAX_DMA_BURST_LENGTH;
-    for(refresh_count = 0 ; refresh_count < (DMA_BURST_BREAK_CYCLES - 1); refresh_count++)
+    for (refresh_count = 0 ; refresh_count < (DMA_BURST_BREAK_CYCLES - 1); refresh_count++)
     {
       WAIT_WHILE_PHI_1_LOW;
       WAIT_WHILE_PHI_1_HIGH;
@@ -304,7 +312,7 @@ static void DMA_Preamble(uint16_t DMA_Target_Address)
               //  edge of LMA accurately, we might arrive here while Phi 1 is already high, and
               //  we just missed a rising edge that we are looking for
               //
-              if(IS_PHI_1_HIGH)
+              if (IS_PHI_1_HIGH)
               {
                 WAIT_WHILE_PHI_1_HIGH;
               }
@@ -431,7 +439,7 @@ static int32_t DMA_Read_Burst(uint8_t buffer[], uint32_t bytecount)
     //  Due to the pipelined nature of bus transactions, if we need to do more transfers after the current read,
     //  we need to assert /RD for the next transaction, even though we haven't received the data for the current cycle
     //
-    if((buffer_index + 1) != bytecount) //  See if there are more reads in the current burst, and if so, start another read
+    if ((buffer_index + 1) != bytecount) //  See if there are more reads in the current burst, and if so, start another read
     {                                   //  This is not the last byte, so start another /RD pulse
       WAIT_WHILE_PHI_1_LOW;
       CTRL_START_RD_TWEAK;              //  Extremely finely tuned so that the falling edge of /RD will arrive at pin 17 of 1MB1 130 ns after rising edge of Phi 1
@@ -440,14 +448,14 @@ static int32_t DMA_Read_Burst(uint8_t buffer[], uint32_t bytecount)
     }
     else
     {
-      WAIT_WHILE_PHI_1_LOW;             // this is in both branches of the if() so that the other one is not separated from the CTRL_START_TWEAK and ASSERT
+      WAIT_WHILE_PHI_1_LOW;             // this is in both branches of the if () so that the other one is not separated from the CTRL_START_TWEAK and ASSERT
     }
     WAIT_WHILE_PHI_1_HIGH;
     data_from_IO_bus = (GPIO_PAD_STATUS_REG_DB0 >> BIT_POSITION_DB0) & 0x000000FFU;     //  Requires that data bits are contiguous and in the right order
     buffer[buffer_index++] = data_from_IO_bus;     //  Save the data that has just been read
   }
 
-  if(Logic_Analyzer_State == ANALYZER_ACQUIRING)
+  if (Logic_Analyzer_State == ANALYZER_ACQUIRING)
   {
     DMA_Logic_Analyzer_Support(buffer, bytecount, 0);
   }
@@ -465,11 +473,13 @@ int32_t DMA_Write_Block(uint32_t DMA_Target_Address, uint8_t buffer[], uint32_t 
   uint32_t               buffer_index;
   uint8_t                refresh_count;
 
-  if((bytecount == 0) || (buffer == NULL) || (!DMA_Active))
+  if ((bytecount == 0) || (buffer == NULL) || (!DMA_Active))
   {
     return 0;        //  Pointless or dangerous call
   }
 
+                     //                                                                                This has been reviewed, and __disable_irq() has already been done "DMA_Acknowledge" part of the
+                     //                                                                                EBTKS_Bus_Interface_ISR.cpp  .  So this should be removed, and tested
   __disable_irq();   //  Disable all interrupts while DMA is happening. In particular the Systick stuff.
                      //  This means that if we want delays, we need to have our own EBTKS_delay_ns()
                      //  All interrupts are re-enabled at the end of release_DMA_request()
@@ -514,7 +524,7 @@ int32_t DMA_Write_Block(uint32_t DMA_Target_Address, uint8_t buffer[], uint32_t 
     DMA_Write_Burst(&buffer[buffer_index], MAX_DMA_BURST_LENGTH);     //  On exit, we are just after the falling edge of Phi 1, /WRX is not asserted,
                                                                       //  /RC not asserted, U2 disabled, T4 bus is output, I/O bus direction is from HP
     buffer_index += MAX_DMA_BURST_LENGTH;
-    for(refresh_count = 0 ; refresh_count < (DMA_BURST_BREAK_CYCLES - 1); refresh_count++)
+    for (refresh_count = 0 ; refresh_count < (DMA_BURST_BREAK_CYCLES - 1); refresh_count++)
     {
       WAIT_WHILE_PHI_1_LOW;
       WAIT_WHILE_PHI_1_HIGH;
@@ -602,7 +612,7 @@ static int32_t DMA_Write_Burst(uint8_t buffer[], uint32_t bytecount)
     //  Due to the pipelined nature of bus transactions, if we need to do more transfers after the current write,
     //  we need to assert /WR for the next transaction, even though we haven't written the data for the current cycle
     //
-    if(buffer_index != bytecount)
+    if (buffer_index != bytecount)
     { //  This is not the last byte, so start another /WR pulse
       WAIT_WHILE_PHI_1_LOW;
       CTRL_START_WR_TWEAK;              //  Extremely finely tuned so that the falling edge of /WR will arrive at pin 15 of 1MB1 130 ns after rising edge of Phi 1
@@ -610,7 +620,7 @@ static int32_t DMA_Write_Burst(uint8_t buffer[], uint32_t bytecount)
     }
     else
     { //  This is the last transfer, so don't issue another /WR
-      WAIT_WHILE_PHI_1_LOW;             // this is in both branches of the if() so that the other one is not separated from the CTRL_START_TWEAK and ASSERT
+      WAIT_WHILE_PHI_1_LOW;             // this is in both branches of the if () so that the other one is not separated from the CTRL_START_TWEAK and ASSERT
     }
     WAIT_WHILE_PHI_1_HIGH;
     //
@@ -626,7 +636,7 @@ static int32_t DMA_Write_Burst(uint8_t buffer[], uint32_t bytecount)
   //  /RC is asserted and the last data byte to be written is on the data bus
   //
 
-  if(Logic_Analyzer_State == ANALYZER_ACQUIRING)
+  if (Logic_Analyzer_State == ANALYZER_ACQUIRING)
   {
     DMA_Logic_Analyzer_Support(buffer, bytecount, 1);
   }
@@ -702,7 +712,7 @@ void release_DMA_request(void)
   //  We want to consistently release HALT 100 ns after Phi 2 rising. But this routine is called asynchronously, so Phi 2 could be in either state
   //  We are ok with wasting a cycle to get synchronized
   //
-  if(IS_PHI_2_HIGH)   // approximately 12.5% chance of this happening
+  if (IS_PHI_2_HIGH)   // approximately 12.5% chance of this happening
   {
     WAIT_WHILE_PHI_2_HIGH;
   }
@@ -756,12 +766,12 @@ static void DMA_Logic_Analyzer_Support(uint8_t buffer[], uint32_t bytecount, int
 
   index = 0;
 
-  if(Logic_Analyzer_Triggered && (Logic_Analyzer_State == ANALYZER_ACQUIRING))
+  if (Logic_Analyzer_Triggered && (Logic_Analyzer_State == ANALYZER_ACQUIRING))
   {
     while(index < bytecount)
     {
       Logic_Analyzer_main_sample = (DMA_Addr_for_Logic_Analyzer++ << 8) | buffer[index++];
-      if(mode == 0)
+      if (mode == 0)
       {   //    Read
         Logic_Analyzer_main_sample |= 0x0D000000;
       }
@@ -776,9 +786,9 @@ static void DMA_Logic_Analyzer_Support(uint8_t buffer[], uint32_t bytecount, int
 
       Logic_Analyzer_Data_index &= Logic_Analyzer_Current_Index_Mask;          //  Modulo addressing of sample buffer. Requires buffer length to be a power of two
       Logic_Analyzer_Valid_Samples++;   //  This could theoretically over flow if we didn't see a trigger in 7000 seconds (1.9 hours). Saturating is not worth the overhead
-      if(Logic_Analyzer_Triggered)
+      if (Logic_Analyzer_Triggered)
       {
-        if(--Logic_Analyzer_Samples_Till_Done == 0)
+        if (--Logic_Analyzer_Samples_Till_Done == 0)
         {
           Logic_Analyzer_State = ANALYZER_ACQUISITION_DONE;
         }

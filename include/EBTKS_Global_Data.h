@@ -282,6 +282,7 @@ EXTERN  EXTMEM char dir_line[258];                                              
         volatile bool DMA_Request = false;
         volatile bool DMA_Acknowledge = false;
         volatile bool DMA_Active = false;
+        volatile bool DMA_has_been_Requested = false;
 
         const char b64_alphabet[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
                                     "abcdefghijklmnopqrstuvwxyz"
@@ -309,6 +310,7 @@ EXTERN  EXTMEM char dir_line[258];                                              
         extern  volatile bool DMA_Request;
         extern  volatile bool DMA_Acknowledge;
         extern  volatile bool DMA_Active;
+        extern  volatile bool DMA_has_been_Requested;
 
         extern  const char b64_alphabet[];
 

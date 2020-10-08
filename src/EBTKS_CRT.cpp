@@ -187,7 +187,7 @@ void Write_on_CRT_Alpha(uint16_t row, uint16_t column, const char *  text)
     {
       uint8_t data;
       DMA_Read_Block(CRTSTS , &data , 1);
-      if((data & 0x80) == 0)
+      if ((data & 0x80) == 0)
       {
         break;
       }
@@ -276,7 +276,7 @@ void DMA_Test_5(void)
 //  while(loops--)
 //  {
 //    DMA_Read_Block(CRTSTS , &data , 1);
-//    if(data & 0x02)
+//    if (data & 0x02)
 //    {
 //      SET_RXD;
 //    }
@@ -285,7 +285,7 @@ void DMA_Test_5(void)
 //      CLEAR_RXD;
 //    }
 //
-//    if(data & 0x80)
+//    if (data & 0x80)
 //    {
 //      TOGGLE_TXD;           //  While busy, toggle TXD
 //    }
@@ -327,7 +327,7 @@ void CRT_Timing_Test_1(void)
   while(loops--)
   {
     DMA_Read_Block(CRTSTS , &data , 1);
-    if(data & 0x02)
+    if (data & 0x02)
     {
       SET_RXD;
     }
@@ -336,7 +336,7 @@ void CRT_Timing_Test_1(void)
       CLEAR_RXD;
     }
 
-    if(data & 0x80)
+    if (data & 0x80)
     {
       //  If busy, do nothing
     }

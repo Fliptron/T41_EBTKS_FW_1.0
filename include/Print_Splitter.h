@@ -29,7 +29,7 @@ class Print_Splitter:public Print
 
   virtual size_t write(uint8_t b)                                 //  Returns the number of characters written to the buffer. Usually 1, or 0 if full
   {
-    if(_Buffer_write_index < (_big_buffer_size - 1))
+    if (_Buffer_write_index < (_big_buffer_size - 1))
     {
       _big_buffer_ptr[_Buffer_write_index++] = b;
       _big_buffer_ptr[_Buffer_write_index]   = 0x00;
@@ -57,21 +57,21 @@ class Print_Splitter:public Print
     uint32_t    current_length;                                   //  Return -1 if we are at the end of the buffer. String in dest is 0x00 terminated, but is not
                                                                   //  included in the count. So dest needs to be 1 char longer than max_chars
 
-    if(_Buffer_read_index == _Buffer_write_index)
+    if (_Buffer_read_index == _Buffer_write_index)
     {
       return -1;
     }
     current_length = 0;
     while(1)
     {
-      if(_Buffer_read_index == _Buffer_write_index)               //  Nothing more to read
+      if (_Buffer_read_index == _Buffer_write_index)               //  Nothing more to read
       {
         return current_length;
       }
-      if(_big_buffer_ptr[_Buffer_read_index] == 0x0D)      //  Found CR. Skip over it and and following LF, and return the with the current length
+      if (_big_buffer_ptr[_Buffer_read_index] == 0x0D)      //  Found CR. Skip over it and and following LF, and return the with the current length
       {
         _Buffer_read_index++;
-        if(_big_buffer_ptr[_Buffer_read_index] == 0x0A)
+        if (_big_buffer_ptr[_Buffer_read_index] == 0x0A)
         {
           _Buffer_read_index++;
         }
@@ -80,7 +80,7 @@ class Print_Splitter:public Print
       *dest++ = _big_buffer_ptr[_Buffer_read_index++];
       *dest = 0x00;
       current_length++;
-      if(current_length == max_chars)
+      if (current_length == max_chars)
       {
         return current_length;
       }

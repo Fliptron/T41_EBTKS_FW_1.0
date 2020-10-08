@@ -439,7 +439,7 @@ void tape_handle_command_flush(void)
 void tape_handle_command_load(void)
 {
   Serial.printf("\nLoad new tape file. Enter filename: ");
-  if(!wait_for_serial_string())       //  Hang here till we get a file name (hopefully)
+  if (!wait_for_serial_string())       //  Hang here till we get a file name (hopefully)
   {
     return;                           //  Got a Ctrl-C , so abort command
   }
