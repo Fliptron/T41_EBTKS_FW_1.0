@@ -206,9 +206,10 @@ EXTERN  jmp_buf   PWO_While_Running;
 EXTERN  char  serial_string[SERIAL_STRING_MAX_LENGTH + 2];
 EXTERN  char  lc_serial_command[SERIAL_COMMAND_MAX_LENGTH + 2];
 
-EXTERN  volatile  uint8_t   just_once;      //  This is used to trigger a temporary diagnostic function in a piece of code, where dumping with Serial.printf() is not an option
+EXTERN  volatile  uint8_t   just_once;       // This is used to trigger a temporary diagnostic function in a piece of code, where dumping with Serial.printf() is not an option
+EXTERN  volatile bool globalIntAck;          // set when our interrupt was acknowleged
+EXTERN  volatile bool globalIntEn;           // global interrupt enable
 
-EXTERN volatile bool globalIntAck;          //set when our interrupt was acknowleged
 //
 //  map handler functions for each i/o address                        All of these functions that aren't NULL need to be timed.
 //  For I/O we do not represent, ioReadNullFunc() just returns false

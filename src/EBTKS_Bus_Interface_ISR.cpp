@@ -52,6 +52,8 @@
 ioReadFuncPtr_t ioReadFuncs[256];      //ensure the setup() code initialises this!
 ioWriteFuncPtr_t ioWriteFuncs[256];
 
+volatile bool intEn_1MB5 = false;
+int intrState = 0;
 
 bool ioReadNullFunc(void) //  This function is running within an ISR, keep it short and fast.
 {
@@ -62,6 +64,24 @@ void ioWriteNullFunc(uint8_t) //  This function is running within an ISR, keep i
 {
   return;
 }
+void onWriteGIE(uint8_t val)
+{
+    (void)val;
+    globalIntEn = true;
+}
+
+void onWriteGID(uint8_t val)
+{
+    (void)val;
+    globalIntEn = false;
+}
+// this register is implemented in the 1MB5 translator chips - they all share this register
+void onWriteInterrupt(uint8_t val)
+{
+    (void)val;
+    intEn_1MB5 = true; //a write to this register enables 1MB5 interrupts
+
+}
 
 void initIOfuncTable(void)
 {
@@ -70,7 +90,21 @@ for (int a = 0; a < 256; a++)
     ioReadFuncs[a] = &ioReadNullFunc; //default all
     ioWriteFuncs[a] = &ioWriteNullFunc;
   }
+
+setIOWriteFunc(0x40,&onWriteInterrupt); //177500 1MB5 INTEN
+setIOWriteFunc(0, &onWriteGIE);         //global interrupt enable
 }
+
+void removeIOReadFunc(uint8_t addr)
+{
+  ioReadFuncs[addr] = &ioReadNullFunc;
+}
+
+void removeIOWriteFunc(uint8_t addr)
+{
+  ioWriteFuncs[addr] = &ioWriteNullFunc;
+}
+
 void setIOReadFunc(uint8_t addr,ioReadFuncPtr_t readFuncP)
 {
   ioReadFuncs[addr] = readFuncP;
@@ -150,6 +184,11 @@ inline void onPhi_1_Rise(void)                  //  This function is running wit
 
   data_from_IO_bus = (GPIO_PAD_STATUS_REG_DB0 >> BIT_POSITION_DB0) & 0x000000FFU;       //  Requires that data bits are contiguous and in the right order
 
+  if (intrState)
+    {
+      ASSERT_INTPRI;  //if we have asserted /IRL, assert our priority in the chain
+    }
+  
 //
 //  Read the local data bus. Regardless of whether we are idle, providing data, or receiving data,
 //  the Pad Status Register should have the current data bus for this cycle
@@ -336,18 +375,39 @@ inline void onPhi_2_Rise(void)                                  //  This functio
 //  NOT Tested yet
 //
 
- if (Interrupt_Acknowledge)
+ switch(intrState)
   {
-    TOGGLE_TXD;
-    if ((interruptReq == true) && (!IS_IPRIH_IN_LO)) //PRIH is high and we're interrupt - must be our turn
-    {
-      globalIntAck = true;  //set when we've been the interrupter
-      readData = interruptVector;      
-      interruptReq = false; //clear request
-      RELEASE_INT;
-      RELEASE_INTPRI;
-      HP85_Read_Us = true;
-    }
+    case 0: //test for a request or see if there is an intack
+
+      if ((Interrupt_Acknowledge) && (!IS_IPRIH_IN_LO))
+      {
+        intEn_1MB5 = false;   //lower priority device had interrupted, disable our ints until a write to 177500
+      }
+      else if ((interruptReq == true) && (globalIntEn == true) && (intEn_1MB5 == true))
+      {
+        intrState = 1; //interrupt was requested
+        ASSERT_INT; //IRL low synchronous to phi2 rise - max 500ns to fall
+      }  
+      break;
+
+    case 1: // IRL is low
+      if ((Interrupt_Acknowledge) && (!IS_IPRIH_IN_LO)) //we're interrupting - so it must be our turn
+        {
+          RELEASE_INT;
+          RELEASE_INTPRI;
+          globalIntAck = true;  //set when we've been the interrupter
+          readData = interruptVector;     
+          HP85_Read_Us = true; 
+          interruptReq = false; //clear request
+          intrState = 0;
+        }
+      if ((Interrupt_Acknowledge) && (IS_IPRIH_IN_LO)) //higher priority request beat us
+        {
+          RELEASE_INT;  //let go of /IRL as we lost
+          RELEASE_INTPRI;
+          intrState = 0; //try for another request
+        }
+      break;
   }
 
   //  For a Read Cycle (I/O bus to CPU on main board), this is where we turn the data bus around

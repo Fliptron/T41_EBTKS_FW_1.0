@@ -549,6 +549,10 @@ void setup()
   pinMode(CORE_PIN_INTERRUPT, OUTPUT);  //  INT inverted by hardware
   RELEASE_INT;
 
+  pinMode(CORE_PIN_IPRIH_IN, INPUT);    //PRIH input - interrupt priority chain input. low if someone above us is interrupting
+  pinMode(CORE_PIN_INTPRI,OUTPUT);
+  RELEASE_INTPRI;
+
   pinMode(CORE_PIN_IPRIH_IN, INPUT);    //PRIH input - interrupt priority chain input. Low if someone above us is interrupting
   pinMode(CORE_PIN_INTPRI,OUTPUT);
   RELEASE_INTPRI;

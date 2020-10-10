@@ -70,6 +70,9 @@ void mySystick_isr(void);
 void initIOfuncTable(void);
 void setIOReadFunc(uint8_t addr,ioReadFuncPtr_t readFuncP);
 void setIOWriteFunc(uint8_t addr,ioWriteFuncPtr_t writeFuncP);
+void removeIOReadFunc(uint8_t addr);
+void removeIOWriteFunc(uint8_t addr);
+
 
 
 //

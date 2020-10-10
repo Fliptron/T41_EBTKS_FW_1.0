@@ -114,18 +114,6 @@ HpibDisk *devices[NUM_DEVICES];
 // emulated registers - note these run under the interrupt context - keep them short n sweet!
 //
 
-void onWriteGIE(uint8_t val)
-{
-  (void)val;
-  globalIntEnable = true;
-}
-
-void onWriteGID(uint8_t val)
-{
-  (void)val;
-  globalIntEnable = false;
-}
-
 bool onReadStatus(void)
     {
     uint8_t result;
@@ -207,13 +195,6 @@ void onWriteOb(uint8_t val)
         }
     }
 
-void onWriteInterrupt(uint8_t val)
-    {
-    (void)val;
-    // respond to reset
-    //interruptReq = true;
-    //ASSERT_INT;
-    }
 //
 //   consider this the interrupt acknowledge function. Note: isr context!
 //
@@ -307,8 +288,6 @@ void requestInterrupt(uint8_t reason)
     {
     intReason = reason;
     interruptVector = 0x10;   //  Interrupt vector for the 1MB5
-    ASSERT_INT;
-    ASSERT_INTPRI;
     interruptReq = true;
     }
 
@@ -334,12 +313,8 @@ void initTranslator(int selectNum)
   setIOReadFunc(addr + 1,&onReadIB);
   setIOWriteFunc(addr,&onWriteCCR);
   setIOWriteFunc(addr + 1,&onWriteOb);
-  setIOWriteFunc(0x40,&onWriteInterrupt);
-  setIOReadFunc(0x40,&onReadInterrupt);
-
-  setIOWriteFunc(0,&onWriteGIE);            //global interrupt enable
-  setIOWriteFunc(1,&onWriteGID);            //global interrupt disable
-
+  setIOReadFunc(0x40, &onReadInterrupt);
+  setIOReadFunc(0x41, &onReadInterrupt);
 
   selectCode = addr; //the lower address is also the response value when the global 1MB5 register at 0xff40 (0177500) is read
 
@@ -393,16 +368,16 @@ void loopTranslator(void)
         }
     else
         {
-        if (prevReset == true)
+        if ((prevReset == true) && (globalIntEn == true))
             {
-            LOGPRINTF_1MB5("IOP RESET\n");
+            LOGPRINTF_1MB5("IOP RESET GIE:%d\n",globalIntEn);
+
             intReason = 3;
             interruptVector = 0x10; //int vector for the 1MB5
-            ASSERT_INT;
-            ASSERT_INTPRI;
             interruptReq = true;
+            prevReset = false;
             }
-        prevReset = false;
+        
         }
 
     if (millis() > (TICK_TIME + tick))
