@@ -18,7 +18,7 @@ enum {
 #define MAX_DISKS 4    //only allow a maximum of 4 disk drives (units)
 extern uint8_t readBuff[];
 extern uint8_t diskBuff[];
-extern void loadReadBuff(int count);
+extern void loadReadBuff(int count, bool pack);
 extern bool isReadBuffMT();
 
 /*

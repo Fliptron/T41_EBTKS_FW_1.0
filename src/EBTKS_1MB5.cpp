@@ -104,7 +104,6 @@ bool inputInt = false;
 void processOB(void);
 void processIB(void);
 void requestInterrupt(uint8_t reason);
-void loadReadBuff(int count);
 bool isReadBuffMT();
 
 #define NUM_DEVICES 31
@@ -252,7 +251,7 @@ bool writeIb(uint8_t *val)
     return full;
     }
 //assumes data to send in in the readBuff array
-void loadReadBuff(int count)
+void loadReadBuff(int count, bool pack = false)
     {
     __disable_irq();
     readIndex = 0;
@@ -265,6 +264,11 @@ void loadReadBuff(int count)
         {
         statusReg = 0;
         }
+
+    if (pack)
+      {
+        statusReg |= PSR_PACK;
+      }
 
     ibf = true;
     __enable_irq();
@@ -351,13 +355,16 @@ void loopTranslator(void)
         if (prevInt == false)
             {
             LOGPRINTF_1MB5("HP85 interrupted us\n");    //  This happens the least significant bit of the CCR register in the 1MB5 is set
-            writeStatus(statusReg ^ PSR_PACK);          //  In real hardware this would be an interrupt sent to the 8049 microprocessor
-                                                        //  Everett and Philip added the xor with statusReg  2020_10_08
+            loadReadBuff(0,true);                     //0 byte with PACK
             }
         prevInt = true;
         }
     else
         {
+        if (prevInt == true)            //falling edge of INT - reset PACK
+          {
+            writeStatus(0);
+          }
         prevInt = false;
         }
 
