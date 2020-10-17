@@ -279,6 +279,9 @@ bool loadConfiguration(const char *filename)
   // Open file for reading
   File file = SD.open(filename);
 
+  LOGPRINTF("Open was [%s]\n", file ? "Successful":"Failed");     //  We need to probably push this to the screen if it fails
+                                                                  //  Except this happens before the PWO is released
+
   // Allocate a temporary JsonDocument
   // Don't forget to change the capacity to match your requirements.
   // Use arduinojson.org/v6/assistant to compute the capacity.
@@ -393,7 +396,7 @@ bool loadConfiguration(const char *filename)
     int select = hpibDevice["select"] | 7;       //1MB5 select code (3..10). 7 is the default
     int type = hpibDevice["type"] | 0;           //disk drive type 0 = 5 1/4"
     int device = hpibDevice["device"] | 0;       //hpib device number 0..31
-    const char *diskDir = hpibDevice["directory"] | "/disk/";    //disk image folder/directory
+    const char *diskDir = hpibDevice["directory"] | "/disks/";    //disk image folder/directory
     bool enable = hpibDevice["enable"] | false;   //are we enabled?
 
     if (enable == true)

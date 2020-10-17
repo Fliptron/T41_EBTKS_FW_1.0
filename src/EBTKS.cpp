@@ -401,23 +401,23 @@ GPIO9   33         7           CORE_PIN33_PORTREG
 //  Messages for startup indicating LOGLEVEL
 
 #if LOGLEVEL_GEN == LOG_NONE
-#define LOGLEVEL_GEN_MESSAGE      "LOGLEVEL_GEN is None\n"
+#define LOGLEVEL_GEN_MESSAGE      "LOGLEVEL_GEN is  None\n"
 #elif LOGLEVEL_GEN == LOG_FILE
-#define LOGLEVEL_GEN_MESSAGE      "LOGLEVEL_GEN is File on SD card\n"
+#define LOGLEVEL_GEN_MESSAGE      "LOGLEVEL_GEN is  File on SD card\n"
 #elif LOGLEVEL_GEN == LOG_SERIAL
-#define LOGLEVEL_GEN_MESSAGE      "LOGLEVEL_GEN is Serial via USB\n"
+#define LOGLEVEL_GEN_MESSAGE      "LOGLEVEL_GEN is  Serial via USB\n"
 #else
-#define LOGLEVEL_GEN_MESSAGE      "LOGLEVEL_GEN is unknown\n"
+#define LOGLEVEL_GEN_MESSAGE      "LOGLEVEL_GEN is  unknown\n"
 #endif
 
 #if LOGLEVEL_AUX == LOG_NONE
-#define LOGLEVEL_AUX_MESSAGE      "LOGLEVEL_AUX is None\n"
+#define LOGLEVEL_AUX_MESSAGE      "LOGLEVEL_AUX is  None\n"
 #elif LOGLEVEL_AUX == LOG_FILE
-#define LOGLEVEL_AUX_MESSAGE      "LOGLEVEL_AUX is File on SD card\n"
+#define LOGLEVEL_AUX_MESSAGE      "LOGLEVEL_AUX is  File on SD card\n"
 #elif LOGLEVEL_AUX == LOG_SERIAL
-#define LOGLEVEL_AUX_MESSAGE      "LOGLEVEL_AUX is Serial via USB\n"
+#define LOGLEVEL_AUX_MESSAGE      "LOGLEVEL_AUX is  Serial via USB\n"
 #else
-#define LOGLEVEL_AUX_MESSAGE      "LOGLEVEL_AUX is unknown\n"
+#define LOGLEVEL_AUX_MESSAGE      "LOGLEVEL_AUX is  unknown\n"
 #endif
 
 #if LOGLEVEL_1MB5 == LOG_NONE

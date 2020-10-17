@@ -3,6 +3,8 @@
 //
 //  09/11/2020  PMF.  Implemented SDCD, SDCUR$,
 //
+//  10/17/2020        Fix pervasive errors in how I was handling buffers
+//
 
 #include <Arduino.h>
 #include <string.h>
@@ -121,14 +123,19 @@ void AUXROM_Poll(void)
   }
 
   //my_R12 = AUXROM_RAM_Window.as_struct.AR_R12_copy;
-  LOGPRINTF_AUX("AUXROM Function called. Got Mailbox # %d  and Usage %d\n", Mailbox_to_be_processed , AUXROM_RAM_Window.as_struct.AR_Usages[Mailbox_to_be_processed]);
+  LOGPRINTF_AUX("AUXROM Function called. Got Mailbox # %d  and Usage %d\n", Mailbox_to_be_processed , *p_usage);
   //LOGPRINTF_AUX("R12, got %06o\n", my_R12);
   //Serial.printf("Showing 16 bytes prior to R12 address\n");
   //HexDump_HP85_mem(my_R12 - 16, 16, true, true);
   //Serial.flush();
   //delay(500);
 
-  switch (AUXROM_RAM_Window.as_struct.AR_Usages[Mailbox_to_be_processed])
+  p_mailbox = &AUXROM_RAM_Window.as_struct.AR_Mailboxes[Mailbox_to_be_processed];     //  Pointer to the selected primary mailbox for keyword
+  p_len     = &AUXROM_RAM_Window.as_struct.AR_Lengths[Mailbox_to_be_processed];       //  Pointer to the selected buffer length
+  p_usage   = &AUXROM_RAM_Window.as_struct.AR_Usages[Mailbox_to_be_processed];        //  Pointer to the selected buffer usage , and return success/error status
+  p_buffer  = &AUXROM_RAM_Window.as_struct.AR_Buffer_0[Mailbox_to_be_processed * 256];//  Pointer to the selected primary buffer for keyword.
+
+  switch (*p_usage)
   {
     case AUX_USAGE_CLOCK:
       AUXROM_CLOCK();
@@ -196,12 +203,12 @@ void AUXROM_Poll(void)
       AUXROM_WROM();
       break;
     default:
-      AUXROM_RAM_Window.as_struct.AR_Usages[Mailbox_to_be_processed] = 1;     //  Failure, unrecognized Usage code
+      *p_usage = 1;     //  Failure, unrecognized Usage code
   }
 
   new_AUXROM_Alert = false;
   //show_mailboxes_and_usage();
-  AUXROM_RAM_Window.as_struct.AR_Mailboxes[Mailbox_to_be_processed] = 0;      //  Relinquish control of the mailbox
+  *p_mailbox = 0;      //  Relinquish control of the mailbox
 
 }
 

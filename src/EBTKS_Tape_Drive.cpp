@@ -284,7 +284,7 @@ bool Tape::setFile(const char *fname)
   _tapeFile = SD.open(temptext, (O_RDWR));
   if (!_tapeFile)
   {
-    Serial.printf("Tape file did not open: %s\n", temptext);
+    Serial.printf("Tape file did not open: %s   <<<<<<<<<<<<<<<<<<\n", temptext);
   }
   else
   {
@@ -323,7 +323,7 @@ bool Tape::blockRead(uint32_t blkNum)
 
     if (!_tapeFile.seek(blkNum * TAPE_BLOCKSIZE * 2))
         {
-        Serial.printf("Tape seek error %d\n", blkNum);                      //  Maybe this should be pushed to the screen
+        Serial.printf("Tape seek error on block %d\n", blkNum);                      //  Maybe this should be pushed to the screen
         }
     else
         {

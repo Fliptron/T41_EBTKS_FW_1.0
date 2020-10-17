@@ -1226,7 +1226,7 @@ la_display_results:
     {
       Serial.printf("  Trigger\n");
     }
-    else if (temp & 0x08000000)                                //  See if the DMA bit is set
+    else if (temp & 0x08000000)                               //  See if the DMA bit is set
     {                                                         //  WE DO NOT TRACE THE DMA LMA Cycles, or the Refresh Cycles. We do not support triggering on DMA
       Serial.printf("  DMA\n");
     }

@@ -116,6 +116,11 @@ union RAM_WINDOW_OVERLAY
 
 EXTERN union RAM_WINDOW_OVERLAY AUXROM_RAM_Window;
 
+EXTERN uint8_t              * p_mailbox;                              //  This will be a pointer to the selected primary mailbox for keyword
+EXTERN uint16_t             * p_len;                                  //  This will be a pointer to the selected buffer length
+EXTERN uint16_t             * p_usage;                                //  This will be a pointer to the selected buffer usage , and return success/error status
+EXTERN char                 * p_buffer;                               //  This will be a pointer to the selected primary buffer for keyword.
+
 struct PACKED S_HP85_Number
 {
   uint8_t     real_bytes[8];
