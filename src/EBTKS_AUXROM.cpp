@@ -130,10 +130,10 @@ void AUXROM_Poll(void)
   //Serial.flush();
   //delay(500);
 
-  p_mailbox = &AUXROM_RAM_Window.as_struct.AR_Mailboxes[Mailbox_to_be_processed];     //  Pointer to the selected primary mailbox for keyword
-  p_len     = &AUXROM_RAM_Window.as_struct.AR_Lengths[Mailbox_to_be_processed];       //  Pointer to the selected buffer length
-  p_usage   = &AUXROM_RAM_Window.as_struct.AR_Usages[Mailbox_to_be_processed];        //  Pointer to the selected buffer usage , and return success/error status
-  p_buffer  = &AUXROM_RAM_Window.as_struct.AR_Buffer_0[Mailbox_to_be_processed * 256];//  Pointer to the selected primary buffer for keyword.
+  p_mailbox = &AUXROM_RAM_Window.as_struct.AR_Mailboxes[Mailbox_to_be_processed];         //  Pointer to the selected primary mailbox for keyword
+  p_len     = &AUXROM_RAM_Window.as_struct.AR_Lengths[Mailbox_to_be_processed];           //  Pointer to the selected buffer length
+  p_usage   = &AUXROM_RAM_Window.as_struct.AR_Usages[Mailbox_to_be_processed];            //  Pointer to the selected buffer usage , and return success/error status
+  p_buffer  = &AUXROM_RAM_Window.as_struct.AR_Buffer_0[Mailbox_to_be_processed * 256];    //  Pointer to the selected primary buffer for keyword.
 
   switch (*p_usage)
   {
@@ -203,12 +203,12 @@ void AUXROM_Poll(void)
       AUXROM_WROM();
       break;
     default:
-      *p_usage = 1;     //  Failure, unrecognized Usage code
+      *p_usage = 1;               //  Failure, unrecognized Usage code
   }
 
   new_AUXROM_Alert = false;
   //show_mailboxes_and_usage();
-  *p_mailbox = 0;      //  Relinquish control of the mailbox
+  *p_mailbox = 0;                 //  Relinquish control of the mailbox
 
 }
 
@@ -231,9 +231,9 @@ void AUXROM_Poll(void)
 //  #################  does not handle RAM window in EBTKS ROMs
 //
 
-void AUXROM_Fetch_Memory(uint8_t * dest, uint32_t src_addr, uint16_t num_bytes)
+void AUXROM_Fetch_Memory(uint8_t *dest, uint32_t src_addr, uint16_t num_bytes)
 {
-  while(num_bytes--)
+  while (num_bytes--)
   {
     if (getHP85RamExp())
     {
@@ -242,7 +242,7 @@ void AUXROM_Fetch_Memory(uint8_t * dest, uint32_t src_addr, uint16_t num_bytes)
       //
       if ((src_addr >= HP85A_16K_RAM_module_base_addr) && (src_addr < IO_ADDR))
       {
-        *dest++ = HP85A_16K_RAM_module[src_addr++ & 0x3FFFU];   //  Got 85A EBTKS RAM, and address match
+        *dest++ = HP85A_16K_RAM_module[src_addr++ & 0x3FFFU]; //  Got 85A EBTKS RAM, and address match
         continue;
       }
       //  If we get here, got 85A EBTKS RAM, and address does not match, so must be built-in DRAM,
@@ -276,9 +276,9 @@ void AUXROM_Fetch_Memory(uint8_t * dest, uint32_t src_addr, uint16_t num_bytes)
 //  dest_addr is an HP85 memory address. source is a pointer into EBTKS memory
 //
 
-void AUXROM_Store_Memory(uint16_t dest_addr, char * source, uint16_t num_bytes)
+void AUXROM_Store_Memory(uint16_t dest_addr, char *source, uint16_t num_bytes)
 {
-  while(num_bytes--)
+  while (num_bytes--)
   {
     if (getHP85RamExp())
     {
@@ -297,10 +297,9 @@ void AUXROM_Store_Memory(uint16_t dest_addr, char * source, uint16_t num_bytes)
     //  built-in DRAM
     //
     //Serial.printf("DestAddr %08X  SrcAddr %08X  byte %02X\n", dest_addr, source, *source);
-    DMA_Poke8((dest_addr++) & 0x0000FFFF , *source++);
+    DMA_Poke8((dest_addr++) & 0x0000FFFF, *source++);
   }
 }
-
 
 //
 //  Fetch num_bytes for HP-85 memory which are parameters on the R12 stack
@@ -310,9 +309,9 @@ void AUXROM_Store_Memory(uint16_t dest_addr, char * source, uint16_t num_bytes)
 //  addresses stack, and R12 is pointing at the first free byte.
 //
 
-void AUXROM_Fetch_Parameters(void * Parameter_Block_XXX , uint16_t num_bytes)
+void AUXROM_Fetch_Parameters(void *Parameter_Block_XXX, uint16_t num_bytes)
 {
-  AUXROM_Fetch_Memory(( uint8_t *)Parameter_Block_XXX, AUXROM_RAM_Window.as_struct.AR_R12_copy - num_bytes, num_bytes);
+  AUXROM_Fetch_Memory((uint8_t *)Parameter_Block_XXX, AUXROM_RAM_Window.as_struct.AR_R12_copy - num_bytes, num_bytes);
 }
 
 //

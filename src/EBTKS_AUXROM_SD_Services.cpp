@@ -726,7 +726,12 @@ void AUXROM_MOUNT(void)
 //  (2) strlen(msu$)        is AUXROM_RAM_Window.as_struct.AR_Lengths[0]
 //  (3) resolved path       is Resolved_Path[]                              // null terminated
 //  (4) mode                is AUXROM_RAM_Window.as_struct.AR_BUF0_OPTS[0]  
-
+//
+//
+//  I need to split out :D and :T       :D701
+//  I need to split out Select Code       7
+//  I need to split out Device Number      0       0..31 (- dev 22 )
+//  I need to split out unit number         1      1..4
 
 //   bool  rmdir_status;
 //   File  dirfile;
