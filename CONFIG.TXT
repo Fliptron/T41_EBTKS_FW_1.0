@@ -1,6 +1,6 @@
 {
   "machineName": "HP85A",
-  "flags": 173368985,
+  "flags": 5,
   "ram16k": true,
   "screenEmu": false,
   "tape": {
@@ -72,14 +72,39 @@
       "enable": true,
       "drives": [
         {
+          "Comment": "msu 300",
           "unit": 0,
           "filename": "85Games1.dsk",
           "writeProtect": false,
           "enable": true
         },
         {
+          "Comment": "msu 301",
           "unit": 1,
           "filename": "85Games2.dsk",
+          "writeProtect": false,
+          "enable": true
+        }
+      ]
+    },
+    {
+      "select": 3,
+      "type": 0,
+      "device": 1,
+      "directory": "/disks/",
+      "enable": true,
+      "drives": [
+        {
+          "Comment": "msu 310",
+          "unit": 0,
+          "filename": "85GamesMisc.dsk",
+          "writeProtect": false,
+          "enable": true
+        },
+        {
+          "Comment": "msu 311",
+          "unit": 1,
+          "filename": "85GeneralStatPac.dsk",
           "writeProtect": false,
           "enable": true
         }

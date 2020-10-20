@@ -27,7 +27,7 @@ extern bool isReadBuffMT();
 class HpibDisk
     {
     public:
-        HpibDisk(int tla)
+        HpibDisk(int tla)   //  Talker/Listener Address
             {
             _tla = tla;
             _numDisks = 0;

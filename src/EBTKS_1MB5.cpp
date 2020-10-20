@@ -328,12 +328,12 @@ void initTranslator(int selectNum)
     CR[17] = 0x0d;
     CR[18] = 0x0a;
     Serial.printf("HPIB init select code:%d\n", selectNum);
-    devices[0] = new HpibDisk(0); //define one disk system as device #0
-                                  //devices[1] = new HpibDisk(1);    //test multiple devices
-                                  //devices[1]->addDisk(DISK_TYPE_5Q);
-                                  //devices[1]->addDisk(DISK_TYPE_5Q);
-                                  //devices[1]->setFile(0, (char *)"/disks/85Games2.dsk", false);
-                                  //devices[1]->setFile(1, (char *)"/disks/85Games1.dsk", false);
+    // devices[0] = new HpibDisk(0); //define one disk system as device #0
+    //                               //devices[1] = new HpibDisk(1);    //test multiple devices
+    //                               //devices[1]->addDisk(DISK_TYPE_5Q);
+    //                               //devices[1]->addDisk(DISK_TYPE_5Q);
+    //                               //devices[1]->setFile(0, (char *)"/disks/85Games2.dsk", false);
+    //                               //devices[1]->setFile(1, (char *)"/disks/85Games1.dsk", false);
 }
 
 void loopTranslator(void)

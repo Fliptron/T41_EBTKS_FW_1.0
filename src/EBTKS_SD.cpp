@@ -393,11 +393,16 @@ bool loadConfiguration(const char *filename)
 
   for (JsonVariant hpibDevice : doc["hpib"].as <JsonArray>()) //iterate hpib devices on a bus
   {
-    int select = hpibDevice["select"] | 7;       //1MB5 select code (3..10). 7 is the default
-    int type = hpibDevice["type"] | 0;           //disk drive type 0 = 5 1/4"
-    int device = hpibDevice["device"] | 0;       //hpib device number 0..31
+    int select = hpibDevice["select"] | 7;       //  1MB5 select code (3..10). 7 is the default
+    int type = hpibDevice["type"] | 0;           //  disk drive type 0 = 5 1/4"
+    int device = hpibDevice["device"] | 0;       //  HPIB device number 0..31 (can contain up to 4 drives)
     const char *diskDir = hpibDevice["directory"] | "/disks/";    //disk image folder/directory
     bool enable = hpibDevice["enable"] | false;   //are we enabled?
+
+    if ((devices[device] == NULL) && (enable == true))
+      {
+        devices[device] = new HpibDisk(device);   //  create a new HPIB device (can contain up to 4 drives)
+      }
 
     if (enable == true)
     {
@@ -413,7 +418,6 @@ bool loadConfiguration(const char *filename)
         //form full path/filename
         strcpy(fname, diskDir);  //get path
         strlcat(fname, filename, sizeof(fname)); //append the filename
-
         if ((devices[device] != NULL) && (en == true))
         {
           devices[device]->addDisk((DISK_TYPE)type);
