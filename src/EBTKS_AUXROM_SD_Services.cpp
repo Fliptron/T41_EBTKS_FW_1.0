@@ -584,15 +584,24 @@ void AUXROM_SDCLOSE(void)
 }
 
 //
-//  Return in the designated buffer the current path and its length
+//  Returns in the designated buffer the current path and its length (AUXROM_RAM_Window.as_struct.AR_BUF6_OPTS[0] == 0)     SDCUR$
+//  Returns in the designated buffer "/"                             (AUXROM_RAM_Window.as_struct.AR_BUF6_OPTS[0] != 0)     SDHOME$
 //
 
 void AUXROM_SDCUR(void)
 {
   uint16_t    copy_length;
-  copy_length = strlcpy(p_buffer, Current_Path, 256);
-  *p_len = copy_length;
-  *p_usage = 0;                         //  Indicate Success
+  if (AUXROM_RAM_Window.as_struct.AR_BUF6_OPTS[0] == 0)
+  {
+    copy_length = strlcpy(p_buffer, Current_Path, 256);
+    *p_len = copy_length;
+  }
+  else
+  {
+    strlcpy(p_buffer, "/", 2);
+    *p_len = 1;
+  }
+  *p_usage = 0;                        //  Indicate Success
   //  show_mailboxes_and_usage();
   *p_mailbox = 0;                      //  Release mailbox.    Must always be the last thing we do
 }
