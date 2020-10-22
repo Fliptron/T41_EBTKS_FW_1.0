@@ -202,6 +202,12 @@ EXTERN  bool HP85_Read_Us;   //  Set on rising edge of Phi 2 if a processor read
                              //  (see tick 41 for falling edge of /RC)
 EXTERN  uint8_t readData;    //  Data to be sent to the processor, is driven onto the bus for the duration of /RC asserted. (Ticks 41 through 51)
 
+EXTERN  bool msu_is_tape;
+EXTERN  bool msu_is_disk;
+EXTERN  uint8_t msu_select_code;
+EXTERN  uint8_t msu_device_code;
+EXTERN  uint8_t msu_drive_select;
+
 EXTERN  volatile bool interruptReq;     //set when we are requesting an interrupt. cleared by the acknowledge code
 EXTERN  volatile bool Interrupt_Acknowledge;
 EXTERN  volatile uint8_t interruptVector; // vector value used by intack

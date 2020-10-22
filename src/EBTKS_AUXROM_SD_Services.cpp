@@ -55,8 +55,19 @@
 //        380..389      AUXROM_SDFLUSH
 //        390..399      AUXROM_SDFLUSH
 //        400..409      AUXROM_SDMKDIR
+//                                          409       MOUNT File already exists
 //        410..419      AUXROM_MOUNT
 //                                                    Shares use of 330
+//                                          410       Invalid MOUNT mode
+//                                          411       MOUNT file does not exist
+//                                          412       MOUNT MSU$ error
+//                                          413       MOUNT only disks supported
+//                                          414       Only Select code 3 supported
+//                                          415       MOUNT failed
+//                                          416       MOUNT Filename must end in .dsk
+//                                          417       Couldn't open Ref Disk
+//                                          418       Couldn't open New Disk
+//                                          419       Couldn't init New Disk
 //        420..429      AUXROM_SDOPEN
 //                                          420       File is already open
 //                                          421       Parsing problems with path
@@ -78,6 +89,7 @@
 
 #include <Arduino.h>
 #include <string.h>
+#include <strings.h>
 #include <math.h>
 #include <stdlib.h>
 
@@ -680,67 +692,298 @@ void AUXROM_SDMKDIR(void)
 }
 
 //
+//  An msu (Mass Storage Unit) is a text string tape or disk drive
+//
+//  For tape, the only valid msu is ":T" , and this only exists on HP85A/B
+//
+//  For disks, the msu looks like this: ":D701"
+//      :D        Identifies this as a disk msu
+//      7         First number, can be 3 to 10. Note that although 10 is 2 digits, it is unambiguous because 1 is not a valid first number
+//                This number is the select code for a HPIB module, typically HP-82937A. The default is 7
+//      0         Second number is the device address, valid values are 0..7, this number is set by the DIP switches on the back of a disk drive chassis
+//      1         Third number is the drive select, 0..3, and identifies a specific disk drive within the chassis specified by the second number
+//
+//  This function takes an msu and breaks it into a set of variables
+//  It returns true if there are no parsing errors
+//
+///////////////////////////////////  test code  ///////////////////////
+//
+//  test code to check parse_MSU().  450 msu codes tested and the results check by reading
+//  the resultant printf() messages. PMF 10/17/2020
+//
+////// int     i,j,k;
+////// char    dummy_msu[8];
+////// bool    result;
+//////
+////// Serial.printf("\n\nTest all valid MSUs and some illegal ones too\n\n");
+////// for (i = 2 ; i < 12 ; i++)
+////// {
+//////   for (j = 0 ; j < 9 ; j++)
+//////   {
+//////     for (k = 0 ; k < 5 ; k++)
+//////     {
+//////       sprintf(dummy_msu , ":D%1d%1d%1d", i,j,k);
+//////       result = parse_MSU(dummy_msu);
+//////       Serial.printf("%8s   func retn %s   disk %s  %2d %1d %1d\n", dummy_msu, result ? "true ":"false", msu_is_disk ? "true ":"false",
+//////                   msu_select_code, msu_device_code, msu_drive_select);
+//////     }
+//////   }
+////// }
+
+bool parse_MSU(char *msu)
+{
+  char * msu_ptr = msu;
+
+  msu_is_tape = msu_is_disk = false;
+  if (strcasecmp(msu, ":T") == 0)
+  {
+    msu_is_tape = true;
+    return true;
+  }
+  if (strncasecmp(msu, ":D", 2) != 0)
+  {
+    return false;
+  }
+  msu_ptr += 2;
+  if (strncmp(msu_ptr, "10", 2) == 0)
+  {
+    msu_select_code = 10;
+    msu_ptr += 2;
+  }
+  else
+  {
+    msu_select_code = *msu_ptr++ - '0';
+    if ((msu_select_code < 3) || (msu_select_code > 9))
+    {
+      return false;
+    }
+  }
+  msu_device_code = *msu_ptr++ - '0';
+  if ((msu_device_code < 0) || (msu_device_code > 7))     //  msu_device_code is uint8_t, so it can't go negative, and will wrap to a large positive
+  {                                                       //  leave the < 0 test for clarity.
+    return false;
+  }
+  msu_drive_select = *msu_ptr - '0';
+  if ((msu_drive_select < 0) || (msu_drive_select > 3))   //  msu_drive_select is uint8_t, so it can't go negative, and will wrap to a large positive
+  {                                                       //  leave the < 0 test for clarity.
+    return false;
+  }
+  msu_is_disk = true;
+  return true;
+}
+
+//
 //  MOUNT msus$, filePath$ [, modeFlag]
 //  Mode:
 //			0 mount file, error if not there (default if mode not specified)
 //			1 create file if not there, mount file
 //			2 error if file there, else create & mount file
 //
-
-
-// return OK or error code in B_USE0
-// Possible errors:
-//		14D INVALID MODE
-//		15D INVALID MSUS (MSUS is bad, or points to REAL HARDWARE rather than EMULATED tape/disk)
-//		16D BAD SD PATH (ResolvePath() error)
-//		17D FILE/PATH (file open error)
+//  Enforce that disk image file names end in .dsk
+//
+/////////////////////////////////////////////////////////////////
+//
+//  General FYI that is relevant MOUNT
+//    devices is an array of pointers to HpibDisk class instances, think of a device as a drive
+//        chassis that may have multiple drives. So this is an array of chassis. These are
+//        allocated at system boot, and the number depends on the CONFIG.TXT file. The number
+//        of entries in the array is not kept track of, but boot allocates starting at 0, and
+//        realistically only a few would ever be allocated.
+//        A new device is created by the following line
+//            devices[device] = new HpibDisk(device);
+//        See:
+//            EBTKS_SD.cpp
+//              bool loadConfiguration(const char *filename)
+//            HpibDisk *devices[NUM_DEVICES];
+//
+//    A disk instance is created with the following line (during boot)
+//        devices[device]->addDisk((DISK_TYPE)type);
+//    The addDisk member function of Class HpibDisk.  See HpibDisk.h
+//        It creates an instance of HPDisk.  HPDisk.h
+//        so adddisk creates a new drive with this command during boot
+//            _disks[_numDisks] = new HPDisk(type, &SD);
+//
+//    Another member function of Class HpibDisk is setFile, which associates a path on the SD Card
+//        with the just created HPDisk instance, within the HpibDisk instance called like this
+//        after creation with sddDisk
+//        devices[device]->setFile(unitNum, fname, wprot);
+//        setFile will close a previous file if one is open, it will open the new file for WRITE
+//        (which includes read), and the filename is stored in the HPDisk instance.
+//
+//    The filename can be retrieved with
+//        filename = devices[device]->getFilename(disknum)
+//        see list_mount() for example useage
+//  
+/////////////////////////////////////////////////////////////////
+//
+//  msu$      is in AR_Buffer_0
+//            length is in AR_Lengths[0]  but we don't care. msu$ is zero terminated
+//  path$     is in AR_Buffer_6
+//            length is in AR_Lengths[6]  but we don't care. path$ is zero terminated
+//  mode      is in AR_BUF0_OPTS[0]
 //
 
-
+EXTMEM char  Copy_buffer[32768];
 
 void AUXROM_MOUNT(void)
 {
-  //
-  //  Buf 0 (primary) has MSU$ , buf 6 has path
-  //
+//  WARNING: Here are baked in assumptions, that need to be dealt with at a later date
+//
+//  HPIB_Select = 3     hard coded, needs to change. We don't save the select code in
+//                      loadConfiguration().  #### This needs to be fixed, and handling multiple virtual HPIB emulations.
+//
+//  We don't handle tapes yet. When we do we should change it so it store/recalls the full path to the image as a single
+//                      string rather than path and filename
+
+
+//
+//  Phase 1 Checks:
+//                  Check that the path can be resolved         error 330
+//                  Check that the msu$ can be parsed           error 412
+//                  Check that the msu$ is a disk               error 413
+//                  Check that the path ends in .dsk            error 416   case insensitive
+//                  Check that HPIB select code is 3            error 414
+//                      we could also check file length is 270336, but we don't
+//  Phase 2 Mode 0
+//                  Check that the file exists                  error 411
+//                  Mode 0 Mount failed, could not be opened    error 415
+//
+//
+
+  *p_usage = 0;     //  Assume success
 
   if (!Resolve_Path(AUXROM_RAM_Window.as_struct.AR_Buffer_6))
   {
     post_custom_error_message((char *)"Can't resolve path", 330);
     AUXROM_RAM_Window.as_struct.AR_Mailboxes[6] = 0;                  //  This Keyword uses two buffers, buffer 0 (primary for returning status) and buffer 6 for the file path
-    *p_mailbox = 0;                                                   //  Indicate we are done. At time of writing this, Mailbox_to_be_processed is 0,
-                                                                      //  but just in case it changes, we do the right thing
     Serial.printf("MOUNT failed:  Error while resolving subdirectory name\n");
-    return;
+    goto Mount_exit;
   }
 
-  Serial.printf("MOUNT:  MSU$ is [%s]  Resolved_Path is [%s]  Mode is %d\n",
-                  p_buffer,
-                  Resolved_Path,
-                  AUXROM_RAM_Window.as_struct.AR_BUF0_OPTS[0] );
+  AUXROM_RAM_Window.as_struct.AR_Mailboxes[6] = 0;                    //  un-needed from here on
+
+  if (!parse_MSU(AUXROM_RAM_Window.as_struct.AR_Buffer_0))
+  {
+    post_custom_error_message((char *)"MOUNT MSU$ error", 412);
+    goto Mount_exit;
+  }
+
+  if(!msu_is_disk)
+  {
+    post_custom_error_message((char *)"MOUNT only disks supported", 413);
+    goto Mount_exit;
+  }
+
+  if(strcasecmp(".dsk", &Resolved_Path[strlen(Resolved_Path)-4]) != 0)
+  {
+    post_custom_error_message((char *)"MOUNT Filename must end in .dsk", 416);
+    goto Mount_exit;
+  }
+
+  if(msu_select_code != 3)      //  Currently hard coded to HPIB select code 3
+  {
+    post_custom_error_message((char *)"Only Select code 3 supported", 414);
+    goto Mount_exit;
+  }
 
 //
+//  Switch on Mode, can be 0 , 1, 2
 //
-//
-//  (1) msu$                is AUXROM_RAM_Window.as_struct.AR_Buffer_0[Mailbox_to_be_processed]    // null terminated
-//  (2) strlen(msu$)        is AUXROM_RAM_Window.as_struct.AR_Lengths[0]
-//  (3) resolved path       is Resolved_Path[]                              // null terminated
-//  (4) mode                is AUXROM_RAM_Window.as_struct.AR_BUF0_OPTS[0]  
-//
-//
-//  I need to split out :D and :T       :D701
-//  I need to split out Select Code       7
-//  I need to split out Device Number      0       0..31 (- dev 22 )
-//  I need to split out unit number         1      1..4
+switch(AUXROM_RAM_Window.as_struct.AR_BUF0_OPTS[0])
+{
+  case 0:   //  Mount an existing file, Error if it does not exist
+    if (!SD.exists(Resolved_Path))
+      {
+        post_custom_error_message((char *)"MOUNT file does not exist", 411);
+        goto Mount_exit;
+      }
+    if(!devices[msu_device_code]->setFile(msu_drive_select, Resolved_Path, false))
+    {
+      post_custom_error_message((char *)"MOUNT failed", 415);
+      goto Mount_exit;
+    }
+    Serial.printf("MOUNT success\n");
+    goto Mount_exit;      //  Success exit
+    break;
+  case 1:   //  Mount an existing file, Create if it does not exist
+    if (!SD.exists(Resolved_Path))
+    {     //  Does not exist so create a new file by copying the reference empty disk image (Currently only works for Floppy images)
+Mount_create_and_mount:
+      File Ref_Disk_Image = SD.open("/Original_images/blank_D.dsk", FILE_READ);
+      if (!Ref_Disk_Image)
+      {
+        Serial.printf("Couldn't open ref disk image for READ\n");
+        post_custom_error_message((char *)"Couldn't open Ref Disk", 417);
+        goto Mount_exit;
+      }
+      File New_Disk_Image = SD.open(Resolved_Path, FILE_WRITE);
+      if (!New_Disk_Image)
+      {
+        Serial.printf("Couldn't open New disk image for WRITE\n");
+        post_custom_error_message((char *)"Couldn't open New Disk", 418);
+        goto Mount_exit;
+      }
+      //
+      //  Copy the reference disk to the new disk
+      //
+      Serial.printf("Copying reference disk /Original_images/blank_D.dsk to new disk [%s]\n", Resolved_Path);
 
-//   bool  rmdir_status;
-//   File  dirfile;
-//   File  file;
-//   int   file_count;
+      int   chars_read, chars_written;
 
-
-
-
+      while(1)
+      {
+        chars_read = Ref_Disk_Image.read(Copy_buffer, 32768);
+        if(chars_read)
+        {
+          chars_written = New_Disk_Image.write(Copy_buffer, chars_read);
+          if(chars_read != chars_written)
+          {
+            Serial.printf("Couldn't initialize New disk image, writing wrote less than reading\n");
+            post_custom_error_message((char *)"Couldn't init New Disk", 419);
+            Ref_Disk_Image.close();
+            New_Disk_Image.close();
+            New_Disk_Image.remove();
+            goto Mount_exit;
+          }
+          Serial.printf(".");     //  Get a row of dots while copying file. For Floppy image, expect 9 dots for 270336 bytes copied
+        }
+        else
+        {
+          Ref_Disk_Image.close();
+          New_Disk_Image.close();
+          break; //  Out of while(1) loop
+        }
+      }
+      //
+      //  The new disk image has been created and initialized as a blank disk
+      //
+      Serial.printf("\nCopy complete\n");
+    }
+    //
+    //  File either existed, or we just created it
+    //
+    if(!devices[msu_device_code]->setFile(msu_drive_select, Resolved_Path, false))
+    {
+      post_custom_error_message((char *)"MOUNT failed", 415);
+      goto Mount_exit;
+    }
+    Serial.printf("MOUNT success\n");
+    goto Mount_exit;      //  Success exit
+    break;
+  case 2:   //  Mount new file, error if already exists, create & mount
+    if (SD.exists(Resolved_Path))
+    {     //  File exist which is an error in Mode 2
+      post_custom_error_message((char *)"MOUNT File already exists", 409);
+      goto Mount_exit;
+    }
+    goto Mount_create_and_mount;
+    break;
+  default:  //  all others are an error. (this is probably caught by the AUXROMs)
+    post_custom_error_message((char *)"Invalid MOUNT mode", 410);
+    *p_mailbox = 0;             //  Must always be the last thing we do
+    return;
+    break;
+}
 
 // #if VERBOSE_KEYWORDS
 //   Serial.printf("SDOPEN Name: [%s]  Mode %d  File # %d\n", p_buffer,
@@ -760,10 +1003,7 @@ void AUXROM_MOUNT(void)
 //   tape.setFile(serial_string);
 //   serial_string_used();
 
-//   for disk look at the end of loadConfiguration()
-
-  AUXROM_RAM_Window.as_struct.AR_Mailboxes[6] = 0;
-  *p_usage = 0;              //  Indicate Success
+Mount_exit:
   *p_mailbox = 0;            //  Must always be the last thing we do
   return;
 }
@@ -994,7 +1234,7 @@ void AUXROM_SDSEEK(void)
   file_index = AUXROM_RAM_Window.as_struct.AR_BUF6_OPTS[0];               //  File number 1..11
   seek_mode  = AUXROM_RAM_Window.as_struct.AR_BUF6_OPTS[1];               //  0=absolute position, 1=advance from current position, 2=go to end of file
   offset     = AUXROM_RAM_Window.as_struct_a.AR_BUF6_OPTS.as_uint32_t[1]; //  Fetch the file offset, or absolute position
-  Serial.printf("\nSDSEEK Mode %d   Offset %d\n", seek_mode, offset);
+  //  Serial.printf("\nSDSEEK Mode %d   Offset %d\n", seek_mode, offset);
   //
   //  check the file is open
   //
@@ -1002,22 +1242,22 @@ void AUXROM_SDSEEK(void)
   {
     post_custom_error_message((char *)"Seek on file that isn't open", 470);
     *p_mailbox = 0;                      //  Indicate we are done
-    Serial.printf("SDSEEK Error exit 470.  Seek on file that isn't open\n");
+    //  Serial.printf("SDSEEK Error exit 470.  Seek on file that isn't open\n");
     return;
   }
   //
   //  Get current position
   //
   current_position = Auxrom_Files[file_index].curPosition();
-  Serial.printf("SDSEEK: Position prior to seek %d\n", current_position);
+  //  Serial.printf("SDSEEK: Position prior to seek %d\n", current_position);
   //
   //  Get end position
   //
   Auxrom_Files[file_index].seekEnd(0);
   end_position = Auxrom_Files[file_index].curPosition();
-  //Serial.printf("SDSEEK: file size %d\n", end_position);
+  //  Serial.printf("SDSEEK: file size %d\n", end_position);
   Auxrom_Files[file_index].seekSet(current_position);                       //  Restore position, in case something goes wrong
-  //Serial.printf("SDSEEK: Position after restore is %d\n", Auxrom_Files[file_index].curPosition());
+  //  Serial.printf("SDSEEK: Position after restore is %d\n", Auxrom_Files[file_index].curPosition());
   if (seek_mode == 0)
   {
     target_position = offset;
@@ -1048,7 +1288,7 @@ void AUXROM_SDSEEK(void)
     return;
   }
   Auxrom_Files[file_index].seekSet(target_position);
-  Serial.printf("SDSEEK: New position is %d\n", (current_position = Auxrom_Files[file_index].curPosition()) );
+  //  Serial.printf("SDSEEK: New position is %d\n", (current_position = Auxrom_Files[file_index].curPosition()) );
   AUXROM_RAM_Window.as_struct_a.AR_BUF6_OPTS.as_uint32_t[1] = current_position;
   *p_usage    = 0;     //  SDSEEK successful
   *p_mailbox = 0;     //  Indicate we are done
@@ -1104,6 +1344,7 @@ void AUXROM_UNMNT(void)
 //  Always uses Buffer 0 and associated usage locations etc.
 //
 //  Target ROM must be between 0361 and 0376 (241 to 254)
+//
 
 void AUXROM_WROM(void)
 {

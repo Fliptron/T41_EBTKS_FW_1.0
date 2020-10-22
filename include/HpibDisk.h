@@ -219,7 +219,17 @@ class HpibDisk
 
             return retval;
             }
-
+        char * getFilename(int diskNum)
+            {
+            if (isUnitValid(diskNum))
+                {
+                  return _disks[diskNum]->getFilename();
+                }
+            else
+                {
+                  return NULL;
+                }
+            }
         //
         //  called with a byte from hpib that is ATN
         //

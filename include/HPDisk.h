@@ -141,6 +141,12 @@ class HPDisk
             return !!_diskFile;     //!! forces a boolean response.
             }
 
+        //  Get a pointer to the filename associated with this virtual drive
+        char * getFilename()
+            {
+              return _filename;
+            }
+ 
         //
         //  reads a 'sector' from the disk image file
         //  using the current lba value.
@@ -361,7 +367,7 @@ class HPDisk
         int _sectors;
         int _totalSectors;
         uint16_t _type;
-        char _filename[60]; //arbitrary max length
+        char _filename[258]; //arbitrary max length
         uint32_t _tickCount;
         uint32_t _flushTime;
 

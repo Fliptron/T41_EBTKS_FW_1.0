@@ -34,7 +34,7 @@ bool loadRom(const char *fname, int slotNum, const char * description)
   if (!rfile)
   {
     LOGPRINTF("ROM failed to read %s\n", fname);
-    rfile.close();
+    rfile.close();                                    //  Is this right??? if it failed to open, and rfile is null (0) , the what would this statement do???
     return false;
   }
   // validate the rom image. The first two bytes are the id and the complement (except for secondary AUXROMs)

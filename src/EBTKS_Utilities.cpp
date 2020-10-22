@@ -14,7 +14,9 @@
 
 #include <Arduino.h>
 #include "Inc_Common_Headers.h"
+#include "HpibDisk.h"
 
+extern HpibDisk *devices[];
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////  Diagnostic Pulse Generation
 //
@@ -138,6 +140,7 @@ void diag_dir_tapes(void);
 void diag_dir_disks(void);
 void diag_dir_roms(void);
 void diag_dir_root(void);
+void list_mount(void);
 
 
 
@@ -183,6 +186,7 @@ struct S_Command_Entry Command_Table[] =
   {"dir disks",        diag_dir_disks},
   {"dir roms",         diag_dir_roms},
   {"dir root",         diag_dir_root},
+  {"list mount",       list_mount},
   {"TABLE_END",        help_0}
 };
 
@@ -503,20 +507,16 @@ void help_5(void)
 void help_6(void)
 {
   Serial.printf("Commands for Logic Analyzer and other diagnostics\n");
-  Serial.printf("la_start    Start the Logic analyzer. Currently compiled config\n");
-  Serial.printf("la_config   #Configure the Logic analyzer. Currently compiled config\n");
-  Serial.printf("addr        print the current address that the HP85 has accessed\n");
-  Serial.printf("dump_ram_window Start(8) Len(8)    dump memory from the AUXROM RAM area\n");
-  Serial.printf("Other Commands and Demos\n");
-  Serial.printf("graphics_test\n");
-  Serial.printf("show_logfile\n");
-  Serial.printf("clean_logfile\n");
+  Serial.printf("la_setup      la_go\n");
+  Serial.printf("addr          graphics_test\n");
+  Serial.printf("show_logfile  clean_logfile\n");
+  Serial.printf("pwo           list mount\n");
   Serial.printf("auxint\n");
   Serial.printf("show_mb\n");
   Serial.printf("jo\n");
-  Serial.printf("pwo\n");
   Serial.printf("jay_pi\n");
   Serial.printf("reset #Reset HP85 and EBTKS\n");
+  Serial.printf("dump_ram_window Start(8) Len(8)\n");
   Serial.printf("\n");
 }
 
@@ -569,6 +569,32 @@ void diag_dir_disks(void)
 void diag_dir_roms(void)
 {
   diag_dir_path("/roms/");
+}
+
+void list_mount(void)
+{
+  int         device;
+  int         disknum;
+  char        *filename;
+  int         HPIB_Select = 3;    //  hard coded, needs to change. We dont save the select code in
+                                  //  loadConfiguration().  #### This needs to be fixed, and handling multiple virtual HPIB emulations.
+
+  Serial.printf("Currently mounted virtual drives\n msu   File Path\n");
+  for (device = 0 ; device < 31 ; device++)      //  actual upper limit is "#define NUM_DEVICES 31"  found in EBTKS_1MB5.cpp
+  {
+    if (devices[device])
+    {
+      for (disknum = 0 ; disknum < 4 ; disknum++)
+      {
+        filename = devices[device]->getFilename(disknum);
+        if (filename)
+        {
+          Serial.printf(":D%d%d%d    %s\n", HPIB_Select, device, disknum, filename);
+        }
+      }
+    }
+  }
+
 }
 
 
