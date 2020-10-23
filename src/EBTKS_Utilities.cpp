@@ -576,7 +576,7 @@ void list_mount(void)
   int         device;
   int         disknum;
   char        *filename;
-  int         HPIB_Select = 3;    //  hard coded, needs to change. We dont save the select code in
+  int         HPIB_Select = 3;    //  hard coded, needs to change. We don't save the select code in
                                   //  loadConfiguration().  #### This needs to be fixed, and handling multiple virtual HPIB emulations.
 
   Serial.printf("Currently mounted virtual drives\n msu   File Path\n");

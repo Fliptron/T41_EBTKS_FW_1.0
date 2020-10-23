@@ -537,7 +537,7 @@ inline void onPhi_2_Rise(void)                                  //  This functio
     //  The 3 control lines are driving the I/O bus, and each is set High
     //  The 8 Data bits are driving te I/O bus with 0xFF
 
-// *** need to deal with data direction, and initially undriven because we dont't know what 1MA8 does with bus during DMA. It may still be driving
+// *** need to deal with data direction, and initially undriven because we don't know what 1MA8 does with bus during DMA. It may still be driving
 //     and may need RC to flip it around. So maybe can't put addresses onto bus without RC
 //     This may also be a requirement to precharge the bus on the main board, via the 1MA8.
 

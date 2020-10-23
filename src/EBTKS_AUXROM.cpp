@@ -167,7 +167,7 @@ void AUXROM_Poll(void)
       AUXROM_SDFLUSH();
       break;
     case AUX_USAGE_SDMEDIA:
-      AUXROM_SDFLUSH();
+      AUXROM_SDMEDIA();
       break;
     case AUX_USAGE_SDMKDIR:
       AUXROM_SDMKDIR();

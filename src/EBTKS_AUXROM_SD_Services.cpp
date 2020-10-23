@@ -20,6 +20,7 @@
 //  10/20/2020        SDMOUNT
 //  10/21/2020        SDMOUNT
 //  10/22/2020        SDDEL  rewrite to handle wildcards. Not as easy as you might think.
+//                    MEDIA$
 //
 
 /////////////////////On error message / error codes.  Go see email log for this text in context
@@ -94,6 +95,8 @@
 //        480..489      AUXROM_SDWRITE
 //        490..499      AUXROM_UNMNT
 //        500..509      AUXROM_WROM
+//        510..519      AUXROM_SDMEDIA
+//                                          510       MEDIA$ MSU$ error
 
 #include <Arduino.h>
 #include <string.h>
@@ -117,6 +120,8 @@ static bool                 Resolved_Path_ends_with_slash;
 EXTMEM static char          Transfer_Buffer[65536];                   //  This is for SDREAD and SDWRITE which need a messy function
                                                                       //  to access HP85 memory. Using this intermediate should cover
                                                                       //  any possible scenario. Prove me wrong.
+
+bool parse_MSU(char *msu);
 
 //
 //  Support for AUXROM SD Functions
@@ -739,15 +744,50 @@ void AUXROM_SDFLUSH(void)
 }
 
 //
+//  Return the path for a specified msu$.  Return an empty string if there is no mounted virtual tape/disk
 //
+//    #########   Warning. Currently the HPIB Select code is hard wired to 3, so that we can co-exist with a real HPIB card at 7   ##########################
 //
+//  MSU$ is in buf
 
 void AUXROM_SDMEDIA(void)
 {
+  char        *filename;
 
+  if (!parse_MSU(p_buffer))
+  {
+    post_custom_error_message((char *)"MEDIA$ MSU$ error", 510);
+    *p_mailbox = 0;     //  Indicate we are done
+    return;
+  }
+
+  if (msu_is_tape)
+  {
+    
+  }
+
+  //
+  //  Must be disk
+  //
+  filename = devices[msu_device_code]->getFilename(msu_drive_select);
+
+  if(filename)
+  {
+    strcpy(p_buffer, filename);        //  Copy the file path and name to the buffer that held msu$
+    *p_len = strlen(p_buffer);
+    *p_usage = 0;
+    *p_mailbox = 0;     //  Indicate we are done
+    return;
+  }
+  //
+  //  If we get here, no mounted media
+  //
+  *p_buffer = 0x00;                             //  Zero length string
+  *p_len    = 0;                                //  Length is zero
+  *p_usage  = 0;                                //  OK return
+  *p_mailbox = 0;                               //  Indicate we are done
+  return;
 }
-
-
 
 //
 //  Create a new directory in the current directory
@@ -791,6 +831,13 @@ void AUXROM_SDMKDIR(void)
 //
 //  This function takes an msu and breaks it into a set of variables
 //  It returns true if there are no parsing errors
+//
+//  RETURNS:
+//    Either msu_is_disk or msu_is_tape is true
+//    msu_select_code   is 3..10
+//    msu_device_code   is 0..7
+//    msu_drive_select  is 0..4
+//
 //
 ///////////////////////////////////  test code  ///////////////////////
 //
