@@ -276,20 +276,15 @@ Tape::Tape()
 
 bool Tape::setFile(const char *fname)
 {
-  char temptext[270];
-  
-  strcpy(temptext,_pathname);
-  strcat(temptext, fname);
-
-  _tapeFile = SD.open(temptext, (O_RDWR));
+  _tapeFile = SD.open(fname, (O_RDWR));
   if (!_tapeFile)
   {
-    Serial.printf("Tape file did not open: %s   <<<<<<<<<<<<<<<<<<\n", temptext);
+    Serial.printf("Tape file did not open: %s   <<<<<<<<<<<<<<<<<<\n", fname);
   }
   else
   {
     strlcpy(_filename, fname, sizeof(_filename));
-    LOGPRINTF_TAPE("Tape file opened: %s\n", temptext);
+    LOGPRINTF_TAPE("Tape file opened: %s\n", fname);
   }
     return !_tapeFile ? false : true;
 }
@@ -297,16 +292,6 @@ bool Tape::setFile(const char *fname)
 char * Tape::getFile(void)
 {
   return _filename;
-}
-
-void Tape::setPath(const char *pname)
-{
-  strlcpy(_pathname, pname, sizeof(_pathname));
-}
-
-char * Tape::getPath(void)
-{
-  return _pathname;
 }
 
 void Tape::close(void)
@@ -429,21 +414,14 @@ void Tape::poll(void)
     _prevCtrl = ioTapCtl;
 }
 
-
-
-void tape_handle_command_flush(void)
-{
-    //  _downCount = 1; //force a flush/reload                     *****   not sure if this is right, discuss with russell
-}
-
 void tape_handle_command_load(void)
 {
-  Serial.printf("\nLoad new tape file. Enter filename: ");
+  Serial.printf("\nLoad new tape file. Enter filename including path: ");
   if (!wait_for_serial_string())       //  Hang here till we get a file name (hopefully)
   {
     return;                           //  Got a Ctrl-C , so abort command
   }
-  Serial.printf("\nOpening tape: %s%s \n", tape.getPath() ,   serial_string);
+  Serial.printf("\nOpening tape: %s\n", serial_string);
   tape.close();
   blockDirty = false;
   tapeInCount = 1; //flag the tape removal to the HP85

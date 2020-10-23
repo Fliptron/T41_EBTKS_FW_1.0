@@ -12,8 +12,6 @@ class Tape
     Tape();
     bool setFile(const char *fname);
     char * getFile(void);
-    void setPath(const char *pname);
-    char * getPath(void);
     void close(void);
    
     void flush(void);
@@ -23,8 +21,7 @@ class Tape
 
     private:
     File _tapeFile;
-    char _filename[15];
-    char _pathname[250];
+    char _filename[258];
     uint32_t _tick;
     uint8_t _prevCtrl;
     uint32_t _downCount;

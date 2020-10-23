@@ -18,7 +18,6 @@ void setRomMap(uint8_t romId,uint8_t slotNum);
 //
 //  Tape functions
 //
-void tape_handle_command_flush(void);
 void tape_handle_command_load(void);
 
 //

@@ -272,7 +272,7 @@ bool loadConfiguration(const char *filename)
   TXD_Pulser(1);
   EBTKS_delay_ns(10000);    //  10 us
 
-  char fname[256];
+  char fname[258];
 
   LOGPRINTF("Opening Config File [%s]\n", filename);
 
@@ -345,8 +345,9 @@ bool loadConfiguration(const char *filename)
 
   if (tapeEn)     //only set the path/filename if the tape subsystem is enabled
     {
-    tape.setPath(path);
-    tape.setFile(tapeFname);
+    strcpy(fname, path);
+    strlcat(fname, tapeFname, sizeof(fname));
+    tape.setFile(fname);
     }
   tape.enable(tapeEn);
   LOGPRINTF("Tape file: %s%s enabled is: %s\n", path, tapeFname, tapeEn ? "Active" : "Inactive");  

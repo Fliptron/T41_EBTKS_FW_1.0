@@ -166,7 +166,6 @@ struct S_Command_Entry Command_Table[] =
   {"5",                help_5},
   {"6",                help_6},
   {"7",                help_7},
-  {"tflush",           tape_handle_command_flush},
   {"tload",            tape_handle_command_load},
   {"crt_1",            CRT_Timing_Test_1},
   {"la_setup",         Setup_Logic_Analyzer},
@@ -436,7 +435,6 @@ void help_0(void)
 void help_1(void)
 {
   Serial.printf("Commands for the Tape Drive\n");
-  Serial.printf("tflush        Force a tape flush and reload\n");
   Serial.printf("tload         Load a new tape image from SD\n");
   Serial.printf("dir tapes     Directory of available tapes\n");
   Serial.printf("twhich        #Which tape is currently loaded\n");
