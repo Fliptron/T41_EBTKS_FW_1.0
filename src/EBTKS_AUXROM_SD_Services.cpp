@@ -21,6 +21,7 @@
 //  10/21/2020        SDMOUNT
 //  10/22/2020        SDDEL  rewrite to handle wildcards. Not as easy as you might think.
 //                    MEDIA$
+//  10/23/2020        SDMOUNT total re-write to support Tape and Disk
 //
 
 /////////////////////On error message / error codes.  Go see email log for this text in context
@@ -70,7 +71,7 @@
 //                                          410       Invalid MOUNT mode
 //                                          411       MOUNT file does not exist
 //                                          412       MOUNT MSU$ error
-//                                          413       MOUNT only disks supported
+//                                          413       MOUNT Filename must end in .tap
 //                                          414       Only Select code 3 supported
 //                                          415       MOUNT failed
 //                                          416       MOUNT Filename must end in .dsk
@@ -84,6 +85,9 @@
 //                                          423       Open failed Mode 1
 //                                          424       Open failed Mode 2
 //                                          425       Open failedIllegal Mode
+//                                          426       Couldn't open Ref Tape
+//                                          427       Couldn't open New Tape
+//                                          428       Couldn't init New Tape
 //        430..439      AUXROM_SPF
 //        440..449      AUXROM_SDREAD
 //        450..459      AUXROM_SDREN
@@ -97,6 +101,7 @@
 //        500..509      AUXROM_WROM
 //        510..519      AUXROM_SDMEDIA
 //                                          510       MEDIA$ MSU$ error
+//                                          511       MEDIA$ HPIB Select must match
 
 #include <Arduino.h>
 #include <string.h>
@@ -746,8 +751,6 @@ void AUXROM_SDFLUSH(void)
 //
 //  Return the path for a specified msu$.  Return an empty string if there is no mounted virtual tape/disk
 //
-//    #########   Warning. Currently the HPIB Select code is hard wired to 3, so that we can co-exist with a real HPIB card at 7   ##########################
-//
 //  MSU$ is in buf
 
 void AUXROM_SDMEDIA(void)
@@ -763,12 +766,31 @@ void AUXROM_SDMEDIA(void)
 
   if (msu_is_tape)
   {
-    
+    filename = tape.getFile();
+    if(filename)
+    {
+      strcpy(p_buffer, filename);        //  Copy the file path and name to the buffer that held msu$
+      *p_len = strlen(p_buffer);
+      *p_usage = 0;
+      *p_mailbox = 0;     //  Indicate we are done
+      return;
+    }
   }
 
   //
-  //  Must be disk
+  //  If not tape, must be disk
   //
+
+  //
+  //  Check that the requested HPIB Select code is the one we are emulating
+  //
+  if(get_Select_Code() != msu_select_code)
+  {
+    post_custom_error_message((char *)"MEDIA$ HPIB Select must match", 511);
+    *p_mailbox = 0;     //  Indicate we are done
+    return;
+  }
+
   filename = devices[msu_device_code]->getFilename(msu_drive_select);
 
   if(filename)
@@ -958,22 +980,121 @@ bool parse_MSU(char *msu)
 
 EXTMEM char  Copy_buffer[32768];
 
+bool create_disk_image(char * path)
+{
+  File Ref_Disk_Image = SD.open("/Original_images/blank_D.dsk", FILE_READ);
+  if (!Ref_Disk_Image)
+  {
+    Serial.printf("Couldn't open ref disk image for READ\n");
+    post_custom_error_message((char *)"Couldn't open Ref Disk", 417);
+    return false;
+  }
+  File New_Disk_Image = SD.open(Resolved_Path, FILE_WRITE);
+  if (!New_Disk_Image)
+  {
+    Serial.printf("Couldn't open New disk image for WRITE\n");
+    post_custom_error_message((char *)"Couldn't open New Disk", 418);
+    return false;
+  }
+  //
+  //  Copy the reference disk to the new disk
+  //
+  Serial.printf("Copying reference disk /Original_images/blank_D.dsk to new disk [%s]\n", path);
+
+  int   chars_read, chars_written;
+
+  while(1)
+  {
+    chars_read = Ref_Disk_Image.read(Copy_buffer, 32768);
+    if(chars_read)
+    {
+      chars_written = New_Disk_Image.write(Copy_buffer, chars_read);
+      if(chars_read != chars_written)
+      {
+        Serial.printf("Couldn't initialize New disk image, writing wrote less than reading\n");
+        post_custom_error_message((char *)"Couldn't init New Disk", 419);
+        Ref_Disk_Image.close();
+        New_Disk_Image.close();
+        New_Disk_Image.remove();
+        return false;
+      }
+      Serial.printf(".");     //  Get a row of dots while copying file. For Floppy image, expect 9 dots for 270336 bytes copied
+    }
+    else
+    {
+      Ref_Disk_Image.close();
+      New_Disk_Image.close();
+      break; //  Out of while(1) loop
+    }
+  }
+  //
+  //  The new disk image has been created and initialized as a blank disk
+  //
+  Serial.printf("\nCopy complete\n");
+  return true;
+}
+
+bool create_tape_image(char * path)
+{
+  File Ref_Tape_Image = SD.open("/Original_images/blank_T.tap", FILE_READ);
+  if (!Ref_Tape_Image)
+  {
+    Serial.printf("Couldn't open ref tape image for READ\n");
+    post_custom_error_message((char *)"Couldn't open Ref Tape", 426);
+    return false;
+  }
+  File New_Tape_Image = SD.open(Resolved_Path, FILE_WRITE);
+  if (!New_Tape_Image)
+  {
+    Serial.printf("Couldn't open New tape image for WRITE\n");
+    post_custom_error_message((char *)"Couldn't open New Tape", 427);
+    return false;
+  }
+  //
+  //  Copy the reference tape to the new tape
+  //
+  Serial.printf("Copying reference tape /Original_images/blank_T.tap to new tape [%s]\n", path);
+
+  int   chars_read, chars_written;
+
+  while(1)
+  {
+    chars_read = Ref_Tape_Image.read(Copy_buffer, 32768);
+    if(chars_read)
+    {
+      chars_written = New_Tape_Image.write(Copy_buffer, chars_read);
+      if(chars_read != chars_written)
+      {
+        Serial.printf("Couldn't initialize New tape image, writing wrote less than reading\n");
+        post_custom_error_message((char *)"Couldn't init New Tape", 428);
+        Ref_Tape_Image.close();
+        New_Tape_Image.close();
+        New_Tape_Image.remove();
+        return false;
+      }
+      Serial.printf(".");     //  Get a row of dots while copying file. For Tape image, expect xxx dots for xxxxxx bytes copied
+    }
+    else
+    {
+      Ref_Tape_Image.close();
+      New_Tape_Image.close();
+      break; //  Out of while(1) loop
+    }
+  }
+  //
+  //  The new tape image has been created and initialized as a blank tape
+  //
+  Serial.printf("\nCopy complete\n");
+  return true;
+}
+
 void AUXROM_MOUNT(void)
 {
-//  WARNING: Here are baked in assumptions, that need to be dealt with at a later date
-//
-//  HPIB_Select = 3     hard coded, needs to change. We don't save the select code in
-//                      loadConfiguration().  #### This needs to be fixed, and handling multiple virtual HPIB emulations.
-//
-//  We don't handle tapes yet. When we do we should change it so it store/recalls the full path to the image as a single
-//                      string rather than path and filename
-
-
 //
 //  Phase 1 Checks:
 //                  Check that the path can be resolved         error 330
 //                  Check that the msu$ can be parsed           error 412
-//                  Check that the msu$ is a disk               error 413
+//                  Check that the path ends in .tap            error 413
 //                  Check that the path ends in .dsk            error 416   case insensitive
 //                  Check that HPIB select code is 3            error 414
 //                      we could also check file length is 270336, but we don't
@@ -1001,140 +1122,119 @@ void AUXROM_MOUNT(void)
     goto Mount_exit;
   }
 
-  if(!msu_is_disk)
-  {
-    post_custom_error_message((char *)"MOUNT only disks supported", 413);
-    goto Mount_exit;
-  }
+  //
+  //  There are significant similarities but also differences between how MOUNT works for tapes and disks.
+  //  So try and avoid duplication by sharing code where possible
+  //
 
-  if(strcasecmp(".dsk", &Resolved_Path[strlen(Resolved_Path)-4]) != 0)
+  switch(AUXROM_RAM_Window.as_struct.AR_BUF0_OPTS[0])
   {
-    post_custom_error_message((char *)"MOUNT Filename must end in .dsk", 416);
-    goto Mount_exit;
-  }
-
-  if(msu_select_code != 3)      //  Currently hard coded to HPIB select code 3
-  {
-    post_custom_error_message((char *)"Only Select code 3 supported", 414);
-    goto Mount_exit;
-  }
-
-//
-//  Switch on Mode, can be 0 , 1, 2
-//
-switch(AUXROM_RAM_Window.as_struct.AR_BUF0_OPTS[0])
-{
-  case 0:   //  Mount an existing file, Error if it does not exist
-    if (!SD.exists(Resolved_Path))
+    case 0:   //  Mount an existing file, Error if it does not exist
+      if (!SD.exists(Resolved_Path))
       {
         post_custom_error_message((char *)"MOUNT file does not exist", 411);
         goto Mount_exit;
       }
-    if(!devices[msu_device_code]->setFile(msu_drive_select, Resolved_Path, false))
-    {
-      post_custom_error_message((char *)"MOUNT failed", 415);
-      goto Mount_exit;
-    }
-    Serial.printf("MOUNT success\n");
-    goto Mount_exit;      //  Success exit
-    break;
-  case 1:   //  Mount an existing file, Create if it does not exist
-    if (!SD.exists(Resolved_Path))
-    {     //  Does not exist so create a new file by copying the reference empty disk image (Currently only works for Floppy images)
-Mount_create_and_mount:
-      File Ref_Disk_Image = SD.open("/Original_images/blank_D.dsk", FILE_READ);
-      if (!Ref_Disk_Image)
+      if(msu_is_tape)
       {
-        Serial.printf("Couldn't open ref disk image for READ\n");
-        post_custom_error_message((char *)"Couldn't open Ref Disk", 417);
-        goto Mount_exit;
-      }
-      File New_Disk_Image = SD.open(Resolved_Path, FILE_WRITE);
-      if (!New_Disk_Image)
-      {
-        Serial.printf("Couldn't open New disk image for WRITE\n");
-        post_custom_error_message((char *)"Couldn't open New Disk", 418);
-        goto Mount_exit;
-      }
-      //
-      //  Copy the reference disk to the new disk
-      //
-      Serial.printf("Copying reference disk /Original_images/blank_D.dsk to new disk [%s]\n", Resolved_Path);
-
-      int   chars_read, chars_written;
-
-      while(1)
-      {
-        chars_read = Ref_Disk_Image.read(Copy_buffer, 32768);
-        if(chars_read)
+        if(strcasecmp(".tap", &Resolved_Path[strlen(Resolved_Path)-4]) != 0)
         {
-          chars_written = New_Disk_Image.write(Copy_buffer, chars_read);
-          if(chars_read != chars_written)
+          post_custom_error_message((char *)"MOUNT Filename must end in .tap", 413);
+          goto Mount_exit;
+        }
+        if(!tape_handle_MOUNT(Resolved_Path))
+        {
+          post_custom_error_message((char *)"MOUNT failed", 415);
+          goto Mount_exit;
+        }
+      }
+      else    //  must be a disk msu$
+      {
+        if(strcasecmp(".dsk", &Resolved_Path[strlen(Resolved_Path)-4]) != 0)
+        {
+          post_custom_error_message((char *)"MOUNT Filename must end in .dsk", 416);
+          goto Mount_exit;
+        }
+        if(!devices[msu_device_code]->setFile(msu_drive_select, Resolved_Path, false))
+        {
+          post_custom_error_message((char *)"MOUNT failed", 415);
+          goto Mount_exit;
+        }
+      }
+      //  Common success exit
+      Serial.printf("MOUNT success\n");
+      goto Mount_exit;      //  Success exit
+      break;
+
+
+    case 1:   //  Mount an existing file, Create if it does not exist
+      if (!SD.exists(Resolved_Path))
+      {     //  Does not exist so create a new file by copying the reference image
+        if(msu_is_tape)
+        {   //  Create and mount for tape
+Mount_create_and_mount_tape:
+        if(!create_tape_image(Resolved_Path))
           {
-            Serial.printf("Couldn't initialize New disk image, writing wrote less than reading\n");
-            post_custom_error_message((char *)"Couldn't init New Disk", 419);
-            Ref_Disk_Image.close();
-            New_Disk_Image.close();
-            New_Disk_Image.remove();
             goto Mount_exit;
           }
-          Serial.printf(".");     //  Get a row of dots while copying file. For Floppy image, expect 9 dots for 270336 bytes copied
         }
         else
+        {   //  Create and mount for disk
+Mount_create_and_mount_disk:
+        if(!create_disk_image(Resolved_Path))
+          {
+            goto Mount_exit;
+          }
+        }
+      }     //  End of creating a blank image
+      //
+      //  File either existed, or we just created it
+      //
+      if(msu_is_tape)
+      {
+        if(!tape_handle_MOUNT(Resolved_Path))
         {
-          Ref_Disk_Image.close();
-          New_Disk_Image.close();
-          break; //  Out of while(1) loop
+          post_custom_error_message((char *)"MOUNT failed", 415);
+          goto Mount_exit;
         }
       }
-      //
-      //  The new disk image has been created and initialized as a blank disk
-      //
-      Serial.printf("\nCopy complete\n");
-    }
-    //
-    //  File either existed, or we just created it
-    //
-    if(!devices[msu_device_code]->setFile(msu_drive_select, Resolved_Path, false))
-    {
-      post_custom_error_message((char *)"MOUNT failed", 415);
-      goto Mount_exit;
-    }
-    Serial.printf("MOUNT success\n");
-    goto Mount_exit;      //  Success exit
-    break;
-  case 2:   //  Mount new file, error if already exists, create & mount
-    if (SD.exists(Resolved_Path))
-    {     //  File exist which is an error in Mode 2
-      post_custom_error_message((char *)"MOUNT File already exists", 409);
-      goto Mount_exit;
-    }
-    goto Mount_create_and_mount;
-    break;
-  default:  //  all others are an error. (this is probably caught by the AUXROMs)
-    post_custom_error_message((char *)"Invalid MOUNT mode", 410);
-    *p_mailbox = 0;             //  Must always be the last thing we do
-    return;
-    break;
-}
+      else
+      {
+        if(!devices[msu_device_code]->setFile(msu_drive_select, Resolved_Path, false))
+        {
+          post_custom_error_message((char *)"MOUNT failed", 415);
+          goto Mount_exit;
+        }
+      }
+      Serial.printf("MOUNT success\n");
+      goto Mount_exit;      //  Success exit
+      break;          
 
-// #if VERBOSE_KEYWORDS
-//   Serial.printf("SDOPEN Name: [%s]  Mode %d  File # %d\n", p_buffer,
-//                                                             AUXROM_RAM_Window.as_struct.AR_BUF6_OPTS[1],
-//                                                             file_index);
-// #endif
 
-//   Serial.printf("\nLoad new tape file. Enter filename: ");
-//   if (!wait_for_serial_string())       //  Hang here till we get a file name (hopefully)
-//   {
-//     return;                           //  Got a Ctrl-C , so abort command
-//   }
-//   Serial.printf("\nOpening tape: %s%s \n", tape.getPath() ,   serial_string);
-//   tape.close();
-//   blockDirty = false;
-//   tapeInCount = 1; //flag the tape removal to the HP85
-//   tape.setFile(serial_string);
-//   serial_string_used();
+    case 2:   //  Mount new file, error if already exists, create & mount
+      if (SD.exists(Resolved_Path))
+      {     //  File exist which is an error in Mode 2
+        post_custom_error_message((char *)"MOUNT File already exists", 409);
+        goto Mount_exit;
+      }
+      if(msu_is_tape)
+      {
+        goto Mount_create_and_mount_tape;
+      }
+      else
+      {
+        goto Mount_create_and_mount_disk;
+      }
+      break;
+
+
+    default:  //  all others are an error. (this is probably caught by the AUXROMs)
+      post_custom_error_message((char *)"Invalid MOUNT mode", 410);
+      *p_mailbox = 0;             //  Must always be the last thing we do
+      return;
+      break;
+  }
+
 
 Mount_exit:
   *p_mailbox = 0;            //  Must always be the last thing we do

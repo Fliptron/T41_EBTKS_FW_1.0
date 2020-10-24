@@ -9,9 +9,9 @@
 
 #include "Inc_Common_Headers.h"
 
-uint8_t vram[8192];                   // Virtual Graphics memory, to avoid needing Read-Modify-Write
+uint8_t vram[8192];                   //  Virtual Graphics memory, to avoid needing Read-Modify-Write
 uint8_t Mirror_Video_RAM[8192];       //
-volatile uint8_t crtControl = 0;      //write to status register stored here. bit 7 == 1 is graphics mode, else char mode
+volatile uint8_t crtControl = 0;      //  write to status register stored here. bit 7 == 1 is graphics mode, else char mode
 volatile bool writeCRTflag = false;
 
 bool badFlag = false;                 //odd/even flag for Baddr

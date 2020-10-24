@@ -60,6 +60,8 @@ volatile bool obf, ibf;
 bool prevReset;
 bool prevInt;
 bool globalIntEnable = false;
+uint8_t         Our_Select_Code;
+
 //
 //  ioTranslator vars
 //
@@ -304,6 +306,9 @@ void initTranslator(int selectNum)
     {
         selectNum = 7; //default to select code 7 if an illegal value is passed
     }
+
+    Our_Select_Code = selectNum;
+
     int addr = HPIB_IF_BASE_ADDR + ((selectNum - 3) * 2); //form the base address of the 1MB5
 
     // map our i/o handlers in the required addresses
@@ -334,6 +339,11 @@ void initTranslator(int selectNum)
     //                               //devices[1]->addDisk(DISK_TYPE_5Q);
     //                               //devices[1]->setFile(0, (char *)"/disks/85Games2.dsk", false);
     //                               //devices[1]->setFile(1, (char *)"/disks/85Games1.dsk", false);
+}
+
+uint8_t get_Select_Code(void)
+{
+  return Our_Select_Code;
 }
 
 void loopTranslator(void)

@@ -392,6 +392,14 @@ bool loadConfiguration(const char *filename)
   // configure the disk drives. currently we only handle one hpib interface
   //
 
+  //
+  //  Although we don't check it and report an error if necessary, the following things      ####  should we add checks ? ####
+  //  MUST be true of the HPIB device configuration comming from the CONFIG.TXT file
+  //
+  //    1) The "select" fields must all have the same value 3..10 as we can only emulate 1 HPIB interface
+  //    2) The "device" fields must be different, and should probably start at 0 and go no higher than 7
+  //
+
   for (JsonVariant hpibDevice : doc["hpib"].as <JsonArray>()) //iterate hpib devices on a bus
   {
     int select = hpibDevice["select"] | 7;       //  1MB5 select code (3..10). 7 is the default

@@ -574,8 +574,7 @@ void list_mount(void)
   int         device;
   int         disknum;
   char        *filename;
-  int         HPIB_Select = 3;    //  hard coded, needs to change. We don't save the select code in
-                                  //  loadConfiguration().  #### This needs to be fixed, and handling multiple virtual HPIB emulations.
+  int         HPIB_Select = get_Select_Code();
 
   Serial.printf("Currently mounted virtual drives\n msu   File Path\n");
   for (device = 0 ; device < 31 ; device++)      //  actual upper limit is "#define NUM_DEVICES 31"  found in EBTKS_1MB5.cpp
@@ -592,6 +591,8 @@ void list_mount(void)
       }
     }
   }
+  filename = tape.getFile();
+  Serial.printf(":T       %s\n", filename);
 
 }
 

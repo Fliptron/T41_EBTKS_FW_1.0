@@ -3,7 +3,7 @@
 #include "SdFat.h"
 
 //  The next line must exist in just one compilation unit, which is this file.
-//  All other usage of the globals file msut not have this line, leaving ALLOCATE undefined
+//  All other usage of the globals file must not have this line, leaving ALLOCATE undefined
 #define ALLOCATE  1
 
 #include "Inc_Common_Headers.h"

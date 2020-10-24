@@ -276,6 +276,11 @@ Tape::Tape()
 
 bool Tape::setFile(const char *fname)
 {
+  if (_tapeFile)
+  {
+    _tapeFile.close();    //  Which hopefully does a flush
+  }
+
   _tapeFile = SD.open(fname, (O_RDWR));
   if (!_tapeFile)
   {
@@ -387,7 +392,7 @@ void Tape::poll(void)
             if (_downCount == 0)
             {
                 flush();
-                setFile(_filename);
+                setFile(_filename);       //  #### Ask Russell about how this is supposed to work ####
             }
         }
     }
@@ -427,4 +432,13 @@ void tape_handle_command_load(void)
   tapeInCount = 1; //flag the tape removal to the HP85
   tape.setFile(serial_string);
   serial_string_used();
+}
+
+bool tape_handle_MOUNT(char *path)
+{
+  Serial.printf("\nOpening tape: %s\n", path);
+  tape.close();
+  blockDirty = false;
+  tapeInCount = 1; //flag the tape removal to the HP85
+  return tape.setFile(path);
 }

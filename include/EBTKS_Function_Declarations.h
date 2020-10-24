@@ -7,6 +7,8 @@
 //
 void initTranslator(int selectNum);
 void loopTranslator(void);
+uint8_t get_Select_Code(void);
+
 //
 //  bank rom functions
 //
@@ -19,6 +21,7 @@ void setRomMap(uint8_t romId,uint8_t slotNum);
 //  Tape functions
 //
 void tape_handle_command_load(void);
+bool tape_handle_MOUNT(char *path);
 
 //
 //  DMA Functions

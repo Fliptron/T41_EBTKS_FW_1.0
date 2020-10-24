@@ -47,17 +47,17 @@
         "enable": true
       },
       {
-        "description": "AUXROM Primary 2020_09_28",
+        "description": "AUXROM Primary 2020_10_19",
         "filename": "85aux1.bin",
         "enable": true
       },
       {
-        "description": "AUXROM Secondary 1 2020_09_28",
+        "description": "AUXROM Secondary 1 2020_10_19",
         "filename": "85aux2.bin",
         "enable": true
       },
       {
-        "description": "AUXROM Secondary 2 2020_09_28",
+        "description": "AUXROM Secondary 2 2020_10_19",
         "filename": "85aux3.bin",
         "enable": true
       }
@@ -89,6 +89,7 @@
     },
     {
       "select": 3,
+      "Comment": "All blocks must have the same select and different device",
       "type": 0,
       "device": 1,
       "directory": "/disks/",
@@ -104,7 +105,7 @@
         {
           "Comment": "msu 311",
           "unit": 1,
-          "filename": "85GeneralStatPac.dsk",
+          "filename": "PMFTESTS.DSK",
           "writeProtect": false,
           "enable": true
         }
