@@ -125,7 +125,6 @@ class HPDisk
                 }
 
             _diskFile = _sd->open(fname, FILE_WRITE);
-            _loaded = true;
             if (!_diskFile)
                 {
                 _loaded = false;

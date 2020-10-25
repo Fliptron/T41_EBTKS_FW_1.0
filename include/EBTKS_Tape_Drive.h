@@ -18,6 +18,7 @@ class Tape
     void init(void);
     void poll(void);
     void enable(bool enable);
+    bool is_tape_loaded(void);
 
     private:
     File _tapeFile;
@@ -25,7 +26,8 @@ class Tape
     uint32_t _tick;
     uint8_t _prevCtrl;
     uint32_t _downCount;
-    bool _enabled;
+    bool _enabled;              //  Is there an emulated tape drive
+    bool _tape_inserted;        //  Is there a tape in the tape drive
 
     bool blockRead(uint32_t blkNum);
     void blockWrite(int blkNum);

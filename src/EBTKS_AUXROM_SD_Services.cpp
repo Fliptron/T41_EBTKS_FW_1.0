@@ -22,6 +22,8 @@
 //  10/22/2020        SDDEL  rewrite to handle wildcards. Not as easy as you might think.
 //                    MEDIA$
 //  10/23/2020        SDMOUNT total re-write to support Tape and Disk
+//  10/24/2020        Update SDREAD and SDWRITE to match AUXROM Release 11
+//                    UNMOUNT
 //
 
 /////////////////////On error message / error codes.  Go see email log for this text in context
@@ -99,7 +101,8 @@
 //                                          472       Trying to seek past EOF
 //        480..489      AUXROM_SDWRITE
 //                                          480       SDWRITE File not open for write
-//        490..499      AUXROM_UNMNT
+//        490..499      AUXROM_UNMOUNT
+//                                          490       UNMOUNT MSU$ error
 //        500..509      AUXROM_WROM
 //        510..519      AUXROM_SDMEDIA
 //                                          510       MEDIA$ MSU$ error
@@ -1544,9 +1547,29 @@ void AUXROM_SDWRITE(void)
   return;
 }
 
-void AUXROM_UNMNT(void)
+//
+//  Unmount the virtual drive specified by the MSU$
+//
+
+void AUXROM_UNMOUNT(void)
 {
 
+  *p_usage = 0;     //  Assume success
+
+  if (!parse_MSU(p_buffer))
+  {
+    post_custom_error_message((char *)"UNMOUNT MSU$ error", 490);
+    goto Unmount_exit;
+  }
+  if (msu_is_tape)
+  {
+    tape_handle_UNMOUNT();
+  }
+
+
+Unmount_exit:
+  *p_mailbox = 0;            //  Must always be the last thing we do
+  return;
 }
 
 //

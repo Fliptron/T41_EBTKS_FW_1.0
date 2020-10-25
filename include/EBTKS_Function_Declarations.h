@@ -22,6 +22,7 @@ void setRomMap(uint8_t romId,uint8_t slotNum);
 //
 void tape_handle_command_load(void);
 bool tape_handle_MOUNT(char *path);
+void tape_handle_UNMOUNT(void);
 void tape_disk_which(void);             // does both tape and disk
 
 //
@@ -150,7 +151,7 @@ void AUXROM_SDREAD(void);
 void AUXROM_SDRMDIR(void);
 void AUXROM_SDSEEK(void);
 void AUXROM_SDWRITE(void);
-          void AUXROM_UNMNT(void);
+void AUXROM_UNMOUNT(void);
 void AUXROM_WROM(void);
 
 //

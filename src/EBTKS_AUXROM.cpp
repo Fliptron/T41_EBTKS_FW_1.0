@@ -33,7 +33,7 @@
 #define  AUX_USAGE_SDRMDIR       ( 13)      //  SDRMDIR folderName$                               Remove a folder (error if not empty)
 #define  AUX_USAGE_SPF           ( 14)      //  SPF                                               sprintf()
 #define  AUX_USAGE_MOUNT         ( 15)      //  MOUNT                                             mount a disk/tape in a unit
-#define  AUX_USAGE_UNMNT         ( 16)      //  UNMNT                                             remove a disk/tape from a unit
+#define  AUX_USAGE_UNMOUNT       ( 16)      //  UNMOUNT                                           remove a disk/tape from a unit
 #define  AUX_USAGE_FLAGS         ( 17)      //  FLAGS                                             save A.FLAGS to config file
 #define  AUX_USAGE_SDREN         ( 18)      //  SDREN                                             Rename a file
 #define  AUX_USAGE_CLOCK         ( 19)      //  CLOCK                                             Return Real Time Clock
@@ -190,8 +190,8 @@ void AUXROM_Poll(void)
     case AUX_USAGE_SDWRIT:
       AUXROM_SDWRITE();
       break;
-    case AUX_USAGE_UNMNT:
-      AUXROM_UNMNT();
+    case AUX_USAGE_UNMOUNT:
+      AUXROM_UNMOUNT();
       break;
     case AUX_USAGE_WROM:
       AUXROM_WROM();

@@ -107,7 +107,10 @@ FASTRUN bool readTapeStatus(void)
     }
     else
     {
-        status |= STS_INSERTED;
+        if(tape.is_tape_loaded())
+        {
+          status |= STS_INSERTED;
+        }
         status |= STS_WRITE_EN; //tape always write enabled @todo - logic to enable/disable??
     }
 
@@ -269,29 +272,35 @@ FASTRUN void writeTapeCtrl(uint8_t val)
 
 Tape::Tape()
 {
-    _tick = millis();
+    _tick = millis();       //  This probably always loads 0, because it happens before main()
     _downCount = 0;
     _enabled = false;
+    _tape_inserted = false;
 }
 
 bool Tape::setFile(const char *fname)
 {
   if (_tapeFile)
   {
-    _tapeFile.close();    //  Which hopefully does a flush
+    close();                //  Includes flushing the tape cache and the SD cache
   }
 
   _tapeFile = SD.open(fname, (O_RDWR));
   if (!_tapeFile)
   {
+    _tape_inserted = false;
     Serial.printf("Tape file did not open: %s   <<<<<<<<<<<<<<<<<<\n", fname);
   }
   else
   {
+    _tape_inserted = true;
     strlcpy(_filename, fname, sizeof(_filename));
+    TAPPOS = 528 + 2048; //position to the right of the first hole
+    currBlockNum = TAPPOS / TAPE_BLOCKSIZE;
+    blockRead(currBlockNum);
     LOGPRINTF_TAPE("Tape file opened: %s\n", fname);
   }
-    return !_tapeFile ? false : true;
+  return _tapeFile;
 }
 
 char * Tape::getFile(void)
@@ -301,10 +310,13 @@ char * Tape::getFile(void)
 
 void Tape::close(void)
 {
+    flush();                        //  Flushing the dirty cache
     if (_tapeFile)
         {
-        _tapeFile.close();
+        _tapeFile.close();          //  Close the SD File. This also flushes the SD cache (if any).
         }
+    _tape_inserted = false;
+    _filename[0] = 0x00;
 }
 
 bool Tape::blockRead(uint32_t blkNum)
@@ -351,8 +363,8 @@ void Tape::flush(void)
         blockWrite(currBlockNum);
         blockDirty = false;
     }
-    LOGPRINTF_TAPE("Flushing tape image to disk\n");
-    close();
+    _tapeFile.flush();
+    LOGPRINTF_TAPE("Flushing tape cache and SD write buffer\n");
 }
 
 void Tape::enable(bool enable)
@@ -369,15 +381,6 @@ void Tape::enable(bool enable)
         close();
         }   
 
-
-    if ((_enabled == true ) && (enable == false))       //on disable -> enable
-        {
-        TAPPOS = 528 + 2048; //position to the right of the first hole
-        uint32_t blk = TAPPOS / TAPE_BLOCKSIZE;
-        blockRead(blk);
-        currBlockNum = blk;
-        }
-
     _enabled = enable;
 }
 
@@ -392,7 +395,6 @@ void Tape::poll(void)
             if (_downCount == 0)
             {
                 flush();
-                setFile(_filename);       //  #### Ask Russell about how this is supposed to work ####
             }
         }
     }
@@ -419,6 +421,11 @@ void Tape::poll(void)
     _prevCtrl = ioTapCtl;
 }
 
+bool Tape::is_tape_loaded(void)
+{
+  return _tape_inserted;
+}
+
 void tape_handle_command_load(void)
 {
   Serial.printf("\nLoad new tape file. Enter filename including path: ");
@@ -439,6 +446,15 @@ bool tape_handle_MOUNT(char *path)
   Serial.printf("\nOpening tape: %s\n", path);
   tape.close();
   blockDirty = false;
-  tapeInCount = 1; //flag the tape removal to the HP85
+  tapeInCount = 1;        //  flag the tape removal to the HP85
   return tape.setFile(path);
+}
+
+void tape_handle_UNMOUNT(void)
+{
+  Serial.printf("\nClosing tape\n");
+  tape.close();
+  blockDirty = false;
+  tapeInCount = 1;        //  flag the tape removal to the HP85
+  return;
 }
