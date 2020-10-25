@@ -16,6 +16,7 @@ USBHub hub2(myusb);
 USBHub hub3(myusb);
 KeyboardController keyboard1(myusb);
 KeyboardController keyboard2(myusb);
+LED leds;
 
 
 
@@ -579,6 +580,8 @@ void setup()
   initRoms();
   initCrtEmu();
 
+  leds.begin();
+
   setIOWriteFunc(0340,&ioWriteAuxROM_Alert); // AUXROM Alert that a Mailbox/Buffer has been updated
   setIOReadFunc(0340,&onReadAuxROM_Alert);   // Use HEYEBTKS to return identification string
 
@@ -728,6 +731,17 @@ void setup()
   {
     no_SD_card_message();
   }
+
+
+  //leds.setLedColor(0,CRGB::Purple);
+  //leds.setLedColor(1,CRGB::Blue);
+  //
+  //  alternately, hard code the brightness in 
+  leds.setLedColor(0,{10,0,0});  //r,g,b. 20 is a reasonable brighness
+  leds.setLedColor(1,{0,10,0});
+  
+  leds.update();
+
 
 }
 

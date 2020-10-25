@@ -300,6 +300,7 @@ class HPDisk
                 {
                 _diskFile.close();
                 _loaded = false;
+                _filename[0] = 0x00;
                 }
             return true;
             }
