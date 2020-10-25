@@ -167,26 +167,26 @@ struct S_Command_Entry Command_Table[] =
   {"6",                help_6},
   {"7",                help_7},
   {"tload",            tape_handle_command_load},
-  {"crt_1",            CRT_Timing_Test_1},
-  {"la_setup",         Setup_Logic_Analyzer},
-  {"la_go",            Logic_analyzer_go},
-  {"graphics_test",    Simple_Graphics_Test},
-  {"show_logfile",     show_logfile},
-  {"clean_logfile",    clean_logfile},
-  {"addr",             proc_addr},
-  {"auxint",           proc_auxint},
-  {"show_mb",          show_mailboxes_and_usage},
-  {"jo",               just_once_func},
-  {"pwo",              pulse_PWO},
-  {"dump_ram_window",  dump_ram_window},
-  {"jay_pi",           jay_pi},
-  {"ulisp",            ulisp},
   {"dir tapes",        diag_dir_tapes},
   {"dir disks",        diag_dir_disks},
+  {"td which",         tape_disk_which},
   {"dir roms",         diag_dir_roms},
   {"dir root",         diag_dir_root},
-  {"list mount",       list_mount},
-  {"TABLE_END",        help_0}
+  {"crt_1",            CRT_Timing_Test_1},
+  {"la setup",         Setup_Logic_Analyzer},
+  {"la go",            Logic_analyzer_go},
+  {"addr",             proc_addr},
+  {"show logfile",     show_logfile},
+  {"clean logfile",    clean_logfile},
+  {"pwo",              pulse_PWO},
+  {"show mb",          show_mailboxes_and_usage},
+  {"dump ram window",  dump_ram_window},                  //  Currently broken
+  {"graphics test",    Simple_Graphics_Test},
+  {"jay pi",           jay_pi},
+  {"auxint",           proc_auxint},
+  {"jo",               just_once_func},
+//{"ulisp",            ulisp},
+  {"TABLE_END",        help_0}                            //  Must be uppercase to mark end of table
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////  Get string from Serial, with editing
@@ -313,6 +313,7 @@ void Serial_Command_Poll(void)
     if (strcmp(Command_Table[command_index].command_name , "TABLE_END") == 0)
     {
       Serial.printf("\nUnrecognized Command [%s].  Flushing command\n", lc_serial_command);
+      help_0();
       return;
     }
     if (strcmp(Command_Table[command_index].command_name , lc_serial_command) == 0)
@@ -422,13 +423,13 @@ void help_0(void)
 {
   Serial.printf("\nEBTKS Control commands - not case sensitive\n\n");
   Serial.printf("0     Help for the help levels\n");
-  Serial.printf("1     Help for Tape commands\n");
-  Serial.printf("2     Help for Disk commands\n");
+  Serial.printf("1     Help for Tape/Disk commands\n");
+  Serial.printf("2     Help for xxx\n");
   Serial.printf("3     Help for Configuration commands\n");
   Serial.printf("4     Help for Auxiliary programs\n");
   Serial.printf("5     Help for Diagnostic commands\n");
-  Serial.printf("6     Help for Logic Analyzer\n");
-  Serial.printf("7     Help for ROMs\n");
+  Serial.printf("6     Help for Demo\n");
+  Serial.printf("7     Help for Transient commands\n");
   Serial.printf("\n");
 }
 
@@ -436,41 +437,42 @@ void help_1(void)
 {
   Serial.printf("Commands for the Tape Drive\n");
   Serial.printf("tload         Load a new tape image from SD\n");
+  Serial.printf("                 You will be prompted for a file name\n");
+//Serial.printf("dload         #Load a new disk image from SD\n");     //  Not yet Implemented
   Serial.printf("dir tapes     Directory of available tapes\n");
-  Serial.printf("twhich        #Which tape is currently loaded\n");
+  Serial.printf("dir disks     Directory of available disks\n");
+  Serial.printf("td which      Which tape/disk is currently loaded\n");
+//Serial.printf("dflush        #Force a disk flush and reload\n");     //  Not yet Implemented
+//Serial.printf("dwhich        #Which disk(s) is(are) currently loaded\n");
   Serial.printf("\n");
 }
 
 void help_2(void)
 {
-  Serial.printf("Commands for the Disk Drive\n");
-  Serial.printf("dflush        #Force a disk flush and reload\n");     //  Not yet Implemented
-  Serial.printf("dload         #Load a new disk image from SD\n");     //  Not yet Implemented
-  Serial.printf("dir disks     Directory of available disks\n");
-  Serial.printf("dwhich        #Which disk(s) is(are) currently loaded\n");
+  Serial.printf("Commands for xxx\n");
   Serial.printf("\n");
 }
 
 void help_3(void)
 {
   Serial.printf("Commands for the Configuration\n");
-  Serial.printf("cfgrom         #Select active roms\n");      //  Not yet Implemented
-  Serial.printf("dir roms       Directory of available ROMs\n");
-  Serial.printf("dir root       Directory of available ROMs\n");
-  Serial.printf("screen         #Screen emulation\n");        //  Not yet Implemented
-  Serial.printf("keyboard       #Keyboard emulation\n");      //  Not yet Implemented
+//Serial.printf("cfgrom        #Select active roms\n");      //  Not yet Implemented
+  Serial.printf("dir roms      Directory of available ROMs\n");
+  Serial.printf("dir root      Directory of available ROMs\n");
+//Serial.printf("screen        #Screen emulation\n");        //  Not yet Implemented
+//Serial.printf("keyboard      #Keyboard emulation\n");      //  Not yet Implemented
   Serial.printf("\n");
 }
 
 void help_4(void)
 {
   Serial.printf("Comands for Auxiliary programs\n");
-  Serial.printf("cpm         #CP/M operating system\n");                           //  Not yet Implemented
-  Serial.printf("ulisp       #uLisp interpreter\n");
-  Serial.printf("python      #uPython\n");                                         //  Not yet Implemented
-  Serial.printf("pdp8-os8    #PDP-8E inc Fortran-II and IV, Basic, Focal\n");      //  Not yet Implemented
-  Serial.printf("cobol       #COBOL\n");                                           //  Not yet Implemented
-  Serial.printf("fasthp85    #Turbo HP-85\n");                                     //  Not yet Implemented
+//Serial.printf("cpm           #CP/M operating system\n");                           //  Not yet Implemented
+//Serial.printf("ulisp         #uLisp interpreter\n");
+//Serial.printf("python        #uPython\n");                                         //  Not yet Implemented
+//Serial.printf("pdp8-os8      #PDP-8E inc Fortran-II and IV, Basic, Focal\n");      //  Not yet Implemented
+//Serial.printf("cobol         #COBOL\n");                                           //  Not yet Implemented
+//Serial.printf("fasthp85      #Turbo HP-85\n");                                     //  Not yet Implemented
   Serial.printf("\n");
 }
 
@@ -480,7 +482,16 @@ void help_5(void)
   //uint16_t    i;
 
   Serial.printf("Commands for Diagnostic\n");
-  Serial.printf("crt_1    Try and understand CRT Busy status timing\n");
+  Serial.printf("crt 1         Try and understand CRT Busy status timing\n");
+  Serial.printf("la setup      Set up the logic analyzer\n");
+  Serial.printf("la go         Start the logic analyzer\n");
+  Serial.printf("addr          Instantly show where HP85 is executing\n");
+  Serial.printf("show logfile  Show the logfile\n");
+  Serial.printf("clean logfile Clean_logfile\n");
+  Serial.printf("pwo           Pulse PWO, resetting HP85 and EBTKS\n");
+  Serial.printf("show mb       Display current mailboxes and related data\n");
+//Serial.printf("dump ram window Start(8) Len(8)   Dump RAM in ROM window\n");                          //  Currently broken because of parsing
+//Serial.printf("reset #Reset HP85 and EBTKS\n");
   Serial.printf("\n");
   //
   //  test code
@@ -504,24 +515,17 @@ void help_5(void)
 
 void help_6(void)
 {
-  Serial.printf("Commands for Logic Analyzer and other diagnostics\n");
-  Serial.printf("la_setup      la_go\n");
-  Serial.printf("addr          graphics_test\n");
-  Serial.printf("show_logfile  clean_logfile\n");
-  Serial.printf("pwo           list mount\n");
-  Serial.printf("auxint\n");
-  Serial.printf("show_mb\n");
-  Serial.printf("jo\n");
-  Serial.printf("jay_pi\n");
-  Serial.printf("reset #Reset HP85 and EBTKS\n");
-  Serial.printf("dump_ram_window Start(8) Len(8)\n");
+  Serial.printf("Commands for Demo\n");
+  Serial.printf("graphics test  Set graphics mode first\n");
+  Serial.printf("jay pi         Jay's Pi calculator running on Teensy\n");
   Serial.printf("\n");
 }
 
 void help_7(void)
 {
-  Serial.printf("ROM commands\n");
-  Serial.printf("dir roms     List ROMs\n");
+  Serial.printf("Transient commands\n");
+//Serial.printf("auxint\n");                //  Implemented, but probably not useful
+//Serial.printf("jo\n");                    //  Implemented, but probably not useful
   Serial.printf("\n");
 }
 
@@ -569,7 +573,7 @@ void diag_dir_roms(void)
   diag_dir_path("/roms/");
 }
 
-void list_mount(void)
+void tape_disk_which(void)
 {
   int         device;
   int         disknum;
@@ -701,6 +705,7 @@ void dump_ram_window(void)      //  dump_ram_window Start(8) Len(8)    dump memo
   //
   //  The dump command may only have white space separators "dump_ram_window Start(8) Len(8)"
   //
+  Serial.printf("Command to parse  [%s]\n", lc_serial_command);
   sscanf(lc_serial_command, "%s %o %o", &junque[0], (unsigned int*)&dump_start, (unsigned int*)&dump_len );
   dump_start &= 07760;  dump_len &= 07777;    //  Somewhat constrain start address and length to be in the AUXROM RAM window. Not precise, but I'm in a hurry. Note start is forced to 16 byte boundary
   Serial.printf("Dumping AUXROM RAM from %06o for %06o bytes\n", dump_start, dump_len);   // and addresses start at 0000 for dump == 070000 for the HP-85
