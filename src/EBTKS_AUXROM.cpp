@@ -122,18 +122,12 @@ void AUXROM_Poll(void)
     return;
   }
 
-  //my_R12 = AUXROM_RAM_Window.as_struct.AR_R12_copy;
-  LOGPRINTF_AUX("AUXROM Function called. Got Mailbox # %d  and Usage %d\n", Mailbox_to_be_processed , *p_usage);
-  //LOGPRINTF_AUX("R12, got %06o\n", my_R12);
-  //Serial.printf("Showing 16 bytes prior to R12 address\n");
-  //HexDump_HP85_mem(my_R12 - 16, 16, true, true);
-  //Serial.flush();
-  //delay(500);
-
   p_mailbox = &AUXROM_RAM_Window.as_struct.AR_Mailboxes[Mailbox_to_be_processed];         //  Pointer to the selected primary mailbox for keyword
   p_len     = &AUXROM_RAM_Window.as_struct.AR_Lengths[Mailbox_to_be_processed];           //  Pointer to the selected buffer length
   p_usage   = &AUXROM_RAM_Window.as_struct.AR_Usages[Mailbox_to_be_processed];            //  Pointer to the selected buffer usage , and return success/error status
   p_buffer  = &AUXROM_RAM_Window.as_struct.AR_Buffer_0[Mailbox_to_be_processed * 256];    //  Pointer to the selected primary buffer for keyword.
+
+  LOGPRINTF_AUX("AUXROM Function called. Got Mailbox # %d  and Usage %d\n", Mailbox_to_be_processed , *p_usage);
 
   switch (*p_usage)
   {

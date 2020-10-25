@@ -90,6 +90,7 @@
 //                                          428       Couldn't init New Tape
 //        430..439      AUXROM_SPF
 //        440..449      AUXROM_SDREAD
+//                                          440       SDREAD File not open
 //        450..459      AUXROM_SDREN
 //        460..469      AUXROM_SDRMDIR
 //        470..479      AUXROM_SDSEEK
@@ -97,6 +98,7 @@
 //                                          471       Trying to seek before beginning
 //                                          472       Trying to seek past EOF
 //        480..489      AUXROM_SDWRITE
+//                                          480       SDWRITE File not open for write
 //        490..499      AUXROM_UNMNT
 //        500..509      AUXROM_WROM
 //        510..519      AUXROM_SDMEDIA
@@ -121,10 +123,6 @@ extern HpibDisk *devices[];
 EXTMEM static char          Current_Path[MAX_SD_PATH_LENGTH  + 2];    //  I don't think initialization of EXTMEM is supported yet
 EXTMEM static char          Resolved_Path[MAX_SD_PATH_LENGTH + 2];
 static bool                 Resolved_Path_ends_with_slash;
-
-EXTMEM static char          Transfer_Buffer[65536];                   //  This is for SDREAD and SDWRITE which need a messy function
-                                                                      //  to access HP85 memory. Using this intermediate should cover
-                                                                      //  any possible scenario. Prove me wrong.
 
 bool parse_MSU(char *msu);
 
@@ -1323,46 +1321,34 @@ void AUXROM_SPF(void)
 
 
 //
-//  Read specified number of bytes from an open file, and store directly in HP85 Memory
-//
-//  Check with Everett: We always talked about this read storing to a pre-allocated string. Could it also be
-//  used to store into an 8 byte Real, or an array?
+//  Read specified number of bytes from an open file, and store in the specified buffer which should always be buffer 6
 //
 //  Position after read is next character to be read
 //
 
-void AUXROM_SDREAD(void)                                                 //  UNTESTED  UNTESTED  UNTESTED  UNTESTED  UNTESTED
+void AUXROM_SDREAD(void)
 {
   int         file_index;
   int         bytes_to_read;
   int         bytes_actually_read;
-  uint16_t    HP85_Mem_Address;
 
   file_index = AUXROM_RAM_Window.as_struct.AR_BUF6_OPTS[0];               //  File number 1..11
-  bytes_to_read = *p_len;              //  Length of read
+  bytes_to_read = *p_len;                                                 //  Length of read
   if (!Auxrom_Files[file_index].isOpen())
   {
-    *p_usage    = 213;    //  Error
+    post_custom_error_message((char *)"SDREAD File not open", 440);
     *p_mailbox = 0;      //  Indicate we are done
     Serial.printf("SDREAD Error. File not open. File Number %d\n", file_index);
     return;
   }
-  //  following crappy extract because still haven't found a way around
-  //  dereferencing type-punned pointer will break strict-aliasing rules [-Wstrict-aliasing]
-  HP85_Mem_Address = p_buffer[0] | (p_buffer[1] << 8);
-
-  bytes_actually_read = Auxrom_Files[file_index].readBytes(Transfer_Buffer, bytes_to_read);
+  bytes_actually_read = Auxrom_Files[file_index].readBytes(p_buffer, bytes_to_read);
   Serial.printf("Read file # %2d , requested %d bytes, got %d\n", file_index, bytes_to_read, bytes_actually_read);
-  //Serial.printf("Target address in HP85 memory is %06o  %08X\n", HP85_Mem_Address, HP85_Mem_Address);
-  //Serial.printf("[%s]\n", Transfer_Buffer);
-  AUXROM_Store_Memory(HP85_Mem_Address, Transfer_Buffer, bytes_actually_read);
-
   //
   //  Assume all is good
   //
   *p_len = bytes_actually_read;
-  *p_usage    = 0;     //  SDREAD successful
-  *p_mailbox = 0;     //  Indicate we are done
+  *p_usage    = 0;                                                        //  SDREAD successful
+  *p_mailbox = 0;                                                         //  Indicate we are done
   return;
 }
 
@@ -1532,35 +1518,29 @@ void AUXROM_SDSEEK(void)
 //  Write the specified number of bytes to an open file
 //
 
-void AUXROM_SDWRITE(void)                                                 //  UNTESTED  UNTESTED  UNTESTED  UNTESTED  UNTESTED
+void AUXROM_SDWRITE(void)
 {
   int         file_index;
   int         bytes_to_write;
   int         bytes_actually_written;
-  uint16_t    HP85_Mem_Address;
 
   file_index = AUXROM_RAM_Window.as_struct.AR_BUF6_OPTS[0];               //  File number 1..11
   bytes_to_write = *p_len;             //  Length of write
   if (!Auxrom_Files[file_index].isWritable())
   {
-    *p_usage    = 213;    //  Error
+    post_custom_error_message((char *)"SDWRITE File not open for write", 480);
     *p_mailbox = 0;      //  Indicate we are done
     Serial.printf("SDWRITE Error. File not open for write. File Number %d\n", file_index);
     return;
   }
-  //  following crappy extract because still haven't found a way around
-  //  dereferencing type-punned pointer will break strict-aliasing rules [-Wstrict-aliasing]
-  HP85_Mem_Address = p_buffer[0] | (p_buffer[1] << 8);
-
-  AUXROM_Fetch_Memory((uint8_t *)Transfer_Buffer, HP85_Mem_Address, bytes_to_write);
-  bytes_actually_written = Auxrom_Files[file_index].write(Transfer_Buffer, bytes_to_write);
+  bytes_actually_written = Auxrom_Files[file_index].write(p_buffer, bytes_to_write);
   Serial.printf("Write file # %2d , requested write %d bytes, %d actually written\n", file_index, bytes_to_write, bytes_actually_written);
   //
   //  Assume all is good
   //
-  *p_len = bytes_actually_written;
-  *p_usage    = 0;     //  SDWRITE successful
-  *p_mailbox = 0;     //  Indicate we are done
+  *p_len      = bytes_actually_written;
+  *p_usage    = 0;                                                        //  SDWRITE successful
+  *p_mailbox  = 0;                                                        //  Indicate we are done
   return;
 }
 
