@@ -9,9 +9,8 @@
 
 #include "Inc_Common_Headers.h"
 
-uint8_t vram[8192];                   //  Virtual Graphics memory, to avoid needing Read-Modify-Write
-uint8_t Mirror_Video_RAM[8192];       //
-volatile uint8_t crtControl = 0;      //  write to status register stored here. bit 7 == 1 is graphics mode, else char mode
+uint8_t vram[8192];                   // Virtual Graphics memory, to avoid needing Read-Modify-Write
+volatile uint8_t crtControl = 0;      //write to status register stored here. bit 7 == 1 is graphics mode, else char mode
 volatile bool writeCRTflag = false;
 
 bool badFlag = false;                 //odd/even flag for Baddr
@@ -19,6 +18,18 @@ uint16_t badAddr = 0;
 
 bool sadFlag = false;                 //odd/even flag for CRT start address
 uint16_t sadAddr = 0;
+
+// structure to hold the video subsystem snapshot
+typedef struct {
+  uint16_t sadAddr;
+  uint16_t badAddr;
+  uint8_t  ctrl;
+  uint8_t  vram[8192];
+} video_capt_t;
+
+video_capt_t current_screen;          // contains the current HP85 screen state
+video_capt_t captured_screen;         // the current screen is copied into here when captured
+
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////     CRT Mirror Support
 
@@ -32,6 +43,7 @@ void ioWriteCrtSad(uint8_t val)                 //  This function is running wit
   if (sadFlag)
   {                                             //  If true, we are doing the high byte
     sadAddr |= (uint16_t)val << 8;              //  High byte
+    current_screen.sadAddr = sadAddr;
   }
   else
   {                                             //  Low byte
@@ -58,6 +70,7 @@ void ioWriteCrtBad(uint8_t val)                 //  This function is running wit
     {
       badAddr &= 0x0FFFU;                       //  Alpha mode
     }
+    current_screen.badAddr = badAddr;
   }
   else
   {
@@ -74,6 +87,7 @@ void ioWriteCrtBad(uint8_t val)                 //  This function is running wit
 void ioWriteCrtCtrl(uint8_t val)                //  This function is running within an ISR, keep it short and fast.
 {
   crtControl = val;
+  current_screen.ctrl = val;
 }
 
 //
@@ -87,14 +101,14 @@ void ioWriteCrtDat(uint8_t val)                             //  This function is
   {                                                         //  00085-90444 85 Assembler ROM, page 7-110 says top nibble goes to lower nibble address
                                                             //  So if the address is even, we are pointing at the high nibble, and if the address is
                                                             //  odd, we are pointing to the low nibble
-    Mirror_Video_RAM[badAddr >> 1] &= 0xF0U;                //  Code by RB. Reviewed by PMF 7/17/2020
-    Mirror_Video_RAM[badAddr >> 1] |= (val >> 4);
-    Mirror_Video_RAM[(badAddr >> 1) + 1] &= 0x0FU;
-    Mirror_Video_RAM[(badAddr >> 1) + 1] |= (val << 4);
+    current_screen.vram[badAddr >> 1] &= 0xF0U;                //  Code by RB. Reviewed by PMF 7/17/2020
+    current_screen.vram[badAddr >> 1] |= (val >> 4);
+    current_screen.vram[(badAddr >> 1) + 1] &= 0x0FU;
+    current_screen.vram[(badAddr >> 1) + 1] |= (val << 4);
   }
   else                                                      //  Else Even address is just a byte write
   {
-    Mirror_Video_RAM[badAddr >> 1] = val;
+    current_screen.vram[badAddr >> 1] = val;
   }
 
   badAddr += 2;
@@ -468,7 +482,7 @@ void dumpCrtAlpha(void)
   {
     for (int h = 0; h < 32; h++)
     {
-      char c = Mirror_Video_RAM[(v * 32) + h] & 0x7f; //remove the underline (bit 7) for the moment
+      char c = current_screen.vram[(v * 32) + h] & 0x7f; //remove the underline (bit 7) for the moment
       if (c < 0x20)
       {
         c = ' '; //unprintables convert to space char
@@ -542,6 +556,63 @@ void dumpCrtAlphaAsJSON(void)
 {
   char base64Buff[16384];
 
-  base64_encode(base64Buff, (char *)Mirror_Video_RAM, 4096); //64x32 alpha only
+  base64_encode(base64Buff, (char *)current_screen.vram, 2048); //64x32 alpha only
   Serial.printf("\"crt\":{\"alpha\":\"%s\"}\r\n", base64Buff);
 }
+
+//
+//  copy the current video state into captured_screen
+//  no synchronisation is done - not sure if it is needed.
+//  Time will tell!
+//
+void CRT_capture_screen(void)
+{
+  memcpy(&captured_screen,&current_screen,sizeof(video_capt_t));
+  dumpCrtAlpha();
+}
+
+//
+//  restore the HP85 video state from one previously captured
+//  currently we only restore the alpha pages
+//
+void CRT_restore_screen(void)
+{
+  //copy 2k of alpha data back to the HP85 video controller
+  while (DMA_Peek8(CRTSTS) & 0x80)
+  {
+  };   //wait until video controller is ready
+  DMA_Poke16(CRTBAD, 0); 
+  DMA_Poke16(CRTSAD, 0);  
+
+    //start dma
+  DMA_Request = true;
+  while (!DMA_Active)
+  {
+  }; // Wait for acknowledgement, and Bus ownership
+
+  for (int ch = 0; ch < 2048; ch++)
+    {
+    uint8_t data = 0x80;
+    while (data & 0x80)
+    {
+      DMA_Read_Block(CRTSTS,&data, 1);
+    }; //wait until video controller is ready
+
+    DMA_Write_Block(CRTDAT, &captured_screen.vram[ch], 1);              
+    }
+        
+  release_DMA_request();
+        
+  while (DMA_Active)
+    {
+    }; // Wait for release
+    //stop dma
+
+  while (DMA_Peek8(CRTSTS) & 0x80)
+  {
+  };   //wait until video controller is ready
+  DMA_Poke16(CRTBAD, captured_screen.badAddr); 
+  DMA_Poke16(CRTSAD, captured_screen.sadAddr);
+  DMA_Poke8(CRTSTS,captured_screen.ctrl);
+}
+

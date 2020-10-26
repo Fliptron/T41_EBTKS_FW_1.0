@@ -50,6 +50,8 @@ int  base64_encode(char *output, char *input, int inputLen);
 void dumpCrtAlphaAsJSON(void);
 void writePixel(int x, int y, int color);
 void writeLine(int x0, int y0, int x1, int y1, int color);
+void CRT_capture_screen(void);
+void CRT_restore_screen(void);
 
 //
 //  Bank Switched ROM support
