@@ -66,6 +66,12 @@ bool loadRom(const char *fname, int slotNum, const char * description)
 //          375 362  363 
 //          376 361  362 
 //          
+//  Standard ROMS in an HP87 (at least Philip's one) are
+//  Decimal
+//  001   HP87 Graphics
+//  208   Mass Storage
+//
+
 
   id = header[0];
   LOGPRINTF("%03o %3d  %02X   %02X    %02X   ", id, id, id, header[1], (uint8_t)(id + header[1]));
@@ -84,13 +90,32 @@ bool loadRom(const char *fname, int slotNum, const char * description)
       return false;
     }
   }
-  else if (id != (uint8_t)(~header[1]))   //  now test normal ROM ID's , including the AUXROM Primary.
-  {
-    LOGPRINTF("ROM file header error %02X %02X\n", id, (uint8_t)~header[1]);
-    rfile.close();
-    return false;
+  else
+  {   //  Check for machine type.   This is going to break for HP83 (so CONFIG.TXT should say 85A) and 99151/B (also 85A ?)
+    if ((machineNum == 0) || (machineNum == 1))
+    {   //  CONFIG.TXT says we are loading ROMS for HP85A or HP85B:  One's complement for second byte of ROM
+      if (id != (uint8_t)(~header[1]))   //  now test normal ROM ID's , including the AUXROM Primary.
+      {
+        LOGPRINTF("ROM file header error first two bytes %02X %02X   Expect One's Complement\n", id, (uint8_t)header[1]);
+        rfile.close();
+        return false;
+      }
+    }
+    else if ((machineNum == 2) || (machineNum == 3))
+    {   //  CONFIG.TXT says we are loading ROMS for HP86 or HP87:  Two's complement for second byte of ROM
+      if (id != (uint8_t)(-header[1]))   //  now test normal ROM ID's , including the AUXROM Primary.
+      {
+        LOGPRINTF("ROM file header error first two bytes %02X %02X   Expect Two's Complement\n", id, (uint8_t)header[1]);
+        rfile.close();
+        return false;
+      }
+    }
+    else
+    {
+      LOGPRINTF("ERROR Unsupported Machine type\n");
+    }
   }
-
+  
   //  ROM header looks good, read the ROM file into memory
   rfile.seek(0);    //  Rewind the file
    int flen = rfile.read(getRomSlotPtr(slotNum), ROM_PAGE_SIZE);
