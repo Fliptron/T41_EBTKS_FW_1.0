@@ -651,8 +651,10 @@ uint8_t DMA_Peek8(uint32_t address)
   uint8_t data;
 
   DMA_Request = true;
-  while(!DMA_Active){};     // Wait for acknowledgement, and Bus ownership
+  while(!DMA_Active){}      // Wait for acknowledgement, and Bus ownership
+
   DMA_Read_Block(address , (uint8_t *)&data , 1);
+
   release_DMA_request();
   while(DMA_Active){};      // Wait for release
   //  Serial.printf("DMA_Peek8  %06O  O: %03O  H: %02X  D: %03d\n", address, data, data, data);

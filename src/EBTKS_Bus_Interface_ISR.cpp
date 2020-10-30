@@ -295,7 +295,7 @@ inline void onPhi_1_Rise(void)                  //  This function is running wit
 //    /WR   /RD   /LMA      Note all signals are active low in hardware.
 //
 
-inline void onPhi_2_Rise(void)                                  //  This function is running within an ISR, keep it short and fast.
+inline void onPhi_2_Rise(void)                             //  This function is running within an ISR, keep it short and fast.
 {
   bool       lma;
   bool       rd;
@@ -553,6 +553,10 @@ inline void onPhi_2_Rise(void)                                  //  This functio
 
   __disable_irq();  //  Disable all interrupts for duration of DMA. No USB activity, no Serial via USB, no SysTick
                     //  We need to do this to get precise timing for /LMA /RD /WR /RC
+                    //
+                    //  10/30/2020 Maybe we could avoid this, allowing diagnostic Serial.printf("for example")
+                    //  by only doing this when we are actually doing 1 or more dma transactions. We have already
+                    //  disabled the pin interrupts.
 
   //
   //  The matching release of DMA is in EBTKS_DMA.cpp at release_DMA_request()

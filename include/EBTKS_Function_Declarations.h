@@ -136,7 +136,7 @@ void initialize_SD_functions(void);
 
           void AUXROM_CLOCK(void);
           void AUXROM_FLAGS(void);
-          void AUXROM_HELP(void);
+void AUXROM_HELP(void);
 void AUXROM_SDCAT(void);
 void AUXROM_SDCD(void);
 void AUXROM_SDCLOSE(void);

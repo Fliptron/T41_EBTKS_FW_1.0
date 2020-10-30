@@ -9,8 +9,17 @@
 
 #include "Inc_Common_Headers.h"
 
-uint8_t vram[8192];                   // Virtual Graphics memory, to avoid needing Read-Modify-Write
-volatile uint8_t crtControl = 0;      //write to status register stored here. bit 7 == 1 is graphics mode, else char mode
+//
+//  The CRT memory layout is described in 00085-90444_85_Assembler_ROM_389_pages_1981_11.pdf at PDF page 273 onwards
+//  We have a library of functions in EBTKS_CRT.cpp
+//  Memory addresses are nibble addresses, but writes and reads are 8 bits on even boundaries: Just means address inc/dec must be by 2
+//  Alpha memory starts at address 000000(8) and is 4 pages of 16 lines or 32 characters -> 2048 characters -> 4096 nibbles, thus alpha memory ends at 007777
+//  Graphics memory is 256 x 192 pixels packed into 6144 bytes. Nibble address starts at 010000 to 037777
+//  So total memory is 16384 nibbles, which we store as 8192 bytes
+//
+
+uint8_t vram[8192];                   //  Virtual Graphics memory, to avoid needing Read-Modify-Write
+volatile uint8_t crtControl = 0;      //  Write to status register stored here. bit 7 == 1 is graphics mode, else char mode
 volatile bool writeCRTflag = false;
 
 bool badFlag = false;                 //odd/even flag for Baddr
@@ -101,7 +110,7 @@ void ioWriteCrtDat(uint8_t val)                             //  This function is
   {                                                         //  00085-90444 85 Assembler ROM, page 7-110 says top nibble goes to lower nibble address
                                                             //  So if the address is even, we are pointing at the high nibble, and if the address is
                                                             //  odd, we are pointing to the low nibble
-    current_screen.vram[badAddr >> 1] &= 0xF0U;                //  Code by RB. Reviewed by PMF 7/17/2020
+    current_screen.vram[badAddr >> 1] &= 0xF0U;             //  Code by RB. Reviewed by PMF 7/17/2020
     current_screen.vram[badAddr >> 1] |= (val >> 4);
     current_screen.vram[(badAddr >> 1) + 1] &= 0x0FU;
     current_screen.vram[(badAddr >> 1) + 1] |= (val << 4);
@@ -194,7 +203,8 @@ void Write_on_CRT_Alpha(uint16_t row, uint16_t column, const char *  text)
   //
 
   DMA_Request = true;
-  while(!DMA_Active){};     // Wait for acknowledgement, and Bus ownership
+  while(!DMA_Active){}     // Wait for acknowledgement, and Bus ownership
+
   while(*text)
   {
     while(1)
@@ -207,38 +217,20 @@ void Write_on_CRT_Alpha(uint16_t row, uint16_t column, const char *  text)
       }
     }
     //  Busy de-asserted
+    SET_TXD;
     DMA_Write_Block(CRTDAT , (uint8_t *)text , 1);
+    current_screen.vram[local_badAddr>>1] = *text;
+    local_badAddr += 2;
     text++;
+    CLEAR_TXD;
   }
   DMA_Write_Block(CRTBAD , (uint8_t *)&badAddr_restore , 2);
   release_DMA_request();
-  while(DMA_Active){};      // Wait for release
+  while(DMA_Active){}       // Wait for release
   //  End of alternate code
 
 }
 
-static char test_message[] = "The Quick Green EBTKS Jumps over the Slow HP-85";
-
-void DMA_Test_5(void)
-{
-  char  * message_ptr;
-
-  Serial.printf("DMA Text to the screen\n");
-  
-  message_ptr = test_message;
-  
-  while(*message_ptr != 0)
-  {
-    while(DMA_Peek8(CRTSTS) & 0x80)
-    {        //  Wait while CRT is Busy
-    //   Serial.printf(".");
-    }
-    //  delayMicroseconds(20);
-    DMA_Poke8 (CRTDAT, *message_ptr);
-    Serial.printf("%c", *message_ptr);
-    message_ptr++;
-  }
-}
 
 //
 //  The purpose of this test is to reverse engineer the timing of the busy flag in the CRT controller
@@ -330,6 +322,11 @@ void DMA_Test_5(void)
 //              will be delayed till the start of the retrace time. I will also bet the 5 ms window starts at the beginning of the
 //              vertical front porch and ends with the end of the vertical back porch.
 //
+//        Slight change 10/29/2020    Change from toggling TXD to just showing BUSY state
+//
+//  Mode 1    RXD (Scope CH 1)  CRTSTS bit 1 , Retrace Time when low, Display time when high
+//            TXD (Scope CH 2)  CRTSTS bit 7 , Not Busy when low,  Busy when high
+//
 
 void CRT_Timing_Test_1(void)
 {
@@ -352,18 +349,141 @@ void CRT_Timing_Test_1(void)
 
     if (data & 0x80)
     {
-      //  If busy, do nothing
+      SET_TXD;          // Busy
     }
     else
     {
-      //  If not busy, write an 'X' and do a toggle
-      TOGGLE_TXD;
+      CLEAR_TXD;        // Not busy
       DMA_Write_Block(CRTDAT , (uint8_t *)&"X" , 1);      //  Write an 'X' occasionally
     }
   }
   release_DMA_request();
-  while(DMA_Active){};      // Wait for release
+  while(DMA_Active){}      // Wait for sweet, sweet release
 }
+
+static char test_message[] = "012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789";   // 90 characters
+
+//
+//  Writes 209 characters using 2 bursts of 74 and 135 characters following the start of retrace.
+//  Takes 2.26 ms, averaging 10.8 us. Does not poll the status bit for each character, only polls for the start of retrace
+//
+
+void CRT_Timing_Test_2(void)
+{
+  int         loops = 1;
+  uint8_t     data;
+  int         index, count;
+
+  DMA_Request = true;
+  while(!DMA_Active){}     // Wait for acknowledgement, and Bus ownership. Also locks out interrupts on EBTKS, so can't do USB serial or SD card stuff
+  SET_RXD;
+  while(loops--)
+  {
+    //
+    //  Find start of retrace
+    //
+    while(1)
+    {
+      DMA_Read_Block(CRTSTS , &data , 1);
+      if (data & 0x02)
+      {
+        break;  //  we are in Display Time
+      }
+    }
+    while(1)
+    {
+      DMA_Read_Block(CRTSTS , &data , 1);
+      if (!(data & 0x02))
+      {
+        break;  //  Start of Retrace
+      }
+    }
+    CLEAR_RXD;
+    count = 0;
+    index = 0;
+    //
+    //  These 74 characters take 728 us
+    //
+    SET_TXD;
+    while(count < 74)
+    {
+      DMA_Write_Block(CRTDAT, (uint8_t *)&test_message[index++], 1);
+      if(index == 32)
+      {
+        index = 0;
+      }
+      EBTKS_delay_ns(3000);   // Fails at 1300, works at 1400, Fails at 2000, use 3000, but need to
+      count++;                // test all around 2000 to 4000 and find a sweet spot or a point where it always works
+    }
+    CLEAR_TXD;
+
+    EBTKS_delay_ns(200000);   //  Skip Blip 1
+    SET_TXD;
+    count = 0;
+    while(count < 135)
+    {
+      DMA_Write_Block(CRTDAT, (uint8_t *)&test_message[index++], 1);
+      if(index == 32)
+      {
+        index = 0;
+      }
+      EBTKS_delay_ns(3000);   // Fails at 1300, works at 1400, Fails at 2000, use 3000, but need to
+      count++;                // test all around 2000 to 4000 and find a sweet spot or a point where it always works
+    }
+    CLEAR_TXD;
+
+  }
+  release_DMA_request();
+  while(DMA_Active){}      // Wait for sweet, sweet release
+}
+
+//
+//  Writes 209 characters using 2 calls to Write_on_CRT_Alpha, so wil have overhead of negotiating DMA twice
+//  and it tests Busy bit for every character.
+//  Takes 3.08 ms, averaging 14.7 us.
+//  But the code is way cleaner. So this really is the way to go, even though 50% ish slower
+
+void CRT_Timing_Test_3(void)
+{
+  Write_on_CRT_Alpha(0,0,"01234567890123456789012345678901012345678901234567890123456789010123456789012345678901234567890101234567890123456789012345678901");   // 128
+  Write_on_CRT_Alpha(4,0,"012345678901234567890123456789010123456789012345678901234567890101234567890123456");   // 81
+}
+
+//
+//  Test Screen Save and Restore
+//
+
+void CRT_Timing_Test_4(void)
+{
+  int       temp;
+
+  CRT_capture_screen();
+  Serial.printf("Dump of captured_screen Structure\n");
+  temp = captured_screen.sadAddr;
+  Serial.printf("sadAddr = %d   Col = %d   Row = %d\n", temp, (temp & 0x3F) >> 1 , temp >> 6);
+  temp = captured_screen.badAddr;
+  Serial.printf("badAddr = %d   Col = %d   Row = %d\n", temp, (temp & 0x3F) >> 1 , temp >> 6);
+  Serial.printf("ctrl    = %02X\n", captured_screen.ctrl);
+  for (int v = 0; v < 64; v++)
+  {
+    Serial.printf("Row %2d [", v);
+    for (int h = 0; h < 32; h++)
+    {
+      char c = captured_screen.vram[(v * 32) + h] & 0x7f; //remove the underline (bit 7) for the moment
+      if (c < 0x20)
+      {
+        c = ' '; //unprintables convert to space char
+      }
+      Serial.printf("%c", c);
+    }
+    Serial.printf("]\n");
+  }
+
+  delay(5000);
+  Serial.printf("Starting restore\n");
+  CRT_restore_screen();
+}
+
 
 
 
@@ -560,35 +680,43 @@ void dumpCrtAlphaAsJSON(void)
   Serial.printf("\"crt\":{\"alpha\":\"%s\"}\r\n", base64Buff);
 }
 
+
 //
-//  copy the current video state into captured_screen
+//  Copy the current video state into captured_screen
 //  no synchronisation is done - not sure if it is needed.
 //  Time will tell!
 //
+
 void CRT_capture_screen(void)
 {
-  memcpy(&captured_screen,&current_screen,sizeof(video_capt_t));
-  dumpCrtAlpha();
+  memcpy(&captured_screen, &current_screen, sizeof(video_capt_t));
 }
 
 //
 //  restore the HP85 video state from one previously captured
 //  currently we only restore the alpha pages
 //
+
 void CRT_restore_screen(void)
 {
   //copy 2k of alpha data back to the HP85 video controller
-  while (DMA_Peek8(CRTSTS) & 0x80)
-  {
-  };   //wait until video controller is ready
-  DMA_Poke16(CRTBAD, 0); 
-  DMA_Poke16(CRTSAD, 0);  
+  while (DMA_Peek8(CRTSTS) & 0x80)              //  I thought this wait might not be necessary, but the code in the system ROMs checks the busy bit
+  {                                             //  before writing to CRTBAD. It also does it before writing to CRTSAD, but only if a CRTBAD write is adjacent.
+  }   //wait until video controller is ready       Best guess is it is only needed for CRTBAD.  Also seems that if it knows retrace is happening, then a write is ok.
+  DMA_Poke16(CRTBAD, 0);
+  DMA_Poke16(CRTSAD, 0);
 
-    //start dma
+  // Serial.printf("CRTBAD and CRTBAD set to 0\n");
+  // delay(1000);
+  // Serial.printf("Start block DMA\n");         //  no reporting until DMA end, as interrupts are off
+
+  //  Start DMA mode
   DMA_Request = true;
   while (!DMA_Active)
   {
-  }; // Wait for acknowledgement, and Bus ownership
+  } // Wait for acknowledgement, and Bus ownership
+
+  //  Bus is now ours, All interrupts are disabled on Teensy
 
   for (int ch = 0; ch < 2048; ch++)
     {
@@ -596,7 +724,7 @@ void CRT_restore_screen(void)
     while (data & 0x80)
     {
       DMA_Read_Block(CRTSTS,&data, 1);
-    }; //wait until video controller is ready
+    }  // Wait until video controller is ready
 
     DMA_Write_Block(CRTDAT, &captured_screen.vram[ch], 1);              
     }
@@ -604,15 +732,25 @@ void CRT_restore_screen(void)
   release_DMA_request();
         
   while (DMA_Active)
-    {
-    }; // Wait for release
-    //stop dma
+  {
+  } //  Wait for release
+    //  DMA mode is ended
+
+  // Serial.printf("Block DMA has ended\n");         //  no reporting until DMA end, as interrupts are off
+  // delay(1000);
+  // Serial.printf("Restoring CRTBAD, CRTSAD, and CRTSTS\n");         //  no reporting until DMA end, as interrupts are off
 
   while (DMA_Peek8(CRTSTS) & 0x80)
   {
-  };   //wait until video controller is ready
+  } ;   //wait until video controller is ready
   DMA_Poke16(CRTBAD, captured_screen.badAddr); 
   DMA_Poke16(CRTSAD, captured_screen.sadAddr);
   DMA_Poke8(CRTSTS,captured_screen.ctrl);
+  //
+  //  Update what BASIC thinks these variables are
+  //
+  // DMA_Poke16(CRTBYT, captured_screen.badAddr); 
+  // DMA_Poke16(CRTRAM, captured_screen.sadAddr);
+  // DMA_Poke8(CRTWRS,captured_screen.ctrl);
 }
 

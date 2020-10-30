@@ -50,7 +50,7 @@ struct PACKED AUXROM_RAM
   char          AR_BUF6_OPTS[8];                    //  070360 - 070367     240 -   247           A.BOPT60 - A.BOPT67   See 85aux2.lst line 2226 for details. TLDR: used as additional Usage values.
                                                     //                                                                  Same mailbox constraints on ownership
   char          AR_BUF0_OPTS[4];                    //  070370 - 070373     248 -   251           A.BOPT00 - A.BOPT03
-  char          AR_BUF1_OPTS[4];                    //  070374 - 070374     252 -   255           A.BOPT10 - A.BOPT13
+  char          AR_BUF1_OPTS[4];                    //  070374 - 070374     252 -   255           A.COPT0-A.COPT3        U_cmd-specific options
   char          AR_Buffer_0[256];                   //  070400 - 070777     256 -   511
   char          AR_Buffer_1[256];                   //  071000 - 070377     512 -   767
   char          AR_Buffer_2[256];                   //  071400 - 071777     768 -  1023
@@ -95,7 +95,7 @@ struct PACKED AUXROM_RAM_A
   } AR_BUF6_OPTS;
 
   uint16_t      AR_BUF0_OPTS[2];                    //  070370 - 070373     248 -   251           A.BOPT00 - A.BOPT01    !!!!!!!!!!!!!!!!  this is the only difference
-  uint8_t       AR_BUF1_OPTS[4];                    //  070374 - 070374     252 -   255           A.BOPT10 - A.BOPT13
+  uint8_t       AR_BUF1_OPTS[4];                    //  070374 - 070374     252 -   255           A.COPT0-A.COPT3        U_cmd-specific options
   uint8_t       AR_Buffer_0[256];                   //  070400 - 070777     256 -   511
   uint8_t       AR_Buffer_1[256];                   //  071000 - 070377     512 -   767
   uint8_t       AR_Buffer_2[256];                   //  071400 - 071777     768 -  1023

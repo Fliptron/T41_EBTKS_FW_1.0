@@ -123,6 +123,9 @@ void help_7(void);
 void tape_handle_command_flush(void);
 void tape_handle_command_load(void);
 void CRT_Timing_Test_1(void);
+void CRT_Timing_Test_2(void);
+void CRT_Timing_Test_3(void);
+void CRT_Timing_Test_4(void);
 void Setup_Logic_analyzer(void);
 void Logic_analyzer_go(void);
 void Simple_Graphics_Test(void);
@@ -172,7 +175,10 @@ struct S_Command_Entry Command_Table[] =
   {"td which",         tape_disk_which},
   {"dir roms",         diag_dir_roms},
   {"dir root",         diag_dir_root},
-  {"crt_1",            CRT_Timing_Test_1},
+  {"crt 1",            CRT_Timing_Test_1},
+  {"crt 2",            CRT_Timing_Test_2},
+  {"crt 3",            CRT_Timing_Test_3},
+  {"crt 4",            CRT_Timing_Test_4},
   {"la setup",         Setup_Logic_Analyzer},
   {"la go",            Logic_analyzer_go},
   {"addr",             proc_addr},
@@ -483,6 +489,9 @@ void help_5(void)
 
   Serial.printf("Commands for Diagnostic\n");
   Serial.printf("crt 1         Try and understand CRT Busy status timing\n");
+  Serial.printf("crt 2         Fast CRT Write Experiments\n");
+  Serial.printf("crt 3         Normal CRT Write Experiments\n");
+  Serial.printf("crt 4         Test screen Save and Restore\n");
   Serial.printf("la setup      Set up the logic analyzer\n");
   Serial.printf("la go         Start the logic analyzer\n");
   Serial.printf("addr          Instantly show where HP85 is executing\n");
