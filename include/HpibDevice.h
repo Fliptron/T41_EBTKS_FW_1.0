@@ -33,6 +33,13 @@ class HpibDevice
         // return length of message put into readBuff
         //
         virtual int input();
+
+        //
+        //
+        //
+        virtual bool setFile(const char *fname);
+        virtual bool setFile(int diskNum, const char *fname, bool wprot);
+        virtual bool addDisk(int type);
     };
     #endif //_HPIBDEVICE
 

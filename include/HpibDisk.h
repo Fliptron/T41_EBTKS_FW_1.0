@@ -45,12 +45,12 @@ class HpibDisk : public HpibDevice
         // only the id from the first disk is used - there's no mechanism to cope 
         // with varied drive types- HP made it this way
         // returns true if there is an error
-        bool addDisk(enum DISK_TYPE type)
+        bool addDisk(int type)
             {
             bool err = true;
             if (_numDisks < MAX_DISKS)
                 {
-                _disks[_numDisks] = new HPDisk(type, &SD);
+                _disks[_numDisks] = new HPDisk((enum DISK_TYPE)type, &SD);
                 _numDisks++;
                 err = false;
                 }
@@ -209,7 +209,7 @@ class HpibDisk : public HpibDevice
                 _disks[a]->tick();
                 }
             }
-        bool setFile(int diskNum, char *fname, bool wprot)
+        bool setFile(int diskNum, const char *fname, bool wprot)
             {
             bool retval = false;
             if (isUnitValid(diskNum))
@@ -368,6 +368,11 @@ class HpibDisk : public HpibDevice
             status[2] = _status[2];
             status[3] = _status[3];
             }
+
+        bool setFile(const char *fname)
+        {
+            return false;
+        }
 
 
     private:

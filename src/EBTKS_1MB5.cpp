@@ -343,8 +343,8 @@ void initTranslator(int selectNum)
     //                               //devices[1]->addDisk(DISK_TYPE_5Q);
     //                               //devices[1]->setFile(0, (char *)"/disks/85Games2.dsk", false);
     //                               //devices[1]->setFile(1, (char *)"/disks/85Games1.dsk", false);
-    devices[10] = &printer;
-    printer.setFile((char *)"/printfile.txt");
+    //devices[10] = &printer;
+    //printer.setFile((char *)"/printfile.txt");
 }
 
 uint8_t get_Select_Code(void)

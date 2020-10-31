@@ -53,7 +53,7 @@ public:
         }
     }
 
-    bool setFile(char *fname)
+    bool setFile(const char *fname)
     {
         if (_printFile) //if a file was open already
         {
@@ -154,6 +154,16 @@ public:
     uint8_t parallelPoll()
     {
         return 0;
+    }
+    bool setFile(int diskNum, const char *fname, bool wprot)
+    {
+
+        return false;
+    }
+
+    bool addDisk(int type)
+    {
+        return false;
     }
 
 private:

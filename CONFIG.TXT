@@ -110,6 +110,17 @@
           "enable": true
         }
       ]
+    },
+    {
+      "select": 3,
+      "type": 0,
+      "device": 10,
+      "directory": "/printers/",
+      "enable": true,
+      "printer":
+        {
+          "filename": "printFile.txt"
+        }
     }
   ]
 }
