@@ -320,7 +320,7 @@ void AUXROM_SDCAT(void)
   {
   //
   //  Filespec$ is captured here on the first call.
-  //  If it has a trailing slash, then we are catalogging a subdirectory, and the assumed match pattern is "*"
+  //  If it has a trailing slash, then we are cataloging a subdirectory, and the assumed match pattern is "*"
   //     until Everett changes his mind and adds another parameter, which would be totally ok.
   //
   //  Need to deal with the following cases
@@ -328,7 +328,7 @@ void AUXROM_SDCAT(void)
   //    If the result ends with a slash, then we are doing a full catalog of a directory
   //      and the merged path must not have any '?' or '*' in it, since that would be wildcarded directories
   //      the resultant filespec for matching is '*'
-  //      Special case 1: The Resolved_Path is 1 character long, which means we are catalogging the root directory
+  //      Special case 1: The Resolved_Path is 1 character long, which means we are cataloging the root directory
   //                      We actually don't need to do anything special.
   //    If the result does not end in slash, then we have a path with a trailing pattern to be matched
   //      Search backward from the end of the Resolved_Path looking for the last '/'

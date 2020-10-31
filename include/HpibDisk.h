@@ -1,6 +1,8 @@
 #include <Arduino.h>
 #include "SdFat.h"
+#include "HpibDevice.h"
 #include "HPDisk.h"
+
 
 #define HPIB_UNT 0x5f
 #define HPIB_UNL 0x3f
@@ -24,10 +26,10 @@ extern bool isReadBuffMT();
 /*
     enscapulates a hpib disk unit
 */
-class HpibDisk
+class HpibDisk : public HpibDevice
     {
     public:
-        HpibDisk(int tla)   //  Talker/Listener Address
+        HpibDisk(int tla) : HpibDevice()  //  Talker/Listener Address
             {
             _tla = tla;
             _numDisks = 0;
@@ -88,7 +90,7 @@ class HpibDisk
                     head = cmdBuff[4];
                     sector = cmdBuff[5];
 
-                    if (isUnitValid(cmdBuff[1]))
+                    if (isUnitValid(cmdBuff[1]) && isUnitLoaded(cmdBuff[1]))
                         {
                         _disks[_currUnit]->seekCHS(cyl, head, sector); //@todo add error handling
                         clearErrorStatus(cmdBuff[1]);
@@ -112,12 +114,11 @@ class HpibDisk
                         {
                         setErrorStatus(cmdBuff[1]); //report bad drive
                         }
-
                     break;
 
                 case AMIGO_READ: //read cmd,unit
                     LOGPRINTF_1MB5("Read device %d unit %d\n", _tla, cmdBuff[1]);
-                    if (isUnitValid(cmdBuff[1]))
+                    if (isUnitValid(cmdBuff[1]) && isUnitLoaded(cmdBuff[1]))
                         {
                         _disks[_currUnit]->readSector(diskBuff); //@todo add error handling
                         clearErrorStatus(cmdBuff[1]);
@@ -131,7 +132,7 @@ class HpibDisk
 
                 case AMIGO_VERIFY: //verify cmd,unit   @todo always return success
                     LOGPRINTF_1MB5("Verify unit %d\n", cmdBuff[1]);
-                    if (isUnitValid(cmdBuff[1]))
+                    if (isUnitValid(cmdBuff[1]) && isUnitLoaded(cmdBuff[1]))
                         {
                         clearErrorStatus(cmdBuff[1]);
                         }
@@ -139,13 +140,12 @@ class HpibDisk
                         {
                         setErrorStatus(cmdBuff[1]); //report bad drive
                         }
-
                     break;
 
                 case AMIGO_WRITE: //write cmd,unit
                     LOGPRINTF_1MB5("Write device %d unit %d\n", _tla, cmdBuff[1]);
 
-                    if (isUnitValid(cmdBuff[1]))
+                    if (isUnitValid(cmdBuff[1]) && isUnitLoaded(cmdBuff[1]))
                         {
                         LOGPRINTF_1MB5("Write unit %d\n", cmdBuff[1]);
                         clearErrorStatus(cmdBuff[1]);
@@ -160,7 +160,7 @@ class HpibDisk
 
                 case AMIGO_REQ_ADDR: //request disk address cmd unit
                     LOGPRINTF_1MB5("Disk addr device %d unit %d\n", _tla, cmdBuff[1]);
-                    if (isUnitValid(cmdBuff[1]))
+                    if (isUnitValid(cmdBuff[1]) && isUnitLoaded(cmdBuff[1]))
                         {
                         _disks[cmdBuff[1]]->getDiskAddr(_diskAddr);
                         clearErrorStatus(cmdBuff[1]);
@@ -174,7 +174,7 @@ class HpibDisk
 
                 case AMIGO_FORMAT: //format disk cmd x x x x x
                     LOGPRINTF_1MB5("Format unit %d\n", cmdBuff[1]);
-                    if (isUnitValid(cmdBuff[1]))
+                    if (isUnitValid(cmdBuff[1]) && isUnitLoaded(cmdBuff[1]))
                         {
                         clearErrorStatus(cmdBuff[1]);
                         }
@@ -392,6 +392,20 @@ class HpibDisk
                 {
                 _currUnit = unit;
                 retval = true;
+                }
+            return retval;
+            }
+
+        bool isUnitLoaded(uint8_t unit)
+            {
+            bool retval = false;
+
+            if (unit < _numDisks)
+                {
+                if (_disks[unit]->isLoaded())
+                  {
+                  retval = true;
+                  }
                 }
             return retval;
             }
