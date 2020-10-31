@@ -12,7 +12,9 @@
 
 #include "Inc_Common_Headers.h"
 
+#include "HpibDevice.h"
 #include "HpibDisk.h"
+#include "HpibPrint.h"
 
 // register defines
 
@@ -91,6 +93,8 @@ volatile uint8_t selectCode;
 void HPIBOutput(uint8_t val, uint8_t ccr);
 void HPIBAtnOut(uint8_t val, uint8_t ccr);
 
+HpibPrint printer(10);  //default the printer to device #10
+
 uint32_t TA; //talk address bitmap. 1 bit per device
 uint32_t LA; //listen address bitmap
 uint32_t SA; //secondary address
@@ -105,7 +109,7 @@ void requestInterrupt(uint8_t reason);
 bool isReadBuffMT();
 
 #define NUM_DEVICES 31
-HpibDisk *devices[NUM_DEVICES];
+HpibDevice *devices[NUM_DEVICES];
 
 //
 // emulated registers - note these run under the interrupt context - keep them short n sweet!
@@ -339,6 +343,8 @@ void initTranslator(int selectNum)
     //                               //devices[1]->addDisk(DISK_TYPE_5Q);
     //                               //devices[1]->setFile(0, (char *)"/disks/85Games2.dsk", false);
     //                               //devices[1]->setFile(1, (char *)"/disks/85Games1.dsk", false);
+    devices[10] = &printer;
+    printer.setFile("/printfile.txt");
 }
 
 uint8_t get_Select_Code(void)
