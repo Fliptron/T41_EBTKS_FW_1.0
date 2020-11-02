@@ -14,12 +14,12 @@
       {
         "description": "Service ROM 340 AUXROM Aware",
         "filename": "340aux.bin",
-        "enable": true
+        "enable": false
       },
       {
         "description": "Assembler ROM",
         "filename": "rom050",
-        "enable": true
+        "enable": false
       },
       {
         "description": "I/O ROM",
@@ -44,20 +44,20 @@
       {
         "description": "Advanced Programming",
         "filename": "rom350",
-        "enable": true
+        "enable": false
       },
       {
-        "description": "AUXROM Primary 2020_10_19",
+        "description": "AUXROM Primary 2020_10_31",
         "filename": "85aux1.bin",
         "enable": true
       },
       {
-        "description": "AUXROM Secondary 1 2020_10_19",
+        "description": "AUXROM Secondary 1 2020_10_31",
         "filename": "85aux2.bin",
         "enable": true
       },
       {
-        "description": "AUXROM Secondary 2 2020_10_19",
+        "description": "AUXROM Secondary 2 2020_10_31",
         "filename": "85aux3.bin",
         "enable": true
       }
@@ -91,19 +91,19 @@
       "select": 3,
       "Comment": "All blocks must have the same select and different device",
       "type": 0,
-      "device": 1,
+      "device": 2,
       "directory": "/disks/",
       "enable": true,
       "drives": [
         {
-          "Comment": "msu 310",
+          "Comment": "msu 320",
           "unit": 0,
           "filename": "85GamesMisc.dsk",
           "writeProtect": false,
           "enable": true
         },
         {
-          "Comment": "msu 311",
+          "Comment": "msu 321",
           "unit": 1,
           "filename": "PMFTESTS.DSK",
           "writeProtect": false,
@@ -112,6 +112,7 @@
       ]
     },
     {
+      "Comment": "msu 310",
       "select": 3,
       "type": 0,
       "device": 10,

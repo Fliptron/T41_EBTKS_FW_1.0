@@ -93,8 +93,6 @@ volatile uint8_t selectCode;
 void HPIBOutput(uint8_t val, uint8_t ccr);
 void HPIBAtnOut(uint8_t val, uint8_t ccr);
 
-HpibPrint printer(10);  //default the printer to device #10
-
 uint32_t TA; //talk address bitmap. 1 bit per device
 uint32_t LA; //listen address bitmap
 uint32_t SA; //secondary address

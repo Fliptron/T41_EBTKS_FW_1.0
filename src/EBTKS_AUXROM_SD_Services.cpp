@@ -314,7 +314,7 @@ void AUXROM_SDCAT(void)
   //  Show Parameters
   //
   //Serial.printf("\nSDCAT Start next entry\n");
-  Serial.printf(".");
+  //Serial.printf("."); //  less noisy progress for SDCAT
 
   if (AUXROM_RAM_Window.as_struct.AR_BUF6_OPTS[0] == 0)  //  This is a First Call
   {
@@ -347,7 +347,7 @@ void AUXROM_SDCAT(void)
       Serial.printf("SDCAT Error exit 1.  Error while resolving subdirectory name\n");
       return;
     }
-    Serial.printf("SDCAT call 0   Resolve_Path = [%s]\n", Resolved_Path);
+    //Serial.printf("SDCAT call 0   Resolve_Path = [%s]\n", Resolved_Path);
     //
     //  Split Resolved_Path into the path and filename/pattern sections.
     //  Since Resolved_Path is an absolute path, we know it has a leading '/'
@@ -389,7 +389,7 @@ void AUXROM_SDCAT(void)
     //          I think the issue is that this works, but maybe there is info that can't be retrieved that the ls() does retrieve  ????
     //  Come back to this another day, and see if we can avoid the 64K buffer
     //
-    Serial.printf("Catalogging directory of [%s]\n", SDCAT_path_part_of_Resolved_Path);
+    // Serial.printf("Catalogging directory of [%s]\n", SDCAT_path_part_of_Resolved_Path);
     if (!LineAtATime_ls_Init(SDCAT_path_part_of_Resolved_Path))               //  This is where the whole directory is listed into a buffer
     {                                                                   //  Failed to do a listing of the current directory
       post_custom_error_message((char *)"Can't list directory", 331);
@@ -419,7 +419,7 @@ void AUXROM_SDCAT(void)
       SDCAT_First_seen = false;                             //  Make sure the next call is a starting call
       *p_len   = 0;                                         //  nothing more to return
       *p_usage    = 1;                                      //  Success and END
-      Serial.printf("SDCAT We are done, no more entries\n");
+      //Serial.printf("SDCAT We are done, no more entries\n");
       //show_mailboxes_and_usage();
       *p_mailbox = 0;                                       //  Indicate we are done
       return;
@@ -803,8 +803,8 @@ void AUXROM_SDFLUSH(void)
     Auxrom_Files[file_index].flush();
     Serial.printf("Flushing file %2d\n", file_index);
   }
-  *p_usage    = 0;     //  File flush successfully
-  *p_mailbox = 0;     //  Indicate we are done
+  *p_usage    = 0;      //  File flush successfully
+  *p_mailbox = 0;       //  Indicate we are done
   return;
 }
 

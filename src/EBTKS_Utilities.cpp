@@ -126,6 +126,7 @@ void CRT_Timing_Test_1(void);
 void CRT_Timing_Test_2(void);
 void CRT_Timing_Test_3(void);
 void CRT_Timing_Test_4(void);
+void diag_sdread_1(void);
 void Setup_Logic_analyzer(void);
 void Logic_analyzer_go(void);
 void Simple_Graphics_Test(void);
@@ -179,6 +180,7 @@ struct S_Command_Entry Command_Table[] =
   {"crt 2",            CRT_Timing_Test_2},
   {"crt 3",            CRT_Timing_Test_3},
   {"crt 4",            CRT_Timing_Test_4},
+  {"sdreadtimer",      diag_sdread_1},
   {"la setup",         Setup_Logic_Analyzer},
   {"la go",            Logic_analyzer_go},
   {"addr",             proc_addr},
@@ -430,12 +432,12 @@ void help_0(void)
   Serial.printf("\nEBTKS Control commands - not case sensitive\n\n");
   Serial.printf("0     Help for the help levels\n");
   Serial.printf("1     Help for Tape/Disk commands\n");
-  Serial.printf("2     Help for xxx\n");
-  Serial.printf("3     Help for Configuration commands\n");
-  Serial.printf("4     Help for Auxiliary programs\n");
-  Serial.printf("5     Help for Diagnostic commands\n");
+  Serial.printf("2     Help for Assorted Utility commands\n");
+  Serial.printf("3     Help for Directory Commands\n");
+//  Serial.printf("4     Help for Auxiliary programs\n");
+//  Serial.printf("5     Help for Diagnostic commands\n");
   Serial.printf("6     Help for Demo\n");
-  Serial.printf("7     Help for Transient commands\n");
+//  Serial.printf("7     Help for Transient commands\n");
   Serial.printf("\n");
 }
 
@@ -445,8 +447,6 @@ void help_1(void)
   Serial.printf("tload         Load a new tape image from SD\n");
   Serial.printf("                 You will be prompted for a file name\n");
 //Serial.printf("dload         #Load a new disk image from SD\n");     //  Not yet Implemented
-  Serial.printf("dir tapes     Directory of available tapes\n");
-  Serial.printf("dir disks     Directory of available disks\n");
   Serial.printf("td which      Which tape/disk is currently loaded\n");
 //Serial.printf("dflush        #Force a disk flush and reload\n");     //  Not yet Implemented
 //Serial.printf("dwhich        #Which disk(s) is(are) currently loaded\n");
@@ -454,35 +454,6 @@ void help_1(void)
 }
 
 void help_2(void)
-{
-  Serial.printf("Commands for xxx\n");
-  Serial.printf("\n");
-}
-
-void help_3(void)
-{
-  Serial.printf("Commands for the Configuration\n");
-//Serial.printf("cfgrom        #Select active roms\n");      //  Not yet Implemented
-  Serial.printf("dir roms      Directory of available ROMs\n");
-  Serial.printf("dir root      Directory of available ROMs\n");
-//Serial.printf("screen        #Screen emulation\n");        //  Not yet Implemented
-//Serial.printf("keyboard      #Keyboard emulation\n");      //  Not yet Implemented
-  Serial.printf("\n");
-}
-
-void help_4(void)
-{
-  Serial.printf("Comands for Auxiliary programs\n");
-//Serial.printf("cpm           #CP/M operating system\n");                           //  Not yet Implemented
-//Serial.printf("ulisp         #uLisp interpreter\n");
-//Serial.printf("python        #uPython\n");                                         //  Not yet Implemented
-//Serial.printf("pdp8-os8      #PDP-8E inc Fortran-II and IV, Basic, Focal\n");      //  Not yet Implemented
-//Serial.printf("cobol         #COBOL\n");                                           //  Not yet Implemented
-//Serial.printf("fasthp85      #Turbo HP-85\n");                                     //  Not yet Implemented
-  Serial.printf("\n");
-}
-
-void help_5(void)
 {
   //uint16_t    nxtmem;
   //uint16_t    i;
@@ -492,6 +463,7 @@ void help_5(void)
   Serial.printf("crt 2         Fast CRT Write Experiments\n");
   Serial.printf("crt 3         Normal CRT Write Experiments\n");
   Serial.printf("crt 4         Test screen Save and Restore\n");
+  Serial.printf("sdreadtimer   Test Reading with different start positions\n");
   Serial.printf("la setup      Set up the logic analyzer\n");
   Serial.printf("la go         Start the logic analyzer\n");
   Serial.printf("addr          Instantly show where HP85 is executing\n");
@@ -520,6 +492,37 @@ void help_5(void)
   //   }
   // }
   // Serial.printf("\n\n");
+}
+
+void help_3(void)
+{
+  Serial.printf("Directory Commands\n");
+//Serial.printf("cfgrom        #Select active roms\n");      //  Not yet Implemented
+  Serial.printf("dir tapes     Directory of available tapes\n");
+  Serial.printf("dir disks     Directory of available disks\n");
+  Serial.printf("dir roms      Directory of available ROMs\n");
+  Serial.printf("dir root      Directory of available ROMs\n");
+//Serial.printf("screen        #Screen emulation\n");        //  Not yet Implemented
+//Serial.printf("keyboard      #Keyboard emulation\n");      //  Not yet Implemented
+  Serial.printf("\n");
+}
+
+void help_4(void)
+{
+  Serial.printf("Comands for Auxiliary programs\n");
+//Serial.printf("cpm           #CP/M operating system\n");                           //  Not yet Implemented
+//Serial.printf("ulisp         #uLisp interpreter\n");
+//Serial.printf("python        #uPython\n");                                         //  Not yet Implemented
+//Serial.printf("pdp8-os8      #PDP-8E inc Fortran-II and IV, Basic, Focal\n");      //  Not yet Implemented
+//Serial.printf("cobol         #COBOL\n");                                           //  Not yet Implemented
+//Serial.printf("fasthp85      #Turbo HP-85\n");                                     //  Not yet Implemented
+  Serial.printf("\n");
+}
+
+void help_5(void)
+{
+  Serial.printf("Commands for xxx\n");
+  Serial.printf("\n");
 }
 
 void help_6(void)
@@ -580,6 +583,113 @@ void diag_dir_disks(void)
 void diag_dir_roms(void)
 {
   diag_dir_path("/roms/");
+}
+
+//
+//  Explore the time it takes to do SDREADs of less than a sector at a time
+//
+//      need to circle back to this: ifstream sdin("getline.txt");
+//        which supports:  } else if (sdin.eof()) {
+//        found in: G:\PlatformIO_Projects\Teensy_V4.1\T41_EBTKS_FW_1.0\.pio\libdeps\teensy41\SdFat\examples\examplesV1\getline\getline.ino
+//
+
+void diag_sdread_1(void)
+{
+  uint32_t    Start_time;
+  uint32_t    Start_time_total;
+  uint32_t    Stop_time;
+  uint32_t    file_offset;
+  uint8_t     buffer[256];
+  uint32_t    bytes_read;
+
+  Serial.printf("\n\n\nTest pass 1: reading 256 bytes from a file with varying start positions\n");
+  Serial.printf("Test pass 1: Using readBytes() and default timeout\n");
+  File testfile = SD.open("/help85/00/85_INDEX.txt", FILE_READ);
+  if(!testfile)
+  {
+    Serial.printf("File open for /help85/85_INDEX.txt failed\n");
+    return;
+  }
+  file_offset = 0;
+  testfile.setTimeout(1000);        //  Default timeout is 1000 ms
+  Stop_time = Start_time_total = systick_millis_count;
+  while(testfile.available32())
+  {
+    Start_time = systick_millis_count;
+    if(!testfile.seekSet(file_offset))
+    {
+      Serial.printf("seekSet failed with file_offset of %d\n", file_offset);
+      return;
+    }
+    bytes_read = testfile.readBytes(buffer, 256);
+    Stop_time = systick_millis_count;
+    Serial.printf("Pos: %4d  Bytes read: %4d  Duration: %5d ms\n", file_offset, bytes_read, Stop_time - Start_time);
+    file_offset += 23;
+  }
+  Serial.printf("Total time for test is %5d ms\n", Stop_time - Start_time_total);
+  Serial.printf("Test pass 1 finished, no more characters\n\n");
+  testfile.close();
+//
+//
+//
+  Serial.printf("\n\n\nTest pass 2: reading 256 bytes from a file with varying start positions\n");
+  Serial.printf("Test pass 2: Using readBytes() and timeout set to 0\n");
+  testfile = SD.open("/help85/00/85_INDEX.txt", FILE_READ);
+  if(!testfile)
+  {
+    Serial.printf("File open for /help85/85_INDEX.txt failed\n");
+    return;
+  }
+  file_offset = 0;
+  testfile.setTimeout(0);
+  Stop_time = Start_time_total = systick_millis_count;
+  while(testfile.available32())
+  {
+    Start_time = systick_millis_count;
+    if(!testfile.seekSet(file_offset))
+    {
+      Serial.printf("seekSet failed with file_offset of %d\n", file_offset);
+      return;
+    }
+    bytes_read = testfile.readBytes(buffer, 256);
+    Stop_time = systick_millis_count;
+    Serial.printf("Pos: %4d  Bytes read: %4d  Duration: %5d ms\n", file_offset, bytes_read, Stop_time - Start_time);
+    file_offset += 23;
+  }
+  Serial.printf("Total time for test is %5d ms\n", Stop_time - Start_time_total);
+  Serial.printf("Test pass 2 finished, no more characters\n\n");
+  testfile.close();
+//
+//
+//
+  Serial.printf("\n\n\nTest pass 3: reading 256 bytes from a file with varying start positions\n");
+  Serial.printf("Test pass 3: Using read() and timeout set to 1000 (but it should have no effect)\n");
+  testfile = SD.open("/help85/00/85_INDEX.txt", FILE_READ);
+  if(!testfile)
+  {
+    Serial.printf("File open for /help85/85_INDEX.txt failed\n");
+    return;
+  }
+  file_offset = 0;
+  testfile.setTimeout(1000);        //  Default timeout is 1000 ms (but it should have no effect)
+  Stop_time = Start_time_total = systick_millis_count;
+  while(testfile.available32())
+  {
+    Start_time = systick_millis_count;
+    if(!testfile.seekSet(file_offset))
+    {
+      Serial.printf("seekSet failed with file_offset of %d\n", file_offset);
+      return;
+    }
+    bytes_read = testfile.read(buffer, 256);
+    Stop_time = systick_millis_count;
+    Serial.printf("Pos: %4d  Bytes read: %4d  Duration: %5d ms\n", file_offset, bytes_read, Stop_time - Start_time);
+    file_offset += 23;
+  }
+  Serial.printf("Total time for test is %5d ms\n", Stop_time - Start_time_total);
+  Serial.printf("Test pass 3 finished, no more characters\n\n");
+  testfile.close();
+
 }
 
 void tape_disk_which(void)

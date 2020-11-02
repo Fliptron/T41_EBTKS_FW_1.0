@@ -57,7 +57,7 @@ class HpibDisk : public HpibDevice
             return err;
             }
         // called when there is a HPIB identify request
-        void indentify()
+        void identify()
             {
             if (_numDisks != 0)
                 {
@@ -278,7 +278,7 @@ class HpibDisk : public HpibDevice
                     if ((val7 & 0x1f) == _tla)      //only respond if we're addressed
                         {
                         LOGPRINTF_1MB5("Identify device:%d\n", _tla);
-                        indentify();
+                        identify();
                         }
                     }
                 else if (val7 == 0x68) //secondary commands

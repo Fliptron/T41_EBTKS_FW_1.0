@@ -11,7 +11,7 @@ public:
     }
 
     // called when there is a HPIB identify request
-    void indentify()
+    void identify()
     {
     }
 
@@ -66,7 +66,7 @@ public:
         if (!_printFile)
         {
             _fileOpen = false;
-            Serial.printf("Print file did not open: %s\r\n", fname);
+            //  Serial.printf("Print file did not open: %s\n", fname);
         }
         else
         {
@@ -135,16 +135,16 @@ public:
         }
         else if ((val7 >= 0x60) && (val7 < 0x7f))
         {
-            //secondary address
-            Serial.printf("SAD %02X\r\n", val7);
+            //  secondary address
+            //  Serial.printf("HpibPrint.h: SAD %02X\r\n", val7);
             if (_prevHPIBCmd == HPIB_UNT) //if UNT then secondary
             {
                 // identify command
 
                 if ((val7 & 0x1f) == _tla) //only respond if we're addressed
                 {
-                    Serial.printf("Identify device:%d\r\n", _tla);
-                    indentify();
+                    //Serial.printf("HpibPrint.h: Identify device:%d\r\n", _tla);
+                    identify();
                 }
             }
         }

@@ -10,7 +10,7 @@ class HpibDevice
         //virtual HpibDevice(int tla);
 
         // called when there is a HPIB identify request
-        virtual void indentify();
+        virtual void identify();
 
         // called when we've received a complete device level command
         virtual void processCmd(uint8_t * cmdBuff, int length);
