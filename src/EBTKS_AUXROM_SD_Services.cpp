@@ -1403,7 +1403,7 @@ void AUXROM_SDREAD(void)
     Serial.printf("SDREAD Error. File not open. File Number %d\n", file_index);
     return;
   }
-  bytes_actually_read = Auxrom_Files[file_index].readBytes(p_buffer, bytes_to_read);
+  bytes_actually_read = Auxrom_Files[file_index].read(p_buffer, bytes_to_read);
   Serial.printf("Read file # %2d , requested %d bytes, got %d\n", file_index, bytes_to_read, bytes_actually_read);
   //
   //  Assume all is good
