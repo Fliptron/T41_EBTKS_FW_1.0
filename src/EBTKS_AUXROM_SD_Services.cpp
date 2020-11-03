@@ -104,7 +104,7 @@
 //                                          480       SDWRITE File not open for write
 //        490..499      AUXROM_UNMOUNT
 //                                          490       UNMOUNT MSU$ error
-//                                          491       UNMOUNT Disk MSU$ not supported
+//                                          491       UNMOUNT Disk error
 //        500..509      AUXROM_WROM
 //        510..519      AUXROM_SDMEDIA
 //                                          510       MEDIA$ MSU$ error
@@ -1626,9 +1626,11 @@ void AUXROM_UNMOUNT(void)
   }
   else
   {
-    //    ##############   Currently unsupported both here and in HpibDisk.cpp   ########################
-    post_custom_error_message((char *)"UNMOUNT Disk MSU$ not supported", 491);
-    goto Unmount_exit;
+    if(!devices[msu_device_code]->close(msu_drive_select))
+    {
+      post_custom_error_message((char *)"UNMOUNT Disk error", 491);
+      goto Unmount_exit;
+    }
   }
 
 

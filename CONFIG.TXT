@@ -112,6 +112,30 @@
       ]
     },
     {
+      "select": 3,
+      "Comment": "All blocks must have the same select and different device",
+      "type": 4,
+      "device": 3,
+      "directory": "/disks/",
+      "enable": true,
+      "drives": [
+        {
+          "Comment": "msu 330",
+          "unit": 0,
+          "filename": "PMF_5MB.dsk",
+          "writeProtect": false,
+          "enable": true
+        },
+        {
+          "Comment": "msu 331",
+          "unit": 1,
+          "filename": "",
+          "writeProtect": false,
+          "enable": false
+        }
+      ]
+    },
+    {
       "Comment": "msu 310",
       "select": 3,
       "type": 0,

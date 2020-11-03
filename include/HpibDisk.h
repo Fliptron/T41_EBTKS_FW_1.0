@@ -219,6 +219,17 @@ class HpibDisk : public HpibDevice
 
             return retval;
             }
+
+        bool close(int diskNum)
+            {
+            bool retval = false;
+            if (isUnitValid(diskNum))
+                {
+                retval = _disks[diskNum]->close();
+                }
+            return retval;
+            }
+
         char * getFilename(int diskNum)
             {
             if (isUnitValid(diskNum))
