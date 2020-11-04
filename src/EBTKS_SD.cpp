@@ -500,6 +500,36 @@ bool loadConfiguration(const char *filename)
   // Close the file (Curiously, File's destructor doesn't close the file)
   file.close();
 
+  //
+  //  Restore the 4 flag bytes
+  //
+
+  if (!(file = SD.open("/AUXROM_FLAGS.TXT", READ_ONLY)))
+  {   //  File does not exist, so create it with default contents
+failed_to_read_flags:
+    Serial.printf("Creating /AUXROM_FLAGS.TXT with default contents of 00000000 because it does not exist\n");
+    file = SD.open("/AUXROM_FLAGS.TXT", O_RDWR | O_TRUNC | O_CREAT);
+    file.write("00000000\r\n", 10);
+    file.close();
+    // AUXROM_RAM_Window.as_struct.AR_FLAGS[0] = 0;   //  load with default 0x      00
+    // AUXROM_RAM_Window.as_struct.AR_FLAGS[1] = 0;   //  load with default 0x    00
+    // AUXROM_RAM_Window.as_struct.AR_FLAGS[2] = 0;   //  load with default 0x  00
+    // AUXROM_RAM_Window.as_struct.AR_FLAGS[3] = 0;   //  load with default 0x00
+    AUXROM_RAM_Window.as_struct.AR_FLAGS = 0;
+  }
+  else
+  {
+    char      flags_to_read[12];
+    uint8_t   chars_read;
+    chars_read = file.read(flags_to_read, 10);
+    if(chars_read != 10)
+    {   //  Something is wrong with the flags file, so rewrite it.
+      goto failed_to_read_flags;
+    }
+    sscanf(flags_to_read, "%8lx", &AUXROM_RAM_Window.as_struct.AR_FLAGS);
+    file.close();
+  }
+  
   TXD_Pulser(1);
   EBTKS_delay_ns(10000); //  10 us
   TXD_Pulser(1);

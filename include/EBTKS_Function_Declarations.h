@@ -175,6 +175,7 @@ bool MatchesPattern(char *pT, char *pP);
 void HexDump_T41_mem (uint32_t start_address, uint32_t count, bool show_addr, bool final_nl);
 void HexDump_HP85_mem(uint32_t start_address, uint32_t count, bool show_addr, bool final_nl);
 void show_mailboxes_and_usage(void);
+void show_file(void);
 
 void Setup_Logic_Analyzer(void);
 void Logic_analyzer_go(void);

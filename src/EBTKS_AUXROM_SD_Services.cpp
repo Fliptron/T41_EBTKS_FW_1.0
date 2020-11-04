@@ -46,6 +46,8 @@
 //
 //        300..309      AUXROM_CLOCK
 //        310..319      AUXROM_FLAGS
+//                                          310       Can't open /AUXROM_FLAGS.TXT
+//                                          311       Can't write /AUXROM_FLAGS.TXT
 //        320..329      AUXROM_HELP
 //        330..339      AUXROM_SDCAT
 //                                          330       Can't resolve path                  Used by multiple functions when Resolve_Path() fails
@@ -178,9 +180,38 @@ void AUXROM_CLOCK(void)
 
 }
 
+//
+//  This function is called whenever AUXROM makes changes to FLAGS, a 4 byte area in the shared RAM window
+//  We save the 4 bytes in file in the root directory of the SD Card named AUXROM_FLAGS.TXT
+//  We restore from the file on Boot.
+//
+
 void AUXROM_FLAGS(void)
 {
+  File      temp_file;
+  char      flags_to_write[12];
+  uint8_t   chars_written;
 
+  if (!(temp_file = SD.open("/AUXROM_FLAGS.TXT", O_RDWR | O_TRUNC | O_CREAT)))
+  {
+    post_custom_error_message((char *)"Can't open /AUXROM_FLAGS.TXT", 310);
+    *p_mailbox = 0;      //  Indicate we are done
+    Serial.printf("Can't open /AUXROM_FLAGS.TXT\n");
+    return;
+  }
+  sprintf(flags_to_write, "%08lx\r\n", AUXROM_RAM_Window.as_struct.AR_FLAGS);
+  chars_written = temp_file.write(flags_to_write, 10);
+  temp_file.close();
+  if (chars_written != 10)
+  {
+    post_custom_error_message((char *)"Can't write /AUXROM_FLAGS.TXT", 311);
+    *p_mailbox = 0;      //  Indicate we are done
+    Serial.printf("Can't write /AUXROM_FLAGS.TXT\n");
+    return;
+  }
+  Serial.printf("Write /AUXROM_FLAGS.TXT success\n");
+  *p_usage = 0;
+  return;
 }
 
 char HelpScreen[]="\
@@ -1343,7 +1374,7 @@ void AUXROM_SDOPEN(void)
       case 2:       //  Mode 2 (R/W, truncate)
         error_number = 424;   strlcpy(error_message,"Open failed Mode 2", 32);
         //if (!Auxrom_Files[file_index].open(Resolved_Path , O_RDWR | O_TRUNC | O_CREAT | O_BINARY)) error_occured = true;
-        if (!Auxrom_Files[file_index].open(Resolved_Path , FILE_WRITE)) error_occured = true;
+        if (!Auxrom_Files[file_index].open(Resolved_Path , O_RDWR | O_TRUNC | O_CREAT)) error_occured = true;
        break;
       default:
         error_number = 425;   strlcpy(error_message,"Open failed, Illegal Mode", 32);        // This should never happen because AUXROM checks Mode is 0,1,2

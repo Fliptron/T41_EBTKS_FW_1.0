@@ -42,7 +42,7 @@ struct PACKED AUXROM_RAM
   uint16_t      AR_R12_copy;                        //  070206 - 070207     134 -   135           A.MBR12         2-byte R12 value when "passing stack" to EBTKS
   uint16_t      AR_ERR_NUM;                         //  070210 - 070211     136 -   137           A.ERRN          2-BYTE error# for custom error message #9, returned by AUXERRN function
   uint16_t      AR_TMP[9];                          //  070212 - 070233     138 -   155           A.TMP0 - A.TMP8
-  char          AR_FLAGS[4];                        //  070234 - 070237     156 -   159           A.FLAGS         4-BYTE misc flags, gets saved by EBTKS in CFG file and restored at power-on
+  uint32_t      AR_FLAGS;                           //  070234 - 070237     156 -   159           A.FLAGS         4-BYTE misc flags, gets saved by EBTKS in CFG file and restored at power-on
                                                     //                                                            BIT 0   =0 if / used in paths, =1 if \ used in paths
                                                     //                                                            BIT 1   =0 if LF eol, =1 if CRLF eol
                                                     //                                                            BITS 2-31 unused

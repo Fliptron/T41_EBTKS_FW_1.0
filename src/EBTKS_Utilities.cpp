@@ -135,6 +135,7 @@ void clean_logfile(void);
 void proc_addr(void);
 void proc_auxint(void);
 void show_mailboxes_and_usage(void);
+void show_file(void);
 void just_once_func(void);
 void pulse_PWO(void);
 void dump_ram_window(void);
@@ -186,6 +187,7 @@ struct S_Command_Entry Command_Table[] =
   {"addr",             proc_addr},
   {"show logfile",     show_logfile},
   {"clean logfile",    clean_logfile},
+  {"show file",        show_file},
   {"pwo",              pulse_PWO},
   {"show mb",          show_mailboxes_and_usage},
   {"dump ram window",  dump_ram_window},                  //  Currently broken
@@ -469,6 +471,7 @@ void help_2(void)
   Serial.printf("addr          Instantly show where HP85 is executing\n");
   Serial.printf("show logfile  Show the logfile\n");
   Serial.printf("clean logfile Clean_logfile\n");
+  Serial.printf("show file     You will be prompted for a file path/name to be displayed\n");
   Serial.printf("pwo           Pulse PWO, resetting HP85 and EBTKS\n");
   Serial.printf("show mb       Display current mailboxes and related data\n");
 //Serial.printf("dump ram window Start(8) Len(8)   Dump RAM in ROM window\n");                          //  Currently broken because of parsing
@@ -798,6 +801,33 @@ void just_once_func(void)
 //  Serial.printf("var name here  %08X  ", just_once );
 //  Serial.printf("\n");
 }
+
+//
+//  Prompt for a file to be dumped (as text) to the diag terminal
+//
+
+void show_file(void)
+{
+  File          file;
+  int           character;
+  Serial.printf("\nEnter filename including path to be displayed: ");
+  if (!wait_for_serial_string())       //  Hang here till we get a file name (hopefully)
+  {
+    return;                           //  Got a Ctrl-C , so abort command
+  }
+  if (!(file = SD.open(serial_string)))
+  {   // Failed to open
+    Serial.printf("Can't open file\n");
+    return;
+  }
+  while((character = file.read()) > 0)
+  {
+    Serial.printf("%c", character);
+  }
+  file.close(); 
+  serial_string_used();
+}
+
 
 void pulse_PWO(void)
 {
