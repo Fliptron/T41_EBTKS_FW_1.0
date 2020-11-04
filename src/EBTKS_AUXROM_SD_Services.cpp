@@ -100,6 +100,7 @@
 //                                          470       Seek on file that isn't open
 //                                          471       Trying to seek before beginning
 //                                          472       Trying to seek past EOF
+//                                          473       SDSEEK failed somehow
 //        480..489      AUXROM_SDWRITE
 //                                          480       SDWRITE File not open for write
 //        490..499      AUXROM_UNMOUNT
@@ -1569,7 +1570,16 @@ void AUXROM_SDSEEK(void)
     return;
   }
   Auxrom_Files[file_index].seekSet(target_position);
-  //  Serial.printf("SDSEEK: New position is %d\n", (current_position = Auxrom_Files[file_index].curPosition()) );
+  current_position = Auxrom_Files[file_index].curPosition();
+  if (target_position != current_position)
+  {
+    post_custom_error_message((char *)"SDSEEK failed somehow", 473);
+    *p_mailbox = 0;                      //  Indicate we are done
+    Serial.printf("SDSEEK failed Target position %d   Current position %d\n", target_position, current_position);
+    return;
+  }
+
+  //  Serial.printf("SDSEEK: New position is %d\n", current_position);
   AUXROM_RAM_Window.as_struct_a.AR_BUF6_OPTS.as_uint32_t[1] = current_position;
   *p_usage    = 0;     //  SDSEEK successful
   *p_mailbox = 0;     //  Indicate we are done
