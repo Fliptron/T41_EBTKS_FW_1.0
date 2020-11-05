@@ -97,6 +97,9 @@
 //        440..449      AUXROM_SDREAD
 //                                          440       SDREAD File not open
 //        450..459      AUXROM_SDREN
+//                                          450       Can't resolve parameter 1
+//                                          451       Can't resolve parameter 2
+//                                          452       SDREN rename failed
 //        460..469      AUXROM_SDRMDIR
 //        470..479      AUXROM_SDSEEK
 //                                          470       Seek on file that isn't open
@@ -133,6 +136,8 @@ EXTMEM static char          Resolved_Path[MAX_SD_PATH_LENGTH + 2];
 static bool                 Resolved_Path_ends_with_slash;
 EXTMEM static char          SDCAT_path_part_of_Resolved_Path[258];
 EXTMEM static char          SDCAT_pattern_part_of_Resolved_Path[258];
+EXTMEM static char          Resolved_Path_for_SDREN_param_1[MAX_SD_PATH_LENGTH + 2];
+
 
 bool parse_MSU(char *msu);
 
@@ -158,7 +163,9 @@ static File Auxrom_Files[MAX_AUXROM_SDFILES+1];                       //  These 
 //
 
 File        file;
-SdFile      SD_file;
+//  SdFile      SD_file;    //  We never used this. How is this different from File?
+                            //  Apparently "FAT16/FAT32 file with Print"
+                            //  See G:\PlatformIO_Projects\Teensy_V4.1\T41_EBTKS_FW_1.0\.pio\libdeps\teensy41\SdFat\examples\examplesV1\rename\rename.ino  line 53
 FatFile     Fat_File;
 FatVolume   Fat_Volume;
 File        HP85_file[11];                                          //  10 file handles for the user, and one for Everett
@@ -214,6 +221,7 @@ void AUXROM_FLAGS(void)
   return;
 }
 
+#if 0
 char HelpScreen[]="\
 ********************************\
 *                              *\
@@ -231,6 +239,7 @@ char HelpScreen[]="\
 * interleave: 1-16 (default=1) *\
 *                              *\
 ********************************";
+#endif
 
 //
 //  Buffer 6:   Text of requested HELP$
@@ -244,7 +253,7 @@ void AUXROM_HELP(void)
   if(AUXROM_RAM_Window.as_struct.AR_BUF6_OPTS[0])
   {
     CRT_capture_screen();
-    //Write_on_CRT_Alpha(0,0,HelpScreen);
+    //Write_on_CRT_Alpha(0,0,HelpScreen);     // if you uncomment this, uncomment the above test data
   }
   else
   {
@@ -1200,8 +1209,8 @@ void AUXROM_MOUNT(void)
 
   if (!Resolve_Path(AUXROM_RAM_Window.as_struct.AR_Buffer_6))
   {
-    post_custom_error_message((char *)"Can't resolve path", 330);
     AUXROM_RAM_Window.as_struct.AR_Mailboxes[6] = 0;                  //  This Keyword uses two buffers, buffer 0 (primary for returning status) and buffer 6 for the file path
+    post_custom_error_message((char *)"Can't resolve path", 330);
     Serial.printf("MOUNT failed:  Error while resolving subdirectory name\n");
     goto Mount_exit;
   }
@@ -1446,9 +1455,48 @@ void AUXROM_SDREAD(void)
   return;
 }
 
+//
+//  Rename old [path1/]filename1  to  new [path2/]filename2
+//
+//  Old [path1/]filename1 is in buffer 0, and length is in Blength 0
+//  New [path2/]filename2 is in buffer 6, and length is in Blength 6
+//  Mailbox 6 needs to be released
+//  Mailbox 0 is used for the handshake
+//
+//  Can rename a directory, including moving it to a different place in the directory hierarchy
+//
+
 void AUXROM_SDREN(void)
 {
+  if(!Resolve_Path(AUXROM_RAM_Window.as_struct.AR_Buffer_0))
+  {
+    AUXROM_RAM_Window.as_struct.AR_Mailboxes[6] = 0;                  //  This Keyword uses two buffers/mailboxes (0 and 6), mailbox 0 is the main one
+    post_custom_error_message((char *)"Can't resolve parameter 1", 450);
+    *p_mailbox = 0;      //  Indicate we are done
+    Serial.printf("SDREN rename failed  old [%s]   new [%s]\n", AUXROM_RAM_Window.as_struct.AR_Buffer_0, AUXROM_RAM_Window.as_struct.AR_Buffer_6);
+    return;
+  }
+  strlcpy(Resolved_Path_for_SDREN_param_1, Resolved_Path, MAX_SD_PATH_LENGTH+1);
+  if(!Resolve_Path(AUXROM_RAM_Window.as_struct.AR_Buffer_6))
+  {
+    AUXROM_RAM_Window.as_struct.AR_Mailboxes[6] = 0;                  //  This Keyword uses two buffers/mailboxes (0 and 6), mailbox 0 is the main one
+    post_custom_error_message((char *)"Can't resolve parameter 2", 451);
+    *p_mailbox = 0;      //  Indicate we are done
+    Serial.printf("SDREN rename failed  old [%s]   new [%s]\n", AUXROM_RAM_Window.as_struct.AR_Buffer_0, AUXROM_RAM_Window.as_struct.AR_Buffer_6);
+    return;
+  }
 
+  if(!SD.rename(Resolved_Path_for_SDREN_param_1, Resolved_Path))
+  {
+    AUXROM_RAM_Window.as_struct.AR_Mailboxes[6] = 0;                  //  This Keyword uses two buffers/mailboxes (0 and 6), mailbox 0 is the main one
+    post_custom_error_message((char *)"SDREN rename failed", 452);
+    *p_mailbox = 0;      //  Indicate we are done
+    Serial.printf("SDREN rename failed  Resolved paths are old [%s]   new [%s]\n", Resolved_Path_for_SDREN_param_1, Resolved_Path);
+    return;
+  }
+  *p_usage = 0;                         //  Indicate Success
+  *p_mailbox = 0;                       //  Must always be the last thing we do
+  return;
 }
 
 //
@@ -1501,7 +1549,7 @@ void AUXROM_SDRMDIR(void)
     Serial.printf("SDRMDIR: Directory is not empty. found %d files\n", file_count);
     post_custom_error_message((char *)"Directory not empty", 313);
     dirfile.close();
-    *p_mailbox = 0;                      //  Indicate we are done
+    *p_mailbox = 0;                       //  Indicate we are done
     return;
   }
   //
@@ -1513,7 +1561,7 @@ void AUXROM_SDRMDIR(void)
   if (rmdir_status)
   {
     *p_usage = 0;                         //  Indicate Success
-    *p_mailbox = 0;                      //  Must always be the last thing we do
+    *p_mailbox = 0;                       //  Must always be the last thing we do
     return;
   }
   else
@@ -1521,7 +1569,7 @@ void AUXROM_SDRMDIR(void)
     Serial.printf("SDRMDIR: Delete directory failed\n");
     post_custom_error_message((char *)"Directory delete failed", 314);
     dirfile.close();
-    *p_mailbox = 0;                      //  Indicate we are done
+    *p_mailbox = 0;                       //  Indicate we are done
     return;
   }
 }
