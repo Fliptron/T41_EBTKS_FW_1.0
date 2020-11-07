@@ -23,7 +23,7 @@ void setRomMap(uint8_t romId,uint8_t slotNum);
 void tape_handle_command_load(void);
 bool tape_handle_MOUNT(char *path);
 void tape_handle_UNMOUNT(void);
-void tape_disk_which(void);             // does both tape and disk
+void report_media(void);             // does both tape and disk
 
 //
 //  DMA Functions

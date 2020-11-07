@@ -174,7 +174,7 @@ struct S_Command_Entry Command_Table[] =
   {"tload",            tape_handle_command_load},
   {"dir tapes",        diag_dir_tapes},
   {"dir disks",        diag_dir_disks},
-  {"td which",         tape_disk_which},
+  {"media",            report_media},
   {"dir roms",         diag_dir_roms},
   {"dir root",         diag_dir_root},
   {"crt 1",            CRT_Timing_Test_1},
@@ -449,7 +449,7 @@ void help_1(void)
   Serial.printf("tload         Load a new tape image from SD\n");
   Serial.printf("                 You will be prompted for a file name\n");
 //Serial.printf("dload         #Load a new disk image from SD\n");     //  Not yet Implemented
-  Serial.printf("td which      Which tape/disk is currently loaded\n");
+  Serial.printf("media         Show the currently mounted tape and disk media\n");
 //Serial.printf("dflush        #Force a disk flush and reload\n");     //  Not yet Implemented
 //Serial.printf("dwhich        #Which disk(s) is(are) currently loaded\n");
   Serial.printf("\n");
@@ -695,7 +695,7 @@ void diag_sdread_1(void)
 
 }
 
-void tape_disk_which(void)
+void report_media(void)
 {
   int         device;
   int         disknum;

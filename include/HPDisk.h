@@ -143,6 +143,7 @@ class HPDisk
         //  Get a pointer to the filename associated with this virtual drive
         char * getFilename()
             {
+              //Serial.printf("In HPDisk, returning %08x\n", _filename);
               return _filename;
             }
  

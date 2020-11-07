@@ -868,6 +868,10 @@ void AUXROM_SDMEDIA(void)
     *p_mailbox = 0;     //  Indicate we are done
     return;
   }
+  
+  //Serial.printf("MSU Parser Tape:%s  Disk:%s  SelectCode:%2d  Device:%1d  Drive:%1d\n",
+  //                      msu_is_tape ? "true":"false", msu_is_disk  ? "true":"false", msu_select_code, msu_device_code, msu_drive_select);
+  //Serial.flush();
 
   if (msu_is_tape)
   {
@@ -896,23 +900,34 @@ void AUXROM_SDMEDIA(void)
     return;
   }
 
-  filename = devices[msu_device_code]->getFilename(msu_drive_select);
-
-  if(filename)
+  //
+  //  Check that the Device number is a valid device
+  //
+  if (devices[msu_device_code])
   {
-    strcpy(p_buffer, filename);        //  Copy the file path and name to the buffer that held msu$
-    *p_len = strlen(p_buffer);
-    *p_usage = 0;
-    *p_mailbox = 0;     //  Indicate we are done
-    return;
+    filename = devices[msu_device_code]->getFilename(msu_drive_select);
+    //Serial.printf("Disk mounted filename [%s]\n", filename);
+    //Serial.flush();
+
+    if(filename)
+    {
+      strcpy(p_buffer, filename);        //  Copy the file path and name to the buffer that held msu$
+      *p_len = strlen(p_buffer);
+      *p_usage = 0;
+      *p_mailbox = 0;     //  Indicate we are done
+      return;
+    }
   }
   //
-  //  If we get here, no mounted media
+  //  If we get here, no mounted media, or msu_device_code is not valid
   //
-  *p_buffer = 0x00;                             //  Zero length string
-  *p_len    = 0;                                //  Length is zero
-  *p_usage  = 0;                                //  OK return
-  *p_mailbox = 0;                               //  Indicate we are done
+  //Serial.printf("No mounted media or msu_device_code is not valid\n");
+  //Serial.flush();
+  //
+  *p_buffer  = 0x00;                             //  Zero length string
+  *p_len     = 0;                                //  Length is zero
+  *p_usage   = 0;                                //  OK return
+  *p_mailbox = 0;                                //  Indicate we are done
   return;
 }
 

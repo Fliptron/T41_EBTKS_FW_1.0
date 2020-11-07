@@ -39,7 +39,8 @@ bool loadRom(const char *fname, int slotNum, const char *description)
     return false;
   }
   // validate the rom image. The first two bytes are the id and the complement (except for secondary AUXROMs)
-  if (rfile.read(header, 2) != 2)
+  // but to support the way we are handling HP86/87, we read 3 bytes. See comment below that starts "No special ROM loading for Primary AUXROM at 0361. ....."
+  if (rfile.read(header, 3) != 3)
   {
     LOGPRINTF("ROM file read error %s\n", fname);
     rfile.close();
@@ -78,6 +79,19 @@ bool loadRom(const char *fname, int slotNum, const char *description)
   //
   //  No special ROM loading for Primary AUXROM at 0361.  This code handles the Secondaries from 0362 to 0375
   //
+  //
+  //  Non-primary AUXROMs now have 377 as first byte, ROM# as second byte, aux_complement as third byte
+  //  so that the 87 doesn't see them as "non-87 ROMs" and issue a warning.
+  //  so, if 377 is the first byte, we move the 2nd and 3rd bytes down before proceeding.
+  //  This shift of bytes is in our local copy of the first 2 bytes of the ROM. The actual ROM image
+  //  still starts with 377, id "what will be the first byte", "what will be the second byte"
+  //
+  if (id==0377)
+  {
+    id = header[0] = header[1];
+    header[1] = header[2];
+//    Serial.printf("AUX HEADER ROM# %03o\n", id);
+  }
   if ((id >= AUXROM_SECONDARY_ID_START) && (id <= AUXROM_SECONDARY_ID_END)) //  Note, not testing Primary AUXROM at ID = 361
   {
     //
