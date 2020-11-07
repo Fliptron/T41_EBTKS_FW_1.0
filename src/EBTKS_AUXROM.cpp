@@ -39,6 +39,14 @@
 #define  AUX_USAGE_CLOCK         ( 19)      //  CLOCK                                             Return Real Time Clock
 #define  AUX_USAGE_HELP          ( 20)      //  HELP                                              Provides help
 #define  AUX_USAGE_SDMEDIA       ( 21)      //  MEDIA$                                            Returns the file name of the mounted media on a drive
+#define  AUX_USAGE_MEMCPY        ( 22)      //  MEMCPY
+#define  AUX_USAGE_SETLED        ( 23)      //  SETLED
+#define  AUX_USAGE_SDCOPY        ( 24)      //  SDCOPY                                            
+
+
+
+
+
 
 //#define  AUX_USAGE_RDSTR         ( 18)      //  RDSTR                                             read a LF or CR/LF terminated string from an SD file
 
@@ -195,6 +203,15 @@ void AUXROM_Poll(void)
       break;
     case AUX_USAGE_WROM:
       AUXROM_WROM();
+      break;
+    case AUX_USAGE_MEMCPY:
+      AUXROM_MEMCPY();
+      break;
+    case AUX_USAGE_SETLED:
+      AUXROM_SETLED();
+      break;
+    case AUX_USAGE_SDCOPY                                            :
+      AUXROM_SDCOPY();
       break;
     default:
       *p_usage = 1;               //  Failure, unrecognized Usage code

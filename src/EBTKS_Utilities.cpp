@@ -549,13 +549,13 @@ void diag_dir_path(const char * path)
   char      date[20], file_size[20];
   uint32_t  temp_uint;
 
-  if (!LineAtATime_ls_Init((char *)path))                    //  This is where the whole directory is listed into a buffer
+  if (!LineAtATime_ls_Init_SDCAT((char *)path))                    //  This is where the whole directory is listed into a buffer
   {                                                         //  Failed to do a listing of the current directory
     Serial.printf("Couldn't initialize read directory /tapes/ on SD card\n");
   }
   while(1)                                                  //  keep looping till we run out of entries
   {
-    if (!LineAtATime_ls_Next())
+    if (!LineAtATime_ls_Next_SDCAT())
     {   //  No more directory lines
       Serial.printf("\n");
       return;

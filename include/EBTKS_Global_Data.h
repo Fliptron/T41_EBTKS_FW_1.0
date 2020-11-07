@@ -225,11 +225,13 @@ EXTERN  Tape tape;
 
 EXTERN  SdFat SD;
 
-EXTERN  Print_Splitter PS;
+EXTERN  Print_Splitter PS_SDCAT;
+EXTERN  Print_Splitter PS_SDDEL;
 
-EXTERN  EXTMEM char Directory_Listing_Buffer[DIRECTORY_LISTING_BUFFER_SIZE];    //  Normally this should be inside the Class as private, but I don't
-                                                                                //  know if the EXTMEM can be done within a class, and we certainly
-                                                                                //  don't want this buffer to be dynamically allocated on heap either.
+EXTERN  EXTMEM char Directory_Listing_Buffer_for_SDCAT[DIRECTORY_LISTING_BUFFER_SIZE];    //  Normally this should be inside the Class as private, but I don't
+                                                                                          //  know if the EXTMEM can be done within a class, and we certainly
+                                                                                          //  don't want this buffer to be dynamically allocated on heap either.
+EXTERN  EXTMEM char Directory_Listing_Buffer_for_SDDEL[DIRECTORY_LISTING_BUFFER_SIZE];
 
 EXTERN  EXTMEM char dir_line[258];                                              //  Leave room for a trailing 0x00 (that is not included in the passed max length of PS.get_line)
 

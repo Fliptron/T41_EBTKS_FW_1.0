@@ -96,8 +96,10 @@ void no_SD_card_message(void);
 void enHP85RamExp(bool en);
 bool getHP85RamExp(void);
 
-bool LineAtATime_ls_Init(char * path);
-bool LineAtATime_ls_Next(void);
+bool LineAtATime_ls_Init_SDCAT(char * path);
+bool LineAtATime_ls_Next_SDCAT(void);
+bool LineAtATime_ls_Init_SDDEL(char * path);
+bool LineAtATime_ls_Next_SDDEL(void);
 
 //
 //  Log File support
@@ -135,7 +137,7 @@ void post_custom_warning_message(const char * message, uint16_t error_number);
 void initialize_SD_functions(void);
 
           void AUXROM_CLOCK(void);
-          void AUXROM_FLAGS(void);
+void AUXROM_FLAGS(void);
 void AUXROM_HELP(void);
 void AUXROM_SDCAT(void);
 void AUXROM_SDCD(void);
@@ -149,12 +151,15 @@ void AUXROM_MOUNT(void);
 void AUXROM_SDOPEN(void);
           void AUXROM_SPF(void);
 void AUXROM_SDREAD(void);
-          void AUXROM_SDREN(void);
+void AUXROM_SDREN(void);
 void AUXROM_SDRMDIR(void);
 void AUXROM_SDSEEK(void);
 void AUXROM_SDWRITE(void);
 void AUXROM_UNMOUNT(void);
 void AUXROM_WROM(void);
+          void AUXROM_MEMCPY(void);
+          void AUXROM_SETLED(void);
+          void AUXROM_SDCOPY(void);
 
 //
 //  Utility Functions
