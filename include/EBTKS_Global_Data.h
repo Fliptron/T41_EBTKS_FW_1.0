@@ -47,10 +47,8 @@ struct PACKED AUXROM_RAM
                                                     //                                                            BIT 1   =0 if LF eol, =1 if CRLF eol
                                                     //                                                            BITS 2-31 unused
   char          AR_Pad_2[80];                       //  070240 - 070357     160 -   239
-  char          AR_BUF6_OPTS[8];                    //  070360 - 070367     240 -   247           A.BOPT60 - A.BOPT67   See 85aux2.lst line 2226 for details. TLDR: used as additional Usage values.
-                                                    //                                                                  Same mailbox constraints on ownership
-  char          AR_BUF0_OPTS[4];                    //  070370 - 070373     248 -   251           A.BOPT00 - A.BOPT03
-  char          AR_BUF1_OPTS[4];                    //  070374 - 070374     252 -   255           A.COPT0-A.COPT3        U_cmd-specific options
+  char          AR_Opts[16];                        //  070360 - 070374     240 -   255           See 85aux2.lst line 3242 for details. TLDR: used as additional Usage values.
+                                                    //                                            Same mailbox constraints on ownership
   char          AR_Buffer_0[256];                   //  070400 - 070777     256 -   511
   char          AR_Buffer_1[256];                   //  071000 - 070377     512 -   767
   char          AR_Buffer_2[256];                   //  071400 - 071777     768 -  1023
@@ -61,57 +59,11 @@ struct PACKED AUXROM_RAM
   char          AR_Pad_3[256];                      //  075400 - 075777    2816 -  3071
 };
 
-//
-//    This is similar to the above struct, except for "uint8_t AR_BUF0_OPTS[4];" being replaced with "uint16_t AR_BUF0_OPTS[2];"
-//    and many things that were char in the above struct are uint8_t in the AUXROM_RAM_A struct
-//    This is to avoid a compiler warning "warning: dereferencing type-punned pointer will break strict-aliasing rules [-Wstrict-aliasing]"
-//    when compiling the WROM function in EBTKS_AUXROM_SD_Services.cpp
-//
-struct PACKED AUXROM_RAM_A
-{                                                   //  Octal Addresses   Decimal byte number     AUXROM Internal name
-                                                    //                    in this struct
-  uint8_t       AR_Mailboxes[32];                   //  070000 - 070037       0 -    31           A.MB0    - A.MB31
-  uint16_t      AR_Lengths[8];                      //  070040 - 070057      32 -    47           A.BLEN0  - A.BLEN7
-  uint16_t      AR_Usages[8];                       //  070060 - 070077      48 -    63           A.BUSE0  - A.BUSE7
-  uint8_t       AR_SPAR1_CPU_Register_save[64];     //  070100 - 070177      64 -   127           A.R0 , A.R2 , A.R4 , A.R6 , A.R10, A.R12, A.R14, A.R16,
-                                                    //                                            A.R20, A.R30, A.R40, A.R50, A.R60, A.R70
-  uint8_t       AR_SPAR1_CPU_SAD[3];                //  070200 - 070202     128 -   130           A.SAD
-  uint8_t       AR_TMPP;                            //  070203              131                   A.TMPP          1-BYTE VERY temp storage for non-R6-stack short-term value saving during parsing
-  uint16_t      AR_Present;                         //  070204 - 070205     132 -   133           A.RLOG          2-byte bit-log of AUXROMs present
-  uint16_t      AR_R12_copy;                        //  070206 - 070207     134 -   135           A.MBR12         2-byte R12 value when "passing stack" to EBTKS
-  uint16_t      AR_ERR_NUM;                         //  070210 - 070211     136 -   137           A.ERRN          2-BYTE error# for custom error message #9, returned by AUXERRN function
-  uint16_t      AR_TMP[9];                          //  070212 - 070233     138 -   155           A.TMP0 - A.TMP8
-  uint8_t       AR_FLAGS[4];                        //  070234 - 070237     156 -   159           A.FLAGS         4-BYTE misc flags, gets saved by EBTKS in CFG file and restored at power-on
-                                                    //                                                            BIT 0   =0 if / used in paths, =1 if \ used in paths
-                                                    //                                                            BIT 1   =0 if LF eol, =1 if CRLF eol
-                                                    //                                                            BITS 2-31 unused
-  uint8_t       AR_Pad_2[80];                       //  070240 - 070357     160 -   239
-
-  union anon1                                       //  This union should hopefully put to bed all the problems with strict-aliasing that keep triggering the
-  {                                                   //  following warnings:   dereferencing type-punned pointer will break strict-aliasing rules [-Wstrict-aliasing]
-   uint8_t       as_uint8_t[8];                       //  070360 - 070367     240 -   247           A.BOPT60 - A.BOPT67
-   char          as_char[8];                          //  See 85aux2.lst line 2269 (approx) for details. TLDR: used as additional Usage values.
-   uint32_t      as_uint32_t[2];
-  } AR_BUF6_OPTS;
-
-  uint16_t      AR_BUF0_OPTS[2];                    //  070370 - 070373     248 -   251           A.BOPT00 - A.BOPT01    !!!!!!!!!!!!!!!!  this is the only difference
-  uint8_t       AR_BUF1_OPTS[4];                    //  070374 - 070374     252 -   255           A.COPT0-A.COPT3        U_cmd-specific options
-  uint8_t       AR_Buffer_0[256];                   //  070400 - 070777     256 -   511
-  uint8_t       AR_Buffer_1[256];                   //  071000 - 070377     512 -   767
-  uint8_t       AR_Buffer_2[256];                   //  071400 - 071777     768 -  1023
-  uint8_t       AR_Buffer_3[256];                   //  072000 - 072377    1024 -  1279
-  uint8_t       AR_Buffer_4[256];                   //  072400 - 072777    1280 -  1535
-  uint8_t       AR_Buffer_5[256];                   //  073000 - 073377    1536 -  1791
-  uint8_t       AR_Buffer_6[1024];                  //  073400 - 075377    1792 -  2815
-  uint8_t       AR_Pad_3[256];                      //  075400 - 075777    2816 -  3071
-};
-
 
 union RAM_WINDOW_OVERLAY
 {
   uint8_t             as_bytes[3072];
   struct AUXROM_RAM   as_struct;
-  struct AUXROM_RAM_A as_struct_a;
 };
 
 EXTERN union RAM_WINDOW_OVERLAY AUXROM_RAM_Window;

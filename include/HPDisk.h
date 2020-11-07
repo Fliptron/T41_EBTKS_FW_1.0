@@ -89,7 +89,7 @@ class HPDisk
                     _heads = 2;
                     _sectors = 60;
                     _totalSectors = 4320;
-                    _type = 0x0181;
+                    _type = 0x0081;
                     break;
 
                 case DISK_TYPE_HD5:

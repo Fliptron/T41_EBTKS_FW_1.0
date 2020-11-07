@@ -201,7 +201,7 @@ void AUXROM_FLAGS(void)
 
   if (!(temp_file = SD.open("/AUXROM_FLAGS.TXT", O_RDWR | O_TRUNC | O_CREAT)))
   {
-    post_custom_error_message((char *)"Can't open /AUXROM_FLAGS.TXT", 310);
+    post_custom_error_message("Can't open /AUXROM_FLAGS.TXT", 310);
     *p_mailbox = 0;      //  Indicate we are done
     Serial.printf("Can't open /AUXROM_FLAGS.TXT\n");
     return;
@@ -211,7 +211,7 @@ void AUXROM_FLAGS(void)
   temp_file.close();
   if (chars_written != 10)
   {
-    post_custom_error_message((char *)"Can't write /AUXROM_FLAGS.TXT", 311);
+    post_custom_error_message("Can't write /AUXROM_FLAGS.TXT", 311);
     *p_mailbox = 0;      //  Indicate we are done
     Serial.printf("Can't write /AUXROM_FLAGS.TXT\n");
     return;
@@ -250,7 +250,7 @@ char HelpScreen[]="\
 
 void AUXROM_HELP(void)
 {
-  if(AUXROM_RAM_Window.as_struct.AR_BUF6_OPTS[0])
+  if(AUXROM_RAM_Window.as_struct.AR_Opts[0])
   {
     CRT_capture_screen();
     //Write_on_CRT_Alpha(0,0,HelpScreen);     // if you uncomment this, uncomment the above test data
@@ -259,7 +259,7 @@ void AUXROM_HELP(void)
   {
     CRT_restore_screen();
   }
-  Serial.printf("HELP %d done.\n", AUXROM_RAM_Window.as_struct.AR_BUF6_OPTS[0]);
+  Serial.printf("HELP %d done.\n", AUXROM_RAM_Window.as_struct.AR_Opts[0]);
   *p_usage = 0;           //  Success
   *p_mailbox = 0;         //  Indicate we are done
   return;
@@ -292,7 +292,7 @@ void AUXROM_HELP(void)
 //  SDCAT A$,D$,S,1,fileSpec$    continues the ACTIVE direcotry listing, putting next name in A$, date in D$, size in S
 //
 //  So only the last two are seen by EBTKS. The parameters are passed as follows:
-//    The 0 or 1 (4th parameter) is passed in AUXROM_RAM_Window.as_struct.AR_BUF6_OPTS[0]
+//    The 0 or 1 (4th parameter) is passed in AUXROM_RAM_Window.as_struct.AR_Opts[0]
 //    The fileSpec$              is passed in AUXROM_RAM_Window.as_struct.AR_Buffer_6 (null terminated) and saved in sdcat_filespec
 //
 //  Returning results:
@@ -314,7 +314,7 @@ void AUXROM_HELP(void)
 //    A.BOPT64-67 = attributes                                       LSB is set for a SubDirectory, next bit is set for ReadOnly
 //
 //
-//  Test cases        AR_BUF6_OPTS[0]   AR_BUF6_OPTS[1]  Buffer 6       Notes
+//  Test cases        AR_Opts[0]        AR_Opts[1]       Buffer 6       Notes
 //                    first=0           wildcards=0      match          Wildcards support adde recently, minimal testing so far
 //                    next=1            unique=1         pattern
 //
@@ -328,8 +328,8 @@ void AUXROM_HELP(void)
 //  SDCAT A$,S,F,1,fileSpec$                                            This is what EBTKS actually receives
 //
 //  Note: In above table, the "xxx" are data left in OPTS/Buffers from the previous call. This only happens
-//  for second and successive calls, where AR_BUF6_OPTS 0..3 are used for passing back the file length, and
-//  since successive calls set AR_BUF6_OPTS[0] to 1, it will be 1, but on entry, the rest of AR_BUF6_OPTS 1..3
+//  for second and successive calls, where AR_Opts 0..3 are used for passing back the file length, and
+//  since successive calls set AR_Opts[0] to 1, it will be 1, but on entry, the rest of AR_Opts 1..3
 //  will have the remnants of the previous file's length, and Buffer 6 will have the prior file name, since
 //  the pattern specification is only provided on the first call
 //
@@ -357,7 +357,7 @@ void AUXROM_SDCAT(void)
   //Serial.printf("\nSDCAT Start next entry\n");
   //Serial.printf("."); //  less noisy progress for SDCAT
 
-  if (AUXROM_RAM_Window.as_struct.AR_BUF6_OPTS[0] == 0)  //  This is a First Call
+  if (AUXROM_RAM_Window.as_struct.AR_Opts[0] == 0)  //  This is a First Call
   {
   //
   //  Filespec$ is captured here on the first call.
@@ -382,7 +382,7 @@ void AUXROM_SDCAT(void)
     if (!Resolve_Path(p_buffer))
     {
       //*p_usage    = 213;    //  Error
-      post_custom_error_message((char *)"Can't resolve path", 330);
+      post_custom_error_message("Can't resolve path", 330);
       //show_mailboxes_and_usage();
       *p_mailbox = 0;      //  Indicate we are done
       Serial.printf("SDCAT Error exit 1.  Error while resolving subdirectory name\n");
@@ -407,7 +407,7 @@ void AUXROM_SDCAT(void)
     //  At this ponint the path part is either a single '/' or a path with '/' at each end
     if (strchr(SDCAT_path_part_of_Resolved_Path, '*') || strchr(SDCAT_path_part_of_Resolved_Path, '?'))
     {   //  No wildcards allowed in path part
-      post_custom_error_message((char *)"SDCAT no wildcards in path", 333);
+      post_custom_error_message("SDCAT no wildcards in path", 333);
       *p_mailbox = 0;      //  Indicate we are done
       return;
     }
@@ -433,7 +433,7 @@ void AUXROM_SDCAT(void)
     // Serial.printf("Catalogging directory of [%s]\n", SDCAT_path_part_of_Resolved_Path);
     if (!LineAtATime_ls_Init(SDCAT_path_part_of_Resolved_Path))               //  This is where the whole directory is listed into a buffer
     {                                                                   //  Failed to do a listing of the current directory
-      post_custom_error_message((char *)"Can't list directory", 331);
+      post_custom_error_message("Can't list directory", 331);
       *p_mailbox = 0;                                                   //  Indicate we are done
       Serial.printf("SDCAT Error exit 2.  Failed to do a listing of the directory [%s]\n", Resolved_Path);
       return;
@@ -447,7 +447,7 @@ void AUXROM_SDCAT(void)
     //
     //  Either we haven't done a first call, or a previous call reported we were at the end of the directory
     //
-    post_custom_error_message((char *)"No SDCAT init or past end", 332);
+    post_custom_error_message("No SDCAT init or past end", 332);
     *p_mailbox = 0;      //  Indicate we are done
     Serial.printf("SDCAT Error exit 3.  Missing First call to SDCAT\n");
     return;
@@ -485,31 +485,32 @@ void AUXROM_SDCAT(void)
     //
     if (p_buffer[temp_uint - 1] == '/')
     {   //  Entry is a subdirectory
-      p_buffer[temp_uint - 1 + 256] = 0x00;                //  Remove the '/' for pattern match
-      AUXROM_RAM_Window.as_struct_a.AR_BUF6_OPTS.as_uint32_t[1] = 1;                      //  Record that the file is actually a directory
+      p_buffer[temp_uint - 1 + 256] = 0x00;                           //  Remove the '/' for pattern match
+      *(uint32_t *)(AUXROM_RAM_Window.as_struct.AR_Opts + 4) = 1;     //  Record that the file is actually a directory
+        
     }
     else
     {   //  Entry is a file name
-      AUXROM_RAM_Window.as_struct_a.AR_BUF6_OPTS.as_uint32_t[1] = 0;                      //  Record that the file is not a directory
+      *(uint32_t *)(AUXROM_RAM_Window.as_struct.AR_Opts + 4) = 0;                 //  Record that the file is not a directory
     }
-    match = MatchesPattern(&p_buffer[256], SDCAT_pattern_part_of_Resolved_Path);          //  See if we have a match
+    match = MatchesPattern(&p_buffer[256], SDCAT_pattern_part_of_Resolved_Path);  //  See if we have a match
 
     if (!match)
     {
-      continue;                                                                           //  See if the next entry is a match
+      continue;                                                                   //  See if the next entry is a match
     }
     //
     //  We have a match, and have alread updated these:
     //    Name        p_buffer starting at position 0
     //    Length      *p_len
-    //    Dir Status  AUXROM_RAM_Window.as_struct_a.AR_BUF6_OPTS.as_uint32_t[1]
+    //    Dir Status  AUXROM_RAM_Window.as_struct.AR_Opts[4] (as uint32_t)
     //
     //  Now finish things
     //
     strlcpy(&p_buffer[256], dir_line, 17);                                                //  The DATE & TIME string is copied to Buffer 6, starting at position 256
     strlcpy(file_size, &dir_line[16], 12);                                                //  Get the size of the file. Still needs some processing
     temp_uint = atoi(file_size);                                                          //  Convert the file size to an int
-    AUXROM_RAM_Window.as_struct_a.AR_BUF6_OPTS.as_uint32_t[0] = temp_uint;                //  Return file size in A.BOPT60-63
+    *(uint32_t *)(AUXROM_RAM_Window.as_struct.AR_Opts) = temp_uint;                       //  Return file size in A.BOPT60-63
     //
     //  Need to get read-only status
     //
@@ -519,13 +520,13 @@ void AUXROM_SDCAT(void)
     temp_file = SD.open(temp_file_path);                                                  //  SD.open() does not mind the trailing slash if the name is a directory
     if (temp_file.isReadOnly())
     {
-      AUXROM_RAM_Window.as_struct_a.AR_BUF6_OPTS.as_uint32_t[1] |= 0x02;                  //  Indicate the file is read only
+      *(uint32_t *)(AUXROM_RAM_Window.as_struct.AR_Opts + 4) |= 0x02;                     //  Indicate the file is read only
     }
     temp_file.close();
 //    Serial.printf("Filename [%s]   Date/time [%s]   Size [%s] = %d  DIR&RO status %d\n\n",  p_buffer,
 //                                                                                            &p_buffer[256],
 //                                                                                            file_size, temp_uint,
-//                                                                                            AUXROM_RAM_Window.as_struct_a.AR_BUF6_OPTS.as_uint32_t[1]  );
+//                                                                                            *(uint32_t *)(AUXROM_RAM_Window.as_struct.AR_Opts + 4)  );
     *p_usage  = 0;        //  Success
     //show_mailboxes_and_usage();
     *p_mailbox = 0;      //  Indicate we are done
@@ -618,15 +619,18 @@ void AUXROM_SDCLOSE(void)
   bool        return_status;
   char        filename[258];
 
-  file_index = AUXROM_RAM_Window.as_struct.AR_BUF6_OPTS[0];               //  File number 1..10 , or 0 for all
+  file_index = AUXROM_RAM_Window.as_struct.AR_Opts[0];               //  File number 1..10 , or 0 for all
   if (file_index == 0)
   {
     for (i = 1 ;  i < MAX_AUXROM_SDFILES ; i++)
     {
       if (Auxrom_Files[i].isOpen())
       {
+        if(!Auxrom_Files[i].getName(filename,255))
+        {
+          Serial.printf("In SDCLOSE, couldn't retrieve filename\n");  
+        }
         return_status = Auxrom_Files[i].close();
-        Auxrom_Files[i].getName(filename,255);
         Serial.printf("Close file %2d [%s]  Success status is %s\n", i, filename, return_status ? "true":"false");
         //
         //  No error exit
@@ -636,8 +640,8 @@ void AUXROM_SDCLOSE(void)
   }
   else
   {
-    return_status = Auxrom_Files[file_index].close();
     Auxrom_Files[file_index].getName(filename,255);
+    return_status = Auxrom_Files[file_index].close();
     Serial.printf("Close file %2d [%s]  Success status is %s\n", file_index, filename, return_status ? "true":"false");
   }
   *p_usage    = 0;     //  File flush successfully
@@ -646,14 +650,14 @@ void AUXROM_SDCLOSE(void)
 }
 
 //
-//  Returns in the designated buffer the current path and its length (AUXROM_RAM_Window.as_struct.AR_BUF6_OPTS[0] == 0)     SDCUR$
-//  Returns in the designated buffer "/"                             (AUXROM_RAM_Window.as_struct.AR_BUF6_OPTS[0] != 0)     SDHOME$
+//  Returns in the designated buffer the current path and its length (AUXROM_RAM_Window.as_struct.AR_Opts[0] == 0)     SDCUR$
+//  Returns in the designated buffer "/"                             (AUXROM_RAM_Window.as_struct.AR_Opts[0] != 0)     SDHOME$
 //
 
 void AUXROM_SDCUR(void)
 {
   uint16_t    copy_length;
-  if (AUXROM_RAM_Window.as_struct.AR_BUF6_OPTS[0] == 0)
+  if (AUXROM_RAM_Window.as_struct.AR_Opts[0] == 0)
   {
     copy_length = strlcpy(p_buffer, Current_Path, 256);
     *p_len = copy_length;
@@ -688,14 +692,14 @@ void AUXROM_SDDEL(void)
   //Serial.printf("SDDEL 1:  %s\n", p_buffer);
   if (!Resolve_Path(p_buffer))
   {   //  Error, Parsing problems with path
-    post_custom_error_message((char *)"Can't resolve path", 330);
+    post_custom_error_message("Can't resolve path", 330);
     *p_mailbox = 0;      //  Indicate we are done
     return;
   }
   Serial.printf("SDDEL 2:  %s\n", Resolved_Path);
   if (Resolved_Path_ends_with_slash)
   {
-    post_custom_error_message((char *)"SDDEL no file specified", 370);
+    post_custom_error_message("SDDEL no file specified", 370);
     *p_mailbox = 0;      //  Indicate we are done
     return;
   }
@@ -707,7 +711,7 @@ void AUXROM_SDDEL(void)
     Serial.printf("SDDEL 3:  No wildcards\n");
    if (!SD.remove(Resolved_Path))
    {
-     post_custom_error_message((char *)"Couldn't delete file", 371);
+     post_custom_error_message("Couldn't delete file", 371);
      *p_mailbox = 0;      //  Indicate we are done
      return;
    }
@@ -748,7 +752,7 @@ void AUXROM_SDDEL(void)
   //  At this ponint the path part is either a single '/' or a path with '/' at each end
   if (strchr(SDCAT_path_part_of_Resolved_Path, '*') || strchr(SDCAT_path_part_of_Resolved_Path, '?'))
   {   //  No wildcards allowed in path part
-    post_custom_error_message((char *)"SDDEL no wildcards in path", 372);
+    post_custom_error_message("SDDEL no wildcards in path", 372);
       *p_mailbox = 0;      //  Indicate we are done
       return;
   }
@@ -758,7 +762,7 @@ void AUXROM_SDDEL(void)
   //
   if (!LineAtATime_ls_Init(SDCAT_path_part_of_Resolved_Path))               //  This is where the whole directory is listed into a buffer
   {                                                                   //  Failed to do a listing of the current directory
-    post_custom_error_message((char *)"SDDEL problem with path", 373);
+    post_custom_error_message("SDDEL problem with path", 373);
     *p_mailbox = 0;      //  Indicate we are done
     Serial.printf("SDDEL Error.  Failed to do a listing of the directory [%s]\n", SDCAT_path_part_of_Resolved_Path);
     return;
@@ -798,7 +802,7 @@ void AUXROM_SDDEL(void)
       Serial.printf("SDDEL 7: Deleting %s\n", p_buffer);
       if (!SD.remove(p_buffer))
       {
-        post_custom_error_message((char *)"Couldn't delete file", 371);
+        post_custom_error_message("Couldn't delete file", 371);
         *p_mailbox = 0;      //  Indicate we are done
         return;
       }
@@ -824,7 +828,7 @@ void AUXROM_SDFLUSH(void)
   int         file_index;
   int         i;
 
-  file_index = AUXROM_RAM_Window.as_struct.AR_BUF6_OPTS[0];               //  File number 1..10 , or 0 for all
+  file_index = AUXROM_RAM_Window.as_struct.AR_Opts[0];               //  File number 1..10 , or 0 for all
   if (file_index == 0)
   {
     for (i = 1 ;  i < MAX_AUXROM_SDFILES ; i++)
@@ -860,7 +864,7 @@ void AUXROM_SDMEDIA(void)
 
   if (!parse_MSU(p_buffer))
   {
-    post_custom_error_message((char *)"MEDIA$ MSU$ error", 510);
+    post_custom_error_message("MEDIA$ MSU$ error", 510);
     *p_mailbox = 0;     //  Indicate we are done
     return;
   }
@@ -887,7 +891,7 @@ void AUXROM_SDMEDIA(void)
   //
   if(get_Select_Code() != msu_select_code)
   {
-    post_custom_error_message((char *)"MEDIA$ HPIB Select must match", 511);
+    post_custom_error_message("MEDIA$ HPIB Select must match", 511);
     *p_mailbox = 0;     //  Indicate we are done
     return;
   }
@@ -1087,14 +1091,14 @@ bool create_disk_image(char * path)
   if (!Ref_Disk_Image)
   {
     Serial.printf("Couldn't open ref disk image for READ\n");
-    post_custom_error_message((char *)"Couldn't open Ref Disk", 417);
+    post_custom_error_message("Couldn't open Ref Disk", 417);
     return false;
   }
   File New_Disk_Image = SD.open(Resolved_Path, FILE_WRITE);
   if (!New_Disk_Image)
   {
     Serial.printf("Couldn't open New disk image for WRITE\n");
-    post_custom_error_message((char *)"Couldn't open New Disk", 418);
+    post_custom_error_message("Couldn't open New Disk", 418);
     return false;
   }
   //
@@ -1113,7 +1117,7 @@ bool create_disk_image(char * path)
       if(chars_read != chars_written)
       {
         Serial.printf("Couldn't initialize New disk image, writing wrote less than reading\n");
-        post_custom_error_message((char *)"Couldn't init New Disk", 419);
+        post_custom_error_message("Couldn't init New Disk", 419);
         Ref_Disk_Image.close();
         New_Disk_Image.close();
         New_Disk_Image.remove();
@@ -1141,14 +1145,14 @@ bool create_tape_image(char * path)
   if (!Ref_Tape_Image)
   {
     Serial.printf("Couldn't open ref tape image for READ\n");
-    post_custom_error_message((char *)"Couldn't open Ref Tape", 426);
+    post_custom_error_message("Couldn't open Ref Tape", 426);
     return false;
   }
   File New_Tape_Image = SD.open(Resolved_Path, FILE_WRITE);
   if (!New_Tape_Image)
   {
     Serial.printf("Couldn't open New tape image for WRITE\n");
-    post_custom_error_message((char *)"Couldn't open New Tape", 427);
+    post_custom_error_message("Couldn't open New Tape", 427);
     return false;
   }
   //
@@ -1167,7 +1171,7 @@ bool create_tape_image(char * path)
       if(chars_read != chars_written)
       {
         Serial.printf("Couldn't initialize New tape image, writing wrote less than reading\n");
-        post_custom_error_message((char *)"Couldn't init New Tape", 428);
+        post_custom_error_message("Couldn't init New Tape", 428);
         Ref_Tape_Image.close();
         New_Tape_Image.close();
         New_Tape_Image.remove();
@@ -1210,7 +1214,7 @@ void AUXROM_MOUNT(void)
   if (!Resolve_Path(AUXROM_RAM_Window.as_struct.AR_Buffer_6))
   {
     AUXROM_RAM_Window.as_struct.AR_Mailboxes[6] = 0;                  //  This Keyword uses two buffers, buffer 0 (primary for returning status) and buffer 6 for the file path
-    post_custom_error_message((char *)"Can't resolve path", 330);
+    post_custom_error_message("Can't resolve path", 330);
     Serial.printf("MOUNT failed:  Error while resolving subdirectory name\n");
     goto Mount_exit;
   }
@@ -1219,7 +1223,7 @@ void AUXROM_MOUNT(void)
 
   if (!parse_MSU(AUXROM_RAM_Window.as_struct.AR_Buffer_0))
   {
-    post_custom_error_message((char *)"MOUNT MSU$ error", 412);
+    post_custom_error_message("MOUNT MSU$ error", 412);
     goto Mount_exit;
   }
 
@@ -1228,24 +1232,24 @@ void AUXROM_MOUNT(void)
   //  So try and avoid duplication by sharing code where possible
   //
 
-  switch(AUXROM_RAM_Window.as_struct.AR_BUF0_OPTS[0])
+  switch(AUXROM_RAM_Window.as_struct.AR_Opts[0])
   {
     case 0:   //  Mount an existing file, Error if it does not exist
       if (!SD.exists(Resolved_Path))
       {
-        post_custom_error_message((char *)"MOUNT file does not exist", 411);
+        post_custom_error_message("MOUNT file does not exist", 411);
         goto Mount_exit;
       }
       if(msu_is_tape)
       {
         if(strcasecmp(".tap", &Resolved_Path[strlen(Resolved_Path)-4]) != 0)
         {
-          post_custom_error_message((char *)"MOUNT Filename must end in .tap", 413);
+          post_custom_error_message("MOUNT Filename must end in .tap", 413);
           goto Mount_exit;
         }
         if(!tape_handle_MOUNT(Resolved_Path))
         {
-          post_custom_error_message((char *)"MOUNT failed", 415);
+          post_custom_error_message("MOUNT failed", 415);
           goto Mount_exit;
         }
       }
@@ -1253,12 +1257,12 @@ void AUXROM_MOUNT(void)
       {
         if(strcasecmp(".dsk", &Resolved_Path[strlen(Resolved_Path)-4]) != 0)
         {
-          post_custom_error_message((char *)"MOUNT Filename must end in .dsk", 416);
+          post_custom_error_message("MOUNT Filename must end in .dsk", 416);
           goto Mount_exit;
         }
         if(!devices[msu_device_code]->setFile(msu_drive_select, Resolved_Path, false))
         {
-          post_custom_error_message((char *)"MOUNT failed", 415);
+          post_custom_error_message("MOUNT failed", 415);
           goto Mount_exit;
         }
       }
@@ -1295,7 +1299,7 @@ Mount_create_and_mount_disk:
       {
         if(!tape_handle_MOUNT(Resolved_Path))
         {
-          post_custom_error_message((char *)"MOUNT failed", 415);
+          post_custom_error_message("MOUNT failed", 415);
           goto Mount_exit;
         }
       }
@@ -1303,7 +1307,7 @@ Mount_create_and_mount_disk:
       {
         if(!devices[msu_device_code]->setFile(msu_drive_select, Resolved_Path, false))
         {
-          post_custom_error_message((char *)"MOUNT failed", 415);
+          post_custom_error_message("MOUNT failed", 415);
           goto Mount_exit;
         }
       }
@@ -1315,7 +1319,7 @@ Mount_create_and_mount_disk:
     case 2:   //  Mount new file, error if already exists, create & mount
       if (SD.exists(Resolved_Path))
       {     //  File exist which is an error in Mode 2
-        post_custom_error_message((char *)"MOUNT File already exists", 409);
+        post_custom_error_message("MOUNT File already exists", 409);
         goto Mount_exit;
       }
       if(msu_is_tape)
@@ -1330,7 +1334,7 @@ Mount_create_and_mount_disk:
 
 
     default:  //  all others are an error. (this is probably caught by the AUXROMs)
-      post_custom_error_message((char *)"Invalid MOUNT mode", 410);
+      post_custom_error_message("Invalid MOUNT mode", 410);
       *p_mailbox = 0;             //  Must always be the last thing we do
       return;
       break;
@@ -1355,11 +1359,11 @@ void AUXROM_SDOPEN(void)
   int         error_number;
   char        error_message[33];
 
-  file_index = AUXROM_RAM_Window.as_struct.AR_BUF6_OPTS[0];               //  File number 1..11
+  file_index = AUXROM_RAM_Window.as_struct.AR_Opts[0];               //  File number 1..11
 
 #if VERBOSE_KEYWORDS
   Serial.printf("SDOPEN Name: [%s]  Mode %d  File # %d\n", p_buffer,
-                                                            AUXROM_RAM_Window.as_struct.AR_BUF6_OPTS[1],
+                                                            AUXROM_RAM_Window.as_struct.AR_Opts[1],
                                                             file_index);
 #endif
 
@@ -1370,7 +1374,7 @@ void AUXROM_SDOPEN(void)
     error_number = 330;   strlcpy(error_message,"Can't resolve path", 32);
     if (!Resolve_Path(p_buffer)) break;     //  Error, Parsing problems with path
     error_occured = false;
-    switch (AUXROM_RAM_Window.as_struct.AR_BUF6_OPTS[1])
+    switch (AUXROM_RAM_Window.as_struct.AR_Opts[1])
     {
       case 0:       //  Mode 0 (READ-ONLY), error if the file doesn't exist
         error_number = 422;   strlcpy(error_message,"Open failed Mode 0", 32);
@@ -1435,11 +1439,11 @@ void AUXROM_SDREAD(void)
   int         bytes_to_read;
   int         bytes_actually_read;
 
-  file_index = AUXROM_RAM_Window.as_struct.AR_BUF6_OPTS[0];               //  File number 1..11
+  file_index = AUXROM_RAM_Window.as_struct.AR_Opts[0];               //  File number 1..11
   bytes_to_read = *p_len;                                                 //  Length of read
   if (!Auxrom_Files[file_index].isOpen())
   {
-    post_custom_error_message((char *)"SDREAD File not open", 440);
+    post_custom_error_message("SDREAD File not open", 440);
     *p_mailbox = 0;      //  Indicate we are done
     Serial.printf("SDREAD Error. File not open. File Number %d\n", file_index);
     return;
@@ -1471,7 +1475,7 @@ void AUXROM_SDREN(void)
   if(!Resolve_Path(AUXROM_RAM_Window.as_struct.AR_Buffer_0))
   {
     AUXROM_RAM_Window.as_struct.AR_Mailboxes[6] = 0;                  //  This Keyword uses two buffers/mailboxes (0 and 6), mailbox 0 is the main one
-    post_custom_error_message((char *)"Can't resolve parameter 1", 450);
+    post_custom_error_message("Can't resolve parameter 1", 450);
     *p_mailbox = 0;      //  Indicate we are done
     Serial.printf("SDREN rename failed  old [%s]   new [%s]\n", AUXROM_RAM_Window.as_struct.AR_Buffer_0, AUXROM_RAM_Window.as_struct.AR_Buffer_6);
     return;
@@ -1480,7 +1484,7 @@ void AUXROM_SDREN(void)
   if(!Resolve_Path(AUXROM_RAM_Window.as_struct.AR_Buffer_6))
   {
     AUXROM_RAM_Window.as_struct.AR_Mailboxes[6] = 0;                  //  This Keyword uses two buffers/mailboxes (0 and 6), mailbox 0 is the main one
-    post_custom_error_message((char *)"Can't resolve parameter 2", 451);
+    post_custom_error_message("Can't resolve parameter 2", 451);
     *p_mailbox = 0;      //  Indicate we are done
     Serial.printf("SDREN rename failed  old [%s]   new [%s]\n", AUXROM_RAM_Window.as_struct.AR_Buffer_0, AUXROM_RAM_Window.as_struct.AR_Buffer_6);
     return;
@@ -1489,7 +1493,7 @@ void AUXROM_SDREN(void)
   if(!SD.rename(Resolved_Path_for_SDREN_param_1, Resolved_Path))
   {
     AUXROM_RAM_Window.as_struct.AR_Mailboxes[6] = 0;                  //  This Keyword uses two buffers/mailboxes (0 and 6), mailbox 0 is the main one
-    post_custom_error_message((char *)"SDREN rename failed", 452);
+    post_custom_error_message("SDREN rename failed", 452);
     *p_mailbox = 0;      //  Indicate we are done
     Serial.printf("SDREN rename failed  Resolved paths are old [%s]   new [%s]\n", Resolved_Path_for_SDREN_param_1, Resolved_Path);
     return;
@@ -1515,7 +1519,7 @@ void AUXROM_SDRMDIR(void)
 
   if (!Resolve_Path(p_buffer))
   {
-    post_custom_error_message((char *)"Can't resolve path", 330);
+    post_custom_error_message("Can't resolve path", 330);
     *p_mailbox = 0;                      //  Indicate we are done
     Serial.printf("SDRMDIR Error exit 1.  Error while resolving subdirectory name\n");
     return;
@@ -1524,14 +1528,14 @@ void AUXROM_SDRMDIR(void)
   if ((dirfile.open(Resolved_Path)) == 0)
   {
     Serial.printf("SDRMDIR: Failed SD.open return value %08X\n", (uint32_t)file);
-    post_custom_error_message((char *)"Can't open subdirectory", 311);
+    post_custom_error_message("Can't open subdirectory", 311);
     *p_mailbox = 0;                      //  Indicate we are done
     return;
   }
   if (!dirfile.isDir())
   {
     Serial.printf("SDRMDIR: Failed file.isDir  Path is not a directory\n");
-    post_custom_error_message((char *)"Path is not a directory", 312);
+    post_custom_error_message("Path is not a directory", 312);
     dirfile.close();
     *p_mailbox = 0;                      //  Indicate we are done
     return;
@@ -1547,7 +1551,7 @@ void AUXROM_SDRMDIR(void)
   if (file_count != 0)
   {
     Serial.printf("SDRMDIR: Directory is not empty. found %d files\n", file_count);
-    post_custom_error_message((char *)"Directory not empty", 313);
+    post_custom_error_message("Directory not empty", 313);
     dirfile.close();
     *p_mailbox = 0;                       //  Indicate we are done
     return;
@@ -1567,7 +1571,7 @@ void AUXROM_SDRMDIR(void)
   else
   {
     Serial.printf("SDRMDIR: Delete directory failed\n");
-    post_custom_error_message((char *)"Directory delete failed", 314);
+    post_custom_error_message("Directory delete failed", 314);
     dirfile.close();
     *p_mailbox = 0;                       //  Indicate we are done
     return;
@@ -1592,16 +1596,16 @@ void AUXROM_SDSEEK(void)
   int         end_position;
   int         target_position;
 
-  file_index = AUXROM_RAM_Window.as_struct.AR_BUF6_OPTS[0];               //  File number 1..11
-  seek_mode  = AUXROM_RAM_Window.as_struct.AR_BUF6_OPTS[1];               //  0=absolute position, 1=advance from current position, 2=go to end of file
-  offset     = AUXROM_RAM_Window.as_struct_a.AR_BUF6_OPTS.as_uint32_t[1]; //  Fetch the file offset, or absolute position
+  file_index = AUXROM_RAM_Window.as_struct.AR_Opts[0];                    //  File number 1..11
+  seek_mode  = AUXROM_RAM_Window.as_struct.AR_Opts[1];               //  0=absolute position, 1=advance from current position, 2=go to end of file
+  offset     = *(uint32_t *)(AUXROM_RAM_Window.as_struct.AR_Opts + 4); //  Fetch the file offset, or absolute position
   //  Serial.printf("\nSDSEEK Mode %d   Offset %d\n", seek_mode, offset);
   //
   //  check the file is open
   //
   if (!Auxrom_Files[file_index].isOpen())
   {
-    post_custom_error_message((char *)"Seek on file that isn't open", 470);
+    post_custom_error_message("Seek on file that isn't open", 470);
     *p_mailbox = 0;                      //  Indicate we are done
     //  Serial.printf("SDSEEK Error exit 470.  Seek on file that isn't open\n");
     return;
@@ -1636,14 +1640,14 @@ void AUXROM_SDSEEK(void)
   //
   if (target_position < 0)
   {
-    post_custom_error_message((char *)"Trying to seek before beginning", 471);
+    post_custom_error_message("Trying to seek before beginning", 471);
     *p_mailbox = 0;                      //  Indicate we are done
     Serial.printf("SDSEEK Error exit 471.  Trying to seek past EOF\n");
     return;
   }
   if (target_position > end_position)
   {
-    post_custom_error_message((char *)"Trying to seek past EOF", 472);
+    post_custom_error_message("Trying to seek past EOF", 472);
     *p_mailbox = 0;                      //  Indicate we are done
     Serial.printf("SDSEEK Error exit 472.  Trying to seek past EOF\n");
     return;
@@ -1652,14 +1656,14 @@ void AUXROM_SDSEEK(void)
   current_position = Auxrom_Files[file_index].curPosition();
   if (target_position != current_position)
   {
-    post_custom_error_message((char *)"SDSEEK failed somehow", 473);
+    post_custom_error_message("SDSEEK failed somehow", 473);
     *p_mailbox = 0;                      //  Indicate we are done
     Serial.printf("SDSEEK failed Target position %d   Current position %d\n", target_position, current_position);
     return;
   }
 
   //  Serial.printf("SDSEEK: New position is %d\n", current_position);
-  AUXROM_RAM_Window.as_struct_a.AR_BUF6_OPTS.as_uint32_t[1] = current_position;
+  *(uint32_t *)(AUXROM_RAM_Window.as_struct.AR_Opts + 4) = current_position;
   *p_usage    = 0;     //  SDSEEK successful
   *p_mailbox = 0;     //  Indicate we are done
   return;
@@ -1675,17 +1679,17 @@ void AUXROM_SDWRITE(void)
   int         bytes_to_write;
   int         bytes_actually_written;
 
-  file_index = AUXROM_RAM_Window.as_struct.AR_BUF6_OPTS[0];               //  File number 1..11
+  file_index = AUXROM_RAM_Window.as_struct.AR_Opts[0];               //  File number 1..11
   bytes_to_write = *p_len;             //  Length of write
   if (!Auxrom_Files[file_index].isWritable())
   {
-    post_custom_error_message((char *)"SDWRITE File not open for write", 480);
+    post_custom_error_message("SDWRITE File not open for write", 480);
     *p_mailbox = 0;      //  Indicate we are done
     Serial.printf("SDWRITE Error. File not open for write. File Number %d\n", file_index);
     return;
   }
   bytes_actually_written = Auxrom_Files[file_index].write(p_buffer, bytes_to_write);
-  Serial.printf("Write file # %2d , requested write %d bytes, %d actually written\n", file_index, bytes_to_write, bytes_actually_written);
+  Serial.printf("SDWRITE to file # %2d , requested write %d bytes, %d actually written\n", file_index, bytes_to_write, bytes_actually_written);
   //
   //  Assume all is good
   //
@@ -1706,7 +1710,7 @@ void AUXROM_UNMOUNT(void)
 
   if (!parse_MSU(p_buffer))
   {
-    post_custom_error_message((char *)"UNMOUNT MSU$ error", 490);
+    post_custom_error_message("UNMOUNT MSU$ error", 490);
     goto Unmount_exit;
   }
   if (msu_is_tape)
@@ -1717,7 +1721,7 @@ void AUXROM_UNMOUNT(void)
   {
     if(!devices[msu_device_code]->close(msu_drive_select))
     {
-      post_custom_error_message((char *)"UNMOUNT Disk error", 491);
+      post_custom_error_message("UNMOUNT Disk error", 491);
       goto Unmount_exit;
     }
   }
@@ -1740,11 +1744,10 @@ Unmount_exit:
 
 void AUXROM_WROM(void)
 {
-  uint8_t     target_rom      = AUXROM_RAM_Window.as_struct.AR_BUF0_OPTS[0];
-  uint16_t    target_address  = AUXROM_RAM_Window.as_struct_a.AR_BUF0_OPTS[1];                      //  address is in the range 060000 to 0100000
-                                                                                                    //  NOTE: This uses as_struct_a to avoid a compiler warning. See EBTKS_Global_Data.h
+  uint8_t     target_rom      = AUXROM_RAM_Window.as_struct.AR_Opts[8];
+  uint16_t    target_address  = *(uint16_t *)(AUXROM_RAM_Window.as_struct.AR_Opts + 10);                      //  address is in the range 060000 to 0100000
   uint16_t    transfer_length = AUXROM_RAM_Window.as_struct.AR_Lengths[0];
-  uint8_t   * data_ptr        = &AUXROM_RAM_Window.as_struct_a.AR_Buffer_0[0];
+  uint8_t   * data_ptr        = (uint8_t *)&AUXROM_RAM_Window.as_struct.AR_Buffer_0[0];
   uint8_t   * dest_ptr;
 
   Serial.printf("Target ROM ID(oct):     %03O\n", target_rom);
@@ -2012,7 +2015,7 @@ bool LineAtATime_ls_Next()
 //
 
 
-void post_custom_error_message(char * message, uint16_t error_number)
+void post_custom_error_message(const char * message, uint16_t error_number)
 {
   char   * dest_ptr;
 
@@ -2030,7 +2033,7 @@ void post_custom_error_message(char * message, uint16_t error_number)
   AUXROM_RAM_Window.as_struct.AR_ERR_NUM = error_number;                    //  AUXERRN
 }
 
-void post_custom_warning_message(char * message, uint16_t error_number)
+void post_custom_warning_message(const char * message, uint16_t error_number)
 {
   char   * dest_ptr;
 
