@@ -1274,9 +1274,9 @@ void AUXROM_MOUNT(void)
 //  Phase 1 Checks:
 //                  Check that the path can be resolved         error 330
 //                  Check that the msu$ can be parsed           error 412
-//                  Check that the path ends in .tap            error 413
+//                  Check that the path ends in .tap            error 413   case insensitive
 //                  Check that the path ends in .dsk            error 416   case insensitive
-//                  Check that HPIB select code is correct      error 414   Current default is 3
+//                  Check that HPIB select code is correct      error 414   current default is 3
 //                  Check that the device code is supported     error 512
 //
 //                      we could also check file length is 270336, but we don't
@@ -1299,7 +1299,7 @@ void AUXROM_MOUNT(void)
   if (!Resolve_Path(p_buffer))
   {
     post_custom_error_message("Can't resolve path", 330);
-    Serial.printf("MOUNT failed:  Error while resolving subdirectory name\n");
+    Serial.printf("MOUNT failed:  Error while resolving subdirectory name 330\n");
     goto Mount_exit;
   }
 
@@ -1897,9 +1897,32 @@ void AUXROM_MEMCPY(void)
   
 }
 
+//
+//  Set the color of the two RGB LEDs
+//
+//  AR_Opts[0]    1   Set LED closest to Power Inlet
+//                2   Set LED closest to SD Card
+//                3   Set both LEDs to same color
+//  AR_Opts[1]    RED   value 0..255
+//  AR_Opts[2]    GREEN value 0..255
+//  AR_Opts[3]    BLUE  value 0..255
+//
+
 void AUXROM_SETLED(void)
 {
-  
+  if ((AUXROM_RAM_Window.as_struct.AR_Opts[0] == 1) || (AUXROM_RAM_Window.as_struct.AR_Opts[0] == 3))
+  {
+    leds.setLedColor(0,{AUXROM_RAM_Window.as_struct.AR_Opts[1],
+                        AUXROM_RAM_Window.as_struct.AR_Opts[2],
+                        AUXROM_RAM_Window.as_struct.AR_Opts[3]  });
+  }
+  if ((AUXROM_RAM_Window.as_struct.AR_Opts[0] == 2) || (AUXROM_RAM_Window.as_struct.AR_Opts[0] == 3))
+  {
+    leds.setLedColor(1,{AUXROM_RAM_Window.as_struct.AR_Opts[1],
+                        AUXROM_RAM_Window.as_struct.AR_Opts[2],
+                        AUXROM_RAM_Window.as_struct.AR_Opts[3]  });
+  }
+  leds.update();
 }
 
 void AUXROM_SDCOPY(void)

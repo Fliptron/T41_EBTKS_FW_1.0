@@ -225,6 +225,8 @@ EXTERN  Tape tape;
 
 EXTERN  SdFat SD;
 
+EXTERN  LED leds;
+
 EXTERN  Print_Splitter PS_SDCAT;
 EXTERN  Print_Splitter PS_SDDEL;
 

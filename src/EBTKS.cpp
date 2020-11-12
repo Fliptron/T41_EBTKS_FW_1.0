@@ -16,9 +16,6 @@ USBHub hub2(myusb);
 USBHub hub3(myusb);
 KeyboardController keyboard1(myusb);
 KeyboardController keyboard2(myusb);
-LED leds;
-
-
 
 //
 //  These includes are only needed in this file
@@ -741,7 +738,7 @@ void setup()
   //leds.setLedColor(1,CRGB::Blue);
   //
   //  alternately, hard code the brightness in 
-  leds.setLedColor(0,{10,0,0});  //r,g,b. 20 is a reasonable brighness
+  leds.setLedColor(0,{10,0,0});  //r,g,b. 10 is a reasonable brighness
   leds.setLedColor(1,{0,10,0});
   
   leds.update();

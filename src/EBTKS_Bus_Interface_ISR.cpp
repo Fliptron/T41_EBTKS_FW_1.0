@@ -306,6 +306,8 @@ inline void onPhi_2_Rise(void)                             //  This function is 
   uint32_t   dataBus;
   uint32_t   bus_cycle_info;                              //  Bits 26 down to 24 will be /WR , /RD , /24 in that order
 
+  TOGGLE_RXD;                                             //  Glitch the ISR entry oscilloscope signal to identify the Phi 2 duration separately from Phi 1
+  TOGGLE_RXD;
 //
 //  This is Russell's code with some minor edits.
 //
