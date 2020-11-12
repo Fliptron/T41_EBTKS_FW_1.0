@@ -196,11 +196,11 @@ LED leds;
 //      09              PRIH       22
 //      10              INTPRI      5
 //      11              INTERRUPT  29
-//      12              
-//      13              
+//      12              /IRLX       6
+//      13              /HALTX      7
 //      14              RXD        10
-//      15              TXD        9
-//      GND_1                      1
+//      15              TXD         9
+//      GND_1                       1
 //      GND_2                      34
 //      GND_3                      47
 
@@ -538,11 +538,15 @@ void setup()
   //  software generates these three signals
   //
 
-  pinMode(CORE_PIN_RD, INPUT);          //  RD
-  pinMode(CORE_PIN_WR, INPUT);          //  WR
-  pinMode(CORE_PIN_LMA, INPUT);         //  LMA
+  pinMode(CORE_PIN_RD, INPUT);          //  /RD
+  pinMode(CORE_PIN_WR, INPUT);          //  /WR
+  pinMode(CORE_PIN_LMA, INPUT);         //  /LMA
   pinMode(CORE_PIN_PHASE1, INPUT);      //  Phi 1
   pinMode(CORE_PIN_PHASE2, INPUT);      //  Phi 2
+
+  pinMode(CORE_PIN_T04, INPUT);         //  /IRLX     Used by the Logic Analyzer
+  pinMode(CORE_PIN_T05, INPUT);         //  /HALTX    Used by the Logic Analyzer
+  pinMode(CORE_PIN_IFETCH, INPUT);      //  IFETCH    Used by the Logic Analyzer
 
   pinMode(CORE_PIN_CTRL_DIR, OUTPUT);   //  bus control buffer direction /LMA,/WR,/RD
   CTRL_DIR_FROM_HP;

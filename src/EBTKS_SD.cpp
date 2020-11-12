@@ -86,6 +86,18 @@ bool loadRom(const char *fname, int slotNum, const char *description)
   //  This shift of bytes is in our local copy of the first 2 bytes of the ROM. The actual ROM image
   //  still starts with 377, id "what will be the first byte", "what will be the second byte"
   //
+  //  Everett:
+  //    I build AUX 1 as normal. For AUX ROMs 2, 3, 4, etc., the first three
+  //    bytes are: 377, ROM#, AUXCOMP# (in other words, the same bytes that
+  //    USED to be in the first two locations are now in the 2nd and 3rd
+  //    locations). This keeps the system from seeing them at "ROM log in"
+  //    time. Then, during the ROM "power-on INIT" call, in the INIT routine
+  //    from AUX 1, the first thing it does is send a U_WROM command to
+  //    write the proper ROM# in the first byte location for each AUX ROM
+  //    2, 3, 4, etc. This way, those who look at 60000 to see which ROM is
+  //    currently loaded will continue to work fine.
+  //
+  //
   if (id==0377)
   {
     id = header[0] = header[1];
@@ -449,7 +461,7 @@ bool loadConfiguration(const char *filename)
 
   for (JsonVariant hpibDevice : doc["hpib"].as<JsonArray>()) //iterate hpib devices on a bus
   {
-    int select = hpibDevice["select"] | 7;      //  1MB5 select code (3..10). 7 is the default
+    int select = hpibDevice["select"] | 7;      //  1MB5 select code (3..10). 3 is the default
     int device = hpibDevice["device"] | 0;      //  HPIB device number 0..31 (can contain up to 4 drives)
     bool enable = hpibDevice["enable"] | false; //are we enabled?
 
@@ -466,11 +478,11 @@ bool loadConfiguration(const char *filename)
       if (enable == true)
       {
         initTranslator(select);
-        //iterate disk drives - we can have up to 4 drive units per device
+        //  Iterate disk drives - we can have up to 4 drive units per device
         for (JsonVariant unit : hpibDevice["drives"].as<JsonArray>())
         {
-          int unitNum = unit["unit"] | 0;          //drive number 0..3
-          const char *filename = unit["filename"]; //disk image filename
+          int unitNum = unit["unit"] | 0;             //  Drive number 0..3
+          const char *filename = unit["filename"];    //  Disk image filename
           bool wprot = unit["writeProtect"] | false;
           bool en = unit["enable"] | false;
 

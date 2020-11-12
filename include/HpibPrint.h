@@ -8,6 +8,7 @@ public:
     {
         _tla = tla;
         _fileOpen = false;
+        _fileName[0] = '\0';
     }
 
     // called when there is a HPIB identify request

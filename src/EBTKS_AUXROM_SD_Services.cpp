@@ -77,7 +77,7 @@
 //                                          411       MOUNT file does not exist
 //                                          412       MOUNT MSU$ error
 //                                          413       MOUNT Filename must end in .tap
-//                                          414       Only Select code 3 supported
+//                                          414       MOUNT HPIB Select must match
 //                                          415       MOUNT failed
 //                                          416       MOUNT Filename must end in .dsk
 //                                          417       Couldn't open Ref Disk
@@ -115,6 +115,7 @@
 //        510..519      AUXROM_SDMEDIA
 //                                          510       MEDIA$ MSU$ error
 //                                          511       MEDIA$ HPIB Select must match
+//                                          512       Device code not supported
 
 #include <Arduino.h>
 #include <string.h>
@@ -134,10 +135,10 @@ extern HpibDisk *devices[];
 EXTMEM static char          Current_Path[MAX_SD_PATH_LENGTH  + 2];    //  I don't think initialization of EXTMEM is supported yet
 EXTMEM static char          Resolved_Path[MAX_SD_PATH_LENGTH + 2];
 static bool                 Resolved_Path_ends_with_slash;
-EXTMEM static char          SDCAT_path_part_of_Resolved_Path[258];
-EXTMEM static char          SDCAT_pattern_part_of_Resolved_Path[258];
-EXTMEM static char          SDDEL_path_part_of_Resolved_Path[258];
-EXTMEM static char          SDDEL_pattern_part_of_Resolved_Path[258];
+EXTMEM static char SDCAT_path_part_of_Resolved_Path[MAX_SD_PATH_LENGTH + 2];
+EXTMEM static char SDCAT_pattern_part_of_Resolved_Path[MAX_SD_PATH_LENGTH + 2];
+EXTMEM static char SDDEL_path_part_of_Resolved_Path[MAX_SD_PATH_LENGTH + 2];
+EXTMEM static char SDDEL_pattern_part_of_Resolved_Path[MAX_SD_PATH_LENGTH + 2];
 EXTMEM static char          Resolved_Path_for_SDREN_param_1[MAX_SD_PATH_LENGTH + 2];
 
 
@@ -561,19 +562,22 @@ void AUXROM_SDCD(void)
     {
       if ((file = SD.open(Resolved_Path)) == 0)
       {
-        error_number = 340;   strlcpy(error_message,"Unable to open directory", 32);
+        error_number = 340;
+        strlcpy(error_message, "Unable to open directory", 32);
         break;                      //  Unable to open directory
       }
       if (!file.isDir())
       {
         file.close();
-        error_number = 341;   strlcpy(error_message,"Target path is not a directory", 32);
+        error_number = 341;
+        strlcpy(error_message, "Target path is not a directory", 32);
         break;                      //  Valid path, but not a directory
       }
       file.close();
       if (!SD.chdir(Resolved_Path))
       {
-        error_number = 342;   strlcpy(error_message,"Couldn't change directory", 32);
+        error_number = 342;
+        strlcpy(error_message, "Couldn't change directory", 32);
         break;                      //  Failed to change to new path
       }
       //
@@ -595,7 +599,8 @@ void AUXROM_SDCD(void)
       *p_mailbox = 0;                      //  Must always be the last thing we do
       return;
     }
-    error_number = 330;   strlcpy(error_message,"Can't resolve path", 32);
+    error_number = 330;
+    strlcpy(error_message, "Can't resolve path", 32);
   } while(0);
   //
   //  This is the shared error exit
@@ -633,7 +638,7 @@ void AUXROM_SDCLOSE(void)
           Serial.printf("In SDCLOSE, couldn't retrieve filename\n");  
         }
         return_status = Auxrom_Files[i].close();
-        Serial.printf("Close file %2d [%s]  Success status is %s\n", i, filename, return_status ? "true":"false");
+        //  Serial.printf("Close file %2d [%s]  Success status is %s\n", i, filename, return_status ? "true":"false");
         //
         //  No error exit
         //
@@ -688,14 +693,14 @@ void AUXROM_SDDEL(void)
   uint32_t    temp_uint;
   bool        match;
 
-  //Serial.printf("SDDEL 1:  %s\n", p_buffer);
+  //  Serial.printf("SDDEL 1:  %s\n", p_buffer);
   if (!Resolve_Path(p_buffer))
   {   //  Error, Parsing problems with path
     post_custom_error_message("Can't resolve path", 330);
     *p_mailbox = 0;      //  Indicate we are done
     return;
   }
-  Serial.printf("SDDEL 2:  %s\n", Resolved_Path);
+  //  Serial.printf("SDDEL 2:  %s\n", Resolved_Path);
   if (Resolved_Path_ends_with_slash)
   {
     post_custom_error_message("SDDEL no file specified", 370);
@@ -707,7 +712,7 @@ void AUXROM_SDDEL(void)
   //     
   if ((strchr(Resolved_Path, '*') == NULL) && (strchr(Resolved_Path, '?') == NULL))
   {   //  No wild cards, so we are just deleting 1 file, or failing
-    Serial.printf("SDDEL 3:  No wildcards\n");
+    //  Serial.printf("SDDEL 3:  No wildcards\n");
     if (!SD.remove(Resolved_Path))
     {
       post_custom_error_message("Couldn't delete file", 371);
@@ -723,7 +728,7 @@ void AUXROM_SDDEL(void)
   //
   //  Resolved_Path has wildcards
   //
-  Serial.printf("SDDEL 4:  Wildcards in match pattern\n");
+  //  Serial.printf("SDDEL 4:  Wildcards in match pattern\n");
   SD.cacheClear();
 
   //
@@ -755,7 +760,7 @@ void AUXROM_SDDEL(void)
       *p_mailbox = 0;      //  Indicate we are done
       return;
   }
-  Serial.printf("SDDEL 5: path [%s]    pattern [%s]\n", SDDEL_path_part_of_Resolved_Path, SDDEL_pattern_part_of_Resolved_Path);
+  //  Serial.printf("SDDEL 5: path [%s]    pattern [%s]\n", SDDEL_path_part_of_Resolved_Path, SDDEL_pattern_part_of_Resolved_Path);
   //
   //  Create a directory listing of the specified path
   //
@@ -790,7 +795,7 @@ void AUXROM_SDDEL(void)
     str_tolower(Resolved_Path);                                               //  Make it lower case, for case insensitive matching
     match = MatchesPattern(Resolved_Path, SDDEL_pattern_part_of_Resolved_Path);     //  See if we have a match
 
-    Serial.printf("SDDEL 6: Matching %s   with   %20s   %s\n", SDDEL_pattern_part_of_Resolved_Path, Resolved_Path, match ? "true":"false");
+    //  Serial.printf("SDDEL 6: Matching %s   with   %20s   %s\n", SDDEL_pattern_part_of_Resolved_Path, Resolved_Path, match ? "true":"false");
     //
     //  If it matches, delete the file. We need another buffer, and the one pointed to by p_buffer is not in use anymore
     //
@@ -798,7 +803,7 @@ void AUXROM_SDDEL(void)
     {
       strcpy(p_buffer, SDDEL_path_part_of_Resolved_Path);     //  This already has a trailing '/'
       strcat(p_buffer, Resolved_Path);                  //  Remember that we are using Resolved_Path as a temp buffer at this point and it has the filename currently
-      Serial.printf("SDDEL 7: Deleting %s\n", p_buffer);
+      //  Serial.printf("SDDEL 7: Deleting %s\n", p_buffer);
       if (!SD.remove(p_buffer))
       {
         post_custom_error_message("Couldn't delete file", 371);
@@ -810,7 +815,7 @@ void AUXROM_SDDEL(void)
   }
 
 SDDEL_Exit:
-  Serial.printf("SDDEL 8: Deleted %d files\n", number_of_deleted_files);
+  //  Serial.printf("SDDEL 8: Deleted %d files\n", number_of_deleted_files);
   *p_usage = 0;           //  Success, file deleted
   *p_mailbox = 0;         //  Indicate we are done
   return;
@@ -917,6 +922,12 @@ void AUXROM_SDMEDIA(void)
       return;
     }
   }
+  else
+  {
+    post_custom_error_message("Device code not supported", 512);
+    *p_mailbox = 0; //  Indicate we are done
+    return;
+  }
   //
   //  If we get here, no mounted media, or msu_device_code is not valid
   //
@@ -1016,6 +1027,7 @@ bool parse_MSU(char *msu)
   }
   if (strncasecmp(msu, ":D", 2) != 0)
   {
+    Serial.printf("parse_MSU fail exit 1 MSU is [%s]\n", msu);
     return false;
   }
   msu_ptr += 2;
@@ -1029,17 +1041,20 @@ bool parse_MSU(char *msu)
     msu_select_code = *msu_ptr++ - '0';
     if ((msu_select_code < 3) || (msu_select_code > 9))
     {
+      Serial.printf("parse_MSU fail exit 2\n");
       return false;
     }
   }
   msu_device_code = *msu_ptr++ - '0';
   if ((msu_device_code < 0) || (msu_device_code > 7))     //  msu_device_code is uint8_t, so it can't go negative, and will wrap to a large positive
   {                                                       //  leave the < 0 test for clarity.
+    Serial.printf("parse_MSU fail exit 3\n");
     return false;
   }
   msu_drive_select = *msu_ptr - '0';
   if ((msu_drive_select < 0) || (msu_drive_select > 3))   //  msu_drive_select is uint8_t, so it can't go negative, and will wrap to a large positive
   {                                                       //  leave the < 0 test for clarity.
+    Serial.printf("parse_MSU fail exit 4\n");
     return false;
   }
   msu_is_disk = true;
@@ -1097,10 +1112,11 @@ bool parse_MSU(char *msu)
 //  mode      is in AR_BUF0_OPTS[0]
 //
 
-EXTMEM char  Copy_buffer[32768];
+EXTMEM char Copy_buffer[32768];       //  ####  Maybe this can re-use the buffer assigned to SDDEL
 
 bool create_disk_image(char * path)
 {
+  int chars_read, chars_written;
   File Ref_Disk_Image = SD.open("/Original_images/blank_D.dsk", FILE_READ);
   if (!Ref_Disk_Image)
   {
@@ -1120,7 +1136,6 @@ bool create_disk_image(char * path)
   //
   Serial.printf("Copying reference disk /Original_images/blank_D.dsk to new disk [%s]\n", path);
 
-  int   chars_read, chars_written;
 
   while(1)
   {
@@ -1207,6 +1222,52 @@ bool create_tape_image(char * path)
   return true;
 }
 
+//
+//  MOUNT   msus$, filePath$ [, modeFlag]
+//
+//  Suggested Test Sequence.  Use ":D320" for mounting images
+//
+//    DIM O$[100]
+//    M$ = ":D320"
+//    T$ = "testdisk.dsk"
+//
+//    SDCD    /testfiles/
+//    SDCAT                                     check we are in the right directory. If testdisk.dsk is there, delete it
+//    SDDEL T$                                    if needed
+//    O$ = MEDIA$(":D320")                      Save the current media so we can restore it
+//    DISP O$                                   show the current mounted LIF disk
+//    MOUNT M$,"///"&O$,0                       Should fail path resolution.
+//    expect: Error 109 : Can't resolve path
+//    AUXERRN
+//    expect: 330
+//    MOUNT "Z"&M$,O$,0                         Should fail msu$ can be parsed"
+//    expect: Error 109 : MOUNT MSU$ error
+//    AUXERRN
+//    expect: 412
+//    MOUNT ":T","newtape",0                    Should fail "MOUNT Filename must end in .tap"
+//    expect: Error 109 : MOUNT Filename must end in .tap
+//    AUXERRN
+//    expect: 413
+//    MOUNT M$,"newdisk",0                      Should fail "MOUNT Filename must end in .dsk"
+//    expect: Error 109 : MOUNT Filename must end in .dsk
+//    AUXERRN
+//    expect: 416
+//    MOUNT ":D720",T$,0                        Should fail "MOUNT HPIB Select must match"
+//    expect: Error 109 : MOUNT HPIB Select must match
+//    AUXERRN
+//    expect: 414
+//    MOUNT ":D373",T$,0                        Should fail "Device code not supported"
+//    expect: Error 109 : Device code not supported
+//    AUXERRN
+//    expect: 512
+//    MOUNT M$,T$,0                             Should fail mode 0 expects file to exist
+//    expect: Error 109 : MOUNT file does not exist
+//    AUXERRN
+//    expect: 411
+//    MOUNT M$,T$,1                             Should succeed
+
+//    Not yet tested are errors 409 and 410 , and mode 2
+
 void AUXROM_MOUNT(void)
 {
 //
@@ -1215,28 +1276,36 @@ void AUXROM_MOUNT(void)
 //                  Check that the msu$ can be parsed           error 412
 //                  Check that the path ends in .tap            error 413
 //                  Check that the path ends in .dsk            error 416   case insensitive
-//                  Check that HPIB select code is 3            error 414
+//                  Check that HPIB select code is correct      error 414   Current default is 3
+//                  Check that the device code is supported     error 512
+//
 //                      we could also check file length is 270336, but we don't
+//
 //  Phase 2 Mode 0
 //                  Check that the file exists                  error 411
 //                  Mode 0 Mount failed, could not be opened    error 415
 //
+//  11/4/2020       Change parameter passing
+//                    No longer using AR_Buffer_6. Only AR_Buffer_0 and AR_Mailboxes[0], both of which have pointers setup by AUXROM_Poll()
+//
+//                    filename starts at AUXROM_RAM_Window.as_struct.AR_Buffer_0[0] and is zero terminated
+//                                       AUXROM_RAM_Window.as_struct.AR_Lengths[0] is not used
+//                    MSUS     starts at AUXROM_RAM_Window.as_struct.AR_Buffer_0[256] and is zero terminated
+//                    mode     is in AR_Opts[0]
 //
 
   *p_usage = 0;     //  Assume success
 
-  if (!Resolve_Path(AUXROM_RAM_Window.as_struct.AR_Buffer_6))
+  if (!Resolve_Path(p_buffer))
   {
-    AUXROM_RAM_Window.as_struct.AR_Mailboxes[6] = 0;                  //  This Keyword uses two buffers, buffer 0 (primary for returning status) and buffer 6 for the file path
     post_custom_error_message("Can't resolve path", 330);
     Serial.printf("MOUNT failed:  Error while resolving subdirectory name\n");
     goto Mount_exit;
   }
 
-  AUXROM_RAM_Window.as_struct.AR_Mailboxes[6] = 0;                    //  un-needed from here on
-
-  if (!parse_MSU(AUXROM_RAM_Window.as_struct.AR_Buffer_0))
+  if (!parse_MSU(p_buffer + 256))
   {
+    Serial.printf("Failing MSU [%s]\n", p_buffer + 256);
     post_custom_error_message("MOUNT MSU$ error", 412);
     goto Mount_exit;
   }
@@ -1245,8 +1314,37 @@ void AUXROM_MOUNT(void)
   //  There are significant similarities but also differences between how MOUNT works for tapes and disks.
   //  So try and avoid duplication by sharing code where possible
   //
+  //
+  //  but first do some common checks that are independent of mode
+  //
+  if (msu_is_tape)
+  {
+    if (strcasecmp(".tap", &Resolved_Path[strlen(Resolved_Path) - 4]) != 0)
+    {
+      post_custom_error_message("MOUNT Filename must end in .tap", 413);
+      goto Mount_exit;
+    }
+  }
+  if (msu_is_disk)
+  {
+    if (strcasecmp(".dsk", &Resolved_Path[strlen(Resolved_Path) - 4]) != 0)
+    {
+      post_custom_error_message("MOUNT Filename must end in .dsk", 416);
+      goto Mount_exit;
+    }
+    if(get_Select_Code() != msu_select_code)
+    {
+      post_custom_error_message("MOUNT HPIB Select must match", 414);
+      goto Mount_exit;
+    }
+    if (!devices[msu_device_code])
+    {
+      post_custom_error_message("Device code not supported", 512);
+      goto Mount_exit;
+    }
+  }
 
-  switch(AUXROM_RAM_Window.as_struct.AR_Opts[0])
+  switch (AUXROM_RAM_Window.as_struct.AR_Opts[0]) //  Switch on MODE
   {
     case 0:   //  Mount an existing file, Error if it does not exist
       if (!SD.exists(Resolved_Path))
@@ -1256,11 +1354,7 @@ void AUXROM_MOUNT(void)
       }
       if(msu_is_tape)
       {
-        if(strcasecmp(".tap", &Resolved_Path[strlen(Resolved_Path)-4]) != 0)
-        {
-          post_custom_error_message("MOUNT Filename must end in .tap", 413);
-          goto Mount_exit;
-        }
+mount_a_tape:
         if(!tape_handle_MOUNT(Resolved_Path))
         {
           post_custom_error_message("MOUNT failed", 415);
@@ -1269,11 +1363,7 @@ void AUXROM_MOUNT(void)
       }
       else    //  must be a disk msu$
       {
-        if(strcasecmp(".dsk", &Resolved_Path[strlen(Resolved_Path)-4]) != 0)
-        {
-          post_custom_error_message("MOUNT Filename must end in .dsk", 416);
-          goto Mount_exit;
-        }
+mount_a_disk:
         if(!devices[msu_device_code]->setFile(msu_drive_select, Resolved_Path, false))
         {
           post_custom_error_message("MOUNT failed", 415);
@@ -1287,46 +1377,42 @@ void AUXROM_MOUNT(void)
 
 
     case 1:   //  Mount an existing file, Create if it does not exist
-      if (!SD.exists(Resolved_Path))
-      {     //  Does not exist so create a new file by copying the reference image
+      if (SD.exists(Resolved_Path))
+      {
         if(msu_is_tape)
-        {   //  Create and mount for tape
-Mount_create_and_mount_tape:
-        if(!create_tape_image(Resolved_Path))
-          {
-            goto Mount_exit;
-          }
+        {
+          goto mount_a_tape;
         }
         else
-        {   //  Create and mount for disk
-Mount_create_and_mount_disk:
-        if(!create_disk_image(Resolved_Path))
-          {
-            goto Mount_exit;
-          }
+        { //    Must be a disk (checked in parse_MSU()  )
+          goto mount_a_disk;
         }
-      }     //  End of creating a blank image
+      }
       //
-      //  File either existed, or we just created it
+      //  The File does not exist, so need to create it.  (###  need to come back to this and look at the select:device:drive
+      //                                                        to find out topology and copy the right image. Currently defaulting
+      //                                                        to a floppy disk image ###)
+      //
+      //  Does not exist so create a new file by copying the reference image
       //
       if(msu_is_tape)
-      {
-        if(!tape_handle_MOUNT(Resolved_Path))
-        {
-          post_custom_error_message("MOUNT failed", 415);
+      { //  Create and mount for tape
+Mount_create_and_mount_tape:
+        if (!create_tape_image(Resolved_Path))      //  If this fails, the error status and message has already been setup in create_tape_image()
+        {                                           //  Possible errors are 426 , 427 , and 428
           goto Mount_exit;
         }
+        goto mount_a_tape;
       }
       else
-      {
-        if(!devices[msu_device_code]->setFile(msu_drive_select, Resolved_Path, false))
+      { //  Create and mount for disk
+Mount_create_and_mount_disk:
+        if (!create_disk_image(Resolved_Path)) //  If this fails, the error status and message has already been setup
         {
-          post_custom_error_message("MOUNT failed", 415);
           goto Mount_exit;
         }
+        goto mount_a_disk;
       }
-      Serial.printf("MOUNT success\n");
-      goto Mount_exit;      //  Success exit
       break;          
 
 
@@ -1383,32 +1469,44 @@ void AUXROM_SDOPEN(void)
 
   do
   {
-    error_number = 420;   strlcpy(error_message,"File is already open", 32);
-    if (Auxrom_Files[file_index].isOpen()) break;                          //  Error, File is already open
-    error_number = 330;   strlcpy(error_message,"Can't resolve path", 32);
-    if (!Resolve_Path(p_buffer)) break;     //  Error, Parsing problems with path
+    error_number = 420;
+    strlcpy(error_message, "File is already open", 32);
+    if (Auxrom_Files[file_index].isOpen())
+      break; //  Error, File is already open
+    error_number = 330;
+    strlcpy(error_message, "Can't resolve path", 32);
+    if (!Resolve_Path(p_buffer))
+      break; //  Error, Parsing problems with path
     error_occured = false;
     switch (AUXROM_RAM_Window.as_struct.AR_Opts[1])
     {
       case 0:       //  Mode 0 (READ-ONLY), error if the file doesn't exist
-        error_number = 422;   strlcpy(error_message,"Open failed Mode 0", 32);
-        if (!Auxrom_Files[file_index].open(Resolved_Path , O_RDONLY | O_BINARY)) error_occured = true;
+      error_number = 422;
+      strlcpy(error_message, "Open failed Mode 0", 32);
+      if (!Auxrom_Files[file_index].open(Resolved_Path, O_RDONLY | O_BINARY))
+        error_occured = true;
         break;
       case 1:       //  Mode 1 (R/W, append)
-        error_number = 423;   strlcpy(error_message,"Open failed Mode 1", 32);
-        if (!Auxrom_Files[file_index].open(Resolved_Path , O_RDWR | O_APPEND | O_CREAT | O_BINARY)) error_occured = true;
+      error_number = 423;
+      strlcpy(error_message, "Open failed Mode 1", 32);
+      if (!Auxrom_Files[file_index].open(Resolved_Path, O_RDWR | O_APPEND | O_CREAT | O_BINARY))
+        error_occured = true;
         break;
       case 2:       //  Mode 2 (R/W, truncate)
-        error_number = 424;   strlcpy(error_message,"Open failed Mode 2", 32);
+      error_number = 424;
+      strlcpy(error_message, "Open failed Mode 2", 32);
         //if (!Auxrom_Files[file_index].open(Resolved_Path , O_RDWR | O_TRUNC | O_CREAT | O_BINARY)) error_occured = true;
-        if (!Auxrom_Files[file_index].open(Resolved_Path , O_RDWR | O_TRUNC | O_CREAT)) error_occured = true;
+      if (!Auxrom_Files[file_index].open(Resolved_Path, O_RDWR | O_TRUNC | O_CREAT))
+        error_occured = true;
        break;
       default:
-        error_number = 425;   strlcpy(error_message,"Open failed, Illegal Mode", 32);        // This should never happen because AUXROM checks Mode is 0,1,2
+      error_number = 425;
+      strlcpy(error_message, "Open failed, Illegal Mode", 32); // This should never happen because AUXROM checks Mode is 0,1,2
         error_occured = true;                                                              //  And yet, we have seen it due to a bug in AUXROM code
         break;
     }
-    if (error_occured) break;
+    if (error_occured)
+      break;
     *p_usage    = 0;     //  File opened successfully
     *p_mailbox = 0;     //  Indicate we are done
 
@@ -1463,7 +1561,7 @@ void AUXROM_SDREAD(void)
     return;
   }
   bytes_actually_read = Auxrom_Files[file_index].read(p_buffer, bytes_to_read);
-  Serial.printf("Read file # %2d , requested %d bytes, got %d\n", file_index, bytes_to_read, bytes_actually_read);
+  //  Serial.printf("Read file # %2d , requested %d bytes, got %d\n", file_index, bytes_to_read, bytes_actually_read);
   //
   //  Assume all is good
   //
@@ -1703,7 +1801,7 @@ void AUXROM_SDWRITE(void)
     return;
   }
   bytes_actually_written = Auxrom_Files[file_index].write(p_buffer, bytes_to_write);
-  Serial.printf("SDWRITE to file # %2d , requested write %d bytes, %d actually written\n", file_index, bytes_to_write, bytes_actually_written);
+  //  Serial.printf("SDWRITE to file # %2d , requested write %d bytes, %d actually written\n", file_index, bytes_to_write, bytes_actually_written);
   //
   //  Assume all is good
   //
@@ -1714,7 +1812,7 @@ void AUXROM_SDWRITE(void)
 }
 
 //
-//  Unmount the virtual drive specified by the MSU$
+//  Unmount the virtual drive specified by the MSU$         (####  currently uses Buffer 6 ####)
 //
 
 void AUXROM_UNMOUNT(void)
@@ -1733,6 +1831,11 @@ void AUXROM_UNMOUNT(void)
   }
   else
   {
+    if (!devices[msu_device_code])
+    {
+      post_custom_error_message("Device code not supported", 512);
+      goto Unmount_exit;
+    }
     if(!devices[msu_device_code]->close(msu_drive_select))
     {
       post_custom_error_message("UNMOUNT Disk error", 491);
@@ -1764,9 +1867,9 @@ void AUXROM_WROM(void)
   uint8_t   * data_ptr        = (uint8_t *)&AUXROM_RAM_Window.as_struct.AR_Buffer_0[0];
   uint8_t   * dest_ptr;
 
-  Serial.printf("Target ROM ID(oct):     %03O\n", target_rom);
-  Serial.printf("Target Address(oct): %06O\n", target_address);
-  Serial.printf("Bytes to write(dec):     %d\n", transfer_length);
+//  Serial.printf("/nTarget ROM ID(oct):     %03O\n", target_rom);
+//  Serial.printf("Target Address(oct): %06O\n", target_address);
+//  Serial.printf("Bytes to write(dec):     %d\n", transfer_length);
 
   if ((dest_ptr = getROMEntry(target_rom)) == NULL)            //  romMap is a table of 256 pointers to locations in EBTKS's address space.
   {                                                           //  i.e. 32 bit pointers. Either NULL, or an address. The index is the ROM ID

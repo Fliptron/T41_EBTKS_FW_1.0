@@ -382,7 +382,7 @@ void CRT_Timing_Test_2(void)
     //
     //  Find start of retrace
     //
-    while(1)
+    while(1)                //  This loop takes about 6.6 uS (== jitter in finding leading edge of retrace)
     {
       DMA_Read_Block(CRTSTS , &data , 1);
       if (data & 0x02)
@@ -390,7 +390,7 @@ void CRT_Timing_Test_2(void)
         break;  //  we are in Display Time
       }
     }
-    while(1)
+    while(1)                //  This loop takes about 6.6 uS (== jitter in finding leading edge of retrace)
     {
       DMA_Read_Block(CRTSTS , &data , 1);
       if (!(data & 0x02))
@@ -402,10 +402,10 @@ void CRT_Timing_Test_2(void)
     count = 0;
     index = 0;
     //
-    //  These 74 characters take 728 us
+    //  These 74 characters take 728 us  (or maybe 719 us)
     //
     SET_TXD;
-    while(count < 74)
+    while(count < 74)         //  This loop that puts characters on the screen takes 9.8 us per character
     {
       DMA_Write_Block(CRTDAT, (uint8_t *)&test_message[index++], 1);
       if(index == 32)
@@ -417,10 +417,10 @@ void CRT_Timing_Test_2(void)
     }
     CLEAR_TXD;
 
-    EBTKS_delay_ns(200000);   //  Skip Blip 1
+    EBTKS_delay_ns(200000);   //  Skip Blip 1   //  wait 200 us
     SET_TXD;
     count = 0;
-    while(count < 135)
+    while(count < 135)         //  This loop that puts characters on the screen takes 9.8 us per character. Does it for 1.32 ms
     {
       DMA_Write_Block(CRTDAT, (uint8_t *)&test_message[index++], 1);
       if(index == 32)

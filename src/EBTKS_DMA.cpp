@@ -478,8 +478,8 @@ int32_t DMA_Write_Block(uint32_t DMA_Target_Address, uint8_t buffer[], uint32_t 
     return 0;        //  Pointless or dangerous call
   }
 
-                     //                                                                                This has been reviewed, and __disable_irq() has already been done "DMA_Acknowledge" part of the
-                     //                                                                                EBTKS_Bus_Interface_ISR.cpp  .  So this should be removed, and tested
+                     //         This has been reviewed, and __disable_irq() has already been done "DMA_Acknowledge" part of the
+                     //         EBTKS_Bus_Interface_ISR.cpp  .  So this should be removed, and tested
   __disable_irq();   //  Disable all interrupts while DMA is happening. In particular the Systick stuff.
                      //  This means that if we want delays, we need to have our own EBTKS_delay_ns()
                      //  All interrupts are re-enabled at the end of release_DMA_request()
@@ -775,11 +775,11 @@ static void DMA_Logic_Analyzer_Support(uint8_t buffer[], uint32_t bytecount, int
       Logic_Analyzer_main_sample = (DMA_Addr_for_Logic_Analyzer++ << 8) | buffer[index++];
       if (mode == 0)
       {   //    Read
-        Logic_Analyzer_main_sample |= 0x0D000000;
+        Logic_Analyzer_main_sample |= 0x85000000;                 //  1000 0101   set bits are DMA, /WR, /LMA       i.e. /WR and /LMA are NOT asserted and /RD is asserted
       }
       else
       {   //    Write
-        Logic_Analyzer_main_sample |= 0x0B000000;
+        Logic_Analyzer_main_sample |= 0x83000000;                 //  1000 0011   set bits are DMA, /RD, /LMA       i.e. /RD and /LMA are NOT asserted and /WR is asserted
       }
       Logic_Analyzer_aux_sample  =  getRselec() & 0x000000FF;
 

@@ -202,8 +202,11 @@ inline void onPhi_1_Rise(void)                  //  This function is running wit
 //
 //  Logic_Analyzer_main_sample layout is:
 //  Bits          Content
-//  31 .. 28      Currently always 0000
-//  27            Set if this was a DMA cycle
+//  31            DMA Cycle (may be combined with /WRX, /RDX, /LMA)                                                         Bit      Group
+//  30            Instruction Fetch Flag                                                            IF   CORE_PIN32_BIT     12       GPIO7       IOMUXC_SW_MUX_CTL_PAD_GPIO_B0_12
+//  29            /IRLX    Interrupt Request Signal from Bus (Might be us or some other module)     T04  CORE_PIN4_BIT       6       GPIO9       IOMUXC_SW_MUX_CTL_PAD_GPIO_EMC_06
+//  28            /HALTX   DMA Request Signal from Bus       (Might be us or some other module)     T05  CORE_PIN5_BIT       8       GPIO9       IOMUXC_SW_MUX_CTL_PAD_GPIO_EMC_08
+//  27            currently unused
 //  26            /WRX    recorded at the prior Phi 2
 //  25            /RDX    recorded at the prior Phi 2
 //  24            /LMA    recorded at the prior Phi 2
@@ -222,7 +225,7 @@ inline void onPhi_1_Rise(void)                  //  This function is running wit
 
   Logic_Analyzer_main_sample =  data_from_IO_bus |                            //  See above for constraints for this to work.
                                 (addReg << 8)    |                            //  because we are very fast, it is ok to take
-                                Logic_Analyzer_current_bus_cycle_state_LA;    //  data on Phi 1 Rising edge, unlike HP-85 that
+                                Logic_Analyzer_current_bus_cycle_state_LA;    //  data on Phi 1 Rising edge, unlike HP-85 that    Logic_Analyzer_current_bus_cycle_state_LA is setup in the Phi 2 code
                                                                               //  uses the falling edge.
   Logic_Analyzer_aux_sample  =  getRselec() & 0x000000FF;                     //  Get the Bank switched ROM select code
 
@@ -326,6 +329,11 @@ inline void onPhi_2_Rise(void)                             //  This function is 
 
   Logic_Analyzer_current_bus_cycle_state_LA = bus_cycle_info  &           //  Yes, this is supposed to be a single &
                                               (BIT_MASK_WR | BIT_MASK_RD | BIT_MASK_LMA);      //  Require bus cycle state to be in bits 24, 25, and 26 of GPIO register
+
+  Logic_Analyzer_current_bus_cycle_state_LA |=  ((GPIO_PAD_STATUS_REG_T04    & BIT_MASK_T04)    << (29 - BIT_POSITION_T04   )) |    //  T04 is monitoring bus /IRLX
+                                                ((GPIO_PAD_STATUS_REG_T05    & BIT_MASK_T05)    << (28 - BIT_POSITION_T05   )) |    //  T05 is monitoring bus /HALTX
+                                                ((GPIO_PAD_STATUS_REG_IFETCH & BIT_MASK_IFETCH) << (30 - BIT_POSITION_IFETCH)) ;
+
 
 //
 //  This is Philip's much nicer version of above that uses enums, and doesn't work on rare occasions.

@@ -130,10 +130,19 @@ void AUXROM_Poll(void)
     return;
   }
 
+  // Serial.printf("\n\nBuf 0 address %08lX\n", AUXROM_RAM_Window.as_struct.AR_Buffer_0);
+  // Serial.printf("Mailbox_to_be_processed %d\n", Mailbox_to_be_processed);
+
   p_mailbox = &AUXROM_RAM_Window.as_struct.AR_Mailboxes[Mailbox_to_be_processed];         //  Pointer to the selected primary mailbox for keyword
   p_len     = &AUXROM_RAM_Window.as_struct.AR_Lengths[Mailbox_to_be_processed];           //  Pointer to the selected buffer length
   p_usage   = &AUXROM_RAM_Window.as_struct.AR_Usages[Mailbox_to_be_processed];            //  Pointer to the selected buffer usage , and return success/error status
   p_buffer  = &AUXROM_RAM_Window.as_struct.AR_Buffer_0[Mailbox_to_be_processed * 256];    //  Pointer to the selected primary buffer for keyword.
+
+  // Serial.printf("p_mailbox %08lX\n", p_mailbox);
+  // Serial.printf("p_len     %08lX\n", p_len);
+  // Serial.printf("p_usage   %08lX\n", p_usage);
+  // Serial.printf("p_buffer  %08lX\n", p_buffer);
+
 
   LOGPRINTF_AUX("AUXROM Function called. Got Mailbox # %d  and Usage %d\n", Mailbox_to_be_processed , *p_usage);
 

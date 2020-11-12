@@ -296,17 +296,17 @@ void requestInterrupt(uint8_t reason)
 /*
  *
  *  We get passed the select number which translates to the dipswitches on the HP82937A HPIB interface
- *  The HP 'official' select code begins at 3. ie: select code 7 is actually 7 - 3 = 4;
+ *  The HP 'official' select code begins at 3. ie: select code 7 is actually 7 - 3 = 4
  * 
  * 
  */
 void initTranslator(int selectNum)
 {
-    //  1MB5 select #7 - 3 /hpib/disk interface
+    //  1MB5 select #3 - 3 /hpib/disk interface
 
     if ((selectNum < 3) || (selectNum > 10))
     {
-        selectNum = 7; //default to select code 7 if an illegal value is passed
+        selectNum = 3;  //  Default to select code 3 if an illegal value is passed
     }
 
     Our_Select_Code = selectNum;

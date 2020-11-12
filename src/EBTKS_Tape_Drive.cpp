@@ -276,6 +276,7 @@ Tape::Tape()
     _downCount = 0;
     _enabled = false;
     _tape_inserted = false;
+    _filename[0] = '\0';
 }
 
 bool Tape::setFile(const char *fname)

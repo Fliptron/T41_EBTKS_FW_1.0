@@ -57,6 +57,7 @@ class HPDisk
             _tickCount = 0;
             _flushTime = 50; //5 seconds
             _writeProtect = false;
+            _filename[0] = '\0';
 
             switch (typeName)
                 {
