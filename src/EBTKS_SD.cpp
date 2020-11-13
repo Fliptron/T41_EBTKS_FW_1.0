@@ -15,10 +15,18 @@ extern HpibDevice *devices[];
 int machineNum = 0;
 uint32_t Config_Flag_word;
 
+char * boot_log_ptr;
+
 bool loadRom(const char *fname, int slotNum, const char *description)
 {
   uint8_t header[10]; //  Why is this 10?  I think it should be 2
   uint8_t id;
+
+  //  boot_log_ptr should already be setup, but just in case it isn't we set it up here, so that we don't have writes going somewhere dangerous
+  if (boot_log_ptr == NULL)
+  {
+    boot_log_ptr = Directory_Listing_Buffer_for_SDDEL;
+  }
 
   //attempts to read a hp80 rom file from the sdcard using the given filename
   //read the file and check the rom header to verify it is a rom file and extract the id
@@ -27,6 +35,7 @@ bool loadRom(const char *fname, int slotNum, const char *description)
   if (slotNum > MAX_ROMS)
   {
     LOGPRINTF("ROM slot number too large %d\n", slotNum);
+    boot_log_ptr += sprintf(boot_log_ptr, "Slot error\n");
     return false;
   }
 
@@ -34,7 +43,8 @@ bool loadRom(const char *fname, int slotNum, const char *description)
 
   if (!rfile)
   {
-    LOGPRINTF("ROM failed to read %s\n", fname);
+    LOGPRINTF("ROM failed to Open %s\n", fname);
+    boot_log_ptr += sprintf(boot_log_ptr, "Can't Open ROM File\n");
     rfile.close(); //  Is this right??? if it failed to open, and rfile is null (0) , the what would this statement do???
     return false;
   }
@@ -43,6 +53,7 @@ bool loadRom(const char *fname, int slotNum, const char *description)
   if (rfile.read(header, 3) != 3)
   {
     LOGPRINTF("ROM file read error %s\n", fname);
+    boot_log_ptr += sprintf(boot_log_ptr, "Can't read ROM");
     rfile.close();
     return false;
   }
@@ -76,6 +87,15 @@ bool loadRom(const char *fname, int slotNum, const char *description)
 
   id = header[0];
   LOGPRINTF("%03o %3d  %02X   %02X    %02X   ", id, id, id, header[1], (uint8_t)(id + header[1]));
+  if(id < 0362)
+  {
+    boot_log_ptr += sprintf(boot_log_ptr, " ID: %03o ", id);    //  Primary AUXROM and normal ROMs have ID in first byte
+  }
+  else
+  {
+    boot_log_ptr += sprintf(boot_log_ptr, " ID: %03o ", header[1]);    //  Secondary AUXROMs have ID in second byte
+  }
+  
   //
   //  No special ROM loading for Primary AUXROM at 0361.  This code handles the Secondaries from 0362 to 0375
   //
@@ -102,7 +122,7 @@ bool loadRom(const char *fname, int slotNum, const char *description)
   {
     id = header[0] = header[1];
     header[1] = header[2];
-//    Serial.printf("AUX HEADER ROM# %03o\n", id);
+    //  Serial.printf("AUX HEADER ROM# %03o\n", id);
   }
   if ((id >= AUXROM_SECONDARY_ID_START) && (id <= AUXROM_SECONDARY_ID_END)) //  Note, not testing Primary AUXROM at ID = 361
   {
@@ -112,6 +132,7 @@ bool loadRom(const char *fname, int slotNum, const char *description)
     if (header[1] != ((uint8_t)(~id) | (uint8_t)0360)) //  1's complement for 85 A/B.  No current support for 86/87
     {
       LOGPRINTF("Secondary AUXROM file header error %02X %02X\n", id, (uint8_t)header[1]);
+      boot_log_ptr += sprintf(boot_log_ptr, "HeaderError\n");
       rfile.close();
       return false;
     }
@@ -123,6 +144,7 @@ bool loadRom(const char *fname, int slotNum, const char *description)
       if (id != (uint8_t)(~header[1])) //  now test normal ROM ID's , including the AUXROM Primary.
       {
         LOGPRINTF("ROM file header error first two bytes %02X %02X   Expect One's Complement\n", id, (uint8_t)header[1]);
+        boot_log_ptr += sprintf(boot_log_ptr, "HeaderError\n");
         rfile.close();
         return false;
       }
@@ -132,6 +154,7 @@ bool loadRom(const char *fname, int slotNum, const char *description)
       if (id != (uint8_t)(-header[1])) //  now test normal ROM ID's , including the AUXROM Primary.
       {
         LOGPRINTF("ROM file header error first two bytes %02X %02X   Expect Two's Complement\n", id, (uint8_t)header[1]);
+        boot_log_ptr += sprintf(boot_log_ptr, "HeaderError\n");
         rfile.close();
         return false;
       }
@@ -139,6 +162,7 @@ bool loadRom(const char *fname, int slotNum, const char *description)
     else
     {
       LOGPRINTF("ERROR Unsupported Machine type\n");
+      boot_log_ptr += sprintf(boot_log_ptr, "Mach???\n");
     }
   }
 
@@ -148,12 +172,13 @@ bool loadRom(const char *fname, int slotNum, const char *description)
   if (flen != ROM_PAGE_SIZE)
   {
     LOGPRINTF("ROM file length error length: %d\n", flen);
+    boot_log_ptr += sprintf(boot_log_ptr, "Length Error\n");
     rfile.close();
     return false;
   }
 
   //  We got this far, update the rom mapping table to say we're here
-
+  boot_log_ptr += sprintf(boot_log_ptr, "OK\n");
   setRomMap(id, slotNum);
 
   LOGPRINTF("%-1s\n", description);
@@ -333,6 +358,10 @@ bool loadConfiguration(const char *filename)
   EBTKS_delay_ns(10000); //  10 us
 
   char fname[258];
+  
+  boot_log_ptr = Directory_Listing_Buffer_for_SDDEL;            //  use this buffer during boot (when it can't be in use) to log messages to be displayed once system has started
+
+  //  boot_log_ptr += sprintf(boot_log_ptr, "Boot Log\n");
 
   LOGPRINTF("Opening Config File [%s]\n", filename);
 
@@ -341,6 +370,10 @@ bool loadConfiguration(const char *filename)
 
   LOGPRINTF("Open was [%s]\n", file ? "Successful" : "Failed"); //  We need to probably push this to the screen if it fails
                                                                 //  Except this happens before the PWO is released
+  if (!file)
+  {
+    boot_log_ptr += sprintf(boot_log_ptr, "Couldn't open %s\n", filename);
+  }
 
   // Allocate a temporary JsonDocument
   // Don't forget to change the capacity to match your requirements.
@@ -352,7 +385,9 @@ bool loadConfiguration(const char *filename)
   if (error)
   {
     file.close();
-    saveConfiguration(filename);
+    boot_log_ptr += sprintf(boot_log_ptr, "deserializeJson failed\n");
+
+    saveConfiguration(filename);                                                        //  ####  This is dangerous, since we don't know 85/86/87  ####
     LOGPRINTF("Failed to read file, using default configuration\n");
     //
     //  Try number 2:  Read the file we hopefully just wrote
@@ -361,6 +396,7 @@ bool loadConfiguration(const char *filename)
     DeserializationError error = deserializeJson(doc, file);
     if (error)
     { //  Failed a second time, give up
+      boot_log_ptr += sprintf(boot_log_ptr, "deserializeJson failed twice\n");
       LOGPRINTF("Failed to read (or write) the default configuration. Giving up\n");
       return false;
     }
@@ -388,9 +424,13 @@ bool loadConfiguration(const char *filename)
     machineNum++;
   }
 
+  boot_log_ptr += sprintf(boot_log_ptr, "Mach:%1d ", machineNum);
+
   enHP85RamExp(doc["ram16k"] | false);
+  boot_log_ptr += sprintf(boot_log_ptr, "RAM:%c ", getHP85RamExp() ? 'T':'F');
   //bool enScreenEmu = doc["screenEmu"] | false;
   bool tapeEn = doc["tape"]["enable"] | false;
+  boot_log_ptr += sprintf(boot_log_ptr, "Tape:%c\n", tapeEn ? 'T':'F');
 
   // Copy values from the JsonDocument to the Config
 
@@ -425,6 +465,7 @@ bool loadConfiguration(const char *filename)
 
   LOGPRINTF("\nLoading ROMs from directory %s\n", optionRoms_directory);
   LOGPRINTF("Name         ID: Oct Dec Hex  Compl  Sum  Description\n");
+  boot_log_ptr += sprintf(boot_log_ptr, "ROM Dir %s\n", optionRoms_directory);
 
   for (JsonVariant theRom : doc["optionRoms"]["roms"].as<JsonArray>())
   {
@@ -434,10 +475,11 @@ bool loadConfiguration(const char *filename)
 
     strcpy(fname, optionRoms_directory);     //  Base directory for ROMs
     strlcat(fname, filename, sizeof(fname)); //  Add the filename
+    boot_log_ptr += sprintf(boot_log_ptr, "%-12s en:%c", filename, enable ? 'T':'F');
 
     if (enable == true)
     {
-      LOGPRINTF("%-16s ", filename);
+      LOGPRINTF(" %-16s ", filename);
       if (loadRom(fname, romIndex, description) == true)
       {
         romIndex++;
@@ -445,6 +487,11 @@ bool loadConfiguration(const char *filename)
       TXD_Pulser(1); //  Loading ROMs takes between 6.5 and 8.5 ms each (more or less)
       //  EBTKS_delay_ns(10000);    //  10 us
     }
+    else
+    {
+      boot_log_ptr += sprintf(boot_log_ptr, "\n");
+    }
+    
   }
   LOGPRINTF("\n");
   //
@@ -464,6 +511,8 @@ bool loadConfiguration(const char *filename)
     int select = hpibDevice["select"] | 7;      //  1MB5 select code (3..10). 3 is the default
     int device = hpibDevice["device"] | 0;      //  HPIB device number 0..31 (can contain up to 4 drives)
     bool enable = hpibDevice["enable"] | false; //are we enabled?
+
+    //  boot_log_ptr += sprintf(boot_log_ptr, "HPIB Sel %d Dev %d En %d\n", select, device, enable);
 
     if (hpibDevice["drives"]) //if the device is a disk drive
     {
@@ -494,6 +543,7 @@ bool loadConfiguration(const char *filename)
             devices[device]->addDisk((int)type);
             devices[device]->setFile(unitNum, fname, wprot);
             LOGPRINTF("Add Drive type: %d to Device: %d as Unit: %d with image file: %s\r\n", type, device, unitNum, fname);
+            boot_log_ptr += sprintf(boot_log_ptr, "%d%d%d %s\n", select, device, unitNum, fname);
           }
         }
       }
@@ -592,3 +642,35 @@ void printDirectory(File dir, int numTabs)
     }
   }
 }
+
+void Dump_Boot_Log(void)
+{
+  int row, column;
+  int seg_length;
+  char segment[100];
+  
+  boot_log_ptr = Directory_Listing_Buffer_for_SDDEL;
+  if (strlen(boot_log_ptr) == 0)
+  {
+    return;
+  }
+  Serial.printf("\n\nDump of Boot Log\n");
+  row = 0;
+  column=0;
+  while (*boot_log_ptr)
+  {
+
+    seg_length = strcspn(boot_log_ptr,"\n");        //  Number of chars not in second string, so does not count the '\n'
+    strlcpy(segment, boot_log_ptr, seg_length+1);   //  Copies the segment, and appends a 0x00
+    boot_log_ptr += seg_length+1;                   //  Skip over the segment and the trailing '\n'
+    Serial.printf("[%s]\n", segment);
+    Write_on_CRT_Alpha(row++, column, segment);
+    delay(50);                                      //  A little delay so they see it happening
+  }
+  while (DMA_Peek8(CRTSTS) & 0x80) {}; //wait until video controller is ready
+  DMA_Poke16(CRTBAD, 0);
+  while (DMA_Peek8(CRTSTS) & 0x80) {}; //wait until video controller is ready
+  DMA_Poke16(CRTSAD, 0);
+}
+
+

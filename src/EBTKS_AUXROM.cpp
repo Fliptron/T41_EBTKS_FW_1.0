@@ -62,22 +62,13 @@
 //                    WMAIL           AUXCMD 1, 0, usage, string         - write string and usage to buf#, don't wait. Does generate HEYEBTKS, so I think it can emulate a command that is passed 1 string
 //                    GENAUXER        AUXCMD(6, DC, error#, "error msg") - CALL AUXERR WITH error# AND error msg
 //
+//AUXOPT$( buf#, usage#, buf$ , opts$)
+//AUXBUF$( buf#, usage#, buf$ , opts$)
+//
 //AUXERRN      FUNC - AUXERRN {return last custom error error#}
 //SDATTR       FUNC - a = SDATTR(filePath$) {return bits indicating file attributes, -1 if error}
 //SDSIZE       FUNC - s = SDSIZE(filePath$) {return size of file, or -1 if error}
-//AUXINP$      FUNC - AUXINP$(cmd#, buf#, usage#, buf$) {invokes AUXROM command cmd#, passes other three args to that command, command must return a string value}
 //
-//                    ROM Label
-//                    WMAILSTR        AUXINP$(2, 0, usage, string)        - write string and usage to buf#, waits, generate HEYEBTKS, so I think it can emulate a function call that is passed 1 string
-//                    AUXREV          AUXINP$(4,0,0,"")                   - returns revision for each AUXROM
-//                                                                          Test: DISP AUXINP$(4,0,0,"")      Result: "1:3 2:3"
-//
-//AUXINP       FUNC - AUXINP(cmd#, buf#, usage#, buf$) {invokes AUXROM command cmd#, passes other three args to that command, command must return a numeric value}
-//
-//                    ROM Label
-//                    WMAILNUM        AUXINP(3, 0, usage, string)         - same as WMAIL but waits for returned BUFFER (8-byte number) and BUFLEN==8  and returns that on stack
-//                    CMDCSUM         AUXINP(5,0,0,"")                    - return results of AUXROM checksums
-//                                                                          Test: DISP AUXINP (5,0,0,"")      Result: 0    (if ok)
 //
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 

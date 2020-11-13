@@ -743,6 +743,8 @@ void setup()
   
   leds.update();
 
+  Dump_Boot_Log();
+
 
 }
 

@@ -171,19 +171,19 @@ void Write_on_CRT_Alpha(uint16_t row, uint16_t column, const char *  text)
   //  the 3rd character position, row would be 15, and column would be 2
   //
 
-  local_badAddr = (sadAddr + (column & 0x1F) * 2 + (row & 0x0F) * 64 ) & 0x0FFF;
+  local_badAddr = (sadAddr + (column & 0x1F) * 2 + (row & 0x3F) * 64 ) & 0x0FFF;
   //  Serial.printf("\nWoCA: local_badAddr %04X   ", local_badAddr);
 
   DMA_Poke16(CRTBAD, local_badAddr);
 
   //
-  //  This code occasionally fails by putting the last character of a line on the first
+  //  This code occasionally fails by putting the last character of a line on the first               #######
   //  character of the next line. Which is impossible and makes no sense. Or maybe somehow
   //  CRTSAD is getting corrupted. I could not isolate the problem. Any way among the working
   //  guesses, is that the multiple going in and out of DMA while polling the Busy bit,
   //  and then storing the single character into video memory was stressing something.
-  //  So the logically correct code is the next 8 lines of wode that fail randomly.
-  //  The alternate code that follows is functionally identical. but since we are not
+  //  So the logically correct code is the next 8 lines of code that fail randomly.
+  //  The alternate code that follows is functionally identical. But since we are not
   //  going in and out of DMA (In just once at the start, Out just once at the end),
   //  the responsiveness is much faster from detecting that the CRT controller is not busy
   //  to when we write to the CRTDAT register
@@ -196,6 +196,8 @@ void Write_on_CRT_Alpha(uint16_t row, uint16_t column, const char *  text)
   //   text++;
   // }
   // DMA_Poke16(CRTBAD, badAddr_restore);         //  Restore the CRTBAD register in the CRT controller
+  
+  //  A month or two later: Maybe we need to check the busy flag before writing CRTBAD and CRTSAD              ####### documented elsewhere that SYSROMS check BUSY
 
   //  See above comments for how this code is a re-implementation of the above 8 lines of code
   //  Alternate approach with 1 long DMA block rather than going in and out of DMA for each character
