@@ -97,9 +97,11 @@
 //        440..449      AUXROM_SDREAD
 //                                          440       SDREAD File not open
 //        450..459      AUXROM_SDREN
-//                                          450       Can't resolve parameter 1
-//                                          451       Can't resolve parameter 2
+//                                          450       Can't resolve Old path
+//                                          451       Can't resolve New path
 //                                          452       SDREN rename failed
+//                                          453       SDREN Mystery bug
+//                                          454       SDREN Old file doesn't exist
 //        460..469      AUXROM_SDRMDIR
 //        470..479      AUXROM_SDSEEK
 //                                          470       Seek on file that isn't open
@@ -126,7 +128,7 @@
 #include "Inc_Common_Headers.h"
 #include "HpibDisk.h"
 
-#define   VERBOSE_KEYWORDS          (1)
+#define   VERBOSE_KEYWORDS          (0)
 
 #define MAX_SD_PATH_LENGTH          (256)
 
@@ -135,11 +137,11 @@ extern HpibDisk *devices[];
 EXTMEM static char          Current_Path[MAX_SD_PATH_LENGTH  + 2];    //  I don't think initialization of EXTMEM is supported yet
 EXTMEM static char          Resolved_Path[MAX_SD_PATH_LENGTH + 2];
 static bool                 Resolved_Path_ends_with_slash;
-EXTMEM static char SDCAT_path_part_of_Resolved_Path[MAX_SD_PATH_LENGTH + 2];
-EXTMEM static char SDCAT_pattern_part_of_Resolved_Path[MAX_SD_PATH_LENGTH + 2];
-EXTMEM static char SDDEL_path_part_of_Resolved_Path[MAX_SD_PATH_LENGTH + 2];
-EXTMEM static char SDDEL_pattern_part_of_Resolved_Path[MAX_SD_PATH_LENGTH + 2];
-EXTMEM static char          Resolved_Path_for_SDREN_param_1[MAX_SD_PATH_LENGTH + 2];
+EXTMEM static char          SDCAT_path_part_of_Resolved_Path[MAX_SD_PATH_LENGTH + 2];
+EXTMEM static char          SDCAT_pattern_part_of_Resolved_Path[MAX_SD_PATH_LENGTH + 2];
+EXTMEM static char          SDDEL_path_part_of_Resolved_Path[MAX_SD_PATH_LENGTH + 2];
+EXTMEM static char          SDDEL_pattern_part_of_Resolved_Path[MAX_SD_PATH_LENGTH + 2];
+EXTMEM static char          Resolved_Old_Path[MAX_SD_PATH_LENGTH + 2];
 
 
 bool parse_MSU(char *msu);
@@ -187,6 +189,9 @@ void initialize_SD_functions(void)
 
 void AUXROM_CLOCK(void)
 {
+#if VERBOSE_KEYWORDS
+    Serial.printf("Call to CLOCK\n");
+#endif
 
 }
 
@@ -195,12 +200,18 @@ void AUXROM_CLOCK(void)
 //  We save the 4 bytes in file in the root directory of the SD Card named AUXROM_FLAGS.TXT
 //  We restore from the file on Boot.
 //
+//  As of 11/20/2020 , the buffer used is 0. Uses SENDCMD -> SENDWAIT with R20 == 
+//
 
 void AUXROM_FLAGS(void)
 {
   File      temp_file;
   char      flags_to_write[12];
   uint8_t   chars_written;
+
+#if VERBOSE_KEYWORDS
+    Serial.printf("Call to FLAGS\n");
+#endif
 
   if (!(temp_file = SD.open("/AUXROM_FLAGS.TXT", O_RDWR | O_TRUNC | O_CREAT)))
   {
@@ -253,6 +264,11 @@ char HelpScreen[]="\
 
 void AUXROM_HELP(void)
 {
+
+#if VERBOSE_KEYWORDS
+    Serial.printf("Call to HELP\n");
+#endif
+
   if(AUXROM_RAM_Window.as_struct.AR_Opts[0])
   {
     CRT_capture_screen();
@@ -352,6 +368,11 @@ void AUXROM_SDCAT(void)
   bool        match;
   char        temp_file_path[258];
 
+#if VERBOSE_KEYWORDS
+    Serial.printf("Call to SDCAT\n");
+#endif
+
+
   SD.cacheClear();
 
   //
@@ -406,7 +427,9 @@ void AUXROM_SDCAT(void)
       strcpy(SDCAT_pattern_part_of_Resolved_Path, "*");
     }
     str_tolower(SDCAT_pattern_part_of_Resolved_Path);                         //  Make it lower case, for case insensitive matching
+#if VERBOSE_KEYWORDS
     Serial.printf("SDCAT call 0   Path Part is [%s]   Pattern part is [*]\n", SDCAT_path_part_of_Resolved_Path, SDCAT_pattern_part_of_Resolved_Path);
+#endif
     //  At this ponint the path part is either a single '/' or a path with '/' at each end
     if (strchr(SDCAT_path_part_of_Resolved_Path, '*') || strchr(SDCAT_path_part_of_Resolved_Path, '?'))
     {   //  No wildcards allowed in path part
@@ -551,8 +574,7 @@ void AUXROM_SDCD(void)
   char        error_message[33];
 
 #if VERBOSE_KEYWORDS
-  Serial.printf("Current Path before SDCD [%s]\n", Current_Path);
-  Serial.printf("Update Path via AUXROM   [%s]\n", p_buffer);
+  Serial.printf("Call to SDCD  Current Path before SDCD [%s] New Path will be [%s]\n", Current_Path, p_buffer);
   //show_mailboxes_and_usage();
 #endif
 
@@ -591,7 +613,7 @@ void AUXROM_SDCD(void)
       *p_usage = 0;                         //  Indicate Success
 
 #if VERBOSE_KEYWORDS
-      Serial.printf("Success. Current Path is now [%s]\n", Current_Path);
+      Serial.printf("SDCD: OK. Current Path is now [%s]\n", Current_Path);
       //show_mailboxes_and_usage();
       //Serial.printf("\nSetting Mailbox 6 to 0 and then returning\n");
 #endif
@@ -625,6 +647,10 @@ void AUXROM_SDCLOSE(void)
   int         i;
   bool        return_status;
   char        filename[258];
+
+#if VERBOSE_KEYWORDS
+  Serial.printf("Call to SDCLOSE\n");
+#endif
 
   file_index = AUXROM_RAM_Window.as_struct.AR_Opts[0];               //  File number 1..10 , or 0 for all
   if (file_index == 0)
@@ -663,6 +689,11 @@ void AUXROM_SDCLOSE(void)
 
 void AUXROM_SDCUR(void)
 {
+
+#if VERBOSE_KEYWORDS
+  Serial.printf("Call to SDCUR\n");
+#endif
+
   uint16_t    copy_length;
   if (AUXROM_RAM_Window.as_struct.AR_Opts[0] == 0)
   {
@@ -674,6 +705,7 @@ void AUXROM_SDCUR(void)
     strlcpy(p_buffer, "/", 2);
     *p_len = 1;
   }
+  //  delay(1000);
   *p_usage = 0;                        //  Indicate Success
   //  show_mailboxes_and_usage();
   *p_mailbox = 0;                      //  Release mailbox.    Must always be the last thing we do
@@ -692,6 +724,10 @@ void AUXROM_SDDEL(void)
   char        *c_ptr;
   uint32_t    temp_uint;
   bool        match;
+
+#if VERBOSE_KEYWORDS
+  Serial.printf("Call to SDDEL\n");
+#endif
 
   //  Serial.printf("SDDEL 1:  %s\n", p_buffer);
   if (!Resolve_Path(p_buffer))
@@ -832,6 +868,10 @@ void AUXROM_SDFLUSH(void)
   int         file_index;
   int         i;
 
+#if VERBOSE_KEYWORDS
+  Serial.printf("Call to SDFLUSH\n");
+#endif
+
   file_index = AUXROM_RAM_Window.as_struct.AR_Opts[0];               //  File number 1..10 , or 0 for all
   if (file_index == 0)
   {
@@ -852,7 +892,7 @@ void AUXROM_SDFLUSH(void)
     Auxrom_Files[file_index].flush();
     Serial.printf("Flushing file %2d\n", file_index);
   }
-  *p_usage    = 0;      //  File flush successfully
+  *p_usage   = 0;       //  File flush successfully
   *p_mailbox = 0;       //  Indicate we are done
   return;
 }
@@ -865,6 +905,10 @@ void AUXROM_SDFLUSH(void)
 void AUXROM_SDMEDIA(void)
 {
   char        *filename;
+
+#if VERBOSE_KEYWORDS
+  Serial.printf("Call to MEDIA$\n");
+#endif
 
   if (!parse_MSU(p_buffer))
   {
@@ -951,6 +995,11 @@ void AUXROM_SDMEDIA(void)
 void AUXROM_SDMKDIR(void)
 {
   bool  mkdir_status;
+
+#if VERBOSE_KEYWORDS
+  Serial.printf("Call to SDMKDIR\n");
+#endif
+
   Serial.printf("New directory name   [%s]\n", p_buffer);
   //  show_mailboxes_and_usage();
   mkdir_status = SD.mkdir(p_buffer, true);    //  second parameter is to create parent directories if needed
@@ -1225,6 +1274,9 @@ bool create_tape_image(char * path)
 //
 //  MOUNT   msus$, filePath$ [, modeFlag]
 //
+//        filePath$ starts at p_buffer , msus$ starts at p_buffer+256 , both 0x00 terminated
+//        modeFlag  is in AUXROM_RAM_Window.as_struct.AR_Opts[0]
+//
 //  Suggested Test Sequence.  Use ":D320" for mounting images
 //
 //    DIM O$[100]
@@ -1293,6 +1345,10 @@ void AUXROM_MOUNT(void)
 //                    MSUS     starts at AUXROM_RAM_Window.as_struct.AR_Buffer_0[256] and is zero terminated
 //                    mode     is in AR_Opts[0]
 //
+
+#if VERBOSE_KEYWORDS
+  Serial.printf("Call to MOUNT\n");
+#endif
 
   *p_usage = 0;     //  Assume success
 
@@ -1371,7 +1427,7 @@ mount_a_disk:
         }
       }
       //  Common success exit
-      Serial.printf("MOUNT success\n");
+      Serial.printf("MOUNT success %s  %s\n", p_buffer+256, p_buffer);
       goto Mount_exit;      //  Success exit
       break;
 
@@ -1462,7 +1518,7 @@ void AUXROM_SDOPEN(void)
   file_index = AUXROM_RAM_Window.as_struct.AR_Opts[0];               //  File number 1..11
 
 #if VERBOSE_KEYWORDS
-  Serial.printf("SDOPEN Name: [%s]  Mode %d  File # %d\n", p_buffer,
+  Serial.printf("Call to SDOPEN Name: [%s]  Mode %d  File # %d\n", p_buffer,
                                                             AUXROM_RAM_Window.as_struct.AR_Opts[1],
                                                             file_index);
 #endif
@@ -1551,6 +1607,10 @@ void AUXROM_SDREAD(void)
   int         bytes_to_read;
   int         bytes_actually_read;
 
+#if VERBOSE_KEYWORDS
+  Serial.printf("Call to SDREAD\n");
+#endif
+
   file_index = AUXROM_RAM_Window.as_struct.AR_Opts[0];               //  File number 1..11
   bytes_to_read = *p_len;                                                 //  Length of read
   if (!Auxrom_Files[file_index].isOpen())
@@ -1574,42 +1634,118 @@ void AUXROM_SDREAD(void)
 //
 //  Rename old [path1/]filename1  to  new [path2/]filename2
 //
-//  Old [path1/]filename1 is in buffer 0, and length is in Blength 0
-//  New [path2/]filename2 is in buffer 6, and length is in Blength 6
-//  Mailbox 6 needs to be released
-//  Mailbox 0 is used for the handshake
+//  Old [path1/]filename1 starts at p_buffer and is 0x00 terminated
+//  New [path2/]filename2 starts at p_buffer+256 and is 0x00 terminated
 //
 //  Can rename a directory, including moving it to a different place in the directory hierarchy
+//
+//
+//  Suggested Test Sequence.
+//
+//  sdcd "/testfiles/deltest/roms2/"
+//  sdcur$ check we got there
+//  sdcat
+//  sdren "rom360", "rom360_renamed"
+//  sdcat
+//  sdren "rom360_renamed", "rom360"
+//  sdcat
+//
+
+//  ##############  Unresolved Bug  ##############
+//
+//  Occasionally while running the SDREN test program, it would fail
+//  with the following (or equiv)
+//
+//    Error 113 on line 220 : SD ERROR
+//
+//  but examining directories shows that the SDREN completed OK
+//  and AUXROM_SDREN() does not have any generic Error exits, they
+//  are all Custom Error messages.
+//  Suspicion fell on SDEXISTS(...) which precedes it. But it is all
+//  in AUXROM, and uses SDCAT. SDCAT has been used extensively and
+//  has not shown any sign of error.
+//  The error has occured on SDREN keywords on other lines in the
+//  program, as well as line 220
+//
+//  I have also seen the test program reporting an error where a
+//  call to SDEXISTS() indicates a file is "not present"/"present",
+//  yet it is either "not present"/"present". I.e. the expected result
+//  of a SDREN has occured, but the confirmation test with SDEXISTS
+//  indicates failure. Looking at the directory with SDCAT after
+//  the failure message shows the SDREN was successful.
+//
+//  Maybe we need a flush operation to make sure the directory is
+//  updated before we proceed. Maybe that should be built into SDREN???
+//  There is no SD.flush(), but there is SD.cacheClear()
+//  that has been added. Now the test program has cycled 2000 times
+//  without an error. Time to stop before wearing out the SD Card.
+//  Not conclusive, but pretty good for now.
+//  Removing this fix brout back the errors in typically less than
+//  20 cycles
+//
+//  11/15/2020  Can't reproduce errors that were occuring yesterday.
+//              If it happens again, suggest LA Setup for 076662 + Read
+//              Instruction is "stmd r43,=TEMP22"
 //
 
 void AUXROM_SDREN(void)
 {
-  if(!Resolve_Path(AUXROM_RAM_Window.as_struct.AR_Buffer_0))
+  bool        rename_status;
+
+#if VERBOSE_KEYWORDS
+  Serial.printf("Call to SDREN\n");
+#endif
+
+  if(!Resolve_Path(p_buffer))
   {
-    AUXROM_RAM_Window.as_struct.AR_Mailboxes[6] = 0;                  //  This Keyword uses two buffers/mailboxes (0 and 6), mailbox 0 is the main one
-    post_custom_error_message("Can't resolve parameter 1", 450);
+    Serial.printf("SDREN error return 450\n");
+    post_custom_error_message("Can't resolve Old path", 450);
     *p_mailbox = 0;      //  Indicate we are done
-    Serial.printf("SDREN rename failed  old [%s]   new [%s]\n", AUXROM_RAM_Window.as_struct.AR_Buffer_0, AUXROM_RAM_Window.as_struct.AR_Buffer_6);
+    Serial.printf("SDREN can't resolve Old path  [%s]\n", p_buffer);
     return;
   }
-  strlcpy(Resolved_Path_for_SDREN_param_1, Resolved_Path, MAX_SD_PATH_LENGTH+1);
-  if(!Resolve_Path(AUXROM_RAM_Window.as_struct.AR_Buffer_6))
+  if (!SD.exists(Resolved_Path))
   {
-    AUXROM_RAM_Window.as_struct.AR_Mailboxes[6] = 0;                  //  This Keyword uses two buffers/mailboxes (0 and 6), mailbox 0 is the main one
-    post_custom_error_message("Can't resolve parameter 2", 451);
+    Serial.printf("SDREN Old file doesn't exist 454\n");
+    post_custom_error_message("SDREN Old file doesn't exist", 454);
     *p_mailbox = 0;      //  Indicate we are done
-    Serial.printf("SDREN rename failed  old [%s]   new [%s]\n", AUXROM_RAM_Window.as_struct.AR_Buffer_0, AUXROM_RAM_Window.as_struct.AR_Buffer_6);
+    Serial.printf("SDREN Old File path  [%s]\n", p_buffer);
     return;
   }
 
-  if(!SD.rename(Resolved_Path_for_SDREN_param_1, Resolved_Path))
+  strlcpy(Resolved_Old_Path, Resolved_Path, MAX_SD_PATH_LENGTH+1);      //  Save path to old file, as we need Resolve_Path() to process new path
+  if(!Resolve_Path(p_buffer+256))
   {
-    AUXROM_RAM_Window.as_struct.AR_Mailboxes[6] = 0;                  //  This Keyword uses two buffers/mailboxes (0 and 6), mailbox 0 is the main one
-    post_custom_error_message("SDREN rename failed", 452);
+    Serial.printf("SDREN error return 451\n");
+    post_custom_error_message("Can't resolve New path", 451);
     *p_mailbox = 0;      //  Indicate we are done
-    Serial.printf("SDREN rename failed  Resolved paths are old [%s]   new [%s]\n", Resolved_Path_for_SDREN_param_1, Resolved_Path);
+    Serial.printf("SDREN can't resolve New path  [%s]\n", p_buffer+256);
     return;
   }
+
+  rename_status = SD.rename(Resolved_Old_Path, Resolved_Path);
+
+  if(!rename_status)
+  {
+    Serial.printf("SDREN error return 452\n");
+    post_custom_error_message("SDREN rename failed", 452);
+    *p_mailbox = 0;      //  Indicate we are done
+    Serial.printf("SDREN rename failed  Resolved paths are old [%s]   new [%s]\n", Resolved_Old_Path, Resolved_Path);
+    return;
+  }
+  //
+  //  Success exit
+  //
+  //SD.cacheClear();                      // Docs say:  Not for normal apps.
+  if (!SD.exists(Resolved_Path))
+  {
+    Serial.printf("SDREN success verification failure\n");
+    Serial.printf("SDREN Mystery bug 453\n");
+    post_custom_error_message("SDREN Mystery bug", 453);
+    *p_mailbox = 0;      //  Indicate we are done
+    return;
+  }
+
   *p_usage = 0;                         //  Indicate Success
   *p_mailbox = 0;                       //  Must always be the last thing we do
   return;
@@ -1628,6 +1764,10 @@ void AUXROM_SDRMDIR(void)
   File  dirfile;
   File  file;
   int   file_count;
+
+#if VERBOSE_KEYWORDS
+  Serial.printf("Call to SDRMDIR\n");
+#endif
 
   if (!Resolve_Path(p_buffer))
   {
@@ -1707,6 +1847,10 @@ void AUXROM_SDSEEK(void)
   int         current_position;
   int         end_position;
   int         target_position;
+
+#if VERBOSE_KEYWORDS
+  Serial.printf("Call to SDSEEK\n");
+#endif
 
   file_index = AUXROM_RAM_Window.as_struct.AR_Opts[0];                    //  File number 1..11
   seek_mode  = AUXROM_RAM_Window.as_struct.AR_Opts[1];               //  0=absolute position, 1=advance from current position, 2=go to end of file
@@ -1791,6 +1935,10 @@ void AUXROM_SDWRITE(void)
   int         bytes_to_write;
   int         bytes_actually_written;
 
+#if VERBOSE_KEYWORDS
+  Serial.printf("Call to SDWRITE\n");
+#endif
+
   file_index = AUXROM_RAM_Window.as_struct.AR_Opts[0];               //  File number 1..11
   bytes_to_write = *p_len;             //  Length of write
   if (!Auxrom_Files[file_index].isWritable())
@@ -1817,6 +1965,10 @@ void AUXROM_SDWRITE(void)
 
 void AUXROM_UNMOUNT(void)
 {
+
+#if VERBOSE_KEYWORDS
+  Serial.printf("Call to UNMOUNT\n");
+#endif
 
   *p_usage = 0;     //  Assume success
 
@@ -1867,6 +2019,10 @@ void AUXROM_WROM(void)
   uint8_t   * data_ptr        = (uint8_t *)&AUXROM_RAM_Window.as_struct.AR_Buffer_0[0];
   uint8_t   * dest_ptr;
 
+#if VERBOSE_KEYWORDS
+  Serial.printf("Call to WROM\n");
+#endif
+
 //  Serial.printf("/nTarget ROM ID(oct):     %03O\n", target_rom);
 //  Serial.printf("Target Address(oct): %06O\n", target_address);
 //  Serial.printf("Bytes to write(dec):     %d\n", transfer_length);
@@ -1894,7 +2050,11 @@ void AUXROM_WROM(void)
 
 void AUXROM_MEMCPY(void)
 {
-  
+#if VERBOSE_KEYWORDS
+  Serial.printf("Call to MEMCPY\n");
+#endif
+
+
 }
 
 //
@@ -1910,6 +2070,11 @@ void AUXROM_MEMCPY(void)
 
 void AUXROM_SETLED(void)
 {
+
+#if VERBOSE_KEYWORDS
+  Serial.printf("Call to SETLED\n");
+#endif
+
   if ((AUXROM_RAM_Window.as_struct.AR_Opts[0] == 1) || (AUXROM_RAM_Window.as_struct.AR_Opts[0] == 3))
   {
     leds.setLedColor(0,{AUXROM_RAM_Window.as_struct.AR_Opts[1],
@@ -1927,7 +2092,11 @@ void AUXROM_SETLED(void)
 
 void AUXROM_SDCOPY(void)
 {
-  
+#if VERBOSE_KEYWORDS
+  Serial.printf("Call to SDCOPY\n");
+#endif
+
+
 }
 
 
@@ -1951,19 +2120,46 @@ bool Resolve_Path(char *New_Path)
   char *    src_ptr;                                          //  Points to next character in New_Path to be processed
   bool      back_up_1_level;
 
-  if (New_Path[0] == '/')
+//
+//  Remove leading and trailing spaces from New_Path
+//
+  src_ptr = New_Path;
+  //Serial.printf("Trimming Leading space [%s]\n", src_ptr);
+  while (*src_ptr == ' ')   //  skip over leading spaces
+  {
+    src_ptr++;
+    //Serial.printf("Trimming Leading space [%s]\n", src_ptr);
+  }
+  if (*src_ptr)             //  Skip over trailing spaces trim if New_Path in now an empty string
+  { //  not an empty string
+    //  use dest_ptr temporarily for trimming trailing spaces
+    dest_ptr = src_ptr + strlen(src_ptr) - 1;                 //  point at last character of New_Path
+    while (src_ptr != dest_ptr)
+    {
+      //Serial.printf("Trimming Trailing space [%s]\n", src_ptr);
+      if (*dest_ptr == ' ')
+      {
+        *dest_ptr = 0x00;                                     //  trim a trailing space
+        dest_ptr--;
+        continue;
+      }
+      break;
+    }
+  }
+
+
+  if (*src_ptr == '/')
 	{
-	  Resolved_Path[0] = '/';                                   //  Handle an absolute path
+	  Resolved_Path[0] = '/';                                 //  Handle an absolute path
 	  Resolved_Path[1] = 0x00;
 	  dest_ptr = Resolved_Path + 1;
-	  src_ptr = New_Path + 1;
+	  src_ptr++;
 	}
 	else
 	{
 	  strlcpy(Resolved_Path, Current_Path, MAX_SD_PATH_LENGTH); //  Handle relative path, so start by copying the Current_Path to the work area. Assume it does not contain any ../ or ./
 	                                                            //  Also, since Current_Path is a directory path, it has both leading and trailing '/' (if root, just one '/')
 	  dest_ptr = Resolved_Path + strlen(Resolved_Path);
-	  src_ptr = New_Path;
 	  if (Resolved_Path[0] != '/')
 	  {
 	    return false;                                           //  make sure that the first character of the path we are building is a '/'
@@ -2175,7 +2371,7 @@ bool LineAtATime_ls_Next_SDDEL()
 //
 //  Custom Error and Warning Messages
 //
-//  All addresses are AUXROM 1
+//  All addresses are AUXROM 1, regardless of which ROM is currently selected by RSELEC
 //
 //    The custom messages area starts at 060024  EBTKSMSG and extends for
 //    34D bytes the last of which must always have the MSB set. Exactly two
@@ -2209,17 +2405,33 @@ void post_custom_error_message(const char * message, uint16_t error_number)
 {
   char   * dest_ptr;
 
+  //
+  //  Make sure AUXROMs are loaded
+  //
   if ((dest_ptr = (char *)getROMEntry(0361)) == NULL)                       //  romMap is a table of 256 pointers to locations in EBTKS's address space.
   {                                                                         //  i.e. 32 bit pointers. Either NULL, or an address. The index is the ROM ID
     Serial.printf("ROM 0361 not loaded\n");
     // return error
   }
-
-  dest_ptr[024] = 0x80;                                                     //  Zero length for warning 8
+  //
+  //  Make Warning 8 zero length
+  //
+  dest_ptr[024] = 0x80;                                                     //  Setting the MSB of location 024 means that warning 8 is zero length
+  //
+  //  Now copy Custom Error Message 9 into locations 025 through 064 (32 characters), and 0x00 pad if string is shorter than 32 characters
+  //
   strncpy(&dest_ptr[025], message, 32);                                     //  If message is less than 32 characters, strncpy pads the destination with 0x00
-
+  //
+  //  Now mark the end of message in HP85 format which is the MSB set in the last character
+  //
   dest_ptr[025 + strlen(message) - 1] |= 0x80;                              //  Mark the end of the custom error message in HP85 style by setting the MSB
+  //
+  //  Let the AUXROMs know the error message is in slot 9
+  //
   *p_usage = 209;     //  Custom Error
+  //
+  //  And finally, set up AUXERRN for BASIC land
+  //
   AUXROM_RAM_Window.as_struct.AR_ERR_NUM = error_number;                    //  AUXERRN
 }
 

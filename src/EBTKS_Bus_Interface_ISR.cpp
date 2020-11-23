@@ -171,7 +171,7 @@ FASTRUN void pinChange_isr(void)      //  This function is an ISR, keep it short
 //      EBTKS
 //
 //  Depending on the source, the data became valid as early as the end of Phi 2 and as late at the end of Phi 21
-//  Actual measurements show data valid prior to the rising edge of Phi 1 as early as 
+//  Actual measurements show data valid prior to the rising edge of Phi 1 as early as ???
 //
 //  Regardless of whether EBTKS or any other device/ROM/RAM/CPU is either reading
 //  or writing to the data bus, by the time we get the Phi 1 rising edge, the data
@@ -242,13 +242,21 @@ inline void onPhi_1_Rise(void)                  //  This function is running wit
     {
       if (Logic_Analyzer_Valid_Samples >= Logic_Analyzer_Pre_Trigger_Samples)
       { //  Triggering is allowed
+
+  // if (((Logic_Analyzer_main_sample >> 8) & 0x0000FFFF) == 0177740)
+  // {
+  //   TOGGLE_TXD;
+  // }
+
+
         if (   ((Logic_Analyzer_main_sample & Logic_Analyzer_Trigger_Mask_1) == Logic_Analyzer_Trigger_Value_1) &&
               ((Logic_Analyzer_aux_sample  & Logic_Analyzer_Trigger_Mask_2) == Logic_Analyzer_Trigger_Value_2)    )
         {   //  Trigger pattern has been matched
-          if (--Logic_Analyzer_Event_Count <= 0)                             //  Event Count is how many match events needed to trigger
+          if (--Logic_Analyzer_Event_Count <= 0)                            //  Event Count is how many match events needed to trigger
           {
             Logic_Analyzer_Triggered = true;
-            Logic_Analyzer_Index_of_Trigger = Logic_Analyzer_Data_index;   //  Record the buffer index at time of trigger
+            Logic_Analyzer_Index_of_Trigger = Logic_Analyzer_Data_index;    //  Record the buffer index at time of trigger
+            SET_TXD;                                                        //  Trigger external logic analyzer
           }
         }
       }
@@ -263,6 +271,7 @@ inline void onPhi_1_Rise(void)                  //  This function is running wit
       if (--Logic_Analyzer_Samples_Till_Done == 0)
       {
         Logic_Analyzer_State = ANALYZER_ACQUISITION_DONE;
+        CLEAR_TXD;
       }
     }
   }
@@ -297,6 +306,10 @@ inline void onPhi_1_Rise(void)                  //  This function is running wit
 //  Re-arange the columns of the Fig 13 in the patent to get these values without any bit shuffling
 //    /WR   /RD   /LMA      Note all signals are active low in hardware.
 //
+//
+//  11/19/2020    There was for a long time, a belief that timing around Phi 2 was not as critical ans Phi 1.
+//                Over a week of bug tracking indicates that this may not be true.
+//
 
 inline void onPhi_2_Rise(void)                             //  This function is running within an ISR, keep it short and fast.
 {
@@ -306,8 +319,6 @@ inline void onPhi_2_Rise(void)                             //  This function is 
   uint32_t   dataBus;
   uint32_t   bus_cycle_info;                              //  Bits 26 down to 24 will be /WR , /RD , /24 in that order
 
-  TOGGLE_RXD;                                             //  Glitch the ISR entry oscilloscope signal to identify the Phi 2 duration separately from Phi 1
-  TOGGLE_RXD;
 //
 //  This is Russell's code with some minor edits.
 //
@@ -328,14 +339,6 @@ inline void onPhi_2_Rise(void)                             //  This function is 
   delayed_lma = lma;                                                      //  Delayed lma
   DMA_Acknowledge = wr && rd && !lma;                                     //  Decode DMA acknowlege state
   Interrupt_Acknowledge = wr && rd && lma;                                //  Decode interrupt acknowlege state
-
-  Logic_Analyzer_current_bus_cycle_state_LA = bus_cycle_info  &           //  Yes, this is supposed to be a single &
-                                              (BIT_MASK_WR | BIT_MASK_RD | BIT_MASK_LMA);      //  Require bus cycle state to be in bits 24, 25, and 26 of GPIO register
-
-  Logic_Analyzer_current_bus_cycle_state_LA |=  ((GPIO_PAD_STATUS_REG_T04    & BIT_MASK_T04)    << (29 - BIT_POSITION_T04   )) |    //  T04 is monitoring bus /IRLX
-                                                ((GPIO_PAD_STATUS_REG_T05    & BIT_MASK_T05)    << (28 - BIT_POSITION_T05   )) |    //  T05 is monitoring bus /HALTX
-                                                ((GPIO_PAD_STATUS_REG_IFETCH & BIT_MASK_IFETCH) << (30 - BIT_POSITION_IFETCH)) ;
-
 
 //
 //  This is Philip's much nicer version of above that uses enums, and doesn't work on rare occasions.
@@ -464,6 +467,13 @@ inline void onPhi_2_Rise(void)                             //  This function is 
 
     ENABLE_BUS_BUFFER_U2; // !OE low.
   }
+
+  Logic_Analyzer_current_bus_cycle_state_LA = bus_cycle_info  &           //  Yes, this is supposed to be a single &
+                                              (BIT_MASK_WR | BIT_MASK_RD | BIT_MASK_LMA);      //  Require bus cycle state to be in bits 24, 25, and 26 of GPIO register
+
+  Logic_Analyzer_current_bus_cycle_state_LA |=  ((GPIO_PAD_STATUS_REG_T04    & BIT_MASK_T04)    << (29 - BIT_POSITION_T04   )) |    //  T04 is monitoring bus /IRLX
+                                                ((GPIO_PAD_STATUS_REG_T05    & BIT_MASK_T05)    << (28 - BIT_POSITION_T05   )) |    //  T05 is monitoring bus /HALTX
+                                                ((GPIO_PAD_STATUS_REG_IFETCH & BIT_MASK_IFETCH) << (30 - BIT_POSITION_IFETCH)) ;
 
   //
   //  ALL DMA requests are handled here

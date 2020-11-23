@@ -129,7 +129,16 @@ bool loadRom(const char *fname, int slotNum, const char *description)
     //
     //  Special check for the the non-primary AUXROMs.  Note that these are not recognized by the HP-85 at boot time scan (by design)
     //
-    if (header[1] != ((uint8_t)(~id) | (uint8_t)0360)) //  1's complement for 85 A/B.  No current support for 86/87
+    //  HP85A/B      use 1's complement for the ID check byte in header[1]
+    //  HP86 or HP87 use 2's complement for the ID check byte in header[1]
+    //  Use machineNum 2 or 3 (HP86 or HP87) to choose between 1's complement in the following test.
+    //  Note: For Secondary AUXROMs (which is what we are testing here), the upper nibble is always 0xF0
+    //
+    //  If HP86/87 (machineNum 2 or 3) adding 1 turns a 1's complement into a 2's complement
+    //
+    uint8_t comp = ((uint8_t)(~id)) + ((machineNum==2 || machineNum==3) ? 1 : 0);
+
+    if (header[1] != (comp | (uint8_t)0360)) //  Check the ID check byte
     {
       LOGPRINTF("Secondary AUXROM file header error %02X %02X\n", id, (uint8_t)header[1]);
       boot_log_ptr += sprintf(boot_log_ptr, "HeaderError\n");
@@ -643,34 +652,61 @@ void printDirectory(File dir, int numTabs)
   }
 }
 
-void Dump_Boot_Log(void)
+
+bool      boot_message_displayed = false;
+
+void Boot_Message_Poll(void)
 {
   int row, column;
   int seg_length;
   char segment[100];
-  
+
+  if(boot_message_displayed)        //  If Boot message has been displayed, we don't do it ever again (untill next boot)
+  {
+    return;
+  }
+
+  if (addReg != 000072)             //  Sneaky check to see if we are in the EXEC loop in the system ROM
+  {                                 //  Hold off displaying boot message untill we are in the EXEC loop
+    return;                         //  We may miss the first occurrence, but we should see it pretty quickly
+  }
+
+  //  Write_on_CRT_Alpha(8, 0, "Please wait, checking ROMs");     //  Haven't figured out how to display this once at the right time,
+  //                                                                  without interfeering with the HP85 boot up and ROM check process.
+
   boot_log_ptr = Directory_Listing_Buffer_for_SDDEL;
   if (strlen(boot_log_ptr) == 0)
   {
     return;
   }
   Serial.printf("\n\nDump of Boot Log\n");
-  row = 0;
+  row = 1;
   column=0;
+  //first_char[0] = (*boot_log_ptr) +128;                //  Add an undersdscore
+  //first_char[1] = 0;
+
   while (*boot_log_ptr)
   {
-
     seg_length = strcspn(boot_log_ptr,"\n");        //  Number of chars not in second string, so does not count the '\n'
     strlcpy(segment, boot_log_ptr, seg_length+1);   //  Copies the segment, and appends a 0x00
     boot_log_ptr += seg_length+1;                   //  Skip over the segment and the trailing '\n'
     Serial.printf("[%s]\n", segment);
+    Serial.flush();
     Write_on_CRT_Alpha(row++, column, segment);
-    delay(50);                                      //  A little delay so they see it happening
+    // delay(50);                                   //  A little delay so they see it happening
+    if(row > 63)
+    {
+      row = 63;                                     //  Just over-write the last line. Note we start on line 1, so max lines is 63. We leave line 0 alone.
+    }
   }
+  // Write_on_CRT_Alpha(0,0, first_char);
   while (DMA_Peek8(CRTSTS) & 0x80) {}; //wait until video controller is ready
   DMA_Poke16(CRTBAD, 0);
   while (DMA_Peek8(CRTSTS) & 0x80) {}; //wait until video controller is ready
   DMA_Poke16(CRTSAD, 0);
+
+  boot_message_displayed = true;
+
 }
 
 

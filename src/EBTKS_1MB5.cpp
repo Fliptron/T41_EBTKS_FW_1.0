@@ -680,6 +680,12 @@ void HPIBOutput(uint8_t val, uint8_t ccr)
 
     if (ccr & CCR_CED) //if message is complete
     {
+        //add end of line bytes ( if configured)
+        for (int i = 0; i < (CR[16] & 7) ; i++)
+          {
+            cmdBuff[cmdIndex++] = CR[17 + i];
+          }
+
         for (int a = 0; a < NUM_DEVICES; a++)
         {
             if (devices[a])
@@ -687,6 +693,7 @@ void HPIBOutput(uint8_t val, uint8_t ccr)
                 devices[a]->processCmd(cmdBuff, cmdIndex);
             }
         }
+        cmdIndex = 0; //reset our command buffer
     }
 }
 //

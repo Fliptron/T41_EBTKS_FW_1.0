@@ -938,16 +938,16 @@ void Setup_Logic_Analyzer(void)
   //  Not all of these initializations are needed, but this makes sure I've got all these
   //  values to something reasonable
   //
-  if (Logic_Analyzer_Event_Count_Init == -1000)        // Use this to indicate the Logic analyzer has no default values. Set to -1000 in setup()
+  if (Logic_Analyzer_Event_Count_Init == -1000)           // Use this to indicate the Logic analyzer has no default values. Set to -1000 in setup()
   {
-    Logic_Analyzer_Trigger_Value_1        = 0x30000000;   //  Bits 29 and 28 are /IRLX and /HALTX with logic low being asserted
+    Logic_Analyzer_Trigger_Value_1        = 0x00000000;   //  Bits 29 and 28 are /IRLX and /HALTX with logic low being asserted
     Logic_Analyzer_Trigger_Value_2        = 0;
     Logic_Analyzer_Trigger_Mask_1         = 0;
     Logic_Analyzer_Trigger_Mask_2         = 0;
     Logic_Analyzer_Event_Count_Init       = 1;
     Logic_Analyzer_Current_Buffer_Length  = LOGIC_ANALYZER_BUFFER_SIZE;
     Logic_Analyzer_Current_Index_Mask     = LOGIC_ANALYZER_INDEX_MASK;
-    Logic_Analyzer_Pre_Trigger_Samples    = Logic_Analyzer_Current_Buffer_Length - 5;   //  Must be less than LOGIC_ANALYZER_BUFFER_SIZE 
+    Logic_Analyzer_Pre_Trigger_Samples    = Logic_Analyzer_Current_Buffer_Length - 24;   //  Must be less than LOGIC_ANALYZER_BUFFER_SIZE 
   }
 
   //
@@ -1208,7 +1208,7 @@ redo_state_pattern:
 //////  serial_string_used();
 //////state_mask_done:
 
-  Serial.printf("Match Value                      Mask Value\nCycle  Addr  Data  RSelec  State   Cycle  Addr  Data  RSelec  State\n");
+  Serial.printf("Match Value                        Mask Value\nCycle  Addr  Data  RSelec  State   Cycle  Addr  Data  RSelec  State\n");
   Serial.printf(" %c%c%c  ", ((Logic_Analyzer_Trigger_Value_1 >> 26) & 0x01) ? '1' : '0',
                              ((Logic_Analyzer_Trigger_Value_1 >> 25) & 0x01) ? '1' : '0',
                              ((Logic_Analyzer_Trigger_Value_1 >> 24) & 0x01) ? '1' : '0'  );
@@ -1347,6 +1347,7 @@ void Logic_analyzer_go(void)
   LA_Heartbeat_Timer                = systick_millis_count + 1000;    //  Do heartbeat message every 1000 ms
   Logic_Analyzer_Valid_Samples_1_second_ago = -100000;
   Logic_Analyzer_State              = ANALYZER_ACQUIRING;
+  Ctrl_C_seen = false;
 }
 
 void Logic_Analyzer_Poll(void)
@@ -1356,6 +1357,7 @@ void Logic_Analyzer_Poll(void)
   int16_t       i, j;
   int16_t       Samples_to_display;
   int16_t       Display_starting_index;
+  float         sample_time;
 
   if (Logic_Analyzer_State == ANALYZER_IDLE)
   {
@@ -1381,8 +1383,8 @@ void Logic_Analyzer_Poll(void)
     //
     if ((Logic_Analyzer_Valid_Samples_1_second_ago == Logic_Analyzer_Valid_Samples) || Ctrl_C_seen)           //  If something crashes (interrupts dead???) , or Ctrl-C activity
     {
-      if (Logic_Analyzer_Valid_Samples < Logic_Analyzer_Current_Buffer_Length)             //  This should never happen
-      {                                                                                   //  So, we didn't even manage to fill the LA buffer
+      if (Logic_Analyzer_Valid_Samples < Logic_Analyzer_Current_Buffer_Length)                                //  This should never happen
+      {                                                                                                       //  So, we didn't even manage to fill the LA buffer
         Samples_to_display = Logic_Analyzer_Valid_Samples;
         Display_starting_index = 0;
       }
@@ -1459,14 +1461,15 @@ la_display_results:
   // Serial.printf("PRIMASK Expect 1     = %08X\n", temp);           //  It will be a real surprise if this works. Expect LSB to be 1. Tested, It works and shows Global Interrupt enable
   Serial.printf("\n\n");
 
-  Serial.printf("Sample  Address      Data    Cycle  RSELEC DMA  IF  /IRLX  /HALTX\n");
-  Serial.printf("                             WRL\n");
+  Serial.printf("    Time Sample   Address     Data   Cycle RSE DMA /IR /HAL\n");
+  Serial.printf("     us                              WRLF  LEC      LX  TX\n");
   sample_number_relative_to_trigger = - Logic_Analyzer_Pre_Trigger_Samples;
 
   for (i = 0 ; i < Samples_to_display ; i++)
   {
     j = (i + Display_starting_index) & Logic_Analyzer_Current_Index_Mask;
     temp = Logic_Analyzer_Data_1[j];
+    if (i == 0) {temp = (temp | 0x80000000) & ~0x30000000;}   //  Deliberately Set the DMA, IRLX and HALTX bits so I can align the headings
     // //
     // //  test code to force various flags to make sure they display correctly (alignment and bit flags)
     // //
@@ -1487,15 +1490,17 @@ la_display_results:
     //   temp &= ~0x10000000;  // test HALTX flag
     // }
 
+    sample_time = (16.0/9.808) * sample_number_relative_to_trigger;
+
     //Serial.printf("%08X ", temp);
     if ((temp & (BIT_MASK_LMA | BIT_MASK_RD | BIT_MASK_WR)) == (BIT_MASK_LMA | BIT_MASK_RD | BIT_MASK_WR))
     { //  All 3 control lines are high (not asserted, so data bus is junque)
-      Serial.printf("   %-4d %06o/%04X  xxx/xx  ", sample_number_relative_to_trigger++, (temp >> 8) & 0x0000FFFFU,
+      Serial.printf("%9.3f %5d %06o/%04X  xxx/xx  ", sample_time, sample_number_relative_to_trigger++, (temp >> 8) & 0x0000FFFFU,
                                                              (temp >> 8) & 0x0000FFFFU );
     }
     else
     {
-      Serial.printf("   %-4d %06o/%04X  %03o/%02X  ", sample_number_relative_to_trigger++, (temp >> 8) & 0x0000FFFFU,
+      Serial.printf("%9.3f %5d %06o/%04X  %03o/%02X  ", sample_time, sample_number_relative_to_trigger++, (temp >> 8) & 0x0000FFFFU,
                                                              (temp >> 8) & 0x0000FFFFU,
                                                              temp & 0x000000FFU,
                                                              temp & 0x000000FFU);
@@ -1503,11 +1508,11 @@ la_display_results:
     Serial.printf("%c", (temp & BIT_MASK_WR)  ? '-' : 'W');   //  Remember that these 3 signals are active low
     Serial.printf("%c", (temp & BIT_MASK_RD)  ? '-' : 'R');
     Serial.printf("%c", (temp & BIT_MASK_LMA) ? '-' : 'L');
-    Serial.printf("    %03o", Logic_Analyzer_Data_2[j] & 0x000000FF    );
-    Serial.printf("    %s", (temp & 0x80000000)   ? "DMA"    : "   "   );
-    Serial.printf("  %s",   (temp & 0x40000000)   ? "IF"     : "  "    );
-    Serial.printf("  %s",   (temp & 0x20000000)   ? "     "  : "/IRLX" );
-    Serial.printf("  %s",   (temp & 0x10000000)   ? "      " : "/HALTX");
+    Serial.printf("%c", (temp & 0x40000000)   ? 'F' : '-');
+    Serial.printf("  %03o", Logic_Analyzer_Data_2[j] & 0x000000FF );
+    Serial.printf(" %s", (temp & 0x80000000)     ? " D "  : "   " );
+    Serial.printf(" %s",   (temp & 0x20000000)   ? "   "  : " I " );
+    Serial.printf(" %s",   (temp & 0x10000000)   ? "   "  : "  H");
 
     if (j == Logic_Analyzer_Index_of_Trigger)
     {

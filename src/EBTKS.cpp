@@ -200,8 +200,47 @@ KeyboardController keyboard2(myusb);
 //      GND_1                       1
 //      GND_2                      34
 //      GND_3                      47
-
 //
+//
+//      Logic Analyzer Configuration 6 for TLA5201
+//                    11/17/2020
+//
+//      C3-7            B7X         On Extender board
+//      C3-6            B6X         On Extender board
+//      C3-5            B5X         On Extender board
+//      C3-4            B4X         On Extender board
+//      C3-3            B3X         On Extender board
+//      C3-2            B2X         On Extender board
+//      C3-1            B1X         On Extender board
+//      C3-0            B0X         On Extender board
+//
+//      C2-7            IF          On Extender board
+//      C2-6            LMA         On Extender board
+//      C2-5            RD          On Extender board
+//      C2-4            WR          On Extender board
+//      C2-3            RC          On Extender board
+//      C2-2            BUFEN       On Teensy Physical Pin  2
+//      C2-1            RXD         On Teensy Physical Pin 10
+//      C2-0            TXD         On Teensy Physical Pin  9
+//
+//      A3-7            Phi1        On Extender board
+//      A3-6            Phi2        On Extender board
+//      A3-5            IRLX        On Extender board
+//      A3-4            PRIL        On Extender board
+//      A3-3            PRIH        On Extender board
+//      A3-2            PWO         On Extender board
+//      A3-1            HALTX       On Extender board
+//      A3-0            TEENSYRC    On Teensy Physical Pin 19
+//
+//      A2-7            CTRLEN      On Teensy Physical Pin 21
+//      A2-6            CTRLDIR     On Teensy Physical Pin  3
+//      A2-5            INTPRI      On Teensy Physical Pin  5
+//      A2-4            
+//      A2-3            
+//      A2-2            
+//      A2-1            
+//      A2-0            
+
 //
 //
 ////////////////////////////////////////////////////////////////        Assumptions, Expectation, Requirements.
@@ -461,13 +500,13 @@ GPIO9   33         7           CORE_PIN33_PORTREG
 //
 
 static uint32_t   one_second_timer = 0;
+static   bool  SD_begin_OK;
 
 void setup()
 {
 
   int   setjmp_reason;
   int   message_count = 0;
-  bool  SD_begin_OK;
   bool  config_success;
 
   setjmp_reason = setjmp(PWO_While_Running);
@@ -623,7 +662,7 @@ void setup()
   if (!SD.begin(SdioConfig(FIFO_SDIO)))          //  This takes about 115 ms.
   {
     CLEAR_TXD; EBTKS_delay_ns(1000);  TXD_Pulser(2);
-    Serial.println("SD begin failed");
+    Serial.println("SD begin failed\nLogfile is not active\n");
     SD_begin_OK = false;
     logfile_active = false;
   }
@@ -631,24 +670,31 @@ void setup()
   {
     CLEAR_TXD; EBTKS_delay_ns(1000);  TXD_Pulser(2);
     logfile_active = open_logfile();
+    Serial.printf("logfile_active is %c\n", logfile_active ? "true":"false");
   }
-  Serial.printf("logfile_active is %d\n", logfile_active);
 
-  LOGPRINTF("\n----------------------------------------------------------------------------------------------------------\n");
-  LOGPRINTF("\nBegin new Logging session\n");
+  if(SD_begin_OK)
+  {
+    LOGPRINTF("\n----------------------------------------------------------------------------------------------------------\n");
+    LOGPRINTF("\nBegin new Logging session\n");
 
-  LOGPRINTF("\nFIFO SDIO mode.\n");
-  LOGPRINTF("Loading configuration...\n");
-  flush_logfile();
+    LOGPRINTF("\nFIFO SDIO mode.\n");
+    LOGPRINTF("Loading configuration...\n");
+    flush_logfile();
 
-  initialize_SD_functions();      //  Used by the AUXROM functions
+    initialize_SD_functions();      //  Used by the AUXROM functions
 
-  // the configuration will init the required devices in most cases.....
+    // the configuration will init the required devices in most cases.....
 
-                              //  It took 74 ms to get to here from SD.begin (open logfile, send some stuff, Init HPIB/Disk)
-                              //  With 9 ROMs being loaded and JSON parsing of CONFIG.TXT , loadConfiguration()  takes 108ms
-  config_success = loadConfiguration(Config_filename);  //  Reports success even if SD.begin() failed, as it uses default config
-                                                        //  This is probably not a good decission
+                                //  It took 74 ms to get to here from SD.begin (open logfile, send some stuff, Init HPIB/Disk)
+                                //  With 9 ROMs being loaded and JSON parsing of CONFIG.TXT , loadConfiguration()  takes 108ms
+    config_success = loadConfiguration(Config_filename);  //  Reports success even if SD.begin() failed, as it uses default config
+                                                          //  This is probably not a good decission
+  }
+  else
+  {
+    config_success = false;
+  }
 
   setupPinChange();           //  Set up the two critical interrupt handlers on Pin Change (rising) on Phi 1 and Phi 2
 
@@ -727,12 +773,13 @@ void setup()
   Logic_Analyzer_Event_Count_Init = -1000;      // Use this to indicate the Logic analyzer has no default values.
 
   Serial.flush();
-  delay(1000);
+  delay(100);
   if (!SD_begin_OK)
   {
+    delay(3000);                                //  Let the HP85 get up to speed
     no_SD_card_message();
+    //  delay(10000);
   }
-
 
   //leds.setLedColor(0,CRGB::Purple);
   //leds.setLedColor(1,CRGB::Blue);
@@ -743,12 +790,7 @@ void setup()
   
   leds.update();
 
-  Dump_Boot_Log();
-
-
 }
-
-
 
 //  Is it possible with Teensy powered by USB for the double LMA to get out of sync?  Scenario: Power cycle HP-85 after first
 //  cycle but before second. Teensy is running in loop() and is un-aware that HP-85 has restarted.
@@ -765,12 +807,10 @@ void setup()
 
 static int  loop_count = 0;
 
-
-
 void loop()
 {
 
-  if (IS_PWO_LOW)                    //  Not sure if this works. Needed to be tested
+  if (IS_PWO_LOW)                    //  Not sure if this works reliably, but seems to work
   {
     longjmp(PWO_While_Running, 99);
   }
@@ -807,12 +847,15 @@ void loop()
                             // to speed things up
  */
 
-
 	Serial_Command_Poll();
   tape.poll();
   AUXROM_Poll();
   Logic_Analyzer_Poll();
   loopTranslator();     //  1MB5 / HPIB / DISK poll
+  if(SD_begin_OK)
+  {
+    Boot_Message_Poll();
+  }
   //myusb.Task();
 
 

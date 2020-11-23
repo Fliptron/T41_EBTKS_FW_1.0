@@ -76,7 +76,7 @@ public:
             putCh(_currCh, _currLine, c);
             incCursor();
         }
-        return 1;
+        return 1;
     }
     //
     //  return character if character was not consumed

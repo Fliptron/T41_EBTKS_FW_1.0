@@ -198,6 +198,7 @@ void Write_on_CRT_Alpha(uint16_t row, uint16_t column, const char *  text)
   // DMA_Poke16(CRTBAD, badAddr_restore);         //  Restore the CRTBAD register in the CRT controller
   
   //  A month or two later: Maybe we need to check the busy flag before writing CRTBAD and CRTSAD              ####### documented elsewhere that SYSROMS check BUSY
+  //                                                                                                                   See comments in CRT_restore_screen()
 
   //  See above comments for how this code is a re-implementation of the above 8 lines of code
   //  Alternate approach with 1 long DMA block rather than going in and out of DMA for each character

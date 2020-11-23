@@ -9,10 +9,13 @@
 #include <stdlib.h>
 #include "Inc_Common_Headers.h"
 
-volatile uint8_t rselec = 0;          //holds rom ID currently selected
-uint8_t *currRom;                     //pointer to the currently selected rom data. NULL if not selected
-DMAMEM uint8_t roms[MAX_ROMS][ROM_PAGE_SIZE];    //  Array to store the rom images loaded from SD card
-uint8_t *romMap[256];                  //  Hold the pointers to the rom data based on ID as the index
+volatile uint8_t rselec = 0;                    //holds rom ID currently selected
+uint8_t *currRom;                               //pointer to the currently selected rom data. NULL if not selected
+
+DMAMEM uint8_t roms[MAX_ROMS][ROM_PAGE_SIZE];   //  Array to store the rom images loaded from SD card, in DMA memory
+//uint8_t roms[MAX_ROMS][ROM_PAGE_SIZE];        //  Array to store the rom images loaded from SD card, in FASTRUN memory
+
+uint8_t *romMap[256];                           //  Hold the pointers to the rom data based on ID as the index
 
 
 void ioWriteRSELEC(uint8_t val)                  //  This function is running within an ISR, keep it short and fast.
@@ -49,7 +52,7 @@ uint8_t *getRomSlotPtr(int slotNum)
 }
 
 
-bool readBankRom(uint16_t addr)                   //  This function is running within an ISR, keep it short and fast.
+bool readBankRom(uint16_t addr)            //  This function is running within an ISR, keep it short and fast.
 {                                                 //  addr is in the range 000000 .. 017777
   //
   //  Check for the special RAM window in the AUXROMs
