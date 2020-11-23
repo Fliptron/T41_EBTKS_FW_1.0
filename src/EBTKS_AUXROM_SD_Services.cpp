@@ -118,6 +118,16 @@
 //                                          510       MEDIA$ MSU$ error
 //                                          511       MEDIA$ HPIB Select must match
 //                                          512       Device code not supported
+//        520..529      AUXROM_SDCOPY
+//                                          520       Can't resolve Source path
+//                                          521       Can't resolve Destination path
+//                                          522       SDCOPY bug in code
+//                                          523       Source file doesn't exist
+//                                          524       Couldn't open Source File
+//                                          525       Couldn't open Destination File
+//                                          526       File copy failed
+
+
 
 #include <Arduino.h>
 #include <string.h>
@@ -1163,109 +1173,60 @@ bool parse_MSU(char *msu)
 
 EXTMEM char Copy_buffer[32768];       //  ####  Maybe this can re-use the buffer assigned to SDDEL
 
-bool create_disk_image(char * path)
+//
+//  Copy a file from one fully qualified path to another. Used here for creating new media files
+//  and also in the SDCOPY Keyword function. The error returns have custom error messages for creating
+//  a new blank disk. the caller must translate as needed (for new tape, or SDCOPY)
+//
+
+bool copy_sd_file(const char * Source_Path, const char * Destination_Path)
 {
   int chars_read, chars_written;
-  File Ref_Disk_Image = SD.open("/Original_images/blank_D.dsk", FILE_READ);
-  if (!Ref_Disk_Image)
+  File Source = SD.open(Source_Path, FILE_READ);
+  if (!Source)
   {
     Serial.printf("Couldn't open ref disk image for READ\n");
     post_custom_error_message("Couldn't open Ref Disk", 417);
     return false;
   }
-  File New_Disk_Image = SD.open(Resolved_Path, FILE_WRITE);
-  if (!New_Disk_Image)
+  File Destination = SD.open(Resolved_Path, FILE_WRITE);
+  if (!Destination)
   {
     Serial.printf("Couldn't open New disk image for WRITE\n");
     post_custom_error_message("Couldn't open New Disk", 418);
     return false;
   }
   //
-  //  Copy the reference disk to the new disk
+  //  Copy the Source File to the Destination File
   //
-  Serial.printf("Copying reference disk /Original_images/blank_D.dsk to new disk [%s]\n", path);
-
+  Serial.printf("Copying [%s] to [%s]\n", Source_Path, Destination_Path);
 
   while(1)
   {
-    chars_read = Ref_Disk_Image.read(Copy_buffer, 32768);
+    chars_read = Source.read(Copy_buffer, 32768);
     if(chars_read)
     {
-      chars_written = New_Disk_Image.write(Copy_buffer, chars_read);
+      chars_written = Destination.write(Copy_buffer, chars_read);
       if(chars_read != chars_written)
       {
-        Serial.printf("Couldn't initialize New disk image, writing wrote less than reading\n");
+        Serial.printf("Couldn't copy file, writing wrote less than reading\n");
         post_custom_error_message("Couldn't init New Disk", 419);
-        Ref_Disk_Image.close();
-        New_Disk_Image.close();
-        New_Disk_Image.remove();
+        Source.close();
+        Destination.close();
+        Destination.remove();
         return false;
       }
       Serial.printf(".");     //  Get a row of dots while copying file. For Floppy image, expect 9 dots for 270336 bytes copied
     }
     else
     {
-      Ref_Disk_Image.close();
-      New_Disk_Image.close();
+      Source.close();
+      Destination.close();
       break; //  Out of while(1) loop
     }
   }
   //
   //  The new disk image has been created and initialized as a blank disk
-  //
-  Serial.printf("\nCopy complete\n");
-  return true;
-}
-
-bool create_tape_image(char * path)
-{
-  File Ref_Tape_Image = SD.open("/Original_images/blank_T.tap", FILE_READ);
-  if (!Ref_Tape_Image)
-  {
-    Serial.printf("Couldn't open ref tape image for READ\n");
-    post_custom_error_message("Couldn't open Ref Tape", 426);
-    return false;
-  }
-  File New_Tape_Image = SD.open(Resolved_Path, FILE_WRITE);
-  if (!New_Tape_Image)
-  {
-    Serial.printf("Couldn't open New tape image for WRITE\n");
-    post_custom_error_message("Couldn't open New Tape", 427);
-    return false;
-  }
-  //
-  //  Copy the reference tape to the new tape
-  //
-  Serial.printf("Copying reference tape /Original_images/blank_T.tap to new tape [%s]\n", path);
-
-  int   chars_read, chars_written;
-
-  while(1)
-  {
-    chars_read = Ref_Tape_Image.read(Copy_buffer, 32768);
-    if(chars_read)
-    {
-      chars_written = New_Tape_Image.write(Copy_buffer, chars_read);
-      if(chars_read != chars_written)
-      {
-        Serial.printf("Couldn't initialize New tape image, writing wrote less than reading\n");
-        post_custom_error_message("Couldn't init New Tape", 428);
-        Ref_Tape_Image.close();
-        New_Tape_Image.close();
-        New_Tape_Image.remove();
-        return false;
-      }
-      Serial.printf(".");     //  Get a row of dots while copying file. For Tape image, expect xxx dots for xxxxxx bytes copied
-    }
-    else
-    {
-      Ref_Tape_Image.close();
-      New_Tape_Image.close();
-      break; //  Out of while(1) loop
-    }
-  }
-  //
-  //  The new tape image has been created and initialized as a blank tape
   //
   Serial.printf("\nCopy complete\n");
   return true;
@@ -1454,8 +1415,20 @@ mount_a_disk:
       if(msu_is_tape)
       { //  Create and mount for tape
 Mount_create_and_mount_tape:
-        if (!create_tape_image(Resolved_Path))      //  If this fails, the error status and message has already been setup in create_tape_image()
-        {                                           //  Possible errors are 426 , 427 , and 428
+        if (!copy_sd_file("/Original_images/blank_T.dsk", Resolved_Path))     //  If this fails, the error status and message has already been setup in create_tape_image()
+        {                                                                     //  Possible errors are 426 , 427 , and 428
+          if (AUXROM_RAM_Window.as_struct.AR_ERR_NUM == 417)
+          {
+            post_custom_error_message("Couldn't open Ref Tape", 426);
+          }
+          if (AUXROM_RAM_Window.as_struct.AR_ERR_NUM == 418)
+          {
+            post_custom_error_message("Couldn't open New Tape", 427);
+          }
+          if (AUXROM_RAM_Window.as_struct.AR_ERR_NUM == 419)
+          {
+            post_custom_error_message("Couldn't init New Tape", 428);
+          }
           goto Mount_exit;
         }
         goto mount_a_tape;
@@ -1463,7 +1436,7 @@ Mount_create_and_mount_tape:
       else
       { //  Create and mount for disk
 Mount_create_and_mount_disk:
-        if (!create_disk_image(Resolved_Path)) //  If this fails, the error status and message has already been setup
+        if (!copy_sd_file("/Original_images/blank_D.dsk", Resolved_Path)) //  If this fails, the error status and message has already been setup
         {
           goto Mount_exit;
         }
@@ -2090,17 +2063,79 @@ void AUXROM_SETLED(void)
   leds.update();
 }
 
+//
+//  SDCOPY srcfile$, dstfile$
+//
+
 void AUXROM_SDCOPY(void)
 {
+  bool        copy_status;
+
 #if VERBOSE_KEYWORDS
   Serial.printf("Call to SDCOPY\n");
 #endif
 
+  if(!Resolve_Path(p_buffer))
+  {
+    Serial.printf("SDCOPY error return 520\n");
+    post_custom_error_message("Can't resolve Source path", 520);
+    *p_mailbox = 0;      //  Indicate we are done
+    Serial.printf("SDCOPY Can't resolve Source path  [%s]\n", p_buffer);
+    return;
+  }
+  if (!SD.exists(Resolved_Path))
+  {
+    Serial.printf("SDCOPY Source file doesn't exist 523\n");
+    post_custom_error_message("Source file doesn't exist", 523);
+    *p_mailbox = 0;      //  Indicate we are done
+    Serial.printf("SDCOPY Source File path  [%s]\n", p_buffer);
+    return;
+  }
+  //
+  //  We need a temporary buffer for the Source file resolved path. We could allocate another 258 bytes,
+  //  but instead we use Resolved_Old_Path from SDREN, since that function isn't currently running
+  //
+  strlcpy(Resolved_Old_Path, Resolved_Path, MAX_SD_PATH_LENGTH+1);      //  Save path to Source file, as we need Resolve_Path() to process the destination path
+  if(!Resolve_Path(p_buffer+256))
+  {
+    Serial.printf("SDCOPY error return 521\n");
+    post_custom_error_message("Can't resolve Destination path", 521);
+    *p_mailbox = 0;      //  Indicate we are done
+    Serial.printf("SDCOPY Can't resolve Destination path  [%s]\n", p_buffer+256);
+    return;
+  }
 
+  copy_status = copy_sd_file(Resolved_Old_Path, Resolved_Path);
+
+  if(!copy_status)
+  {
+    if (AUXROM_RAM_Window.as_struct.AR_ERR_NUM == 417)
+    {
+      post_custom_error_message("Couldn't open Source File", 524);
+    }
+    else if (AUXROM_RAM_Window.as_struct.AR_ERR_NUM == 418)
+    {
+      post_custom_error_message("Couldn't open Destination File", 525);
+    }
+    else if (AUXROM_RAM_Window.as_struct.AR_ERR_NUM == 419)
+    {
+      post_custom_error_message("File copy failed", 526);
+    }
+    else
+    {
+      post_custom_error_message("SDCOPY bug in code", 522);     //  This should never happen
+    }
+    *p_mailbox = 0;      //  Indicate we are done
+    Serial.printf("SDCOPY Copy failed.  Resolved paths are Source [%s]   Destination [%s]\n", Resolved_Old_Path, Resolved_Path);
+    return;
+  }
+  //
+  //  Success exit
+  //
+  *p_usage = 0;                         //  Indicate Success
+  *p_mailbox = 0;                       //  Must always be the last thing we do
+  return;
 }
-
-
-
 
 //
 //  This function takes New_Path and appends it to Current_Path (if it is a relative path) and

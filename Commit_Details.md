@@ -8,7 +8,7 @@ Starting with Commit 76 on 11/22/2020 , I will try and do better, and keep track
 ## Commit \#76 11/22/2020
 
 Changes:
--   Locked which version of **SdFat** and **FastLed* libraries are used in platformio.ini lib_deps section
+-   Locked which version of **SdFat** and **FastLed** libraries are used in platformio.ini lib_deps section
 -   Moved the Boot Log output to the Poll Loop, improvements to how it is displayed
 -   Improved handling of SD Card if it is not installed
 -   Fix to HPIBOutput()
@@ -32,7 +32,7 @@ Changes:
 -   Minor bug fixed in the built-in Logic Analyzer if Ctrl-C was used to end
     the prior acquisition. Affected re-issuing `la go` without doing a new `la setup`
 -   With the recent acquisition of a better external Logic analyzer, documented
-    the new probing arrangement: "Logic Analyzer Configuration 6 for TLA5201"
+    the new probing arrangement: `Logic Analyzer Configuration 6 for TLA5201`
 
 ### What's going on
 
@@ -65,5 +65,13 @@ of the problem.
 Another experiment involved moving the storage for all the ROMs from DMAMEM
 to FASTRUN memory. It only had a minor effect on the issue. This should be
 tried again after other experiments have been tried and implemented.
+
+## Commit \#77 11/23/2020
+
+Changes:
+-   Modify MOUNT for tape and disk when the media needs to be created. Now uses
+    a shared copy function that is also used for SDCOPY.
+-   Implemented SDCOPY
+
 
 
