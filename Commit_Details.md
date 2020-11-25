@@ -66,12 +66,32 @@ Another experiment involved moving the storage for all the ROMs from DMAMEM
 to FASTRUN memory. It only had a minor effect on the issue. This should be
 tried again after other experiments have been tried and implemented.
 
-## Commit \#77 11/23/2020
+## Commit \#78 11/23/2020
 
 Changes:
 -   Modify MOUNT for tape and disk when the media needs to be created. Now uses
     a shared copy function that is also used for SDCOPY.
 -   Implemented SDCOPY
+
+## Commit \#79 11/23/2020
+
+Changes:
+-   Updated the possible error messages and AUXERRN numbers reported in
+    [Keyword Documentation](http://www.fliptronics.com/HP-85_Adventures/AUXROM_Keywords.html)
+-   Update the documentation for AUXCMD, AUXOPT$, AUXBUF$ in
+    [Keyword Documentation](http://www.fliptronics.com/HP-85_Adventures/AUXROM_Keywords.html)
+-   Change all references to AUXROM_SDMEDIA() to AUXROM_MEDIA()
+-   Update some documentation at the top of EBTKS_AUXROM.cpp for AUXCMD, AUXBUF$, AUXOPT$
+-   Implement SPRINTF drawing extensively from Everett's emulator code.
+    Only the most minimal tests. Crashes HP85 when format string is bad, like "%D"
+    about 300 lines of untested code.
+-   Disabled USBHost related class instances at top of EBTKS.cpp
+
+
+
+
+
+
 
 
 

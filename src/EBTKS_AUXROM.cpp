@@ -51,28 +51,39 @@
 //#define  AUX_USAGE_RDSTR         ( 18)      //  RDSTR                                             read a LF or CR/LF terminated string from an SD file
 
 
-//      These apparent Keywords don't have assigned Usage codes
+//      These Keywords don't have assigned Usage codes as they do not require any EBTKS support functions
 //
-//RSECTOR      STMT - RSECTOR dst$Var, sec#, msus$ {read a sector from a LIF disk, dst$Var must be at least 256 bytes long}
-//WSECTOR      STMT - WSECTOR src$, sec#, msus$ {write a sector to a LIF disk, src$ must be 256 bytes}
-//AUXCMD       STMT - AUXCMD cmd#, buf#, usage#, buf$ {invokes AUXROM command cmd#, passes other three args to that command, command must not return a value}
+//  RSECTOR      STMT - RSECTOR dst$Var, sec#, msus$ {read a sector from a LIF disk, dst$Var must be at least 256 bytes long}
+//  WSECTOR      STMT - WSECTOR src$, sec#, msus$ {write a sector to a LIF disk, src$ must be 256 bytes}
+//  AUXERRN      FUNC - AUXERRN {return last custom error error#}
+//  SDATTR       FUNC - a = SDATTR(filePath$) {return bits indicating file attributes, -1 if error}
+//  SDSIZE       FUNC - s = SDSIZE(filePath$) {return size of file, or -1 if error}
 //
-//                    ROM Label
-//                    AUXINT          AUXCMD 0, DC, DC, "DC"             - GENERATE FAKE SPAR1 INT      You probably don't want to do this unless you are debugging interrupts. Will crash HP85
-//                    WMAIL           AUXCMD 1, 0, usage, string         - write string and usage to buf#, don't wait. Does generate HEYEBTKS, so I think it can emulate a command that is passed 1 string
-//                    GENAUXER        AUXCMD(6, DC, error#, "error msg") - CALL AUXERR WITH error# AND error msg
+/////////////////////  Hooks to write EBTKS routines without new AUXROM code  //////////////////
 //
-//AUXOPT$( buf#, usage#, buf$ , opts$)
-//AUXBUF$( buf#, usage#, buf$ , opts$)
+//  AUXCMD       STMT - AUXCMD buf#, usage#, buf$, opt$
+//  	                Errors: 	ARG OUT OF RANGE (system 11D)
+//  				                    INVALID PARAMETER (system 89D)
+//  				                    STRING OVERFLOW (system 56D)
+//  				                    MEMORY OVERFLOW (system 19D)
+//  				                    custom AUXROM msg (209D)
+//  	                Warning:	NULL DATA (system 7)
+//  AUXBUF$(buf#, usage#, buf$, opt$)
+//  	For AUXBUF$, a string is returned containing the A.BLENx bytes of A.BUFx.
 //
-//AUXERRN      FUNC - AUXERRN {return last custom error error#}
-//SDATTR       FUNC - a = SDATTR(filePath$) {return bits indicating file attributes, -1 if error}
-//SDSIZE       FUNC - s = SDSIZE(filePath$) {return size of file, or -1 if error}
+//  AUXOPT$(buf#, usage#, buf$, opt$)
+//  	For AUXOPT$, a 16-byte string is returned containing the bytes of A.BOPT00-A.BOPT15.
 //
+//  For all three of these (AUXCMD, AUXBUF$, AUXOPT$):
+//        0-16 bytes of opt$ get written to A.BOPT00-A.BOPT15.
+//  		  buf$ gets written to A.BUFx where 'x' is buf#.
+//  		  A.BLENx gets set to the length of buf$.
+//  		  usage# gets written to A.BUSEx.
+//  		  MBx gets set to 1.
+//  		  x gets written to HEYEBTKS to send the command.
+//  
+////////////////////////////////////////////////////////////////////////////////////////////////
 //
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-
 //
 //  HEYEBTKS  0xFFE0/0177740. AUXROM_Mailbox_has_Changed
 //  Relative to the base of the I/O area, this is 0340(8) , 0xE0 , 224(10)
@@ -169,7 +180,7 @@ void AUXROM_Poll(void)
       AUXROM_SDFLUSH();
       break;
     case AUX_USAGE_SDMEDIA:
-      AUXROM_SDMEDIA();
+      AUXROM_MEDIA();
       break;
     case AUX_USAGE_SDMKDIR:
       AUXROM_SDMKDIR();

@@ -8,14 +8,13 @@
 
 #include "Inc_Common_Headers.h"
 
-#include "USBHost_t36.h"
-
-USBHost myusb;
-USBHub hub1(myusb);
-USBHub hub2(myusb);
-USBHub hub3(myusb);
-KeyboardController keyboard1(myusb);
-KeyboardController keyboard2(myusb);
+// #include "USBHost_t36.h"                 //  Commenting out saves about 9KB of ITCM for code and 700 bytes for data
+// USBHost myusb;                           //  while we are not using this yet.
+// USBHub hub1(myusb);
+// USBHub hub2(myusb);
+// USBHub hub3(myusb);
+// KeyboardController keyboard1(myusb);
+// KeyboardController keyboard2(myusb);
 
 //
 //  These includes are only needed in this file

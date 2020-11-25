@@ -146,7 +146,7 @@ void AUXROM_SDCLOSE(void);
 void AUXROM_SDCUR(void);
 void AUXROM_SDDEL(void);
 void AUXROM_SDFLUSH(void);
-void AUXROM_SDMEDIA(void);
+void AUXROM_MEDIA(void);
 void AUXROM_SDMKDIR(void);
 void AUXROM_MOUNT(void);
 void AUXROM_SDOPEN(void);
