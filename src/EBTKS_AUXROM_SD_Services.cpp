@@ -24,6 +24,8 @@
 //  10/23/2020        SDMOUNT total re-write to support Tape and Disk
 //  10/24/2020        Update SDREAD and SDWRITE to match AUXROM Release 11
 //                    UNMOUNT
+//  11/xx/2020        lots of work, forgot to update this
+//  11/25/2020        SPRINTF
 //
 
 /////////////////////On error message / error codes.  Go see email log for this text in context
@@ -1123,9 +1125,9 @@ bool parse_MSU(char *msu)
 //
 //  MOUNT msus$, filePath$ [, modeFlag]
 //  Mode:
-//			0 mount file, error if not there (default if mode not specified)
-//			1 create file if not there, mount file
-//			2 error if file there, else create & mount file
+//      0 mount file, error if not there (default if mode not specified)
+//      1 create file if not there, mount file
+//      2 error if file there, else create & mount file
 //
 //  Enforce that disk image file names end in .dsk
 //
@@ -1605,83 +1607,83 @@ void AUXROM_SDOPEN(void)
 //            These are the comments taken from 85auxrom.txt
 //
 //  SPRINTF dst$Var, format$[, comma-separated-arg-list]
-//  	A reasonable facsimile of the C language/library sprintf() function.
-//  	'dst$Var' is the string into which the formatting output will be
-//  	stored. 'format$' is the string that specifies the formatting, which
-//  	will use the arguments in the comma-separated-arg-list to sequentially
-//  	fill formatting paramters in the 'format$'. The comma-separated-arg-list
-//  	entries can be numeric or string expressions, although the type MUST
-//  	match the ones specified in 'format$'.
-//  	
-//  	NOTE: The behavior of this code is VERY dependent upon the library used.
-//  	The behavior of SPRINTF may very possibly differ between EBTKS and the
-//  	Series 80 Emulator, due to different sprintf() library routines being
-//  	linked in for the different environments. Most of the more 'common'
-//  	sprintf() options should behave the same and be supported. However, some
-//  	of the less common ones may work differently OR not work at all. Beware.
-//  	
-//  	The format$ string will simply output any normal text included, but
-//  	whenever it sees a '%' character, that will start the formatting of
-//  	an argument from the arg-list (unless the '%' is immediately followed
-//  	by another '%', in which case the two are replaced by a single '%'
-//  	character in the output and no arg-list items are used). The general
-//  	format of the % formatting is:
-//  		%[flags][width][.precision]type
-//  	NOTE: the []'s in the above indicate OPTIONAL things, they are not included in your format$.
-//  	
-//  	[flags] can be any (or none) of the following:
-//  		-		left-align output rather than right-align output (the default)
-//  		+		prepends a plus for positive signed-numeric types (the default doesn't prepend
+//    A reasonable facsimile of the C language/library sprintf() function.
+//    'dst$Var' is the string into which the formatting output will be
+//    stored. 'format$' is the string that specifies the formatting, which
+//    will use the arguments in the comma-separated-arg-list to sequentially
+//    fill formatting paramters in the 'format$'. The comma-separated-arg-list
+//    entries can be numeric or string expressions, although the type MUST
+//    match the ones specified in 'format$'.
+//    
+//    NOTE: The behavior of this code is VERY dependent upon the library used.
+//    The behavior of SPRINTF may very possibly differ between EBTKS and the
+//    Series 80 Emulator, due to different sprintf() library routines being
+//    linked in for the different environments. Most of the more 'common'
+//    sprintf() options should behave the same and be supported. However, some
+//    of the less common ones may work differently OR not work at all. Beware.
+//    
+//    The format$ string will simply output any normal text included, but
+//    whenever it sees a '%' character, that will start the formatting of
+//    an argument from the arg-list (unless the '%' is immediately followed
+//    by another '%', in which case the two are replaced by a single '%'
+//    character in the output and no arg-list items are used). The general
+//    format of the % formatting is:
+//      %[flags][width][.precision]type
+//    NOTE: the []'s in the above indicate OPTIONAL things, they are not included in your format$.
+//    
+//    [flags] can be any (or none) of the following:
+//      -   left-align output rather than right-align output (the default)
+//      +   prepends a plus for positive signed-numeric types (the default doesn't prepend
 //          anything for positive values)
-//  		SPACE	(space character, not the word SPACE) prepends a space for the sign of positive values
-//  		0		if [width] is specified, prepends zeros for numeric types instead of spaces
-//  		#		alternate forms:
-//  					for g and G types, trailing zeros are not removed
-//  					for f, F, e, E, g, G types, the output always contains a decimal point.
-//  					for o, x, X types, 0, 0x, 0X respectively is prepended to non-zero numbers.
-//  	[width] is a number that specifies the MINIMUM NUMBER of characters to output, used to pad
+//      SPACE (space character, not the word SPACE) prepends a space for the sign of positive values
+//      0   if [width] is specified, prepends zeros for numeric types instead of spaces
+//      #   alternate forms:
+//            for g and G types, trailing zeros are not removed
+//            for f, F, e, E, g, G types, the output always contains a decimal point.
+//            for o, x, X types, 0, 0x, 0X respectively is prepended to non-zero numbers.
+//    [width] is a number that specifies the MINIMUM NUMBER of characters to output, used to pad
 //            output of smaller numbers; no truncation, though, of numbers too large for the width specified.
-//  	
-//  	[.precision] is a number that specifies a MAXIMUM limit on the output, depending upon the 'type'.
-//  	
-//  	NOTE: Both [width] and [.precision] can either be a literal number included in the 'format$' OR
-//  	they can be the '*' character, in which case the '*' gets replaced by a number from the arg-list.
-//  	
-//  	'type' is a single letter indicating the desired formatting of the next item from the arg-list:
-//  		i or d	format the next argument (MUST be numeric) as a signed integer.
-//  		u		formats the next argument (MUST be numeric) as an unsigned integer.
-//  		f or F	formats the next argument (MUST be numeric) as a REAL in fixed-point notation.
-//  				The only difference is whether VERY large or VERY small numbers are output as
-//  				upper or lowercase INF, INFINITY, or NAN.
-//  		e or E	formats the next argument (MUST be numeric) in standard "[-]d.ddd e[+/-]ddd" form.
-//  				The only difference is the case of the 'e' or 'E' used for the exponent.
-//  		g or G	format the next argument (MUST be numeric) in either fixed-point or standard-exponential
-//  				format, whichever is more appropriate for the magnitude.
-//  		x or X	formats the next argument (MUST be numeric) as a hexidecimal value.
-//  		o		formats the next argument (MUST be numeric) as an octal value.
-//  		s		copies the next argument (MUST be string) into the output.
-//  		c		outputs a single character to the output. The argument may be the NUMERIC value of the
-//  				character, or the argument may be a STRING in which case the FIRST character is output.
-//  	
-//  	You can also include special characters in the output by placing
-//  	these character strings in the 'format$':
-//  		\\		outputs a single '\' character
-//  		\r		outputs a CR character
-//  		\n		outputs a LF character
-//  		\t		outputs a TAB character
-//  		\xHH	outputs a character who's value is specified by the two HH hexidecimal digits
-//  		\nnn	outputs a character who's value is specified by the three nnn octal digits
-//  	So, for example
-//  		SPRINTF A$, "\t\r\n"
-//  	would achieve the exact same thing as
-//  		SPRINTF A$, "%c%c%c",9,13,10
-//  	You could also achieve the same thing by:
-//  		SDEOL 1
-//  		SPRINTF A$, "\t%s", SDEOL$
-//  	
-//  	Errors:	SD ERROR (213D) formatted output length > 1024 characters
-//  			BAD FORMAT (219D) something wrong with format$
-//  			FORMAT/ARG MISMATCH (220D) argument list doesn't line up with format$
+//    
+//    [.precision] is a number that specifies a MAXIMUM limit on the output, depending upon the 'type'.
+//    
+//    NOTE: Both [width] and [.precision] can either be a literal number included in the 'format$' OR
+//    they can be the '*' character, in which case the '*' gets replaced by a number from the arg-list.
+//    
+//    'type' is a single letter indicating the desired formatting of the next item from the arg-list:
+//      i or d  format the next argument (MUST be numeric) as a signed integer.
+//      u   formats the next argument (MUST be numeric) as an unsigned integer.
+//      f or F  formats the next argument (MUST be numeric) as a REAL in fixed-point notation.
+//          The only difference is whether VERY large or VERY small numbers are output as
+//          upper or lowercase INF, INFINITY, or NAN.
+//      e or E  formats the next argument (MUST be numeric) in standard "[-]d.ddd e[+/-]ddd" form.
+//          The only difference is the case of the 'e' or 'E' used for the exponent.
+//      g or G  format the next argument (MUST be numeric) in either fixed-point or standard-exponential
+//          format, whichever is more appropriate for the magnitude.
+//      x or X  formats the next argument (MUST be numeric) as a hexidecimal value.
+//      o   formats the next argument (MUST be numeric) as an octal value.
+//      s   copies the next argument (MUST be string) into the output.
+//      c   outputs a single character to the output. The argument may be the NUMERIC value of the
+//          character, or the argument may be a STRING in which case the FIRST character is output.
+//    
+//    You can also include special characters in the output by placing
+//    these character strings in the 'format$':
+//      \\    outputs a single '\' character
+//      \r    outputs a CR character
+//      \n    outputs a LF character
+//      \t    outputs a TAB character
+//      \xHH  outputs a character who's value is specified by the two HH hexidecimal digits
+//      \nnn  outputs a character who's value is specified by the three nnn octal digits
+//    So, for example
+//      SPRINTF A$, "\t\r\n"
+//    would achieve the exact same thing as
+//      SPRINTF A$, "%c%c%c",9,13,10
+//    You could also achieve the same thing by:
+//      SDEOL 1
+//      SPRINTF A$, "\t%s", SDEOL$
+//    
+//    Errors: SD ERROR (213D) formatted output length > 1024 characters
+//        BAD FORMAT (219D) something wrong with format$
+//        FORMAT/ARG MISMATCH (220D) argument list doesn't line up with format$
 //  
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
@@ -1690,309 +1692,381 @@ void AUXROM_SDOPEN(void)
 //  Copied code from the Series 80 Emulator and then modified it for the EBTKS environment
 //
 
-#define SCRATCHLENGTH (1024)
+#define SCRATCHLENGTH             (1024)
 
-DMAMEM  char    ScratchBuffer[4 * SCRATCHLENGTH];
+
+//  Real Arg
+//      Tag = 0
+//      8 bytes of HP85 format real
+//
+#define FORMAT_ARG_REAL           (0)
+//
+//  Integer Arg
+//      Tag = 1
+//      3 bytes of HP85 format tagged integer, without the 0xFF byte (yet) or the 4 ignored bytes
+//                                              5 decimal digits plus sign
+//
+#define FORMAT_ARG_INTEGER        (1)
+//
+//  String Arg
+//      Tag = 2
+//      2 bytes of length
+//      n bytes of string, NOT 0 terminated
+//
+#define FORMAT_ARG_STRING         (2)
+//
+//  End of argument list
+//
+#define FORMAT_ARG_END            (0xFF)
+
+DMAMEM  char    sprintf_result[SCRATCHLENGTH];
+DMAMEM  char    format_segment[100];                  //  This will hold a segment of the main format string, starting with a '%'
+DMAMEM  char    string_arg[SCRATCHLENGTH];
 
 void AUXROM_SPF(void)
 {
-  char      *pFmt;
+  char      *format_ptr;
   int       format_remaining;       //  t       in Everett's emulator
-  char      *pArg;
+  char      *arg_list_ptr;
   int       next_store_index;       //  j       in Everett's emulator
-  double	  numeric;                //  narg
-	char	    *pCopy;
-	int		    string_length;          //  slen    in Everett's emulator
+  double    numeric;                //  narg
+  char      *pCopy;
+  int       string_length;          //  slen    in Everett's emulator
+  char      next_output_char;       //  sb      in Everett's emulator
 
- 	// blen = len of stuff in buf
-	 	// buf = sprintf information:
-	 	//	BYTE	2			string type
-	 	//	WORD	strlen		len of FORMAT$
-	 	//	BYTE	[strlen]	bytes of FORMAT$
-	 	// The FORMAT$ in buf is then optionally followed by numeric and string arguments until a TYPE of 0xFF is seen.
-	 	// The TYPEs are:
-	 	//	BYTE	0			REAL type
-	 	//	BYTE	[8]			8 bytes of REAL# value
-	 	//
-	 	//	BYTE	1			INT type
-	 	//	BYTE	[3]			3 bytes of INT# value
-	 	//
-	 	//	BYTE	2			string type
-	 	//	WORD	strlen		len of string
-	 	//	BYTE	[strlen]	bytes of string value
-	 	//
-	 	//	BYTE	0xFF		end of argument list
+    //  blen          len of stuff in buf
+    //  buf           sprintf information:
+    //    BYTE  2     string type
+    //    WORD        strlen    len of FORMAT$  (16 bits)
+    //    BYTE        [strlen]  bytes of FORMAT$
+    //  The FORMAT$ in buf is then optionally followed by numeric and string arguments until a TYPE of 0xFF is seen.
+    //  The TYPEs are:
+    //    BYTE  0     REAL type
+    //    BYTE        8 bytes of REAL# value
+    //
+    //    BYTE  1     INT type
+    //    BYTE        3 bytes of INT# value
+    //
+    //    BYTE  2     string type
+    //    WORD        strlen    len of string  (16 bits)
+    //    BYTE        [strlen]  bytes of string value
+    //
+    //    BYTE  0xFF    end of argument list
 
-	 	pFmt = p_buffer;
+    format_ptr = p_buffer;
+    sprintf_result[0] = 0;
 
-	 	if (*pFmt++ != 2)
-	 	{
-	 	  goto badformat;	                                  //  No FORMAT$ (should never happen, should be caught by AUXROM,
-	 	                                                    //  but let's be safe, in case an IDIOT wrote the AUXROM)
-	 	}
-	 	format_remaining = *pFmt + (*(pFmt + 1) * 256);     //  Get length of format$
-	 	pFmt += 2;			                                    //  Skip len of format$
-		pArg = pFmt + format_remaining;                     //  Skip format$ to point to first arg
+    if (*format_ptr++ != FORMAT_ARG_STRING)
+    {
+      goto badformat;                                   //  No FORMAT$ (should never happen, should be caught by AUXROM,
+                                                        //  but let's be safe, in case an IDIOT wrote the AUXROM)
+    }
+    format_remaining = *format_ptr + (*(format_ptr + 1) * 256);     //  Get length of format$
+    format_ptr += 2;                                          //  Skip len of format$
+    arg_list_ptr = format_ptr + format_remaining;                     //  Skip format$ to point to first arg
 
-	 	next_store_index = 0;				                                      //  How many chars written to ScratchBuffer (limit of SCRATCHLENGTH)
-	 	//
-	 	//  pFmt                    points to current char in format$
-	 	//  format_remaining        remaining chars in format$ (including the current one). Remember: format$ is NOT NUL-terminated!
-	 	//  pArg                    points to the next arg's TYPE byte in buf
-	 	//  next_store_index        index into ScratchBuffer of where to store next formatted output
+    next_store_index = 0;                                             //  How many chars written to sprintf_result (limit of SCRATCHLENGTH)
+    //
+    //  format_ptr                    points to current char in format$
+    //  format_remaining        remaining chars in format$ (including the current one). Remember: format$ is NOT NUL-terminated!
+    //  arg_list_ptr                    points to the next arg's TYPE byte in buf
+    //  next_store_index        index into sprintf_result of where to store next formatted output
 
-		while ((next_store_index < SCRATCHLENGTH) && format_remaining )
-		{	  //  Process format$ until buffer is full or run out of format$
-			int sb, q;
+    while ((next_store_index < SCRATCHLENGTH) && format_remaining )
+    {   //  Process format$ until buffer is full or run out of format$
+      int q;
 
-			if (*pFmt != '%' || ((format_remaining > 1) && (*(pFmt+1) == '%')) )
-			{
-				if( *pFmt=='%' )
-				{
-					--format_remaining;
-					sb = *pFmt++;	                    //  Skip first %, output the second
-				}
-				else if (*pFmt == '\\')
-				{
-					++pFmt;	                          //  Skip the '\'
-					--format_remaining;
-					if     (*pFmt == '\\') {--format_remaining; sb = *pFmt++;}	// skipped the first one, output the second
-					else if(*pFmt == 'r' ) {sb = 13; ++pFmt; --format_remaining;}
-					else if(*pFmt == 'n' ) {sb = 10; ++pFmt; --format_remaining;}
-					else if(*pFmt == 't' ) {sb =  9; ++pFmt; --format_remaining;}
-					else if(*pFmt == 'x' )
-					{	                                //  Handle \xHH two hex digit char
-						++pFmt;	                        //  Skip x
-						--format_remaining;
-						if (!isxdigit(*pFmt) || !isxdigit(*(pFmt+1)) )
-						{
-						  goto badformat;
-						}
-						sb = (*pFmt-'0' - ((*pFmt > '9') ? 7 : 0 ))<<4;
-						++pFmt;
-						--format_remaining;
-						sb += *pFmt-'0' - ((*pFmt > '9') ? 7 : 0 );
-						++pFmt;
-						--format_remaining;
-					}
-					else if (isdigit(*pFmt))
-					{	  //  Handle "\nnn" octal number char
-						for (sb = q = 0 ; (q < 3) && isdigit(*pFmt); q++, format_remaining--, pFmt++)
-						{
-						  sb = (sb << 3) + *pFmt - '0';	    //  Add in the digit
-						}
-					}
-					else
-					{
-					  goto badformat;
-					}
-				}
-				else
-				{
-					sb = *pFmt++;
-					--format_remaining;
-				}
-				ScratchBuffer[next_store_index++] = sb;
-			}
-			else
-			{	                //  Handle %
-				pCopy = ScratchBuffer+SCRATCHLENGTH;
-				//
-				//  Copy '%' and any FLAGS
-				//
-				do
-				  *pCopy++ = *pFmt++;
-				while (--format_remaining && ((*pFmt == '-' ) ||
-				                              (*pFmt == '+' ) ||
-				                              (*pFmt == ' ' ) ||
-				                              (*pFmt == '0' ) ||
-				                              (*pFmt == '\'') ||
-				                              (*pFmt == '#' )   ) );
-				//  Copy WIDTH field
-				if (format_remaining && (*pFmt == '*') && (*pArg != 0xFF) )
-				{	  //  If '*' and there's args left on the list
-					  //  Substitute a value from the ARG LIST
+      Serial.printf("Format [%*s] StorIndex %d ScratchBuf [%s]\n", format_remaining, format_ptr, next_store_index, sprintf_result);
+
+      if (*format_ptr != '%' || ((format_remaining > 1) && (*(format_ptr+1) == '%')) )
+      {                                           //  Format is not a conversion
+        if( *format_ptr=='%' )
+        {                                         //  Handle %%
+          format_ptr++;                                 //  Skip over the first one
+          --format_remaining;
+          next_output_char = *format_ptr++;             //  Skip first %, output the second
+          --format_remaining;
+        }
+        else if (*format_ptr == '\\')
+        {
+          format_ptr++;                                 //  Skip the '\'
+          --format_remaining;
+          if     (*format_ptr == '\\') {next_output_char =    *format_ptr++; --format_remaining;} // skipped the first '/', output the second '/'
+          else if(*format_ptr == 'r' ) {next_output_char = 13; format_ptr++; --format_remaining;}
+          else if(*format_ptr == 'n' ) {next_output_char = 10; format_ptr++; --format_remaining;}
+          else if(*format_ptr == 't' ) {next_output_char =  9; format_ptr++; --format_remaining;}
+          else if(*format_ptr == 'x' )
+          {                                 //  Handle \xHH two hex digit char
+            format_ptr++;                         //  Skip x
+            --format_remaining;
+            if (!isxdigit(*format_ptr) || !isxdigit(*(format_ptr+1)) )
+            {
+              goto badformat;
+            }
+            //
+            //  Convert 2 Hex Characters (A..F0..9) to an 8 bit character       #####  Emulator does not handle lower case for a..f  ####
+            //
+            //  First character, convert lower case a..f to upper case, in the format string
+            //
+            if (*format_ptr >= 'a')   //  This is sufficient, since we already know it is a Hexadecimal character
+            {
+              *format_ptr -= 0x20;    //  convert a..f to A..F
+            }
+            //  Calculate high nibble
+            next_output_char = (*format_ptr - '0' - ((*format_ptr > '9') ? 7 : 0 )) << 4;
+            format_ptr++;
+            --format_remaining;
+            //
+            //  Second character, convert lower case a..f to upper case, in the format string
+            //
+            if (*format_ptr >= 'a')   //  This is sufficient, since we already know it is a Hexadecimal character
+            {
+              *format_ptr -= 0x20;    //  convert a..f to A..F
+            }
+            next_output_char += (*format_ptr - '0' - ((*format_ptr > '9') ? 7 : 0 ));
+            format_ptr++;
+            --format_remaining;
+          }
+          else if (isdigit(*format_ptr))
+          {   //  Handle "\nnn" octal number char.  consume no more than 3 octal digits        ######  does not catch 8 and 9 and throw an error
+            for (next_output_char = q = 0 ; (q < 3) && isdigit(*format_ptr); q++, format_remaining--, format_ptr++)
+            {
+              next_output_char = (next_output_char << 3) + *format_ptr - '0';     //  Add in the digit
+            }
+          }
+          else
+          {
+            goto badformat;
+          }
+        }
+        else
+        {
+          next_output_char = *format_ptr++;
+          --format_remaining;
+        }
+        sprintf_result[next_store_index++] = next_output_char;
+        sprintf_result[next_store_index] = 0;                      //  For diagnostics, we make the result string zero terminated
+      }
+      else
+      {                 //  Handle %  , Format is a conversion
+        pCopy = format_segment;
+        //
+        //  Copy '%' and any FLAGS
+        //
+        do
+        {
+          *pCopy++ = *format_ptr++;
+          *pCopy   = 0;
+        } while (--format_remaining && ((*format_ptr == '-' ) ||
+                                        (*format_ptr == '+' ) ||
+                                        (*format_ptr == ' ' ) ||
+                                        (*format_ptr == '0' ) ||
+                                        (*format_ptr == '\'') ||
+                                        (*format_ptr == '#' )   ) );
+        //  Copy WIDTH field
+        if (format_remaining && (*format_ptr == '*') && (*arg_list_ptr != FORMAT_ARG_END) )
+        {   //  If '*' and there's args left on the list
+            //  Substitute a value from the ARG LIST
 subarg:
-					++pFmt;	                                        //  Skip '*'
-					--format_remaining;	                            //  Decrement remaining char count
-					if (*pArg == 0)
-					{
-						numeric = cvt_HP85_real_to_IEEE_double((uint8_t *)(pArg+1));	//  Get REAL arg in the usable format
-						pArg += 9;	                                    //  Skip tag and 8-byte value
-					}
-					else if (*pArg == 1)
-					{
-						*pArg = 0xFF;	                                  //  Change tag to tagged-INT tag
-						numeric = cvt_HP85_real_to_IEEE_double((uint8_t *)(pArg-4));	//  Get tagged-INT arg in the usable format       //  ######  need to check if this works  #####
-						pArg += 4;	                                    //  Skip tag and 3-byte value
-					}
-					else
-					{
+          format_ptr++;                                         //  Skip '*'
+          --format_remaining;                             //  Decrement remaining char count
+          if (*arg_list_ptr == FORMAT_ARG_REAL)
+          {
+            numeric = cvt_HP85_real_to_IEEE_double((uint8_t *)(arg_list_ptr+1));  //  Get REAL arg in the usable format. This is for an '*' flag
+            arg_list_ptr += 9;                                      //  Skip tag and 8-byte value
+          }
+          else if (*arg_list_ptr == FORMAT_ARG_INTEGER)
+          {
+            *arg_list_ptr = 0xFF;                                   //  Change tag to tagged-INT tag
+            numeric = cvt_HP85_real_to_IEEE_double((uint8_t *)(arg_list_ptr-4));  //  Get tagged-INT arg in the usable format       //  ######  need to check if this works  #####
+            arg_list_ptr += 4;                                      //  Skip tag and 3-byte value
+          }
+          else
+          {
 argmismatch:
-            *p_usage = 220;                                 //  FORMAT/ARG MISMATCH
+            *p_usage = 220;                                 //  FORMAT/ARG MISMATCH We found an '*' flag, but no matching numeric parameter.
             *p_mailbox = 0;                                 //  Indicate we are done
             Serial.printf("SPRINTF FORMAT/ARG MISMATCH\n");
             return;
           }
-					sprintf((char*)pCopy, "%d", (int)numeric);	      //  Hope and pray that numeric IS an integer
-					pCopy += strlen((char*)pCopy);	                  //  Advance pCopy by however many chars we output to the temp format string
-				}
-				else
-				{                                                   //  Copy any WIDTH number that's there
-					while (format_remaining && isdigit(*pFmt))
-					{
-					  *pCopy++ = *pFmt++;
-					  --format_remaining;
-					}
-				}
-				//  Copy possible WIDTH/PRECISION separating '.'
-				if (format_remaining && *pFmt=='.')
-				{
-				  *pCopy++ = *pFmt++;
-				  --format_remaining;
-				}
-				//  Copy PRECISION field
-				if (format_remaining && *pFmt=='*')
-				{	                                                  //  If the user does something stupid like "%*.***d", they'll go to subarg multiple times and get what they deserve
-					//  Substitute a value from the ARG LIST
-					goto subarg;
-				}
-				else
-				{					                                          //  Copy any PRECISION number that's there
-					while (format_remaining && isdigit(*pFmt))
-					{
-					  *pCopy++ = *pFmt++;
-					  --format_remaining;
-					}
-				}
-				//  NOTE: LENGTH field NOT supported
-
-				//  Get TYPE field
-				if (format_remaining--)
-				{
-					*pCopy++ = *pFmt;	                                //  Copy the TYPE char
-					*pCopy = 0;			                                  //  NUL-term the copied format$ piece
-					switch (*pFmt++)
-					{
-            case 'd':
-            case 'i':
-            case 'u':
-            case 'x':
-            case 'X':
-            case 'o':
+          sprintf((char*)pCopy, "%d", (int)numeric);        //  Ignore any fractional part of the number, and just use the Int part
+          pCopy += strlen((char*)pCopy);                    //  Advance pCopy by however many chars we output to the temp format string
+          // I think this could be written: pCopy += sprintf((char*)pCopy, "%d", (int)numeric);   //  #####  slightly more efficient
+        }
+        else
+        {                                                   //  Not a '*', check for digits. Copy any WIDTH number that's there
+          while (format_remaining && isdigit(*format_ptr))
+          {
+            *pCopy++ = *format_ptr++;
+            --format_remaining;
+          }
+          *pCopy   = 0;
+        }
+        //  Copy possible WIDTH/PRECISION separating '.'
+        if (format_remaining && *format_ptr=='.')
+        {
+          *pCopy++ = *format_ptr++;
+          --format_remaining;
+        }
+        *pCopy   = 0;
+        //  Copy PRECISION field
+        if (format_remaining && *format_ptr=='*')
+        {                                                   //  If the user does something stupid like "%*.***d", they'll go to subarg multiple times and get what they deserve
+          //  Substitute a value from the ARG LIST
+          goto subarg;
+        }
+        else
+        {                                                   //  Copy any PRECISION number that's there
+          while (format_remaining && isdigit(*format_ptr))
+          {
+            *pCopy++ = *format_ptr++;
+            --format_remaining;
+          }
+          *pCopy   = 0;
+        }
+        //
+        //  NOTE: LENGTH field NOT supported
+        //
+        //  We have now processed any Flags, '*', WIDTH and PRECISION
+        //
+        //  Get TYPE field
+        //                                  ######  the next few lines are different from the Emulator. 1 indent level removed
+        //                                          One non-existent else  { section } now not needed
+        if (!format_remaining)
+        {
+          //
+          //  We saw a %, and maybe Flags, '*', WIDTH and PRECISION, but now no field type. Oh so sad
+          //
+          goto badformat;
+        }
+        *pCopy++ = *format_ptr;                                 //  Copy the TYPE char
+        format_remaining--;
+        *pCopy = 0;                                       //  NUL-term the copied format$ piece
+        switch (*format_ptr++)
+        {               //  First, all the integer numeric formats
+          case 'd':
+          case 'D':     //  Not supported in real C library, but so much of HP85 is in upper case. Help the user
+          case 'i':
+          case 'I':     //  Not supported in real C library, but so much of HP85 is in upper case. Help the user
+          case 'u':
+          case 'U':     //  Not supported in real C library, but so much of HP85 is in upper case. Help the user
+          case 'x':
+          case 'X':     //  This is supported, affects the case of a..f in Hex numbers
+          case 'o':
+          case 'O':     //  Not supported in real C library, but so much of HP85 is in upper case. Help the user
               //  Get next (numeric!) arg
-              if (*pArg == 0)
+              if (*arg_list_ptr == FORMAT_ARG_REAL)
               {
-                numeric = cvt_HP85_real_to_IEEE_double((uint8_t *)(pArg+1));	//  Get REAL arg in the usable format
-                pArg += 9;	                                    //  Skip tag and 8-byte value
+                numeric = cvt_HP85_real_to_IEEE_double((uint8_t *)(arg_list_ptr+1));  //  Get REAL arg in the usable format
+                arg_list_ptr += 9;                                                    //  Skip tag and 8-byte value
               }
-              else if (*pArg == 1)
+              else if (*arg_list_ptr == FORMAT_ARG_INTEGER)
               {
-                *pArg = 0xFF;	                                  //  Change tag to tagged-INT tag
-                numeric = cvt_HP85_real_to_IEEE_double((uint8_t *)(pArg-4));	//  Get tagged-INT arg in the usable format
-                pArg += 4;	                                    //  Skip tag and 3-byte value
+                *arg_list_ptr = 0xFF;                                                 //  Change tag to tagged-INT tag
+                numeric = cvt_HP85_real_to_IEEE_double((uint8_t *)(arg_list_ptr-4));  //  Get tagged-INT arg in the usable format
+                arg_list_ptr += 4;                                                    //  Skip tag and 3-byte value
               }
               else
               {
                 goto argmismatch;
               }
-              sprintf((char*)ScratchBuffer+next_store_index, (char*)ScratchBuffer+SCRATCHLENGTH, (long)numeric);
+              sprintf((char*)sprintf_result + next_store_index, (char*)format_segment, (long)numeric);
               break;
-            case 'f':
-            case 'F':
-            case 'e':
-            case 'E':
-            case 'g':
-            case 'G':
-  					 	//  Get next (numeric!) arg
-  						if (*pArg == 0)
-  						{
-  							numeric = cvt_HP85_real_to_IEEE_double((uint8_t *)(pArg+1)); //  Get REAL arg in the usable format
-  							pArg += 9;	                                    //  Skip tag and 8-byte value
-  						}
-  						else if (*pArg == 1)
-  						{
-  							*pArg = 0xFF;	                                  //  Change tag to tagged-INT tag
-  							numeric = cvt_HP85_real_to_IEEE_double((uint8_t *)(pArg-4));	//  Get tagged-INT arg in the usable format
-  							pArg += 4;	                                    //  Skip tag and 3-byte value
-  						}
-  						else
-  						{
-  						  goto argmismatch;
-  						}
-  						sprintf((char*)ScratchBuffer+next_store_index, (char*)ScratchBuffer+SCRATCHLENGTH, numeric);
-  						break;
-			    case 's':
-            //  Get the next (string!) arg
-            if (*pArg != 2)
+                          //  Now, the floating point/real formats
+          case 'f':
+          case 'F':
+          case 'e':
+          case 'E':
+          case 'g':
+          case 'G':
+            //  Get next (numeric!) arg
+            if (*arg_list_ptr == FORMAT_ARG_REAL)
             {
-              goto argmismatch;	                                //  Fail if next arg is not STRING!
+              numeric = cvt_HP85_real_to_IEEE_double((uint8_t *)(arg_list_ptr+1));    //  Get REAL arg in the usable format
+              arg_list_ptr += 9;                                                      //  Skip tag and 8-byte value
             }
-            ++pArg;	                                            //  Skip to len
-            string_length = *pArg + (*(pArg + 1) * 256);	      //  Get string length
-            pArg += 2;	                                        //  Skip len
+            else if (*arg_list_ptr == FORMAT_ARG_INTEGER)
+            {
+              *arg_list_ptr = 0xFF;                                                   //  Change tag to tagged-INT tag
+              numeric = cvt_HP85_real_to_IEEE_double((uint8_t *)(arg_list_ptr-4));    //  Get tagged-INT arg in the usable format
+              arg_list_ptr += 4;                                                      //  Skip tag and 3-byte value
+            }
+            else
+            {
+              goto argmismatch;
+            }
+            sprintf((char*)sprintf_result + next_store_index, (char*)format_segment, numeric);
+            break;
+          case 's':
+            //  Get the next (string) arg
+            if (*arg_list_ptr != FORMAT_ARG_STRING)
+            {
+              goto argmismatch;                                                   //  Fail if next arg is not STRING!
+            }
+            arg_list_ptr++;                                                               //  Skip to len
+            string_length = *arg_list_ptr + (*(arg_list_ptr + 1) * 256);                          //  Get string length
+            arg_list_ptr += 2;                                                            //  Skip len
             if ((string_length + next_store_index) > SCRATCHLENGTH)
+            {
+              goto badformat;                                                     //  Actually, string too long   ######
+            }
+
+            strlcpy(string_arg, arg_list_ptr, string_length+1);                           //  Copy string
+            arg_list_ptr += string_length;                                                //  Skip string arg
+            sprintf((char*)(sprintf_result + next_store_index),
+                    (char*)(format_segment),
+                    (char*)(string_arg)      );                                   //  Copy the string to the output according to the %s formatting
+            break;
+          case 'c':
+            //  Get next numeric arg and make it a char
+            //  or get the next string arg and use the first char
+            if (*arg_list_ptr == FORMAT_ARG_REAL)
+            {
+              numeric = cvt_HP85_real_to_IEEE_double((uint8_t *)(arg_list_ptr+1));    //  Get REAL arg in the usable format
+              arg_list_ptr += 9;                                                      //  Skip tag and 8-byte value
+            }
+            else if (*arg_list_ptr == FORMAT_ARG_INTEGER)
+            {
+              *arg_list_ptr = 0xFF;                                                   //  Change tag to tagged-INT tag
+              numeric = cvt_HP85_real_to_IEEE_double((uint8_t *)(arg_list_ptr-4));    //  Get tagged-INT arg in the usable format
+              arg_list_ptr += 4;                                                      //  Skip tag and 3-byte value
+            }
+            else if (*arg_list_ptr == FORMAT_ARG_STRING)
+            {
+              ++arg_list_ptr;                                                         //  Point to len
+              string_length = *arg_list_ptr + (*(arg_list_ptr + 1) * 256);                    //  Get string length
+              if (string_length == 0)
+              {
+                goto badformat;
+              }
+              arg_list_ptr += 2;
+              numeric = (double)(long)(*arg_list_ptr);                                //  Get first char of string as numeric value       ##########  this looks a bit dodgy
+              arg_list_ptr += string_length;                                          //  Skip string to next arg
+            }
+            else
             {
               goto badformat;
             }
-            memcpy(ScratchBuffer + (SCRATCHLENGTH * 2), pArg, string_length);	    //  Copy string so we can NUL-term it
-            pArg += string_length;			                                          //  Skip string arg
-            ScratchBuffer[(SCRATCHLENGTH * 2) + string_length] = 0;	              //  NUL-term
-            sprintf((char*)(ScratchBuffer + next_store_index),
-                    (char*)(ScratchBuffer + SCRATCHLENGTH),
-                    (char*)(ScratchBuffer + (SCRATCHLENGTH * 2))    );	          //  Copy the string to the output according to the %s formatting
+            sprintf_result[next_store_index++] = (char)(long)numeric;
+            sprintf_result[next_store_index] = 0;                              //  So advance of next_store_index via strlen() below works
             break;
-					case 'c':
-					 	//  Get next numeric arg and make it a char
-					 	//  or get the next string arg and use the first char
-						if (*pArg == 0)
-						{
-							numeric = cvt_HP85_real_to_IEEE_double((uint8_t *)(pArg + 1));	                  //  Get REAL arg in the usable format
-							pArg += 9;	                                                        //  Skip tag and 8-byte value
-						}
-						else if (*pArg == 1)
-						{
-							*pArg = 0xFF;	                                                      //  Change tag to tagged-INT tag
-							numeric = cvt_HP85_real_to_IEEE_double((uint8_t *)(pArg - 4));	                  //  Get tagged-INT arg in the usable format
-							pArg += 4;	                                                        //  Skip tag and 3-byte value
-						}
-						else if (*pArg == 2)
-						{
-							++pArg;	                                                            //  Point to len
-							string_length = *pArg + (*(pArg + 1) * 256);	                      //  Get string length
-							if (string_length == 0)
-							{
-							  goto badformat;
-							}
-							pArg += 2;
-							numeric = (double)(long)(*pArg);	                                  //  Get first char of string as numeric value       ##########  this looks a bit dodgy
-							pArg += string_length;		                                          //  Skip string to next arg
-						}
-						else
-						{
-						  goto badformat;
-						}
-						ScratchBuffer[next_store_index++] = (char)(long)numeric;
-						ScratchBuffer[next_store_index] = 0;	                                //  So advance of next_store_index via strlen() below works
-						break;
-					case 'p':
-					case 'a':
-					case 'A':
-					case 'n':
-					default:
+          case 'p':
+          case 'a':
+          case 'A':
+          case 'n':
+          default:
 badformat:
             *p_len = 0;
             *p_usage = 219;                                 //  BAD FORMAT
             *p_mailbox = 0;                                 //  Indicate we are done
             Serial.printf("SPRINTF BAD FORMAT\n");
             return;
-					}
-					next_store_index += strlen((char*)(ScratchBuffer + next_store_index));
-				}
-			}
-		}
-		strncpy(p_buffer, ScratchBuffer, next_store_index);		  //  Copy formatted output to buf
-    *p_len =  next_store_index;          		                //  Set returned length
+        }
+        next_store_index += strlen((char*)(sprintf_result + next_store_index));
+      }             //  end of conversion processing
+    }               //  end of while loop
+    strncpy(p_buffer, sprintf_result, next_store_index);     //  Copy formatted output to buf
+    *p_len =  next_store_index;                             //  Set returned length
     *p_usage = 0;                                           //  Good exit
     *p_mailbox = 0;                                         //  Indicate we are done
 }
@@ -2286,10 +2360,10 @@ void AUXROM_SDSEEK(void)
   {
     target_position = offset;
   }
-	else if (seek_mode == 1)
-	{
-	  target_position = current_position + offset;
-	}
+  else if (seek_mode == 1)
+  {
+    target_position = current_position + offset;
+  }
   else                                                                      //  Trust that AUXROM never passes a mode other than 0, 1, 2
   {
     target_position = end_position + offset;
@@ -2442,7 +2516,7 @@ void AUXROM_WROM(void)
   }
   if (target_address + transfer_length  >= 0100000 )
   {
-    transfer_length = 0100000 - target_address;	          //  Don't let AUXROM write past end of ROM.  Maybe we should report an error
+    transfer_length = 0100000 - target_address;           //  Don't let AUXROM write past end of ROM.  Maybe we should report an error
   }
   dest_ptr = dest_ptr + (target_address - 060000);
   while(transfer_length--)
@@ -2614,26 +2688,26 @@ bool Resolve_Path(char *New_Path)
 
 
   if (*src_ptr == '/')
-	{
-	  Resolved_Path[0] = '/';                                 //  Handle an absolute path
-	  Resolved_Path[1] = 0x00;
-	  dest_ptr = Resolved_Path + 1;
-	  src_ptr++;
-	}
-	else
-	{
-	  strlcpy(Resolved_Path, Current_Path, MAX_SD_PATH_LENGTH); //  Handle relative path, so start by copying the Current_Path to the work area. Assume it does not contain any ../ or ./
-	                                                            //  Also, since Current_Path is a directory path, it has both leading and trailing '/' (if root, just one '/')
-	  dest_ptr = Resolved_Path + strlen(Resolved_Path);
-	  if (Resolved_Path[0] != '/')
-	  {
-	    return false;                                           //  make sure that the first character of the path we are building is a '/'
-	  }
-	  if (dest_ptr[-1] != '/')
-	  {
-	    return false;                                           //  make sure that the last character of the path we are building is a '/'
-	  }
-	}
+  {
+    Resolved_Path[0] = '/';                                 //  Handle an absolute path
+    Resolved_Path[1] = 0x00;
+    dest_ptr = Resolved_Path + 1;
+    src_ptr++;
+  }
+  else
+  {
+    strlcpy(Resolved_Path, Current_Path, MAX_SD_PATH_LENGTH); //  Handle relative path, so start by copying the Current_Path to the work area. Assume it does not contain any ../ or ./
+                                                              //  Also, since Current_Path is a directory path, it has both leading and trailing '/' (if root, just one '/')
+    dest_ptr = Resolved_Path + strlen(Resolved_Path);
+    if (Resolved_Path[0] != '/')
+    {
+      return false;                                           //  make sure that the first character of the path we are building is a '/'
+    }
+    if (dest_ptr[-1] != '/')
+    {
+      return false;                                           //  make sure that the last character of the path we are building is a '/'
+    }
+  }
 
   //Serial.printf("Path so far [%s]\n", Resolved_Path);
   //

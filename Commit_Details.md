@@ -73,7 +73,7 @@ Changes:
     a shared copy function that is also used for SDCOPY.
 -   Implemented SDCOPY
 
-## Commit \#79 11/23/2020
+## Commit \#79 11/25/2020
 
 Changes:
 -   Updated the possible error messages and AUXERRN numbers reported in
@@ -86,6 +86,14 @@ Changes:
     Only the most minimal tests. Crashes HP85 when format string is bad, like "%D"
     about 300 lines of untested code.
 -   Disabled USBHost related class instances at top of EBTKS.cpp
+
+## Commit \#80 11/26/2020
+
+Changes:
+-   SPRINTF, structure and functionality from Everett, but rewritten in the style
+    of the surrounding code, and with many variable names changed, and different
+    buffer structure. Also a few bugs found.
+
 
 
 
