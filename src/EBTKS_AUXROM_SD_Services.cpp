@@ -128,6 +128,7 @@
 //                                          524       Couldn't open Source File
 //                                          525       Couldn't open Destination File
 //                                          526       File copy failed
+//                                          527       SDCOPY File already Exists
 
 
 
@@ -2607,6 +2608,21 @@ void AUXROM_SDCOPY(void)
     *p_mailbox = 0;      //  Indicate we are done
     Serial.printf("SDCOPY Can't resolve Destination path  [%s]\n", p_buffer+256);
     return;
+  }
+
+  if (SD.exists(Resolved_Path))
+  {
+    if (AUXROM_RAM_Window.as_struct.AR_Opts[0] == 0)
+    {   //  Overwrite is not allowed
+      post_custom_error_message("SDCOPY File already Exists", 527);
+      *p_mailbox = 0;      //  Indicate we are done
+      Serial.printf("SDCOPY File already Exists  [%s]\n", Resolved_Path);
+      return;
+    }
+    //
+    //  Overwrite flag must be non-zero, so overwrite is allowed. Easy solution is delete the destination file 
+    //
+    SD.remove(Resolved_Path);
   }
 
   copy_status = copy_sd_file(Resolved_Old_Path, Resolved_Path);

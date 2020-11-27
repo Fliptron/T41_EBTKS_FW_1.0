@@ -94,7 +94,16 @@ Changes:
     of the surrounding code, and with many variable names changed, and different
     buffer structure. Also a few bugs found.
 
+## Commit \#81 11/26/2020
 
+Changes:
+-   SDCOPY now has an optional Overwrite flag. If no flag is provided, or it is 0
+    then Overwrite is an error. If it is 1, the overwrite is allowed.
+    Update related website documentation
+-   SDSLASH$ Updated related website documentation
+-   In EBTKS_SD.cpp, improve documentaion about how ROM headers are processed during
+    boot, given new support for HP86/87. Also some mostly cosmetic changes to
+    other documentation, and some error messages
 
 
 

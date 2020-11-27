@@ -1,6 +1,7 @@
 //
 //	06/27/2020	All this wonderful code came from Russell.
 //
+//              And then Philip made many changes.
 
 #include <Arduino.h>
 #include <ArduinoJson.h>
@@ -19,19 +20,19 @@ char * boot_log_ptr;
 
 bool loadRom(const char *fname, int slotNum, const char *description)
 {
-  uint8_t header[10]; //  Why is this 10?  I think it should be 2
-  uint8_t id;
+  uint8_t       header[3];
+  uint8_t       id;
 
   //  boot_log_ptr should already be setup, but just in case it isn't we set it up here, so that we don't have writes going somewhere dangerous
   if (boot_log_ptr == NULL)
   {
     boot_log_ptr = Directory_Listing_Buffer_for_SDDEL;
   }
-
-  //attempts to read a hp80 rom file from the sdcard using the given filename
-  //read the file and check the rom header to verify it is a rom file and extract the id
-  // then insert it into the rom emulation system
-
+  //
+  //  Attempts to read a HP80 ROM file from the SD Card using the given filename
+  //  read the file and check the ROM header to verify it is a ROM file and extract
+  //  the ID, then insert it into the ROM emulation system
+  //
   if (slotNum > MAX_ROMS)
   {
     LOGPRINTF("ROM slot number too large %d\n", slotNum);
@@ -48,20 +49,26 @@ bool loadRom(const char *fname, int slotNum, const char *description)
     rfile.close(); //  Is this right??? if it failed to open, and rfile is null (0) , the what would this statement do???
     return false;
   }
-  // validate the rom image. The first two bytes are the id and the complement (except for secondary AUXROMs)
-  // but to support the way we are handling HP86/87, we read 3 bytes. See comment below that starts "No special ROM loading for Primary AUXROM at 0361. ....."
+  //
+  //  Validate the ROM image. The first two bytes are the id and the complement (except for secondary AUXROMs)
+  //  but to support the way we are handling HP86/87, we read 3 bytes.
+  //  See comment below that starts "No special ROM loading for Primary AUXROM at 0361. ....."
+  //
   if (rfile.read(header, 3) != 3)
   {
     LOGPRINTF("ROM file read error %s\n", fname);
-    boot_log_ptr += sprintf(boot_log_ptr, "Can't read ROM");
+    boot_log_ptr += sprintf(boot_log_ptr, "Can't read ROM header %s\n", fname);
     rfile.close();
     return false;
   }
 
   //
-  //  Nothing special for normal HP-85 ROMs, first byte at 060000 is the ROM ID, next byte is the complement. The sum is always 0377  (0xFF)
-  //    For HP-86 and 87 it is the twos complement, and the sum is always 0.    ***We do not handle this yet***
-  //    For AUXROMs, there is a Primary AUXROM, with normal two byte header of 0361 0016  (0xF1  and 0x0E)
+  //  Nothing special for normal HP-85 ROMs, first byte at 060000 is the ROM ID, next byte is the one's complement.
+  //    For HP-85A and HP-85B the sum is always 0377  (0xFF)
+  //    For HP-86 and 87 it is the twos complement, and the sum is always 0.
+  //    For AUXROMs, there is a Primary AUXROM, with normal two byte header of
+  //      85A/B:  0361 0016  (0xF1  and 0x0E)
+  //      86/87:  0361 0017  (0xF1  and 0x0F)
   //    For Secondary AUXROMs, the first byte is 0362 to 0375. The second byte is complemented normally (85: 1's or 86/87: 2's) then ORed with 0360.
   //               85 86/87
   //          361 016  017
@@ -89,11 +96,11 @@ bool loadRom(const char *fname, int slotNum, const char *description)
   LOGPRINTF("%03o %3d  %02X   %02X    %02X   ", id, id, id, header[1], (uint8_t)(id + header[1]));
   if(id < 0362)
   {
-    boot_log_ptr += sprintf(boot_log_ptr, " ID: %03o ", id);    //  Primary AUXROM and normal ROMs have ID in first byte
+    boot_log_ptr += sprintf(boot_log_ptr, " ID: %03o ", id);            //  Primary AUXROM and normal ROMs have ID in first byte
   }
   else
   {
-    boot_log_ptr += sprintf(boot_log_ptr, " ID: %03o ", header[1]);    //  Secondary AUXROMs have ID in second byte
+    boot_log_ptr += sprintf(boot_log_ptr, " ID: %03o ", header[1]);     //  Secondary AUXROMs have ID in second byte
   }
   
   //
@@ -116,7 +123,6 @@ bool loadRom(const char *fname, int slotNum, const char *description)
   //    write the proper ROM# in the first byte location for each AUX ROM
   //    2, 3, 4, etc. This way, those who look at 60000 to see which ROM is
   //    currently loaded will continue to work fine.
-  //
   //
   if (id==0377)
   {

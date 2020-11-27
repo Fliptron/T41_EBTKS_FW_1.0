@@ -669,7 +669,7 @@ void setup()
   {
     CLEAR_TXD; EBTKS_delay_ns(1000);  TXD_Pulser(2);
     logfile_active = open_logfile();
-    Serial.printf("logfile_active is %c\n", logfile_active ? "true":"false");
+    Serial.printf("logfile_active is %s\n", logfile_active ? "true":"false");
   }
 
   if(SD_begin_OK)
