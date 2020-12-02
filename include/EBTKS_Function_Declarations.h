@@ -150,7 +150,7 @@ void AUXROM_MEDIA(void);
 void AUXROM_SDMKDIR(void);
 void AUXROM_MOUNT(void);
 void AUXROM_SDOPEN(void);
-          void AUXROM_SPF(void);
+void AUXROM_SPF(void);
 void AUXROM_SDREAD(void);
 void AUXROM_SDREN(void);
 void AUXROM_SDRMDIR(void);
@@ -159,8 +159,11 @@ void AUXROM_SDWRITE(void);
 void AUXROM_UNMOUNT(void);
 void AUXROM_WROM(void);
           void AUXROM_MEMCPY(void);
-          void AUXROM_SETLED(void);
-          void AUXROM_SDCOPY(void);
+void AUXROM_SETLED(void);
+void AUXROM_SDCOPY(void);
+void AUXROM_SDEOF(void);
+void AUXROM_SDEXISTS(void);
+void AUXROM_EBTKSREV(void);
 
 //
 //  Utility Functions

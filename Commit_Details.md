@@ -104,6 +104,27 @@ Changes:
 -   In EBTKS_SD.cpp, improve documentaion about how ROM headers are processed during
     boot, given new support for HP86/87. Also some mostly cosmetic changes to
     other documentation, and some error messages
+-   Trivial formatting bug in EBTKS.cpp
+
+## Commit \#82 11/30/2020
+
+Changes:
+-   Added SDEOF(file\#) keyword
+-   Added SDEXISTS(filePathAndName$) keyword
+-   Updated Documentation for SDCAT, SDFFIRST and SDFNEXT. Update the associated custom error messages
+-   Implemented EBTKSREV$
+    added EBTKS_FIRMWARE_VERSION in EBTKS.h
+-   Some prior commit added SETLED
+-   SDCLOSE now sends a message to the serial console for each file closed
+-   VERBOSE_KEYWORDS now sends a message to the serial console for each Keyword called
+    May also provide additional information
+-   Minor changes and more debug serial output for SPRINTF
+-   Minor changes to SDREN while debugging Phi 2 to RC timing.
+
+
+
+
+
 
 
 

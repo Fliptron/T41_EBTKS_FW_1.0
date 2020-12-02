@@ -129,6 +129,10 @@
 //                                          525       Couldn't open Destination File
 //                                          526       File copy failed
 //                                          527       SDCOPY File already Exists
+//        530..539      AUXROM_SDEOF
+//                                          530       SDEOF file isn't open
+//        540..549      AUXROM_SDEXISTS
+//
 
 
 
@@ -142,6 +146,7 @@
 #include "HpibDisk.h"
 
 #define   VERBOSE_KEYWORDS          (0)
+#define   VERBOSE_SPRINTF           (1)
 
 #define MAX_SD_PATH_LENGTH          (256)
 
@@ -677,7 +682,7 @@ void AUXROM_SDCLOSE(void)
           Serial.printf("In SDCLOSE, couldn't retrieve filename\n");
         }
         return_status = Auxrom_Files[i].close();
-        //  Serial.printf("Close file %2d [%s]  Success status is %s\n", i, filename, return_status ? "true":"false");
+        Serial.printf("Close file %2d [%s]  Success status is %s\n", i, filename, return_status ? "true":"false");
         //
         //  No error exit
         //
@@ -1762,22 +1767,30 @@ void AUXROM_SPF(void)
       goto badformat;                                   //  No FORMAT$ (should never happen, should be caught by AUXROM,
                                                         //  but let's be safe, in case an IDIOT wrote the AUXROM)
     }
-    format_remaining = *format_ptr + (*(format_ptr + 1) * 256);     //  Get length of format$
-    format_ptr += 2;                                          //  Skip len of format$
-    arg_list_ptr = format_ptr + format_remaining;                     //  Skip format$ to point to first arg
+    format_remaining = *(uint16_t *)format_ptr;         //  Get length of format$
+    format_ptr += 2;                                    //  Skip len of format$
 
-    next_store_index = 0;                                             //  How many chars written to sprintf_result (limit of SCRATCHLENGTH)
+#if VERBOSE_KEYWORDS | VERBOSE_SPRINTF
+    Serial.printf("Call to SPRINTF  Format string length %d  Format string [%.*s]\n", format_remaining, format_remaining, format_ptr);
+#endif
+
+    arg_list_ptr = format_ptr + format_remaining;       //  Skip format$ to point to first arg
+
+    next_store_index = 0;                               //  How many chars written to sprintf_result (limit of SCRATCHLENGTH)
     //
     //  format_ptr                    points to current char in format$
-    //  format_remaining        remaining chars in format$ (including the current one). Remember: format$ is NOT NUL-terminated!
-    //  arg_list_ptr                    points to the next arg's TYPE byte in buf
-    //  next_store_index        index into sprintf_result of where to store next formatted output
+    //  format_remaining              remaining chars in format$ (including the current one). Remember: format$ is NOT NUL-terminated!
+    //  arg_list_ptr                  points to the next arg's TYPE byte in buf
+    //  next_store_index              index into sprintf_result of where to store next formatted output
+    //
 
     while ((next_store_index < SCRATCHLENGTH) && format_remaining )
     {   //  Process format$ until buffer is full or run out of format$
       int q;
 
-      Serial.printf("Format [%*s] StorIndex %d ScratchBuf [%s]\n", format_remaining, format_ptr, next_store_index, sprintf_result);
+      #if VERBOSE_SPRINTF
+      Serial.printf("Format [%.*s] StorIndex %d ScratchBuf [%s]\n", format_remaining, format_ptr, next_store_index, sprintf_result);
+      #endif
 
       if (*format_ptr != '%' || ((format_remaining > 1) && (*(format_ptr+1) == '%')) )
       {                                           //  Format is not a conversion
@@ -2004,9 +2017,9 @@ argmismatch:
             {
               goto argmismatch;                                                   //  Fail if next arg is not STRING!
             }
-            arg_list_ptr++;                                                               //  Skip to len
-            string_length = *arg_list_ptr + (*(arg_list_ptr + 1) * 256);                          //  Get string length
-            arg_list_ptr += 2;                                                            //  Skip len
+            arg_list_ptr++;                                                       //  Skip to len
+            string_length = *(uint16_t *)arg_list_ptr;                            //  Get string length
+            arg_list_ptr += 2;                                                    //  Skip len
             if ((string_length + next_store_index) > SCRATCHLENGTH)
             {
               goto badformat;                                                     //  Actually, string too long   ######
@@ -2035,13 +2048,13 @@ argmismatch:
             else if (*arg_list_ptr == FORMAT_ARG_STRING)
             {
               ++arg_list_ptr;                                                         //  Point to len
-              string_length = *arg_list_ptr + (*(arg_list_ptr + 1) * 256);                    //  Get string length
+              string_length = *(uint16_t *)arg_list_ptr;                              //  Get string length
               if (string_length == 0)
               {
                 goto badformat;
               }
               arg_list_ptr += 2;
-              numeric = (double)(long)(*arg_list_ptr);                                //  Get first char of string as numeric value       ##########  this looks a bit dodgy
+              numeric = (double)(long)(*arg_list_ptr);                                //  Get first char of string as numeric value
               arg_list_ptr += string_length;                                          //  Skip string to next arg
             }
             else
@@ -2090,7 +2103,7 @@ void AUXROM_SDREAD(void)
 #endif
 
   file_index = AUXROM_RAM_Window.as_struct.AR_Opts[0];               //  File number 1..11
-  bytes_to_read = *p_len;                                                 //  Length of read
+  bytes_to_read = *p_len;                                            //  Length of read
   if (!Auxrom_Files[file_index].isOpen())
   {
     post_custom_error_message("SDREAD File not open", 440);
@@ -2170,25 +2183,23 @@ void AUXROM_SDREN(void)
 {
   bool        rename_status;
 
-#if VERBOSE_KEYWORDS
-  Serial.printf("Call to SDREN\n");
-#endif
+  #if VERBOSE_KEYWORDS
+    Serial.printf("Call to SDREN\n");
+  #endif
 
   if(!Resolve_Path(p_buffer))
   {
     Serial.printf("SDREN error return 450\n");
     post_custom_error_message("Can't resolve Old path", 450);
-    *p_mailbox = 0;      //  Indicate we are done
     Serial.printf("SDREN can't resolve Old path  [%s]\n", p_buffer);
-    return;
+    goto SDREN_Error_exit;
   }
   if (!SD.exists(Resolved_Path))
   {
     Serial.printf("SDREN Old file doesn't exist 454\n");
     post_custom_error_message("SDREN Old file doesn't exist", 454);
-    *p_mailbox = 0;      //  Indicate we are done
     Serial.printf("SDREN Old File path  [%s]\n", p_buffer);
-    return;
+    goto SDREN_Error_exit;
   }
 
   strlcpy(Resolved_Old_Path, Resolved_Path, MAX_SD_PATH_LENGTH+1);      //  Save path to old file, as we need Resolve_Path() to process new path
@@ -2196,9 +2207,8 @@ void AUXROM_SDREN(void)
   {
     Serial.printf("SDREN error return 451\n");
     post_custom_error_message("Can't resolve New path", 451);
-    *p_mailbox = 0;      //  Indicate we are done
     Serial.printf("SDREN can't resolve New path  [%s]\n", p_buffer+256);
-    return;
+    goto SDREN_Error_exit;
   }
 
   rename_status = SD.rename(Resolved_Old_Path, Resolved_Path);
@@ -2207,9 +2217,8 @@ void AUXROM_SDREN(void)
   {
     Serial.printf("SDREN error return 452\n");
     post_custom_error_message("SDREN rename failed", 452);
-    *p_mailbox = 0;      //  Indicate we are done
     Serial.printf("SDREN rename failed  Resolved paths are old [%s]   new [%s]\n", Resolved_Old_Path, Resolved_Path);
-    return;
+    goto SDREN_Error_exit;
   }
   //
   //  Success exit
@@ -2220,11 +2229,13 @@ void AUXROM_SDREN(void)
     Serial.printf("SDREN success verification failure\n");
     Serial.printf("SDREN Mystery bug 453\n");
     post_custom_error_message("SDREN Mystery bug", 453);
-    *p_mailbox = 0;      //  Indicate we are done
-    return;
+    goto SDREN_Error_exit;
   }
-
+  //
+  //  Fall into normal successful exit
+  //
   *p_usage = 0;                         //  Indicate Success
+SDREN_Error_exit:
   *p_mailbox = 0;                       //  Must always be the last thing we do
   return;
 }
@@ -2330,9 +2341,9 @@ void AUXROM_SDSEEK(void)
   Serial.printf("Call to SDSEEK\n");
 #endif
 
-  file_index = AUXROM_RAM_Window.as_struct.AR_Opts[0];                    //  File number 1..11
-  seek_mode  = AUXROM_RAM_Window.as_struct.AR_Opts[1];               //  0=absolute position, 1=advance from current position, 2=go to end of file
-  offset     = *(uint32_t *)(AUXROM_RAM_Window.as_struct.AR_Opts + 4); //  Fetch the file offset, or absolute position
+  file_index = AUXROM_RAM_Window.as_struct.AR_Opts[0];                      //  File number 1..11
+  seek_mode  = AUXROM_RAM_Window.as_struct.AR_Opts[1];                      //  0=absolute position, 1=advance from current position, 2=go to end of file
+  offset     = *(uint32_t *)(AUXROM_RAM_Window.as_struct.AR_Opts + 4);      //  Fetch the file offset, or absolute position
   //  Serial.printf("\nSDSEEK Mode %d   Offset %d\n", seek_mode, offset);
   //
   //  check the file is open
@@ -2529,7 +2540,7 @@ void AUXROM_WROM(void)
 void AUXROM_MEMCPY(void)
 {
 #if VERBOSE_KEYWORDS
-  Serial.printf("Call to MEMCPY\n");
+  Serial.printf("Call to MEMCPY (not yet implemented)\n");
 #endif
 
 
@@ -2656,6 +2667,104 @@ void AUXROM_SDCOPY(void)
   *p_mailbox = 0;                       //  Must always be the last thing we do
   return;
 }
+
+//
+//  SDEOF(file#)
+//    File number is in AR_Opts[0]
+//    return value is placed in AR_Opts[4..7]
+//  Returns the number of bytes from the current position to the end of file.
+//  Returns 0 if the current position is the end of file
+//
+
+void AUXROM_SDEOF(void)
+{
+  int         file_index;
+  int         bytes_till_the_end;
+
+#if VERBOSE_KEYWORDS
+  Serial.printf("Call to SDEOF\n");
+#endif
+
+  file_index = AUXROM_RAM_Window.as_struct.AR_Opts[0];                      //  File number 1..12
+  //
+  //  check the file is open
+  //
+  if (!Auxrom_Files[file_index].isOpen())
+  {
+    post_custom_error_message("SDEOF file isn't open", 530);
+    *p_mailbox = 0;                                                         //  Indicate we are done
+    Serial.printf("SDEOF File isn't open. File # %d\n", AUXROM_RAM_Window.as_struct.AR_Opts[0]);
+    return;
+  }
+  bytes_till_the_end = Auxrom_Files[file_index].available();
+  *(uint32_t *)(AUXROM_RAM_Window.as_struct.AR_Opts + 4) = bytes_till_the_end;
+  *p_usage    = 0;                                                          //  SDEOF successful
+  *p_mailbox = 0;                                                           //  Indicate we are done
+  return;
+}
+
+//
+//  SDEXISTS(filePathName$)
+//
+//  Returns true if file/directory exists
+//
+//  Directory Tests:                returns
+//    SDEXISTS("tapes")               1
+//    SDEXISTS("TAPES")               1
+//    SDEXISTS("TApeS")               1
+//    SDEXISTS("/tapes")              1
+//    SDEXISTS("/tapes/")             1
+//    SDEXISTS("tapes/")              1
+//    SDEXISTS("tapez")               0
+//
+//  Filename Tests:                 returns
+//    SDEXISTS("CONFIG.TXT")          1
+//    SDEXISTS("/CONFIG.TXT")         1
+//    SDEXISTS("config.txt")          1
+//    SDEXISTS("/CONFIG.TXT/")        1     Surprising, but not worth fixing
+//    SDEXISTS("CONFIG.zzz")          0
+//
+
+void AUXROM_SDEXISTS(void)
+{
+
+#if VERBOSE_KEYWORDS
+  Serial.printf("Call to SDEXISTS\n");
+#endif
+
+  if(!Resolve_Path(p_buffer))
+  {
+    Serial.printf("Can't resolve path  330\n");
+    post_custom_error_message("Can't resolve path", 330);
+    *p_mailbox = 0;                                                           //  Indicate we are done
+    Serial.printf("SDEXISTS can't resolve Old path  [%s]\n", p_buffer);
+    return;
+  }
+
+  AUXROM_RAM_Window.as_struct.AR_Opts[0] = SD.exists(Resolved_Path) ? 1 : 0;
+  *p_usage    = 0;                                                            //  SDEXISTS successful
+  *p_mailbox  = 0;                                                            //  Indicate we are done
+  return;
+}
+
+//
+//  Return the EBTKS Firmware Revision string
+//
+
+void AUXROM_EBTKSREV(void)
+{
+
+#if VERBOSE_KEYWORDS
+  Serial.printf("Call to EBTKSREV\n");
+#endif
+
+  strcpy(p_buffer, EBTKS_FIRMWARE_VERSION);                                   //  Copies version string including trailing 0x00
+  *p_len = strlen(p_buffer);
+  *p_usage    = 0;                                                            //  SDEXISTS successful
+  *p_mailbox  = 0;                                                            //  Indicate we are done
+  return;
+}
+
 
 //
 //  This function takes New_Path and appends it to Current_Path (if it is a relative path) and

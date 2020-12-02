@@ -42,10 +42,9 @@
 #define  AUX_USAGE_MEMCPY        ( 22)      //  MEMCPY
 #define  AUX_USAGE_SETLED        ( 23)      //  SETLED
 #define  AUX_USAGE_SDCOPY        ( 24)      //  SDCOPY                                            
-
-
-
-
+#define  AUX_USAGE_SDEOF         ( 25)      //  SDEOF                                             Returns number of characters from current position to the end of the file
+#define  AUX_USAGE_SDEXISTS      ( 26)      //  SDEXISTS                                          Returns True (1) if file exists
+#define  AUX_USAGE_EBTKSREV      ( 27)      //  EBTKSREV$                                         Returns a revision string, The string is defined at the top of EBTKS.h
 
 
 //#define  AUX_USAGE_RDSTR         ( 18)      //  RDSTR                                             read a LF or CR/LF terminated string from an SD file
@@ -221,8 +220,17 @@ void AUXROM_Poll(void)
     case AUX_USAGE_SETLED:
       AUXROM_SETLED();
       break;
-    case AUX_USAGE_SDCOPY                                            :
+    case AUX_USAGE_SDCOPY:
       AUXROM_SDCOPY();
+      break;
+    case AUX_USAGE_SDEOF:
+      AUXROM_SDEOF();
+      break;
+    case AUX_USAGE_SDEXISTS:
+      AUXROM_SDEXISTS();
+      break;
+    case AUX_USAGE_EBTKSREV:
+      AUXROM_EBTKSREV();
       break;
     default:
       *p_usage = 1;               //  Failure, unrecognized Usage code
