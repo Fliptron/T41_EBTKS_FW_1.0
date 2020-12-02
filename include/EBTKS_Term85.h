@@ -26,7 +26,69 @@ enum
 
 //
 //  virtual terminal emulation.
-//  we write to a virtual screen. The dimensions are set in the constructor
+//
+//  To create a new Term85 object named term, for example a virtual terminal of 80 chars by 25 lines:
+//
+//      Term85 term(80,25);
+//
+//  Currently the maximum dimensions are 80x25.
+//  If you want a 1:1 virtual terminal for the HP85, then write
+//
+//       Term85 term(32,16);
+//
+//  This creates a virtual 'framebuffer' to which you can write strings to.
+//  Cursor addressing uses the ADM3A escape sequences:
+//      0x1a is clear screen
+//      0x1e is home cursor to top left
+//      to move the cursor to a specific row, send the two characters "esc" and "="
+//          followed by the row number (as a uint8_t) + 32, and the column (as a uint8_t) + 32
+//          a total of 4 characters. For example to move to row 5, column 16, the sequence is
+//          ESC         0x1B
+//          =           0x3D
+//          %            5 + 32 -> 37 -> 0x25 (which is "%")
+//          0           16 + 32 -> 48 -> 0x30 (which is "0")
+//
+//  Squiggly brackets '{}' are translated to () with underline for the hp85
+//
+//  Since this object inherits the Stream object, you can do term.printf("Hello there");
+//
+//  Thus Term85 gives you a virtual terminal. To display this we have the MapScreen
+//  object that maps a Term85 virtual terminal onto the HP85 screen.
+//
+//  To create a MapScreen object, first create a Term85
+//
+//        Term85 term(80,25);
+//
+//  then we pass this instance of Term85, named term, to a newly created MapScreen instance named mapper
+//
+//        MapScreen mapper(term);
+//
+//  The MapScreen instance (mapper) needs to be called on a regular basis using the member function loop().
+//  In the EBTKS system, this means a function call is added to the poll loop:
+//
+//      mapper.loop();      //  This will update the hp85 screen from the virtual terminal every 50ms.
+//
+//  To turn this on/off we have enable(bool). To turn off updates, use
+//
+//      mapper.enable(false);
+//
+//  If you don't want automatic updating (using the poll loop calls), then you can call update()
+//
+//      mapper.update();
+//
+//  This will use DMA to copy a 32x16 window of the virtual terminal onto the hp85 screen.
+//
+//  To move the window, call the scroll(enum) method to move the window.
+//
+//      mapper.scroll(SCROLL_UP);   //  SCROLL_UP, SCROLL_DOWN, SCROLL_LEFT, SCROLL_RIGHT
+//
+//  You can have multiple Term85 and multiple ScreenMap objects. Obviously, only one
+//  ScreenMap object should be enabled at a time - otherwise the resultant display
+//  on the HP85 will be 'interesting'
+//  
+//  Note - that the original HP85 screen state should be preserved prior to performing
+//  an update and restored when you wish to resume normal HP85 display as the HP85
+//  code seems to get a little miffed if things gets changed behind its back.
 //
 
 #define HORZ_CHARS (80U)

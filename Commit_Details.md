@@ -106,7 +106,7 @@ Changes:
     other documentation, and some error messages
 -   Trivial formatting bug in EBTKS.cpp
 
-## Commit \#82 11/30/2020
+## Commit \#82 12/02/2020
 
 Changes:
 -   Added SDEOF(file\#) keyword
@@ -121,7 +121,11 @@ Changes:
 -   Minor changes and more debug serial output for SPRINTF
 -   Minor changes to SDREN while debugging Phi 2 to RC timing.
 
+## Commit \#83 12/02/2020
 
+Changes:
+-   Added documentation on the Term85 virtual terminal object. By RB
+    Light editing by PMF
 
 
 
