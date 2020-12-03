@@ -673,7 +673,7 @@ void Boot_Message_Poll(void)
   }
 
   if (addReg != 000072)             //  Sneaky check to see if we are in the EXEC loop in the system ROM
-  {                                 //  Hold off displaying boot message untill we are in the EXEC loop
+  {                                 //  Hold off displaying boot message until we are in the EXEC loop
     return;                         //  We may miss the first occurrence, but we should see it pretty quickly
   }
 

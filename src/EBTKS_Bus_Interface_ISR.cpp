@@ -49,11 +49,45 @@
 
 #include "Inc_Common_Headers.h"
 
+#define EMC_SUPPORT           (1)
+
+
 ioReadFuncPtr_t ioReadFuncs[256];      //ensure the setup() code initialises this!
 ioWriteFuncPtr_t ioWriteFuncs[256];
 
+#if EMC_SUPPORT
+//
+//  Variables for the EMC (extended memory controller)
+//
+#define EXTRAM_SIZE 0x40000u    //256k to begin with
+
+volatile bool       ifetch , m_emc_mult;
+volatile uint8_t    m_emc_drp;
+uint32_t            m_emc_ptr1 , m_emc_ptr2;   //EMC pointers
+uint8_t             m_emc_mode;
+uint8_t             m_emc_state;
+volatile bool       m_emc_lmard;
+volatile uint32_t   cycleNdx;         //counts the byte index for multi-byte transfers
+DMAMEM uint8_t      extram[EXTRAM_SIZE];
+volatile uint32_t   m_emc_read,m_emc_write;
+
+enum {
+		  EMC_IDLE,
+		  EMC_INDIRECT_1,
+		  EMC_INDIRECT_2
+	};
+
+bool emc_r(void);
+void emc_w(uint8_t val);
+void lma_cycle(bool state);
+void emc_init(void);
+
+#endif
+
 volatile bool intEn_1MB5 = false;
 int intrState = 0;
+
+
 
 bool ioReadNullFunc(void) //  This function is running within an ISR, keep it short and fast.
 {
@@ -64,35 +98,42 @@ void ioWriteNullFunc(uint8_t) //  This function is running within an ISR, keep i
 {
   return;
 }
+
 void onWriteGIE(uint8_t val)
 {
-    (void)val;
-    globalIntEn = true;
+  (void)val;
+  globalIntEn = true;
 }
 
 void onWriteGID(uint8_t val)
 {
-    (void)val;
-    globalIntEn = false;
+  (void)val;
+  globalIntEn = false;
 }
-// this register is implemented in the 1MB5 translator chips - they all share this register
+
+//
+//  This register is implemented in the 1MB5 translator chips - they all share this register
+//
 void onWriteInterrupt(uint8_t val)
 {
-    (void)val;
-    intEn_1MB5 = true; //a write to this register enables 1MB5 interrupts
-
+  (void)val;
+  intEn_1MB5 = true;                              //  A write to this register enables 1MB5 interrupts
 }
 
 void initIOfuncTable(void)
 {
-for (int a = 0; a < 256; a++)
+  for (int a = 0; a < 256; a++)
   {
-    ioReadFuncs[a] = &ioReadNullFunc; //default all
+    ioReadFuncs[a] = &ioReadNullFunc;             //  Default all
     ioWriteFuncs[a] = &ioWriteNullFunc;
   }
+  setIOWriteFunc(0x40, &onWriteInterrupt);        //  177500 1MB5 INTEN
+  setIOWriteFunc(0, &onWriteGIE);                 //  Global interrupt enable
 
-setIOWriteFunc(0x40,&onWriteInterrupt); //177500 1MB5 INTEN
-setIOWriteFunc(0, &onWriteGIE);         //global interrupt enable
+#if EMC_SUPPORT
+  emc_init();
+#endif
+
 }
 
 void removeIOReadFunc(uint8_t addr)
@@ -126,6 +167,7 @@ bool getHP85RamExp(void)      //  Report true if HP85A RAM expansion is enabled
 {
   return enRam16k;
 }
+
 //
 //  EBTKS has only 2 interrupts, one for Phi 1 rising edge, and one for Phi 2 rising edge
 //  Both interupts come here to be serviced. They are mutually exclusive.
@@ -186,7 +228,7 @@ inline void onPhi_1_Rise(void)                  //  This function is running wit
 
   if (intrState)
     {
-      ASSERT_INTPRI;  //if we have asserted /IRL, assert our priority in the chain
+      ASSERT_INTPRI;                            //  If we have asserted /IRL, assert our priority in the chain
     }
   
 //
@@ -307,8 +349,8 @@ inline void onPhi_1_Rise(void)                  //  This function is running wit
 //    /WR   /RD   /LMA      Note all signals are active low in hardware.
 //
 //
-//  11/19/2020    There was for a long time, a belief that timing around Phi 2 was not as critical ans Phi 1.
-//                Over a week of bug tracking indicates that this may not be true.
+//  11/19/2020    There was for a long time, a belief that timing around Phi 2 was not as critical as Phi 1.
+//                Over a week of bug tracking indicates that this is not true.
 //
 
 inline void onPhi_2_Rise(void)                             //  This function is running within an ISR, keep it short and fast.
@@ -327,11 +369,36 @@ inline void onPhi_2_Rise(void)                             //  This function is 
   lma = !(bus_cycle_info & BIT_MASK_LMA);                 //  Invert the bits so they are active high
   rd  = !(bus_cycle_info & BIT_MASK_RD );
   wr  = !(bus_cycle_info & BIT_MASK_WR );
+#if EMC_SUPPORT
+  ifetch = !(GPIO_PAD_STATUS_REG_IFETCH & BIT_MASK_IFETCH);   //  Grab the instruction fetch bit. Only exists on HP85B, 86 and 87
+                                                              //  Used for tracking instructions for the extended memory controller
+#endif
 
   //  Resolve control logic states
 
+#if EMC_SUPPORT
+  //if ((rd != schedule_read) || (wr != schedule_write))    //  Reset on any change of read or write
+  if (lma != delayed_lma)                                   //  Reset count on change of lma
+  {
+    cycleNdx = 0;
+  }
+#endif
+
   schedule_read  = rd && !wr;
   schedule_write = wr && !rd;
+
+#if EMC_SUPPORT
+  if (lma == true)
+  {
+    lma_cycle(rd);    //for emc support
+    cycleNdx &= 1;    //ensure cycleNdx is only 0 or 1 in an lma cycle
+  }
+  else
+  {
+    m_emc_lmard = false;
+  }
+#endif
+
   schedule_address_increment = ((addReg >> 8) != 0xff) &&
                                 !(!schedule_address_load & delayed_lma) &&
                                 (schedule_read | schedule_write);         //  Only increment addr on a non i/o address
@@ -375,7 +442,7 @@ inline void onPhi_2_Rise(void)                             //  This function is 
 
   if (schedule_read)
   {           //  Test if address is in our range and if it is , return true and set readData to the data to be sent to the bus
-    HP85_Read_Us = onReadData(addReg);
+    HP85_Read_Us = onReadData();
   }
 
 //  if (HP85_Read_Us && just_once)
@@ -388,51 +455,51 @@ inline void onPhi_2_Rise(void)                             //  This function is 
 //  NOT Tested yet
 //
 
- switch(intrState)
+  switch(intrState)
   {
-    case 0: //test for a request or see if there is an intack
-
+    case 0:                                         //  Test for a request or see if there is an intack
       if ((Interrupt_Acknowledge) && (!IS_IPRIH_IN_LO))
       {
-        intEn_1MB5 = false;   //lower priority device had interrupted, disable our ints until a write to 177500
+        intEn_1MB5 = false;                         //  Lower priority device had interrupted, disable our ints until a write to 177500
       }
       else if ((interruptReq == true) && (globalIntEn == true) && (intEn_1MB5 == true))
       {
-        intrState = 1; //interrupt was requested
-        ASSERT_INT; //IRL low synchronous to phi2 rise - max 500ns to fall
+        intrState = 1;                              //  Interrupt was requested
+        ASSERT_INT;                                 //  IRL low synchronous to phi2 rise - max 500ns to fall
       }  
       break;
 
-    case 1: // IRL is low
-      if ((Interrupt_Acknowledge) && (!IS_IPRIH_IN_LO)) //we're interrupting - so it must be our turn
-        {
-          RELEASE_INT;
-          RELEASE_INTPRI;
-          globalIntAck = true;  //set when we've been the interrupter
-          readData = interruptVector;     
-          HP85_Read_Us = true; 
-          interruptReq = false; //clear request
-          intrState = 0;
-        }
+    case 1:                                         // IRL is low
+      if ((Interrupt_Acknowledge) && (!IS_IPRIH_IN_LO))     //  We're interrupting - so it must be our turn
+      {
+        RELEASE_INT;
+        RELEASE_INTPRI;
+        globalIntAck = true;                        //  Set when we've been the interrupter
+        readData = interruptVector;     
+        HP85_Read_Us = true; 
+        interruptReq = false;                       //  Clear request
+        intrState = 0;
+      }
       if ((Interrupt_Acknowledge) && (IS_IPRIH_IN_LO)) //higher priority request beat us
-        {
-          RELEASE_INT;  //let go of /IRL as we lost
-          RELEASE_INTPRI;
-          intrState = 0; //try for another request
-        }
+      {
+        RELEASE_INT;                                //  Let go of /IRL as we lost
+        RELEASE_INTPRI;
+        intrState = 0;                              //  Try for another request
+      }
       break;
   }
 
+  //
   //  For a Read Cycle (I/O bus to CPU on main board), this is where we turn the data bus around
   //  and place the data on the bus. We also assert BUS_DIR_TO_HP which changes the direction of
   //  the 8 bit bus level translator. This signal also asserts (drives low) the /RC signal that
   //  tells the 1MA8 that the data direction is from the I/O bus to the CPU.
   //  Timing is not too critical here, as we are about 800 ns before the rising edge of Phi 1
   //  which is when the data is read. Actually latched by Phi 1, so another 200 ns margin.
+  //
 
   if (HP85_Read_Us)
   {
-
     //
     //  This is diagnostic code to see if 1MA8 has let go of bus by the time we get here.
     //  for 100 ns we look at the I/O data bus with an oscilloscope and see what it looks
@@ -445,8 +512,8 @@ inline void onPhi_2_Rise(void)                             //  This function is 
     //          rising, and continuing for 400 ns, and ending at 80 ns after Phi 1 falling edge (i.e. 80 ns hold)
     //
     //  SET_TXD;
-    //  EBTKS_delay_ns(100);    //  This is used as a trigger, and delays us driving the bus for 100 ns, which we believe is a "don't care" due to long setup time
-    //  CLEAR_TXD;
+    //  EBTKS_delay_ns(100);              //  This is used as a trigger, and delays us driving the bus for 100 ns,
+    //  CLEAR_TXD;                        //  which we believe is a "don't care" due to long setup time
     //
 
     //  Set bus to output data 
@@ -462,6 +529,7 @@ inline void onPhi_2_Rise(void)                             //  This function is 
     //
     //  Use clear/set regs to output the bits we want without touching any others - not sure if this is the fastest method
     //
+
     GPIO_DR_CLEAR_DB0 = DATA_BUS_MASK;    //  Clear all 8 data bits
     GPIO_DR_SET_DB0   = dataBus;          //  Put data on the bus. This is the central point for ALL I/O and Memory reads that this board supports
 
@@ -483,7 +551,7 @@ inline void onPhi_2_Rise(void)                             //  This function is 
   if (DMA_Request)
   {
     //WAIT_WHILE_PHI_2_HIGH;              //  While Phi_2 is high, just hang around
-    // delayNanoseconds(130);             //  There is 70 ns overhead, so this puts the earliest version at 200 ns after falling Phi 2
+    //delayNanoseconds(130);              //  There is 70 ns overhead, so this puts the earliest version at 200 ns after falling Phi 2
                                           //  The latest is about 300 ns , so 100 ns jitter, probably due to arrival at the above wait while Phi 2 is high.
     ASSERT_HALT;
 
@@ -584,6 +652,7 @@ inline void onPhi_2_Rise(void)                             //  This function is 
 
   }
   //EBTKS_delay_ns(120);    //  We seem to be exiting so fast that the external logic analyzer is missing this ISR
+                            //  Upgraded logic analyzer. No more problem
 }
 
 //
@@ -600,7 +669,7 @@ inline void onPhi_2_Rise(void)                             //  This function is 
 //  nanosecond critical timing.
 //
 
-inline bool onReadData(uint16_t Current_Read_Address)                  //  This function is running within an ISR, keep it short and fast.
+inline bool onReadData(void)                  //  This function is running within an ISR, keep it short and fast.
 {
   //
   //  If any of these tests indicate that we need to supply data
@@ -610,10 +679,13 @@ inline bool onReadData(uint16_t Current_Read_Address)                  //  This 
   //    return false
   //
 
-  if ((Current_Read_Address & 0xE000) == ROM_PAGE) // ROM page 0x6000..0x7FFF   (8 KB)
+  if ((addReg & 0xE000) == ROM_PAGE) // ROM page 0x6000..0x7FFF   (8 KB)
   {
-    return readBankRom(Current_Read_Address & (ROM_PAGE_SIZE - 1));     //  Knock off some MSBs so we address the ROM from Current_Read_Address 0
-                                                        //  This function knows about the AUXROM RAM Window, and handles these reads as well
+    //
+    //  Knock off some MSBs so we address the ROM from addReg 0
+    //  This function knows about the AUXROM RAM Window, and handles these reads as well
+    //
+    return readBankRom(addReg & (ROM_PAGE_SIZE - 1));
   }
 
   if (enRam16k)
@@ -621,9 +693,9 @@ inline bool onReadData(uint16_t Current_Read_Address)                  //  This 
     //
     //  For HP-85 A, implement 16384 - 256 bytes of RAM, mapped at 0xC000 to 0xFEFF (if enabled)
     //
-    if ((Current_Read_Address >= HP85A_16K_RAM_module_base_addr) && (Current_Read_Address < IO_ADDR))
+    if ((addReg >= HP85A_16K_RAM_module_base_addr) && (addReg < IO_ADDR))
     {
-      readData = HP85A_16K_RAM_module[Current_Read_Address & 0x3FFF];
+      readData = HP85A_16K_RAM_module[addReg & 0x3FFF];
       return true;
     }
   }
@@ -631,13 +703,13 @@ inline bool onReadData(uint16_t Current_Read_Address)                  //  This 
   //
   //  Process I/O reads (data from I/O bus to the CPU)
   //
-  if ((Current_Read_Address & 0xFF00U) == 0xFF00U)
+  if ((addReg & 0xFF00U) == 0xFF00U)
   {
-    return (ioReadFuncs[Current_Read_Address & 0x00FFU])();  // Call I/O read handler
+    return (ioReadFuncs[addReg & 0x00FFU])();  // Call I/O read handler
   }
 
   //
-  //  If we get here, none of the checked address ranges matche the current Read Address
+  //  If we get here, none of the checked address ranges match the current Read Address
   //
 
   return false;
@@ -654,10 +726,9 @@ inline bool onReadData(uint16_t Current_Read_Address)                  //  This 
 //    Any I/O registers that we are implementing
 //    Any I/O registers that we are tracking
 //
-//    Unlike the onReadData() function that is associated with Phi 2, and has rather relaxed timing,
+//    Unlike the onReadData() function that is associated with Phi 2, and has rather relaxed timing,     (THIS IS NOT TRUE)
 //    onWriteData() is associated with Phi 1, and the timing is quite tight
 //
-
 
 inline void onWriteData(uint16_t addr, uint8_t data)
 {                                                                    
@@ -675,7 +746,6 @@ inline void onWriteData(uint16_t addr, uint8_t data)
     //
     //  For HP-85 A, implement 16384 - 256 bytes of RAM, mapped at 0xC000 to 0xFEFF (if enabled)
     //
-
     if ((addr >= HP85A_16K_RAM_module_base_addr) && (addr < IO_ADDR))
     {
       HP85A_16K_RAM_module[addr & 0x3FFFU] = data;
@@ -728,6 +798,25 @@ inline void onPhi_1_Fall(void)
     HP85_Read_Us = false;               //  Doneski
   }
 
+#if EMC_SUPPORT
+  if (schedule_read || schedule_write)
+  {
+    cycleNdx++;                         //  Keep track of the bus cycle count
+  }
+  //
+  //  Capture DRP instructions for the extended memory controller
+  //  and if the instruction is a multiple byte transfer
+  //
+  if (ifetch == true)
+  {
+    if ((data_from_IO_bus & 0xc0u) == 0x40u)    //  DRP instruction 0x40..0x7f?
+    {
+      m_emc_drp = data_from_IO_bus;
+    }
+    m_emc_mult = data_from_IO_bus & 1u;         //  Set if multiple byte instruction
+  }
+#endif
+
   if (schedule_address_load)            //  Load the address registers. Current data_from_IO_bus is the second byte of
                                         //  the address, top 8 bits. Already got the low 8 bits in pending_address_low_byte
   {
@@ -740,6 +829,12 @@ inline void onPhi_1_Fall(void)
   if (schedule_address_increment)       //  Increment address register. Happens for Read and Write cycles, unless address is being loaded, or address register is I/O space
   {
     addReg++;
+//address_register_has_changed:
+                                        //  Comming soon: pipelined processing of the addReg, so that all the time consuming stuff happens here
+                                        //  rather than in the time critical processing of Phi 2
+                                        //  PMF to RB 12/03/2020 at 2:08 am
+                                        //    "You know, if we started the Phi 2 processing on the falling edge of Phi 12, a lot of our timing issues would disappear. "
+  
   }
 
   pending_address_low_byte = data_from_IO_bus;    // Load this every cycle, in case we need it, avoiding an if ()
@@ -788,3 +883,161 @@ void mySystick_isr(void)
 //   while(DMA_Active){};      //  Wait for release
 // }
 // }
+
+
+#if EMC_SUPPORT
+
+//
+//  extended memory code. It's here because it is tightly coupled with the bus cycles
+//  rather than just a simple peripheral
+//
+void emc_init(void)
+{
+  
+  setIOReadFunc( 0xc8 , &emc_r );
+  setIOReadFunc( 0xc9 , &emc_r );
+  setIOReadFunc( 0xca , &emc_r );
+  setIOReadFunc( 0xcb , &emc_r );
+  setIOReadFunc( 0xcc , &emc_r );
+  setIOReadFunc( 0xcd , &emc_r );
+  setIOReadFunc( 0xce , &emc_r );
+  setIOReadFunc( 0xcf , &emc_r );
+
+  setIOWriteFunc( 0xc8 , &emc_w );
+  setIOWriteFunc( 0xc9 , &emc_w );
+  setIOWriteFunc( 0xca , &emc_w );
+  setIOWriteFunc( 0xcb , &emc_w );
+  setIOWriteFunc( 0xcc , &emc_w );
+  setIOWriteFunc( 0xcd , &emc_w );
+  setIOWriteFunc( 0xce , &emc_w );
+  setIOWriteFunc( 0xcf , &emc_w );
+}
+//
+//  note ! uses C++ 'reference'
+//
+inline uint32_t &get_ptr()
+{
+  if (m_emc_mode & 0x04u) //ptr1 or ptr2?
+  {
+    return m_emc_ptr2;
+  }
+  else
+  {
+    return m_emc_ptr1;
+  }
+}
+
+inline void emc_ptr12_decrement(void)
+{
+  uint8_t disp;
+
+  if (m_emc_drp & 0x20u) //8 byte regs or 2 byte regs?
+  {
+    disp = 8u - (m_emc_drp & 7u);
+  }
+  else
+  {
+    disp = 2u - (m_emc_drp & 1u);
+  }
+
+  if (m_emc_mult)
+  {
+    get_ptr() -= disp;
+  }
+  else
+  {
+    get_ptr()--;
+  }
+}
+
+inline void lma_cycle(bool rd)
+{
+  m_emc_lmard = rd; //  True if LMA read
+
+  if (m_emc_state == EMC_INDIRECT_1)
+  {
+    m_emc_state = EMC_INDIRECT_2;
+  }
+  else if (m_emc_state == EMC_INDIRECT_2)
+  {
+    if (!(m_emc_mode & 2u))
+    {
+      //  In PTRx & PTRx- cases, bring the PTR back to start
+      emc_ptr12_decrement();
+    }
+    m_emc_state = EMC_IDLE;
+  }
+}
+
+bool emc_r(void)
+{
+  readData = 0xff;
+  //m_emc_read++;
+
+  if (m_emc_state == EMC_INDIRECT_1)
+  {
+    uint32_t &ptr = get_ptr();
+
+    if ((ptr >= 0x8000) && ((ptr - 0x8000u) < EXTRAM_SIZE))
+    {
+      readData = extram[ptr - 0x8000u];
+      //readData = ptr & 0xff; //diag
+    }
+    ptr++;
+  }
+  else if (m_emc_lmard)
+  {
+    m_emc_mode = uint8_t((addReg & 0xffu) - 0xC8u);
+    // During a LMARD pair, address 0xffc8 is returned to CPU and indirect mode is activated
+    if (cycleNdx == 0)
+    {
+      readData = 0xc8;
+    }
+    else if (cycleNdx == 1)
+    {
+      m_emc_state = EMC_INDIRECT_1;
+      if (m_emc_mode & 1u)
+      {
+        // Pre-decrement
+        emc_ptr12_decrement();
+      }
+    }
+  }
+  else
+  {
+    m_emc_mode = uint8_t((addReg & 0xffu) - 0xC8u);
+    // Read PTRx
+    if (cycleNdx < 3)
+    {
+      readData = uint8_t(get_ptr() >> (8 * cycleNdx));
+    }
+  }
+  return true;
+}
+
+void emc_w(uint8_t val)
+{
+  //m_emc_write++;
+  if (m_emc_state == EMC_INDIRECT_1)
+  {
+    uint32_t &ptr = get_ptr();
+
+    if ((ptr >= 0x8000u) && ((ptr - 0x8000u) < EXTRAM_SIZE))
+    {
+      extram[ptr - 0x8000u] = val;
+    }
+    ptr++;
+  }
+  else
+  {
+    m_emc_mode = uint8_t((addReg & 0xffu) - 0xC8u);
+    // Write PTRx
+    if (cycleNdx < 3)
+    {
+      uint32_t &ptr = get_ptr();
+      uint32_t mask = (uint32_t)0xffU << (8u * cycleNdx);
+      ptr = (ptr & ~mask) | (uint32_t(val) << (8u * cycleNdx));
+    }
+  }
+}
+#endif

@@ -127,6 +127,15 @@ Changes:
 -   Added documentation on the Term85 virtual terminal object. By RB
     Light editing by PMF
 
+## Commit \#84 12/03/2020
+
+Changes:
+-   Integrate the first pass at EMS support, by RB, into EBTKS_Bus_Interface_ISR.cpp
+    also cleaned up some formatting
+-   change onReadData() to just use the global addReg rather than passing it as a parameter
+    since it is only called from one place, and addReg was the only value that is ever passed to it
+-   Removed EBTKS_EXTMEM.cpp, as it was just comments
+
 
 
 

@@ -63,7 +63,7 @@ uint8_t * getROMEntry(uint8_t romId);
 //  HP-85 Bus interface and ISR functions
 //
 
-inline bool onReadData(uint16_t addr);
+inline bool onReadData(void);
 inline void onPhi_2_Rise(void);
 void release_DMA_request(void);
 inline void onPhi_1_Rise(void);

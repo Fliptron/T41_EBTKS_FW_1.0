@@ -145,7 +145,7 @@ EXTERN  bool  schedule_write;                             //  Schedule a write o
 EXTERN  bool  schedule_read;                              //  Schedule a read operation
 EXTERN  bool  delayed_lma;                                //  LMA from prior cycle
 
-EXTERN  volatile uint16_t addReg; //hold the current HP85 address
+EXTERN  volatile uint16_t addReg;                         //  Hold the current HP85 address
 
 EXTERN  uint16_t pending_address_low_byte;    //  Storage for low address byte of a two byte address sequence. Load on Phi 1 falling edge
 
