@@ -136,7 +136,7 @@ Changes:
     since it is only called from one place, and addReg was the only value that is ever passed to it
 -   Removed EBTKS_EXTMEM.cpp, as it was just comments
 
-## Commit \#85 12/08/2020
+## Commit \#85 12/12/2020
 
 Changes:
 -   First successful attempt at dealing with random bus cycle timing when SD Card
@@ -167,6 +167,11 @@ Changes:
 -   Change /roms to /roms85 on the SD Card, in preparation to support HP86/87
 -   Removed a 2 second delay in the EBTKS boot process
 
+## Commit \#86 12/12/2020
+
+Changes:
+-   Correct the date in commit 85 note, above.
+-   Fix the Firmware version message in EBTKS.h
 
 
 

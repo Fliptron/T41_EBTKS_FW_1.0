@@ -24,7 +24,7 @@
 //
 //
 
-#define EBTKS_FIRMWARE_VERSION    "2020_12_03 @ 4:32 AM PST"
+#define EBTKS_FIRMWARE_VERSION    "2020_12_12 @ 7:20 AM PST"
 
 #define CORE_PIN_BUFEN            ( 0)
 #define CORE_PIN_CTRL_DIR         ( 1)
