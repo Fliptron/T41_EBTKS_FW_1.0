@@ -550,9 +550,9 @@ void diag_dir_path(const char * path)
   char      date[20], file_size[20];
   uint32_t  temp_uint;
 
-  if (!LineAtATime_ls_Init_SDCAT((char *)path))                    //  This is where the whole directory is listed into a buffer
+  if (!LineAtATime_ls_Init_SDCAT((char *)path))             //  This is where the whole directory is listed into a buffer
   {                                                         //  Failed to do a listing of the current directory
-    Serial.printf("Couldn't initialize read directory /tapes/ on SD card\n");
+    Serial.printf("Couldn't initialize read directory on SD card\n");
   }
   while(1)                                                  //  keep looping till we run out of entries
   {
@@ -586,7 +586,7 @@ void diag_dir_disks(void)
 
 void diag_dir_roms(void)
 {
-  diag_dir_path("/roms/");
+  diag_dir_path("/roms85/");
 }
 
 //
@@ -713,13 +713,13 @@ void report_media(void)
         filename = devices[device]->getFilename(disknum);
         if (filename)
         {
-          Serial.printf(":D%d%d%d    %s\n", HPIB_Select, device, disknum, filename);
+          Serial.printf(":D%d%d%d  %s\n", HPIB_Select, device, disknum, filename);
         }
       }
     }
   }
   filename = tape.getFile();
-  Serial.printf(":T       %s\n", filename);
+  Serial.printf(":T     %s\n", filename);
 
 }
 

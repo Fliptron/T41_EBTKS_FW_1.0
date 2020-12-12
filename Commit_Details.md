@@ -136,12 +136,36 @@ Changes:
     since it is only called from one place, and addReg was the only value that is ever passed to it
 -   Removed EBTKS_EXTMEM.cpp, as it was just comments
 
+## Commit \#85 12/08/2020
 
-
-
-
-
-
+Changes:
+-   First successful attempt at dealing with random bus cycle timing when SD Card
+    reads occur using quite byzantine code (by PMF). Issue was tracked down to a
+    small critical region in the SdFat library that was disabling all interrups.
+    This then randomly made the EBTKS processing of HP85 bus cycles violate timing.
+-   Second successful attempt at dealing with random bus cycle timing when SD Card
+    reads occur by changing the opperating mode of the SD Card from FIFO_SDIO to
+    DMA_SDIO which then leads to the code never going down the path in the SdFat
+    library that has the critical section (RB). Unless further issues are
+    identified, we will stick with this solution 
+-   Change from supporting Pin interrupts for Phi 1 Rising and Phi 2 Rising to
+    only Phi 1 Rising
+-   Rename onPhi_2_Rise() to mid_cycle_processing() since it is no longer anchored
+    to to the Phi 2 rising edge
+-   Reorganize all the pin change interrupt code, and make function sequence match
+    execution sequence
+-   Identify and document all ISR operations. Look for it just prior to
+    pinChange_isr() in EBTKS_Bus_Interface_ISR.cpp
+-   Change some global functions to local static
+-   Extensive changes to EBTKS_Bus_Interface_ISR.cpp
+-       Significant new documentation, detailed timing analysis will be in next commit
+-       In mid_cycle_processing() move some code that recognizes DMA and Interrupt acknowledgement
+-       Merge various EMC_SUPPORT code sequences
+-   Delete some of Philip's code that has been commented out for months
+-   Mark places in the code that we need to return to with #### tags
+-   Print some dots on the diagnostic terminal when waiting for HP85 to boot after the EBTKS boot
+-   Change /roms to /roms85 on the SD Card, in preparation to support HP86/87
+-   Removed a 2 second delay in the EBTKS boot process
 
 
 

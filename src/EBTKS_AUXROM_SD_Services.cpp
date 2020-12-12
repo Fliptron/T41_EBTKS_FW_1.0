@@ -146,7 +146,7 @@
 #include "HpibDisk.h"
 
 #define   VERBOSE_KEYWORDS          (0)
-#define   VERBOSE_SPRINTF           (1)
+#define   VERBOSE_SPRINTF           (0)
 
 #define MAX_SD_PATH_LENGTH          (256)
 

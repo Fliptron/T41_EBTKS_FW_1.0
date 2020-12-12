@@ -349,7 +349,7 @@
 #define GPIO_DIRECTION_DB0          GPIO6_GDIR
 #define GPIO_DIRECTION_WR           GPIO6_GDIR
 #define GPIO_DIRECTION_PHASE1       GPIO6_GDIR
-#define GPIO_DIRECTION_LMA          GPIO6_GDIR         //  onPhi_2_Rise() assumes/requires that LMA, RD, and WR are in the same GPIO group. They are, GPIO6
+#define GPIO_DIRECTION_LMA          GPIO6_GDIR         //  mid_cycle_processing() assumes/requires that LMA, RD, and WR are in the same GPIO group. They are, GPIO6
 #define GPIO_DIRECTION_RD           GPIO6_GDIR
 #define GPIO_DIRECTION_SCL          GPIO6_GDIR
 #define GPIO_DIRECTION_SDA          GPIO6_GDIR

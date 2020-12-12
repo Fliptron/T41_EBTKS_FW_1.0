@@ -593,9 +593,10 @@ void setup()
   pinMode(CORE_PIN_INTPRI,OUTPUT);
   RELEASE_INTPRI;
 
-  pinMode(CORE_PIN_IPRIH_IN, INPUT);    //PRIH input - interrupt priority chain input. Low if someone above us is interrupting
-  pinMode(CORE_PIN_INTPRI,OUTPUT);
-  RELEASE_INTPRI;
+  //  Why is this duplicate here ###### RB?
+  //  pinMode(CORE_PIN_IPRIH_IN, INPUT);    //PRIH input - interrupt priority chain input. Low if someone above us is interrupting
+  //  pinMode(CORE_PIN_INTPRI,OUTPUT);
+  //  RELEASE_INTPRI;
 
   RELEASE_HALT;                         //  Make activating pin output glitch free
   pinMode(CORE_PIN_HALTX, OUTPUT);      //  HALT inverted by hardware
@@ -621,8 +622,8 @@ void setup()
 
   leds.begin();
 
-  setIOWriteFunc(0340,&ioWriteAuxROM_Alert); // AUXROM Alert that a Mailbox/Buffer has been updated
-  setIOReadFunc(0340,&onReadAuxROM_Alert);   // Use HEYEBTKS to return identification string
+  setIOWriteFunc(0340,&ioWriteAuxROM_Alert);  // AUXROM Alert that a Mailbox/Buffer has been updated
+  setIOReadFunc(0340,&onReadAuxROM_Alert);    // Use HEYEBTKS to return identification string
 
   TXD_Pulser(4);
   EBTKS_delay_ns(10000); //  10 us
@@ -640,7 +641,7 @@ void setup()
   while (!Serial) {  };                                               //  Stall startup until the serial terminal is attached. Do this if we need to see startup messages
 #endif
 
-  delay(2000);                //  Give me a chance to turn the terminal emulator on, after I hear the USB enumeration Bing.
+  //delay(2000);                //  Give me a chance to turn the terminal emulator on, after I hear the USB enumeration Bing.
 
   Serial.begin(115200);       //  USB Serial Baud value is irrelevant for this serial channel
 
@@ -658,7 +659,8 @@ void setup()
   Serial.printf("Doing SD.begin\n");
   TXD_Pulser(2);  SET_TXD;
   SD_begin_OK = true;
-  if (!SD.begin(SdioConfig(FIFO_SDIO)))          //  This takes about 115 ms.
+  //if (!SD.begin(SdioConfig(FIFO_SDIO)))          //  This takes about 115 ms.
+  if (!SD.begin(SdioConfig(DMA_SDIO)))          //  This takes about 115 ms.
   {
     CLEAR_TXD; EBTKS_delay_ns(1000);  TXD_Pulser(2);
     Serial.println("SD begin failed\nLogfile is not active\n");
@@ -754,7 +756,8 @@ void setup()
                                             //  to bank-switched ROM, or RAM that we are supporting, those are handled in the ISRs
                                             //  There appears to be a short PWO high for 2 ms, so let's wait a bit and make sure
                                             //  real PWO high is 187 ms later
-  PHI_1_and_2_IMR = (BIT_MASK_PHASE1 | BIT_MASK_PHASE2);   //  Enable Phi 1 and Phi 2 interrupts
+  //PHI_1_and_2_IMR = (BIT_MASK_PHASE1 | BIT_MASK_PHASE2);   //  Enable Phi 1 and Phi 2 interrupts
+  PHI_1_and_2_IMR = (BIT_MASK_PHASE1);      //  Enable Phi 1 only.  2020_12_06
 
   delay(10);                                //  Wait 10 ms before falling into loop()  This might be BAD. What if a device op occurs while we are waiting?
                                             //  Seems there are some issues of loop functions interfering with the Service ROM initial sanity check,
@@ -767,11 +770,11 @@ void setup()
   //  Serial.begin(9600);                       //  USB Serial Baud value is irrelevant for this serial channel
   Serial.printf("HP-85 EBTKS Board Serial Diagnostics  %-4d\n", message_count++);
   Serial.printf("Access to SD Card is %s\n", SD_begin_OK     ? "true":"false");
-  Serial.printf("Config Success is %s\n"   , config_success  ? "true":"false");
+  Serial.printf("Config Success is %s\nWaiting for HP85 to get to prompt\n"   , config_success  ? "true":"false");
+  Serial.flush();
 
   Logic_Analyzer_Event_Count_Init = -1000;      // Use this to indicate the Logic analyzer has no default values.
 
-  Serial.flush();
   delay(100);
   if (!SD_begin_OK)
   {

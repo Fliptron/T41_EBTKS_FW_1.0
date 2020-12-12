@@ -705,7 +705,7 @@ void DMA_Poke16(uint32_t address, uint16_t val)
 //    rising edge of Phi 1.  Easy Peasy.
 //
 //  Due to the tight timing requirements, the matching code that acquires DMA ownership of the bus is
-//  within the function onPhi_2_Rise()
+//  within the function mid_cycle_processing()
 //
 
 void release_DMA_request(void)
@@ -748,7 +748,8 @@ void release_DMA_request(void)
   CTRL_DIR_FROM_HP;                         //  Go back to listening to the HP-85 /LMA, /RD, /WR
   NVIC_CLEAR_PENDING(IRQ_GPIO6789);         //  Do it again, just to be sure
   NVIC_ENABLE_IRQ(IRQ_GPIO6789);            //  and re-enable the interrupt controller for these Pin interrupts
-  PHI_1_and_2_IMR = (BIT_MASK_PHASE1 | BIT_MASK_PHASE2);   //  Enable Phi 1 and Phi 2 interrupts
+  //PHI_1_and_2_IMR = (BIT_MASK_PHASE1 | BIT_MASK_PHASE2);   //  Enable Phi 1 and Phi 2 interrupts
+  PHI_1_and_2_IMR = (BIT_MASK_PHASE1);      //  Enable Phi 1 only.  2020_12_06
   __enable_irq();                           //  Enable all interrupts, now that DMA is complete. Allows USB activity, Serial via USB, SysTick
 }
 

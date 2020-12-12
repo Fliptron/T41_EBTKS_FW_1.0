@@ -659,7 +659,8 @@ void printDirectory(File dir, int numTabs)
 }
 
 
-bool      boot_message_displayed = false;
+static bool       boot_message_displayed = false;
+static bool       dot_already_printed = false;
 
 void Boot_Message_Poll(void)
 {
@@ -674,6 +675,17 @@ void Boot_Message_Poll(void)
 
   if (addReg != 000072)             //  Sneaky check to see if we are in the EXEC loop in the system ROM
   {                                 //  Hold off displaying boot message until we are in the EXEC loop
+    if ((systick_millis_count % 200) == 0 && !dot_already_printed)
+    {
+      Serial.printf(".");             //  Waiting for HP85 to boot and get to BASIC prompt, so that boot messages
+      dot_already_printed = true;
+    }
+    if ((systick_millis_count % 200) != 0)
+    {
+      dot_already_printed = false;
+    }
+    
+                                    //  don't screw things up
     return;                         //  We may miss the first occurrence, but we should see it pretty quickly
   }
 

@@ -19,7 +19,6 @@
 //
 //      10/05/2020      First attempt ot trace DMA with the logic analyzer
 //
-
 //
 //  HP85 bus emulation
 //      Interrupt on:
@@ -51,6 +50,11 @@
 
 #define EMC_SUPPORT           (1)
 
+inline bool onReadData(void);
+inline void mid_cycle_processing(void);
+inline void onPhi_1_Rise(void);
+inline void onWriteData(uint16_t addr, uint8_t data) __attribute__((always_inline, unused));
+inline void onPhi_1_Fall(void);
 
 ioReadFuncPtr_t ioReadFuncs[256];      //ensure the setup() code initialises this!
 ioWriteFuncPtr_t ioWriteFuncs[256];
@@ -169,39 +173,168 @@ bool getHP85RamExp(void)      //  Report true if HP85A RAM expansion is enabled
 }
 
 //
-//  EBTKS has only 2 interrupts, one for Phi 1 rising edge, and one for Phi 2 rising edge
-//  Both interupts come here to be serviced. They are mutually exclusive.
+//  Prior Interrupt scheme:
+//      EBTKS has only 2 interrupts, one for Phi 1 rising edge, and one for Phi 2 rising edge
+//      Both interupts come here to be serviced. They are mutually exclusive.
+//
+//  New Interrupt scheme (12/06/2020 onward):
+//      EBTKS has only 1 interrupt for handling the HP85 I/O bus: Phi 1 rising.
+//      Where previously we had a distict Phi 2 Rising interrupt, we now process
+//      4 sections:
+//          Phi 1 rising edge tasks:    Capture bus for bus writes that are targetted at us
+//                                      Process I/O address range writes
+//                                      Process memory address range writes
+//                                      Process ROM-Window memory address range writes
+//          Phi 1 falling edge tasks:   Complete bus reads (where we supply the data and the /RC signal, de-assert /RC)
+//                                      Capture bus cycle state for next cycle
+//                                      Update our copy of the address register
+//                                      Logic Analyzer Acquisition
+//          Tweaked delay so that the /RC signal in the next section meets timing requirements of (A) After Phi 2 rising
+//                                      and (B) must start no later than 380 ns After Phi 2 rising
+//          Handle bus reads that we are responding to, by placing data on the bus and asserting /RC
+//                                      Includes RAM reads, ROM reads, ROM-Window reads, I/O reads
+//
 //
 //  The control signals /LMAX, /RD, and /WR are sampled after the falling edge of Phi 1,
 //  based on timing analysis of reverse engineering work
 //
+//  The identified issue that lead to this change of design is that the old cod caused
+//  violations of the time from the rising edge of Phi 2 to the lattest occurence of the
+//  falling edge of /RC on the I/O bus. According to the 1MB5 specification, Figure 5,
+//  tIF2, should fall no later than 380 ns after Phi 2 rising, and can be asserted a
+//  maximum of 200 ns after the falling edge of Phi 1 , spec tRCH.
+//  We can infer that /RC should not occur any earlier than the rising edge of Phi 2
+//  (tIF2 == 0 , not actually specified, but implied) , and the /RC signal can de-assert
+//  as early as the falling edge of Phi 1 (tRCH == 0 , not actually specified, but implied)
+//  It seems some safety margin for both the start and end of /RC would be prudent.
+//
+//
+//  12/06/2020  Timing analysis, from a single instance of EBTKS board
+//
+//              Note that there is the overhead of the SET/CLEAR_RXD , SET/CLEAR_TXD. The pair is about 10 ns
+//
+//                                                      Test            Time    Duration/Delay 
+//                                                      Program         Point   Min ns  Max ns
+//  From Phi 1 rising to first instruction (SET_RXD)    Idle                A                        Interrupt response time   (but saw rare 78 ns, at least twice)
+//                                                                                           
+//  Clearing Interrupts                                                A to B                        Thus latest B is 78+25 = 103ns
+//                                                                                           
+//  Start of onPhi_1_Rise() after Phi 1 Rise            Idle         P1R to C                
+//                                                      SDCAT                                        When looping SDCAT
+//                                                                                           
+//  Duration of onPhi_1_Rise() when idle                               C to D                        Bi modal.
+//                             when looping SDCAT                                                    Even spread. Latest D is 57 ns after Phi 1 F
+//                                                                                                   which is 267 ns after Phi 1 R
+//                                                                                           
+//  Start of onPhi_1_Fall() after Phi 1 Rise            Idle         P1R to E                        77 + 122 = 199  so a bit more than expected
+//                                                      SDCAT                                        When looping SDCAT
+//                                                                                           
+//  Earliest E                                          SDCAT                                        Can't tell latest
+//                                                                                           
+//  Latest F                                            Idle                                 
+//  Latest F                                            SDCAT                                
+//                                                                                           
+//  Earliest E to Latest F                              SDCAT                                
+
+//
+//  The heart of EBTKS is this Pin Change Interrupt Service Routine (ISR). ALL of the following tasks are
+//  processed while the processor is running in interrupt context, and our interrupt level is the highest
+//  level possible (maybe there is an unhandled overtemperature interrupt that is higher). As such, this
+//  sequence of task runs in sequence, and should not be interrupted. The total time to do all tasks must
+//  take no more than approximately 1000 ns. Note that while the list is very long, many of the tasks are
+//  bracketed by a conditional, which means only the test is performed and the bracketed code is skiped.
+//
+//  Tasks are performed in the following order:
+//    Start onPhi_1_Rise() processing
+//      Get data from the bus
+//      Assert INTPRI if we have asserted /IRL
+//      Calculate Logic Analyzer sample
+//      If Logic Analyzer is running
+//        Check for trigger
+//        Store a sample
+//        Update buffer address
+//        Check for acquisition complete
+//      Process writes to I/O devices or registers (may require non-trivial processing)
+//      Process writes to 16 KB RAM on HP85A if enabled and address match
+//      Process writes to special RAM window in the AUXROM(s)
+//      If Phi 1 is still high, wait
+//
+//    Start onPhi_1_Fall() processing
+//      Get data from the bus (again, same data being read into a local variable)
+//      If the HP85 was reading data from EBTKS, end the read, and de-assert /RC
+//      If we are supporting EMS
+//        Update cycle count
+//        test for IFETCH, and handle it
+//      Handle Address Register Loading or incrementing
+//      Save the data from the bus in case we need it as the low byte of an address register load
+//      Delay ??? ns so that /RC happens not too early (no sooner than Phi 2 rising)                #########  update this number
+//
+//    Start mid_cycle_processing()
+//      Get bus control signals /LMA, /RD, /WR and figure out what is hapening
+//      Identify Reads and Writes
+//      Identify DMA and Interrupt Acknowledge
+//      If EMS is supported, get IFETCH state
+//      Schedule Address Increment and Load
+//      If Read Cycle, see if it is an EBTKS Resource
+//        Is it a bank switched ROM address
+//          Is it an AUXROM && RAM Window address
+//            Read from RAM Window
+//        Is it a ROM that EBTKS is providing? If so, read the selected ROM
+//        Process Reads from 16 KB RAM on HP85A if enabled and address match
+//        Process any I/O space Reads (may require non-trivial processing)
+//      Process Interrupt state (HP85 interrupts)
+//      If any resource is being read from EBTKS
+//        While avoiding contention, turn the data bus around and drive
+//        the backplane, put our data on the bus
+//        Assert /RC
+//      Save the Bus Cycle information to be used by the Logic Analyzer
+//      Check for a request for DMA transactions from anywhere else in the EBTKS firmware
+//        Assert /HALT
+//        record that the request is pending
+//      If DMA_Acknowledge && we requested it
+//        Take ownership of the bus by
+//          Stop processing interrupts for Phi 1 Rising edge
+//          Wait for Phi 1 Falling edge (even waste a cycle, just to be sure, but should not ned to)
+//          Take control of the /LMA, /RD, and /WR , while avoiding contention
+//          Start driving the control lines
+//        Indicate to the rest of EBTKS Firmware that we are now in HP85 DMA mode
+//        Disable all EBTKS interrupts. So no USB Serial, no SYSTICK
+//      That's all Folks
+//
+
 
 FASTRUN void pinChange_isr(void)      //  This function is an ISR, keep it short and fast.
 {
 
   uint32_t interrupts;
 
-  TOGGLE_RXD;                           //  Mark the start of all ISR
+  SET_RXD;      //  Time point A
   interrupts = PHI_1_and_2_ISR;         //  This is a GPIO ISR Register 
   PHI_1_and_2_ISR = interrupts;         //  This clears the interrupts
+  //CLEAR_RXD;    //  Time point B
 
-  if (interrupts & BIT_MASK_PHASE1)     //  Phi 1
-  {
-    onPhi_1_Rise();               //                                                                                           Need to document Max Duration
-    WAIT_WHILE_PHI_1_HIGH;        //  While Phi_1 is high, just hang around, not worth doing a return from interrupt
+  //SET_TXD;      //  Time point C
+  onPhi_1_Rise();
+  //CLEAR_TXD;    //  Time point D
+  WAIT_WHILE_PHI_1_HIGH;          //  While Phi_1 is high, just hang around, not worth doing a return from interrupt
                                   //  and then having an interrupt on the falling edge.
                                   //
                                   //  Note that if onPhi_1_Rise() takes more than 200 ns minus the time it took
                                   //  to get to the call to onPhi_1_Rise(), the call to onPhi_1_Fall() will occur
                                   //  after the edge by that excess time
 
-    onPhi_1_Fall();               //                                                                                           Need to document Max Duration
-  }
-  else                            //  Sneaky because we only have two possible interrupts, so must be Phi 2 Rising
-  {
-    onPhi_2_Rise();
-  }
-  TOGGLE_RXD;                     //  Mark the end of all ISR
+  //SET_RXD;      //  Time point E
+  onPhi_1_Fall();
+  //CLEAR_RXD;    //  Time point F
+  
+  //SET_TXD;
+  EBTKS_delay_ns(200);
+  //CLEAR_TXD;
+
+  //SET_RXD;
+  mid_cycle_processing();
+  CLEAR_RXD;
+
 }
 
 //
@@ -218,6 +351,20 @@ FASTRUN void pinChange_isr(void)      //  This function is an ISR, keep it short
 //  Regardless of whether EBTKS or any other device/ROM/RAM/CPU is either reading
 //  or writing to the data bus, by the time we get the Phi 1 rising edge, the data
 //  has been valid for at least 150 ns. 
+//
+//  Tasks are performed in the following order:
+//      Get data from the bus
+//      Assert INTPRI if we have asserted /IRL
+//      Calculate Logic Analyzer sample
+//      If Logic Analyzer is running
+//        Check for trigger
+//        Store a sample
+//        Update buffer address
+//        Check for acquisition complete
+//      Process writes to I/O devices or registers
+//      Process writes to 16 KB RAM on HP85A if enabled and address match
+//      Process writes to special RAM window in the AUXROM(s)
+//      If Phi 1 is still high, wait
 //
 
 inline void onPhi_1_Rise(void)                  //  This function is running within an ISR, keep it short and fast.             This needs to be timed.
@@ -285,35 +432,40 @@ inline void onPhi_1_Rise(void)                  //  This function is running wit
       if (Logic_Analyzer_Valid_Samples >= Logic_Analyzer_Pre_Trigger_Samples)
       { //  Triggering is allowed
 
-  // if (((Logic_Analyzer_main_sample >> 8) & 0x0000FFFF) == 0177740)
-  // {
-  //   TOGGLE_TXD;
-  // }
+        //  Enable this to toggle TXD on a reference to HEYEBTKS by the HP85
+        // if (((Logic_Analyzer_main_sample) & 0x00FFFF00) == (HEYEBTKS << 8))
+        // {
+        //   TOGGLE_TXD;
+        // }
 
-
-        if (   ((Logic_Analyzer_main_sample & Logic_Analyzer_Trigger_Mask_1) == Logic_Analyzer_Trigger_Value_1) &&
-              ((Logic_Analyzer_aux_sample  & Logic_Analyzer_Trigger_Mask_2) == Logic_Analyzer_Trigger_Value_2)    )
+        if ( ((Logic_Analyzer_main_sample & Logic_Analyzer_Trigger_Mask_1) == Logic_Analyzer_Trigger_Value_1) &&
+             ((Logic_Analyzer_aux_sample  & Logic_Analyzer_Trigger_Mask_2) == Logic_Analyzer_Trigger_Value_2)    )
         {   //  Trigger pattern has been matched
           if (--Logic_Analyzer_Event_Count <= 0)                            //  Event Count is how many match events needed to trigger
           {
             Logic_Analyzer_Triggered = true;
             Logic_Analyzer_Index_of_Trigger = Logic_Analyzer_Data_index;    //  Record the buffer index at time of trigger
-            SET_TXD;                                                        //  Trigger external logic analyzer
+            //  SET_TXD;                                                    //  Trigger an external logic analyzer
           }
         }
       }
     }
+    //
+    //  Store a Logic Analyzer sample into the sample buffer
+    //
     Logic_Analyzer_Data_1[Logic_Analyzer_Data_index  ] = Logic_Analyzer_main_sample;
     Logic_Analyzer_Data_2[Logic_Analyzer_Data_index++] = Logic_Analyzer_aux_sample;
-
-    Logic_Analyzer_Data_index &= Logic_Analyzer_Current_Index_Mask;           //  Modulo addressing of sample buffer. Requires buffer length to be a power of two
-    Logic_Analyzer_Valid_Samples++;                                           //  This could theoretically over flow if we didn't see a trigger in 7000 seconds (1.9 hours). Saturating is not worth the overhead
+    //
+    //  Modulo addressing of sample buffer. Requires buffer length to be a power of two
+    //
+    Logic_Analyzer_Data_index &= Logic_Analyzer_Current_Index_Mask;
+    Logic_Analyzer_Valid_Samples++;                                         //  This could theoretically over flow if we didn't see a trigger in 7000 seconds (1.9 hours). Saturating is not worth the overhead
     if (Logic_Analyzer_Triggered)
     {
       if (--Logic_Analyzer_Samples_Till_Done == 0)
       {
         Logic_Analyzer_State = ANALYZER_ACQUISITION_DONE;
-        CLEAR_TXD;
+        //  CLEAR_TXD;                                                    //  End of Trigger of an external logic analyzer
       }
     }
   }
@@ -326,6 +478,82 @@ inline void onPhi_1_Rise(void)                  //  This function is running wit
   {
     onWriteData(addReg, data_from_IO_bus);                      //  Need to document max time
   }
+}
+
+//
+//  Handle Capricorn driving I/O bus, of either Address Bytes (/LMA) or Data Bytes (/RD)
+//
+//  This function is running within an ISR, keep it short and fast.
+//  Depending on the execution time of onPhi_1_Rise(), this may
+//  start later than the name implies (with jitter)
+//
+//  This function has been timed (see commented SET_TXD/CLEAR_TXD) and it takes from ?? ns to ?? ns to execute    ##########  timing neeeds to be redone
+//  The earliest start of this function is ?? ns after the falling edge of Phi 1
+//  The latest start is ?? ns after the falling edge of Phi 1
+//  The earliest end of this function is ?? ns after the falling edge of Phi 1
+//  The latest end is ??? ns after the falling edge of Phi 1
+//  Thus ?? ns margin until precharge during Phi 12
+//
+
+inline void onPhi_1_Fall(void)
+{
+  uint32_t data_from_IO_bus;
+
+  //  ### this is duplicate code to onPhi_1_Rise() , using local variables. Might be more efficient due to local variable in a reg vs a shared static var.
+  data_from_IO_bus = (GPIO_PAD_STATUS_REG_DB0 >> BIT_POSITION_DB0) & 0x000000FFU;       //  Requires that data bits are contiguous and in the right order
+
+  if (HP85_Read_Us)                     //  If a processor read was getting data from this board, we just finished doing it. This was set in mid_cycle_processing()
+  {
+                                        //  According to the 1MB5 specification, data should be held for a minimum of 40 ns
+                                        //  after Phi 1 fall. It looks like the Phi 1 rising code takes long enough that we
+                                        //  don't need to add any additional delay to meet this minimum. i.e. Phi 1 Rising processing takes more than 240 ns
+                                        //  #####  need to check this when we have stopped making changes to this code
+    SET_T4_BUS_TO_INPUT;                //  Set data bus to input on Teensy
+    BUS_DIR_FROM_HP;                    //  Change direction of bus buffer/level translator to inbound from I/O bus
+                                        //  This also de-asserts /RC  (it goes High)
+    CLEAR_TXD;                          //  Use this to track /RC timing
+    HP85_Read_Us = false;               //  Doneski
+  }
+
+#if EMC_SUPPORT
+  if (schedule_read || schedule_write)
+  {
+    cycleNdx++;                         //  Keep track of the bus cycle count
+  }
+  //
+  //  Capture DRP instructions for the extended memory controller
+  //  and if the instruction is a multiple byte transfer
+  //
+  if (ifetch == true)
+  {
+    if ((data_from_IO_bus & 0xc0u) == 0x40u)    //  DRP instruction 0x40..0x7f?
+    {
+      m_emc_drp = data_from_IO_bus;
+    }
+    m_emc_mult = data_from_IO_bus & 1u;         //  Set if multiple byte instruction
+  }
+#endif
+
+  if (schedule_address_load)            //  Load the address registers. Current data_from_IO_bus is the second byte of
+                                        //  the address, top 8 bits. Already got the low 8 bits in pending_address_low_byte
+  {
+    addReg  = data_from_IO_bus << 8;    //  Rely on zero fill for bottom 8 bits
+    addReg |= pending_address_low_byte; //  Should always be only bottom 8 bits
+    return;                             //  Early exit.
+  }
+
+  if (schedule_address_increment)       //  Increment address register. Happens for Read and Write cycles, unless address is being loaded, or address register is I/O space
+  {
+    addReg++;
+//address_register_has_changed:
+                                        //  Comming soon: pipelined processing of the addReg, so that all the time consuming stuff happens here
+                                        //  rather than in the time critical processing of Phi 2
+                                        //  PMF to RB 12/03/2020 at 2:08 am
+                                        //    "You know, if we started the Phi 2 processing on the falling edge of Phi 12, a lot of our timing issues would disappear. "
+  }
+
+  pending_address_low_byte = data_from_IO_bus;    // Load this every cycle, in case we need it, avoiding an if ()
+
 }
 
 //
@@ -353,7 +581,7 @@ inline void onPhi_1_Rise(void)                  //  This function is running wit
 //                Over a week of bug tracking indicates that this is not true.
 //
 
-inline void onPhi_2_Rise(void)                             //  This function is running within an ISR, keep it short and fast.
+inline void mid_cycle_processing(void)                             //  This function is running within an ISR, keep it short and fast.
 {
   bool       lma;
   bool       rd;
@@ -365,29 +593,23 @@ inline void onPhi_2_Rise(void)                             //  This function is 
 //  This is Russell's code with some minor edits.
 //
 
-  bus_cycle_info = GPIO_PAD_STATUS_REG_LMA;               //  All 3 control bits are in the same GPIO register
-  lma = !(bus_cycle_info & BIT_MASK_LMA);                 //  Invert the bits so they are active high
+  bus_cycle_info = GPIO_PAD_STATUS_REG_LMA;                   //  All 3 control bits are in the same GPIO register
+  lma = !(bus_cycle_info & BIT_MASK_LMA);                     //  Invert the bits so they are active high
   rd  = !(bus_cycle_info & BIT_MASK_RD );
   wr  = !(bus_cycle_info & BIT_MASK_WR );
+  schedule_read  = rd && !wr;                                 //  Resolve control logic states
+  schedule_write = wr && !rd;
+  DMA_Acknowledge = wr && rd && !lma;                         //  Decode DMA acknowlege state
+  Interrupt_Acknowledge = wr && rd && lma;                    //  Decode interrupt acknowlege state
+
 #if EMC_SUPPORT
   ifetch = !(GPIO_PAD_STATUS_REG_IFETCH & BIT_MASK_IFETCH);   //  Grab the instruction fetch bit. Only exists on HP85B, 86 and 87
                                                               //  Used for tracking instructions for the extended memory controller
-#endif
-
-  //  Resolve control logic states
-
-#if EMC_SUPPORT
-  //if ((rd != schedule_read) || (wr != schedule_write))    //  Reset on any change of read or write
-  if (lma != delayed_lma)                                   //  Reset count on change of lma
+  //if ((rd != schedule_read) || (wr != schedule_write))      //  Reset on any change of read or write
+  if (lma != delayed_lma)                                     //  Reset count on change of lma
   {
     cycleNdx = 0;
   }
-#endif
-
-  schedule_read  = rd && !wr;
-  schedule_write = wr && !rd;
-
-#if EMC_SUPPORT
   if (lma == true)
   {
     lma_cycle(rd);    //for emc support
@@ -404,41 +626,6 @@ inline void onPhi_2_Rise(void)                             //  This function is 
                                 (schedule_read | schedule_write);         //  Only increment addr on a non i/o address
   schedule_address_load = !schedule_address_load && delayed_lma;          //  Load address reg flag
   delayed_lma = lma;                                                      //  Delayed lma
-  DMA_Acknowledge = wr && rd && !lma;                                     //  Decode DMA acknowlege state
-  Interrupt_Acknowledge = wr && rd && lma;                                //  Decode interrupt acknowlege state
-
-//
-//  This is Philip's much nicer version of above that uses enums, and doesn't work on rare occasions.
-//
-//////enum bus_cycle_type{
-//////        BUS_INTACK    = 0,
-//////        BUS_DMA_GRANT = 1,
-//////        BUS_ADDR_WR   = 2,    //  Should never happen
-//////        BUS_WR        = 3,
-//////        BUS_ADDR_RD   = 4,    //  While reading from somewhere, also load value into address register
-//////        BUS_RD        = 5,
-//////        BUS_ADDR      = 6,
-//////        BUS_NOP       = 7
-//////      };
-//////
-//////
-//////  previous_bus_cycle_state   = current_bus_cycle_state;         //  Save what the prior bus cycle was. Used in handling high byte/low byte  of dual /LMA address transfers
-//////
-//////  Logic_Analyzer_current_bus_cycle_state_LA = GPIO_PAD_STATUS_REG_LMA &         //  Yes, this is supposed to be a single &
-//////                               (BIT_MASK_WR | BIT_MASK_RD | BIT_MASK_LMA);      //  Require bus cycle state to be in bits 24, 25, and 26 of GPIO register
-//////
-//////  current_bus_cycle_state    = (enum bus_cycle_type)(Logic_Analyzer_current_bus_cycle_state_LA >> 24);            //  Make it ready to be used in enum comaprisons
-//////
-//////  schedule_read              = ((current_bus_cycle_state == BUS_RD) || (current_bus_cycle_state == BUS_ADDR_RD));
-//////  schedule_write             = (current_bus_cycle_state == BUS_WR);
-//////  schedule_address_increment = ((addReg >> 8) != 0x00FFU) &&                    //  If not I/O space
-//////                               !(!schedule_address_load & delayed_lma) &&       //    and
-//////                               (schedule_read ||  schedule_write);              //  Any bus read or write
-//////  schedule_address_load      = !schedule_address_load && delayed_lma;
-//////  delayed_lma                = (current_bus_cycle_state == BUS_ADDR) || (current_bus_cycle_state == BUS_ADDR_RD) || (current_bus_cycle_state == BUS_INTACK);
-//////  DMA_Acknowledge            = (current_bus_cycle_state == BUS_DMA_GRANT);
-//////  Interrupt_Acknowledge      = (current_bus_cycle_state == BUS_INTACK);
-//////
 
   if (schedule_read)
   {           //  Test if address is in our range and if it is , return true and set readData to the data to be sent to the bus
@@ -521,6 +708,7 @@ inline void onPhi_2_Rise(void)                             //  This function is 
     DISABLE_BUS_BUFFER_U2;
     BUS_DIR_TO_HP;                        //  DIR high  !!! may need to delay for 1MA8 to let go of driving bus: See above diagnostic test. Confirmed
                                           //  that starting to drive the data bus (with /RC) at Phi 2 is not going to cause contention
+    SET_TXD;                              //  Use this to track /RC timing
 
     SET_T4_BUS_TO_OUTPUT;                 //  set data bus to output      (should be no race condition, since local)
 
@@ -545,7 +733,8 @@ inline void onPhi_2_Rise(void)                             //  This function is 
 
   //
   //  ALL DMA requests are handled here
-  //  DMA is asserted 200 ns after the falling edge of Phi 2
+  //  DMA is asserted 200 ns after the falling edge of Phi 2      ####  Need to check the timing here. 1MB5 docs say it must be asserted no later than
+  //                                                                    500 ns after the Rising edge of Phi2. (implies at least 300 ns before Phi 1 rise)
   //
   
   if (DMA_Request)
@@ -559,6 +748,10 @@ inline void onPhi_2_Rise(void)                             //  This function is 
     DMA_has_been_Requested = true;        //  Record that a request has occured on the bus, but has not yet been acknowledged
   }
 
+//
+//  ##### In the following section, the are multiple references to interrupts coming from both Phi 1 and Phi 2 rising edges.
+//        As of 12/8/2020 it is only Phi 1. Old comments are retained for now in case we need to go back to the old scheme
+//
   if (DMA_Acknowledge && DMA_has_been_Requested)
   {
     DMA_has_been_Requested = false;       //  Bus DMA request is no longer pending
@@ -608,26 +801,18 @@ inline void onPhi_2_Rise(void)                             //  This function is 
     //
     CTRL_DIR_TO_HP;
 
-//  Don't do this. I/O Bus is precharged by 1MA8 during DMA Acknowledge.
-//  NOTE:  NOTE:  The following commented out code is from Nirvana V0.1, and the GPIO registes and bit positions do not match EBTKS V2.0
-//
-//////    //
-//////    //  Finally, Set the Data buffer to drive the I/O bus with 0xFF
-//////    //
-//////    DISABLE_BUS_BUFFER_U2;
-//////    BUS_DIR_TO_HP;                  //  DIR high  !!! may need to delay for 1MA8 to let go of driving bus                            Need to investigate
-//////    GPIO6_GDIR |= DATA_BUS_MASK;    //  Set data bus to output      (should be no race condition, since local)
-//////    GPIO6_DR_SET = DATA_BUS_MASK;   //  Set all bits High
-//////    ENABLE_BUS_BUFFER_U2;           //  !OE Low.
-
+    //
+    //  Note:  The I/O Bus is precharged by 1MA8 during DMA Acknowledge.
     //
     //  The time is now some nanoseconds after Phi 1 Falling.
     //  The 3 control lines are driving the I/O bus, and each is set High
     //  The 8 Data bits are driving te I/O bus with 0xFF
+    //
 
-// *** need to deal with data direction, and initially undriven because we don't know what 1MA8 does with bus during DMA. It may still be driving
-//     and may need RC to flip it around. So maybe can't put addresses onto bus without RC
-//     This may also be a requirement to precharge the bus on the main board, via the 1MA8.
+// #### Need to deal with data direction, and initially undriven because we don't know what
+//      1MA8 does with bus during DMA. It may still be driving and may need RC to flip it
+//      around. So maybe can't put addresses onto bus without RC
+//      This may also be a requirement to precharge the bus on the main board, via the 1MA8.
 
     DMA_Acknowledge = false;
     DMA_Active = true;
@@ -642,9 +827,9 @@ inline void onPhi_2_Rise(void)                             //  This function is 
   __disable_irq();  //  Disable all interrupts for duration of DMA. No USB activity, no Serial via USB, no SysTick
                     //  We need to do this to get precise timing for /LMA /RD /WR /RC
                     //
-                    //  10/30/2020 Maybe we could avoid this, allowing diagnostic Serial.printf("for example")
-                    //  by only doing this when we are actually doing 1 or more dma transactions. We have already
-                    //  disabled the pin interrupts.
+                    //  ####  10/30/2020 Maybe we could avoid this, allowing diagnostic Serial.printf("for example")
+                    //        by only doing this when we are actually doing 1 or more dma transactions. We have already
+                    //        disabled the pin interrupts.
 
   //
   //  The matching release of DMA is in EBTKS_DMA.cpp at release_DMA_request()
@@ -722,12 +907,11 @@ inline bool onReadData(void)                  //  This function is running withi
 //
 //    Any ROM that we are emulating
 //    Any RAM that we are emulating
-//    Any SpecialRAM that we are implementing within the AUXROMs
+//    Any Special RAM that we are implementing within the AUXROMs
 //    Any I/O registers that we are implementing
 //    Any I/O registers that we are tracking
 //
-//    Unlike the onReadData() function that is associated with Phi 2, and has rather relaxed timing,     (THIS IS NOT TRUE)
-//    onWriteData() is associated with Phi 1, and the timing is quite tight
+//    This code is running within an ISR, during the Phi 1 High time. As always with ISR code, keep it simple and fast
 //
 
 inline void onWriteData(uint16_t addr, uint8_t data)
@@ -741,11 +925,11 @@ inline void onWriteData(uint16_t addr, uint8_t data)
     return;
   }
 
+  //
+  //  For HP-85 A, implement 16384 - 256 bytes of RAM, mapped at 0xC000 to 0xFEFF (if enabled)
+  //
   if (enRam16k)
   {
-    //
-    //  For HP-85 A, implement 16384 - 256 bytes of RAM, mapped at 0xC000 to 0xFEFF (if enabled)
-    //
     if ((addr >= HP85A_16K_RAM_module_base_addr) && (addr < IO_ADDR))
     {
       HP85A_16K_RAM_module[addr & 0x3FFFU] = data;
@@ -767,81 +951,6 @@ inline void onWriteData(uint16_t addr, uint8_t data)
   }
 }
 
-//
-//  Handle Capricorn driving I/O bus, of either Address Bytes (/LMA) or Data Bytes (/RD)
-//
-//  This function is running within an ISR, keep it short and fast.
-//  Depending on the execution time of onPhi_1_Rise(), this may
-//  start later than the name implies (with jitter)
-//
-//  This function has been timed (see commented SET_TXD/CLEAR_TXD) and it takes from 42 ns to 74 ns to execute
-//  The earliest start of this function is 54 ns after the falling edge of Phi 1
-//  The latest start is 92 ns after the falling edge of Phi 1
-//  The earliest end of this function is 97 ns after the falling edge of Phi 1
-//  The latest end is 150 ns after the falling edge of Phi 1
-//  Thus 50 ns margin until precharge during Phi 12
-//
-
-inline void onPhi_1_Fall(void)
-{
-  uint32_t data_from_IO_bus;
-
-  //  SET_TXD;
-
-  data_from_IO_bus = (GPIO_PAD_STATUS_REG_DB0 >> BIT_POSITION_DB0) & 0x000000FFU;       //  Requires that data bits are contiguous and in the right order
-
-  if (HP85_Read_Us)                     //  If a processor read was getting data from this board, we just finished doing it. This was set in onPhi_2_Rise()
-  {
-    SET_T4_BUS_TO_INPUT;                //  Set data bus to input on Teensy
-    BUS_DIR_FROM_HP;                    //  Change direction of bus buffer/level translator to inbound from I/O bus
-                                        //  This also de-asserts /RC  (it goes High)
-    HP85_Read_Us = false;               //  Doneski
-  }
-
-#if EMC_SUPPORT
-  if (schedule_read || schedule_write)
-  {
-    cycleNdx++;                         //  Keep track of the bus cycle count
-  }
-  //
-  //  Capture DRP instructions for the extended memory controller
-  //  and if the instruction is a multiple byte transfer
-  //
-  if (ifetch == true)
-  {
-    if ((data_from_IO_bus & 0xc0u) == 0x40u)    //  DRP instruction 0x40..0x7f?
-    {
-      m_emc_drp = data_from_IO_bus;
-    }
-    m_emc_mult = data_from_IO_bus & 1u;         //  Set if multiple byte instruction
-  }
-#endif
-
-  if (schedule_address_load)            //  Load the address registers. Current data_from_IO_bus is the second byte of
-                                        //  the address, top 8 bits. Already got the low 8 bits in pending_address_low_byte
-  {
-    addReg  = data_from_IO_bus << 8;    //  Rely on zero fill for bottom 8 bits
-    addReg |= pending_address_low_byte; //  Should always be only bottom 8 bits
-    //  CLEAR_TXD;
-    return;                             //  Early exit.
-  }
-
-  if (schedule_address_increment)       //  Increment address register. Happens for Read and Write cycles, unless address is being loaded, or address register is I/O space
-  {
-    addReg++;
-//address_register_has_changed:
-                                        //  Comming soon: pipelined processing of the addReg, so that all the time consuming stuff happens here
-                                        //  rather than in the time critical processing of Phi 2
-                                        //  PMF to RB 12/03/2020 at 2:08 am
-                                        //    "You know, if we started the Phi 2 processing on the falling edge of Phi 12, a lot of our timing issues would disappear. "
-  
-  }
-
-  pending_address_low_byte = data_from_IO_bus;    // Load this every cycle, in case we need it, avoiding an if ()
-
-  //  CLEAR_TXD;
-}
-
 void setupPinChange(void)
 {
   __disable_irq();    //  This code is a critical region.
@@ -849,7 +958,7 @@ void setupPinChange(void)
   //  Let's cheat a little and just use the teensy core code to do most of the work for the setup
   //
   attachInterrupt(CORE_PIN_PHASE1, NULL, RISING);   // PHI 1 is Teensy 4.1 pin 21, Physical pin  43
-  attachInterrupt(CORE_PIN_PHASE2, NULL, RISING);   // PHI 2 is Teensy 4.1 pin 38, Physical pin  30
+  //  attachInterrupt(CORE_PIN_PHASE2, NULL, RISING);   // PHI 2 is Teensy 4.1 pin 38, Physical pin  30   //  2020_12_06 only 1 pin change interrupt: Phi 1 rising
 
   NVIC_DISABLE_IRQ(IRQ_GPIO6789);
   //
@@ -1041,3 +1150,24 @@ void emc_w(uint8_t val)
   }
 }
 #endif
+//
+//  If you need TXD and RXD diag pins in non-EBTKS code (like the SdFat library), then
+//  the following should be helpful
+//
+//  #define GPIO_DR_SET_TXD                     GPIO7_DR_SET
+//  #define GPIO_DR_CLEAR_TXD                   GPIO7_DR_CLEAR
+//  #define GPIO_DR_TOGGLE_TXD                  GPIO7_DR_TOGGLE
+//  #define BIT_POSITION_TXD                    (17)
+//  #define BIT_MASK_TXD                        (1 << BIT_POSITION_TXD       )
+//  #define SET_TXD                             (GPIO_DR_SET_TXD    = BIT_MASK_TXD)
+//  #define CLEAR_TXD                           (GPIO_DR_CLEAR_TXD  = BIT_MASK_TXD)
+//  #define TOGGLE_TXD                          (GPIO_DR_TOGGLE_TXD = BIT_MASK_TXD)
+//
+//  #define GPIO_DR_SET_RXD                     GPIO7_DR_SET
+//  #define GPIO_DR_CLEAR_RXD                   GPIO7_DR_CLEAR
+//  #define GPIO_DR_TOGGLE_RXD                  GPIO7_DR_TOGGLE
+//  #define BIT_POSITION_RXD                    (16)
+//  #define BIT_MASK_RXD                        (1 << BIT_POSITION_RXD       )
+//  #define SET_RXD                             (GPIO_DR_SET_RXD    = BIT_MASK_RXD)
+//  #define CLEAR_RXD                           (GPIO_DR_CLEAR_RXD  = BIT_MASK_RXD)
+//  #define TOGGLE_RXD                          (GPIO_DR_TOGGLE_RXD = BIT_MASK_RXD)
