@@ -1315,11 +1315,46 @@ void AUXROM_MOUNT(void)
 //                    mode     is in AR_Opts[0]
 //
 
+  bool  SD_begin_OK;
+
 #if VERBOSE_KEYWORDS
   Serial.printf("Call to MOUNT\n");
 #endif
 
   *p_usage = 0;     //  Assume success
+
+  //
+  //  First check for special case of MOUNT "SDCard","anything"
+  //
+  //  Currently we dont check if the SDCard is already mounted. Also, there does nots eem to
+  //  be a complementary function to SD.begin()  , i.e. a close/detach. Hopefully a new SD.begin()
+  //  just over-writes any previous state
+  //
+Serial.printf("p_buffer + 256 is [%s]\n", p_buffer + 256);
+  if (strcasecmp(p_buffer + 256, "SDCard") == 0)
+  {
+Serial.printf("match\n");
+    //
+    //  This code is lifted and modified version of code in EBTKS.c
+    //
+    if (!SD.begin(SdioConfig(DMA_SDIO)))             //  This takes about ??? ms.          ###
+    {
+      Serial.printf("SD begin failed\nLogfile is not active\n");
+      SD_begin_OK = false;
+      logfile_active = false;
+      return;
+    }
+Serial.printf("SD.begin ok\n");
+    logfile_active = open_logfile();
+    Serial.printf("logfile_active is %s\n", logfile_active ? "true":"false");
+Serial.printf("calling remount\n");
+    if(!remount_drives(Config_filename))
+    {
+      Serial.printf("Failed to re-mount SD Card\n");
+    }
+Serial.printf("MOUNT SDCard exit\n\n\n");
+    return;
+  }
 
   if (!Resolve_Path(p_buffer))
   {
@@ -2454,12 +2489,57 @@ void AUXROM_SDWRITE(void)
 
 void AUXROM_UNMOUNT(void)
 {
+  int         device;
+  int         disknum;
+  char        *filename;
+  int         HPIB_Select = get_Select_Code();
 
 #if VERBOSE_KEYWORDS
   Serial.printf("Call to UNMOUNT\n");
 #endif
 
   *p_usage = 0;     //  Assume success
+
+  //
+  //  Special case to UNMOUNT the SD Card.
+  //    closes the log file
+  //    closes all msus
+  //
+  if (strcasecmp(p_buffer, "SDCard") == 0)
+  {
+    if (logfile_active)
+    {
+      flush_logfile();
+      close_logfile();      //  Also does logfile_active = false;
+      Serial.printf("Closed logfile\n");
+    }
+    for (device = 0 ; device < 31 ; device++)      //  actual upper limit is "#define NUM_DEVICES 31"  found in EBTKS_1MB5.cpp
+    {
+      if (devices[device])
+      {
+        for (disknum = 0 ; disknum < 4 ; disknum++)
+        {
+          filename = devices[device]->getFilename(disknum);
+          if (filename)
+          {
+            if (!devices[device]->close(disknum))
+            {
+              post_custom_error_message("UNMOUNT Disk error", 491);
+              goto Unmount_exit;
+            }
+            Serial.printf("Closed MSUS :D%d%d%d   media: %s\n", HPIB_Select, device, disknum, filename);
+          }
+        }
+        devices[device] = NULL;             //  Need to discuss with RB  #########
+      }
+    }
+    filename = tape.getFile();
+    if(filename)
+    {
+      tape_handle_UNMOUNT();
+    }
+    goto Unmount_exit;
+  }                         //  End of UNMOUNT "SDCard"    --- not case sensitive
 
   if (!parse_MSU(p_buffer))
   {

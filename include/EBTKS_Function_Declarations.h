@@ -83,6 +83,7 @@ void removeIOWriteFunc(uint8_t addr);
 bool loadRom(const char *fname, int slotNum, const char * description);
 void saveConfiguration(const char *filename);
 bool loadConfiguration(const char *filename);
+bool remount_drives(const char *filename);
 void printDirectory(File dir, int numTabs);
 void no_SD_card_message(void);
 void Boot_Message_Poll(void);

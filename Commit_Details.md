@@ -173,5 +173,10 @@ Changes:
 -   Correct the date in commit 85 note, above.
 -   Fix the Firmware version message in EBTKS.h
 
+## Commit \#87 12/13/2020
+
+Changes:
+-   Add new feature to UNMOUNT. Now recognizes "SDCard"              --- not case sensitive
+-   Add new feature to MOUNT.   Now recognizes "SDCard", "anything"  --- not case sensitive
 
 

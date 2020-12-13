@@ -660,7 +660,7 @@ void setup()
   TXD_Pulser(2);  SET_TXD;
   SD_begin_OK = true;
   //if (!SD.begin(SdioConfig(FIFO_SDIO)))          //  This takes about 115 ms.
-  if (!SD.begin(SdioConfig(DMA_SDIO)))          //  This takes about 115 ms.
+  if (!SD.begin(SdioConfig(DMA_SDIO)))             //  This takes about ??? ms.          ###
   {
     CLEAR_TXD; EBTKS_delay_ns(1000);  TXD_Pulser(2);
     Serial.println("SD begin failed\nLogfile is not active\n");
@@ -679,7 +679,7 @@ void setup()
     LOGPRINTF("\n----------------------------------------------------------------------------------------------------------\n");
     LOGPRINTF("\nBegin new Logging session\n");
 
-    LOGPRINTF("\nFIFO SDIO mode.\n");
+    LOGPRINTF("\nDMA SDIO mode.\n");
     LOGPRINTF("Loading configuration...\n");
     flush_logfile();
 

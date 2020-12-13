@@ -628,6 +628,176 @@ failed_to_read_flags:
   return true;           //  maybe we should be more specific about individual successes and failures. Currently only return false if no SD card
 }
 
+//
+//  This is a stripped down version of loadConfiguration()  (the function above)
+//  It is called by the user with
+//    MOUNT "SDCARD", "anything"
+//  when the SD card has been plugged into a running system.
+//  The SD.beging must have already occured
+//  It reads the specified file (typically config.sys) and only does the file system mounting tasks
+//
+
+bool remount_drives(const char *filename)
+{
+  char fname[258];
+
+  LOGPRINTF("Opening Config File [%s]\n", filename);
+  Serial.printf("Opening Config File [%s]\n", filename);
+
+  // Open file for reading
+  File file = SD.open(filename);
+
+  LOGPRINTF("Open was [%s]\n", file ? "Successful" : "Failed");
+  Serial.printf("Open was [%s]\n", file ? "Successful" : "Failed");
+  if (!file)
+  {
+    return false;
+  }
+
+  // Allocate a temporary JsonDocument
+  // Don't forget to change the capacity to match your requirements.
+  // Use arduinojson.org/v6/assistant to compute the capacity.
+  StaticJsonDocument<5000> doc;
+
+  // Deserialize the JSON document
+  DeserializationError error = deserializeJson(doc, file);
+  Serial.printf("deserializeJson error [%s]\n", error ? "True" : "False");
+  if (error)
+  {
+    file.close();
+    LOGPRINTF("Failed to read file file %s\n", filename);
+    Serial.printf("Failed to read file file %s\n", filename);
+    return false;
+  }
+
+  bool tapeEn = doc["tape"]["enable"] | false;
+  
+  const char *tapeFname = doc["tape"]["filename"] | "tape1.tap";
+  const char *path = doc["tape"]["directory"] | "/tapes/";
+
+  if (tapeEn)               //  Only set the path/filename if the tape subsystem is enabled
+  {
+    tape.enable(tapeEn);
+    strcpy(fname, path);
+    strlcat(fname, tapeFname, sizeof(fname));
+    tape.setFile(fname);
+  }
+  LOGPRINTF("Tape file: %s%s enabled is: %s\n", path, tapeFname, tapeEn ? "Active" : "Inactive");
+  Serial.printf("Tape file: %s%s enabled is: %s\n", path, tapeFname, tapeEn ? "Active" : "Inactive");
+
+  //
+  //  Configure the disk drives. Currently we only handle one HPIB interface
+  //
+
+  //
+  //  Although we don't check it and report an error if necessary, the following things      ####  should we add checks ? ####
+  //  MUST be true of the HPIB device configuration comming from the CONFIG.TXT file
+  //
+  //    1) The "select" fields must all have the same value 3..10 as we can only emulate 1 HPIB interface
+  //    2) The "device" fields must be different, and should probably start at 0 and go no higher than 7
+  //
+
+  for (JsonVariant hpibDevice : doc["hpib"].as<JsonArray>())    //  Iterate hpib devices on a bus
+  {
+    int select = hpibDevice["select"] | 7;                      //  1MB5 select code (3..10). 3 is the default
+    int device = hpibDevice["device"] | 0;                      //  HPIB device number 0..31 (can contain up to 4 drives)
+    bool enable = hpibDevice["enable"] | false;                 //  Are we enabled?
+
+    if (hpibDevice["drives"])                                   //  If the device is a disk drive
+    {
+      const char *diskDir = hpibDevice["directory"] | "/disks/"; //disk image folder/directory
+      int type = hpibDevice["type"] | 0;                         //  disk drive type 0 = 5 1/4"
+
+      if ((devices[device] == NULL) && (enable == true))
+      {
+        devices[device] = new HpibDisk(device);                 //  create a new HPIB device (can contain up to 4 drives)
+      }
+
+      if (enable == true)
+      {
+        initTranslator(select);
+        //
+        //  Iterate disk drives - we can have up to 4 drive units per device
+        //
+        for (JsonVariant unit : hpibDevice["drives"].as<JsonArray>())
+        {
+          int unitNum = unit["unit"] | 0;                       //  Drive number 0..3
+          const char *filename = unit["filename"];              //  Disk image filename
+          bool wprot = unit["writeProtect"] | false;
+          bool en = unit["enable"] | false;
+          //
+          //  Form full path/filename
+          //
+          strcpy(fname, diskDir);                               //  Get path
+          strlcat(fname, filename, sizeof(fname));              //  Append the filename
+          if ((devices[device] != NULL) && (en == true))
+          {
+            devices[device]->addDisk((int)type);
+            devices[device]->setFile(unitNum, fname, wprot);
+            LOGPRINTF("Add Drive type: %d to Device: %d as Unit: %d with image file: %s\r\n", type, device, unitNum, fname);
+            Serial.printf("Add Drive type: %d to Device: %d as Unit: %d with image file: %s\r\n", type, device, unitNum, fname);
+          }
+        }
+      }
+    }
+
+    if (hpibDevice["printer"])                                  //  If the device is a printer
+    {
+      int type = hpibDevice["type"] | 0;
+      const char *printDir = hpibDevice["directory"] | "/printers/";  //  Printer folder/directory
+
+      if ((devices[device] == NULL) && (enable == true))
+      {
+        devices[device] = new HpibPrint(device);                //  Create a new HPIB printer device
+      }
+      JsonObject printer = hpibDevice["printer"];
+      const char *filename = printer["filename"];               //  Printer filename
+      //
+      //  Form full path/filename
+      //
+      strcpy(fname, printDir);                                  //  Get path
+      strlcat(fname, filename, sizeof(fname));                  //  Append the filename
+      if ((devices[device] != NULL) && (enable == true))
+      {
+        devices[device]->setFile((char *)fname);
+        LOGPRINTF("Add Printer type: %d to Device: %d with print file: %s\r\n", type, device, fname);
+        Serial.printf("Add Printer type: %d to Device: %d with print file: %s\r\n", type, device, fname);
+      }
+    }
+  }
+
+  //
+  //  Restore the 4 flag bytes
+  //
+
+  if (!(file = SD.open("/AUXROM_FLAGS.TXT", READ_ONLY)))
+  {   //  File does not exist, so create it with default contents
+failed_to_read_flags:
+    Serial.printf("Creating /AUXROM_FLAGS.TXT with default contents of 00000000 because it does not exist\n");
+    file = SD.open("/AUXROM_FLAGS.TXT", O_RDWR | O_TRUNC | O_CREAT);
+    file.write("00000000\r\n", 10);
+    file.close();
+    // AUXROM_RAM_Window.as_struct.AR_FLAGS[0] = 0;   //  load with default 0x      00
+    // AUXROM_RAM_Window.as_struct.AR_FLAGS[1] = 0;   //  load with default 0x    00
+    // AUXROM_RAM_Window.as_struct.AR_FLAGS[2] = 0;   //  load with default 0x  00
+    // AUXROM_RAM_Window.as_struct.AR_FLAGS[3] = 0;   //  load with default 0x00
+    AUXROM_RAM_Window.as_struct.AR_FLAGS = 0;
+  }
+  else
+  {
+    char      flags_to_read[12];
+    uint8_t   chars_read;
+    chars_read = file.read(flags_to_read, 10);
+    if(chars_read != 10)
+    {   //  Something is wrong with the flags file, so rewrite it.
+      goto failed_to_read_flags;
+    }
+    sscanf(flags_to_read, "%8lx", &AUXROM_RAM_Window.as_struct.AR_FLAGS);
+    file.close();
+  }
+  return true;        //  Maybe we should be more specific about individual successes and failures. Currently only return false if no SD card
+}
+
 void printDirectory(File dir, int numTabs)
 {
   while (true)
