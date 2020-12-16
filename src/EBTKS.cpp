@@ -433,6 +433,20 @@ GPIO9   33         7           CORE_PIN33_PORTREG
 
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//                                Main Uses of DMAMEM
+//
+//    256 KB      EXTMEM for the HP85B, HP86/87             EXTRAM_SIZE         EBTKS_Bus_Interface_ISR.cpp
+//    
+//    160 KB      roms[][]                                  MAX_ROMS            EBTKS_Config.h
+//                                                          ROM_PAGE_SIZE       EBTKS_Config.h
+//      0.5 KB    Copy Buffer for MOUNT/copy_sd_file()      COPY_BUFFER_SIZE    EBTKS_AUXROM_SD_Services.cpp
+//      1 KB      sprintf_result                            SCRATCHLENGTH       EBTKS_AUXROM_SD_Services.cpp
+//      1 KB      string_arg                                SCRATCHLENGTH       EBTKS_AUXROM_SD_Services.cpp
+//      0.1 KB    format_segment                                                EBTKS_AUXROM_SD_Services.cpp
+//
+//    436,324 B   Total.  Actual total from linker on 12/15/2020 is 473,312
+//
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 //  Messages for startup indicating LOGLEVEL
 

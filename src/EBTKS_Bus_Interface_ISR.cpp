@@ -302,6 +302,13 @@ bool getHP85RamExp(void)      //  Report true if HP85A RAM expansion is enabled
 //      That's all Folks
 //
 
+// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+//
+//  The declaration for this function (in EBTKS_Function_Declarations.h)
+//  must explicitly indicate that this is an ISR. It looks like this
+//    FASTRUN void pinChange_isr(void) __attribute__ ((interrupt ("IRQ")));
+//
+// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 FASTRUN void pinChange_isr(void)      //  This function is an ISR, keep it short and fast.
 {
@@ -511,7 +518,7 @@ inline void onPhi_1_Fall(void)
     SET_T4_BUS_TO_INPUT;                //  Set data bus to input on Teensy
     BUS_DIR_FROM_HP;                    //  Change direction of bus buffer/level translator to inbound from I/O bus
                                         //  This also de-asserts /RC  (it goes High)
-    CLEAR_TXD;                          //  Use this to track /RC timing
+//    CLEAR_TXD;                          //  Use this to track /RC timing
     HP85_Read_Us = false;               //  Doneski
   }
 
@@ -708,7 +715,7 @@ inline void mid_cycle_processing(void)                             //  This func
     DISABLE_BUS_BUFFER_U2;
     BUS_DIR_TO_HP;                        //  DIR high  !!! may need to delay for 1MA8 to let go of driving bus: See above diagnostic test. Confirmed
                                           //  that starting to drive the data bus (with /RC) at Phi 2 is not going to cause contention
-    SET_TXD;                              //  Use this to track /RC timing
+//    SET_TXD;                              //  Use this to track /RC timing
 
     SET_T4_BUS_TO_OUTPUT;                 //  set data bus to output      (should be no race condition, since local)
 

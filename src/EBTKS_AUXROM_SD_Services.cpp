@@ -391,7 +391,7 @@ void AUXROM_SDCAT(void)
 #endif
 
 
-  SD.cacheClear();
+  //  ta ta bye bye   SD.cacheClear();      ###########  deleted because new SdFat lib
 
   //
   //  Show Parameters
@@ -1179,28 +1179,58 @@ bool parse_MSU(char *msu)
 //  mode      is in AR_BUF0_OPTS[0]
 //
 
-EXTMEM char Copy_buffer[32768];       //  ####  Maybe this can re-use the buffer assigned to SDDEL
-
 //
 //  Copy a file from one fully qualified path to another. Used here for creating new media files
 //  and also in the SDCOPY Keyword function. The error returns have custom error messages for creating
 //  a new blank disk. the caller must translate as needed (for new tape, or SDCOPY)
 //
 
+//
+//  Read/Write block size statistics for copying a reference Floppy Disk image, which happens in MOUNT
+//  when new media is created. Buffer memory is in DMAMEM
+//  
+//   Buf    #blocks   Min   Max     Ave      Std Dev   Total copy
+//   Size             us    us      us       us        time, ms
+//    512   528       405   19425   1157     121       1490.3
+//    512   528       405    4905   1080      46       1480.0
+//    512   528       405   15565   1100      64       1455.6
+//    512   528       405   14625   1113      72       1468.1
+//    512   528       405   19415   1142     109       1483.9
+//                                          
+//   8192    33       721   5250    3009    2239        149.415
+//   8192    33       721   5250    2961    2272        139.964
+//   8192    33       721   5245    2961    2275        147.209
+//   8192    33       721   5236    2958    2278        139.964
+//   8192    33       721   5248    2967    2281        147.84
+//
+//  32768     9      1744   6875    6176     322         79.856
+//  32768     9      1743   6883    6186     329         79.981
+//  32768     9      1731   6880    6178     326         79.982
+//  32768     9      1741   6880    6179     325         79.890
+//  32768     9      1743   6875    6180     326         79.891
+//
+
+#define COPY_BUFFER_SIZE          512
+
+DMAMEM char Copy_buffer[COPY_BUFFER_SIZE];       //  Must be in DMAMEM (or maybe ITCM/DTCM, but definitely not EXTMEM)
+
 bool copy_sd_file(const char * Source_Path, const char * Destination_Path)
 {
   int chars_read, chars_written;
+
+  Serial.printf("Copy file from [%s] to [%s]\n", Source_Path, Destination_Path);
   File Source = SD.open(Source_Path, FILE_READ);
   if (!Source)
   {
-    Serial.printf("Couldn't open ref disk image for READ\n");
+    Serial.printf("Couldn't open ref disk image for Read\n");
     post_custom_error_message("Couldn't open Ref Disk", 417);
     return false;
   }
   File Destination = SD.open(Resolved_Path, FILE_WRITE);
   if (!Destination)
   {
-    Serial.printf("Couldn't open New disk image for WRITE\n");
+    Serial.printf("Couldn't open New disk image for Write\n");
+    Source.close();
     post_custom_error_message("Couldn't open New Disk", 418);
     return false;
   }
@@ -1211,8 +1241,19 @@ bool copy_sd_file(const char * Source_Path, const char * Destination_Path)
 
   while(1)
   {
-    chars_read = Source.read(Copy_buffer, 32768);
-    if(chars_read)
+    SET_TXD;
+    chars_read = Source.read(Copy_buffer, COPY_BUFFER_SIZE);
+    CLEAR_TXD;
+    if (chars_read == COPY_BUFFER_SIZE)
+    {
+      Serial.printf(".");
+    }
+    else
+    {
+      Serial.printf("Read ref-file, rqst %d, got %d\n", COPY_BUFFER_SIZE, chars_read);
+    }
+
+    if(chars_read > 0)      //  make sure we don't try using the -1 we get on error
     {
       chars_written = Destination.write(Copy_buffer, chars_read);
       if(chars_read != chars_written)
@@ -1224,13 +1265,28 @@ bool copy_sd_file(const char * Source_Path, const char * Destination_Path)
         Destination.remove();
         return false;
       }
-      Serial.printf(".");     //  Get a row of dots while copying file. For Floppy image, expect 9 dots for 270336 bytes copied
     }
-    else
+    else if (chars_read == 0)
     {
+      Serial.printf("Got 0 characters, so copy finished\n");
       Source.close();
       Destination.close();
-      break; //  Out of while(1) loop
+      break;  //  Out of while(1) loop
+    }
+    else      //  chars_read must be negative, which means an error
+    {
+      Serial.printf("\nsomehow chars_read == %d  so Copy failed\n", chars_read);
+      Source.close();
+      Destination.close();
+      //  Destination.remove();     // leave it around for diagnostics
+
+      int read_error_bits = Source.getError();
+      Serial.printf("Error bits %08X\n", read_error_bits);
+      Source.clearError();
+      uint8_t sd_error = SD.sdErrorCode();
+      Serial.printf("SD Error code %02X\n", sd_error);
+      Serial.printf("\nCopy failed\n");
+      return false;
     }
   }
   //
@@ -1315,11 +1371,11 @@ void AUXROM_MOUNT(void)
 //                    mode     is in AR_Opts[0]
 //
 
-  bool  SD_begin_OK;
+  //bool  SD_begin_OK;
 
-#if VERBOSE_KEYWORDS
+  #if VERBOSE_KEYWORDS
   Serial.printf("Call to MOUNT\n");
-#endif
+  #endif
 
   *p_usage = 0;     //  Assume success
 
@@ -1330,29 +1386,37 @@ void AUXROM_MOUNT(void)
   //  be a complementary function to SD.begin()  , i.e. a close/detach. Hopefully a new SD.begin()
   //  just over-writes any previous state
   //
-Serial.printf("p_buffer + 256 is [%s]\n", p_buffer + 256);
+  #if VERBOSE_KEYWORDS
+  Serial.printf("p_buffer + 256 is [%s]\n", p_buffer + 256);
+  #endif
   if (strcasecmp(p_buffer + 256, "SDCard") == 0)
   {
-Serial.printf("match\n");
+    Serial.printf("Mounting an SD Card\n");
     //
     //  This code is lifted and modified version of code in EBTKS.c
     //
     if (!SD.begin(SdioConfig(DMA_SDIO)))             //  This takes about ??? ms.          ###
     {
       Serial.printf("SD begin failed\nLogfile is not active\n");
-      SD_begin_OK = false;
+      //SD_begin_OK = false;
       logfile_active = false;
       return;
     }
-Serial.printf("SD.begin ok\n");
+    #if VERBOSE_KEYWORDS
+    Serial.printf("SD.begin ok\n");
+    #endif
     logfile_active = open_logfile();
+    #if VERBOSE_KEYWORDS
     Serial.printf("logfile_active is %s\n", logfile_active ? "true":"false");
-Serial.printf("calling remount\n");
+    Serial.printf("calling remount\n");
+    #endif
     if(!remount_drives(Config_filename))
     {
       Serial.printf("Failed to re-mount SD Card\n");
     }
-Serial.printf("MOUNT SDCard exit\n\n\n");
+    #if VERBOSE_KEYWORDS
+    Serial.printf("MOUNT SDCard exit\n\n\n");
+    #endif
     return;
   }
 
@@ -1437,14 +1501,26 @@ mount_a_disk:
 
 
     case 1:   //  Mount an existing file, Create if it does not exist
+      #if VERBOSE_KEYWORDS
+      Serial.printf("MOUNT mode 1: Resolved_Path [%s]\n", Resolved_Path);
+      #endif
       if (SD.exists(Resolved_Path))
       {
+        #if VERBOSE_KEYWORDS
+        Serial.printf("   Resolved_Path already exists\n");
+        #endif
         if(msu_is_tape)
         {
+          #if VERBOSE_KEYWORDS
+          Serial.printf("   Mounting a tape\n");
+          #endif
           goto mount_a_tape;
         }
         else
         { //    Must be a disk (checked in parse_MSU()  )
+          #if VERBOSE_KEYWORDS
+          Serial.printf("   Mounting a disk\n");
+          #endif
           goto mount_a_disk;
         }
       }
@@ -1455,9 +1531,13 @@ mount_a_disk:
       //
       //  Does not exist so create a new file by copying the reference image
       //
+      #if VERBOSE_KEYWORDS
+      Serial.printf("   Resolved_Path does not exists, need to create\n");
+      #endif
       if(msu_is_tape)
       { //  Create and mount for tape
 Mount_create_and_mount_tape:
+        Serial.printf("   Create and mount a tape\n");
         if (!copy_sd_file("/Original_images/blank_T.dsk", Resolved_Path))     //  If this fails, the error status and message has already been setup in create_tape_image()
         {                                                                     //  Possible errors are 426 , 427 , and 428
           if (AUXROM_RAM_Window.as_struct.AR_ERR_NUM == 417)
@@ -1478,11 +1558,16 @@ Mount_create_and_mount_tape:
       }
       else
       { //  Create and mount for disk
+        #if VERBOSE_KEYWORDS
+        Serial.printf("   Create and mount a disk\n");
+        #endif
 Mount_create_and_mount_disk:
         if (!copy_sd_file("/Original_images/blank_D.dsk", Resolved_Path)) //  If this fails, the error status and message has already been setup
         {
+          Serial.printf("   Create (copy) failed\n");
           goto Mount_exit;
         }
+        Serial.printf("   Create (copy) success\n");
         goto mount_a_disk;
       }
       break;
@@ -1491,7 +1576,9 @@ Mount_create_and_mount_disk:
     case 2:   //  Mount new file, error if already exists, create & mount
       if (SD.exists(Resolved_Path))
       {     //  File exist which is an error in Mode 2
+        #if VERBOSE_KEYWORDS
         post_custom_error_message("MOUNT File already exists", 409);
+        #endif
         goto Mount_exit;
       }
       if(msu_is_tape)

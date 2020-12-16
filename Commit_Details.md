@@ -179,4 +179,31 @@ Changes:
 -   Add new feature to UNMOUNT. Now recognizes "SDCard"              --- not case sensitive
 -   Add new feature to MOUNT.   Now recognizes "SDCard", "anything"  --- not case sensitive
 
+## Commit \#88 12/16/2020
+
+Changes:
+-   Add diagnostic messages to MOUNT for mode 1, Create if LIF does not exits
+-   Figured out why SD Card read acces while copying Ref LIF image for create
+    new virtual disk in MOUNT was randomly failing. When we changed from FIFO_SDIO
+    mode to DMA_SDIO, the memory used for the temporary buffer for the copy
+    operation became a problem, as it was in EXTMEM. Once it was changed to
+    DMAMEM, the problems stopped.
+-   Added a documentation section titled "Main Uses of DMAMEM" to EBTKS.cpp
+-   In EBTKS_Bus_Interface_ISR.cpp , added noe above pinChange_isr() reminding
+    that the function prototype must include
+        __attribute__ ((interrupt ("IRQ")))
+-   Now that MOUNT LIF create works, benchmark different read block sizes
+-   General improvements to copy_sd_file() that catches errors better, and
+    reports them. Part of MOUNT improvement.
+-   General improvements to MOUNT error reporting and diagnostic prints.
+-   Platformio.ini
+        Changed SdFat library from 2.0.0-beta.8 to 2.0.2-beta.3
+        Added "-Wl,--print-memory-usage" which better reports memory usage at
+        and of compile/Link
+
+## Commit \#89 12/??/2020                                                                           Remember to update EBTKS.h
+
+
+
+
 
