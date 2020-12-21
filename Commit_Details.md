@@ -201,7 +201,29 @@ Changes:
         Added "-Wl,--print-memory-usage" which better reports memory usage at
         and of compile/Link
 
-## Commit \#89 12/??/2020                                                                           Remember to update EBTKS.h
+## Commit \#89 12/20/2020
+
+Changes:
+-   Exhaustive characterization of the timing delays within the very many
+    parts of the Pin Change Interrupt
+-   Added dump_devices_array() in EBTKS_Utilities.cpp , not currently used
+-   There is an unresolved issue with the Serial Monitor command "media"
+    with handling the printer association with the file /printers/printfile.txt
+-   There is an unresolved issue with the "printer is 310" assignment (which
+    needs ROM 360 printer/plotter to be installed) does not actually seem to
+    write to the associated file when PRINT ... command are given. This used
+    to work.
+-   There is an unresolved issue with the MOUNT/UNMOUNT "SDCard" crashing the
+    system.
+
+## Commit \#90 12/??/2020                                                                           Remember to update EBTKS.h
+
+Changes:
+-   
+
+
+
+
 
 
 

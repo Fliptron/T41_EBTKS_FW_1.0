@@ -220,12 +220,12 @@ void Write_on_CRT_Alpha(uint16_t row, uint16_t column, const char *  text)
       }
     }
     //  Busy de-asserted
-    SET_TXD;
+    //SET_TXD;
     DMA_Write_Block(CRTDAT , (uint8_t *)text , 1);
     current_screen.vram[local_badAddr>>1] = *text;
     local_badAddr += 2;
     text++;
-    CLEAR_TXD;
+    //CLEAR_TXD;
   }
   DMA_Write_Block(CRTBAD , (uint8_t *)&badAddr_restore , 2);
   release_DMA_request();

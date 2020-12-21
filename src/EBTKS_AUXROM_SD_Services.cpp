@@ -1241,9 +1241,9 @@ bool copy_sd_file(const char * Source_Path, const char * Destination_Path)
 
   while(1)
   {
-    SET_TXD;
+    //SET_TXD;
     chars_read = Source.read(Copy_buffer, COPY_BUFFER_SIZE);
-    CLEAR_TXD;
+    //CLEAR_TXD;
     if (chars_read == COPY_BUFFER_SIZE)
     {
       Serial.printf(".");

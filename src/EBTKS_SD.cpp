@@ -896,5 +896,3 @@ void Boot_Message_Poll(void)
   boot_message_displayed = true;
 
 }
-
-

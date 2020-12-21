@@ -696,6 +696,30 @@ void diag_sdread_1(void)
 
 }
 
+//
+//  Diagnostic to figure out why report_media() was crashing.  Don't know yet
+//
+
+void dump_devices_array(void)
+{
+  int i,j,k;
+  k=0;
+
+  Serial.printf("devices[32], pointers to HpibDevice classes\n");
+  for (i = 0 ; i < 4 ; i++)
+  {
+    for (j = 0 ; j < 8 ; j++)
+    {
+      Serial.printf("%08X  ", devices[k]); 
+      k++;
+    }
+    Serial.printf("\n");
+  }
+  Serial.printf("\n");
+  Serial.flush();
+  delay(1000);
+}
+
 void report_media(void)
 {
   int         device;
@@ -704,8 +728,8 @@ void report_media(void)
   int         HPIB_Select = get_Select_Code();
 
   Serial.printf("Currently mounted virtual drives\n msu   File Path\n");
-  for (device = 0 ; device < 31 ; device++)      //  actual upper limit is "#define NUM_DEVICES 31"  found in EBTKS_1MB5.cpp
-  {
+  for (device = 0 ; device < 7 ; device++)      //  Actual upper limit is "#define NUM_DEVICES 31"  found in EBTKS_1MB5.cpp
+  {                                             //  Don't do 10 which is the printer that crashes everything
     if (devices[device])
     {
       for (disknum = 0 ; disknum < 4 ; disknum++)
@@ -965,7 +989,7 @@ void Setup_Logic_Analyzer(void)
   //  Setup Trigger Pattern
   //
 
-  Serial.printf("Logic Analyzer Setup\n");
+  Serial.printf("Logic Analyzer Setup\n\nWARNING: AUXROM Keywords are not processed while this menu is active\n\n");
   Serial.printf("Typing enter will use the prior value displayed inside [square brackets].   ^C to escape setup menu\n\n");
   Serial.printf("First enter the match pattern, then the mask (set bits to enable match).\n");
   Serial.printf("Order is control signals (3), Address (16), data (8) ROM Select (octal)\n");

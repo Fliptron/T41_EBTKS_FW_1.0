@@ -97,21 +97,21 @@ struct PACKED S_HP85_String_Variable
   uint8_t     flags_2;
   uint16_t    Total_Length;
   uint16_t    Max_Length;
-  int16_t     Actual_Length;        //  Can be -1 for uninitialized string variables
+  int16_t     Actual_Length;                    //  Can be -1 for uninitialized string variables
   uint8_t     text[];
 };
 
-struct PACKED S_Parameter_Block_N_N_N_N_N_N    //  up to 6 numbers, total of 48 bytes
+struct PACKED S_Parameter_Block_N_N_N_N_N_N     //  up to 6 numbers, total of 48 bytes
 {
   struct S_HP85_Number  numbers[6];
 };
 
-struct PACKED S_Parameter_Block_SREF           //  1 string ref, total of 6 bytes
+struct PACKED S_Parameter_Block_SREF            //  1 string ref, total of 6 bytes
 {
   struct S_HP85_String_Ref  string;
 };
 
-struct PACKED S_Parameter_Block_SVAL              //  1 string, total of 4 bytes
+struct PACKED S_Parameter_Block_SVAL            //  1 string, total of 4 bytes
 {
   struct S_HP85_String_Val  string_val;
 };
@@ -147,7 +147,7 @@ EXTERN  bool  delayed_lma;                                //  LMA from prior cyc
 
 EXTERN  volatile uint16_t addReg;                         //  Hold the current HP85 address
 
-EXTERN  uint16_t pending_address_low_byte;    //  Storage for low address byte of a two byte address sequence. Load on Phi 1 falling edge
+EXTERN  uint16_t pending_address_low_byte;                //  Storage for low address byte of a two byte address sequence. Load on Phi 1 falling edge
 
 EXTERN  bool HP85_Read_Us;   //  Set on rising edge of Phi 2 if a processor read cycle that WE  (us)  will be responding to.
                              //  Ends on falling edge of Phi 1 when data is sent.
@@ -160,9 +160,9 @@ EXTERN  uint8_t msu_select_code;
 EXTERN  uint8_t msu_device_code;
 EXTERN  uint8_t msu_drive_select;
 
-EXTERN  volatile bool interruptReq;     //set when we are requesting an interrupt. cleared by the acknowledge code
+EXTERN  volatile bool interruptReq;             //set when we are requesting an interrupt. cleared by the acknowledge code
 EXTERN  volatile bool Interrupt_Acknowledge;
-EXTERN  volatile uint8_t interruptVector; // vector value used by intack
+EXTERN  volatile uint8_t interruptVector;       // vector value used by intack
 
 EXTERN  jmp_buf   PWO_While_Running;
 
@@ -235,7 +235,7 @@ EXTERN  EXTMEM char Directory_Listing_Buffer_for_SDCAT[DIRECTORY_LISTING_BUFFER_
                                                                                           //  don't want this buffer to be dynamically allocated on heap either.
 EXTERN  EXTMEM char Directory_Listing_Buffer_for_SDDEL[DIRECTORY_LISTING_BUFFER_SIZE];
 
-EXTERN  EXTMEM char dir_line[258];                                              //  Leave room for a trailing 0x00 (that is not included in the passed max length of PS.get_line)
+EXTERN  EXTMEM char dir_line[258];                                                        //  Leave room for a trailing 0x00 (that is not included in the passed max length of PS.get_line)
 
 
 ///////////////////////////////////////////////////  Initialized Globals.  /////////////////////////////////////////////////////////////////
