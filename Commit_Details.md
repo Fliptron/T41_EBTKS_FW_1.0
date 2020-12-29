@@ -158,9 +158,10 @@ Changes:
     pinChange_isr() in EBTKS_Bus_Interface_ISR.cpp
 -   Change some global functions to local static
 -   Extensive changes to EBTKS_Bus_Interface_ISR.cpp
--       Significant new documentation, detailed timing analysis will be in next commit
--       In mid_cycle_processing() move some code that recognizes DMA and Interrupt acknowledgement
--       Merge various EMC_SUPPORT code sequences
+>       Significant new documentation, detailed timing analysis will be in next commit
+>       In mid_cycle_processing() move some code that recognizes DMA and Interrupt acknowledgement
+>       Merge various EMC_SUPPORT code sequences
+
 -   Delete some of Philip's code that has been commented out for months
 -   Mark places in the code that we need to return to with #### tags
 -   Print some dots on the diagnostic terminal when waiting for HP85 to boot after the EBTKS boot
@@ -191,15 +192,16 @@ Changes:
 -   Added a documentation section titled "Main Uses of DMAMEM" to EBTKS.cpp
 -   In EBTKS_Bus_Interface_ISR.cpp , added noe above pinChange_isr() reminding
     that the function prototype must include
-        __attribute__ ((interrupt ("IRQ")))
+>        __attribute__ ((interrupt ("IRQ")))
+
 -   Now that MOUNT LIF create works, benchmark different read block sizes
 -   General improvements to copy_sd_file() that catches errors better, and
     reports them. Part of MOUNT improvement.
 -   General improvements to MOUNT error reporting and diagnostic prints.
 -   Platformio.ini
-        Changed SdFat library from 2.0.0-beta.8 to 2.0.2-beta.3
-        Added "-Wl,--print-memory-usage" which better reports memory usage at
-        and of compile/Link
+>       Changed SdFat library from 2.0.0-beta.8 to 2.0.2-beta.3
+>       Added "-Wl,--print-memory-usage" which better reports memory usage at
+>       and of compile/Link
 
 ## Commit \#89 12/20/2020
 
@@ -208,7 +210,9 @@ Changes:
     parts of the Pin Change Interrupt
 -   Added dump_devices_array() in EBTKS_Utilities.cpp , not currently used
 -   There is an unresolved issue with the Serial Monitor command "media"
-    with handling the printer association with the file /printers/printfile.txt
+    with handling the printer association with the file
+>      /printers/printfile.txt
+
 -   There is an unresolved issue with the "printer is 310" assignment (which
     needs ROM 360 printer/plotter to be installed) does not actually seem to
     write to the associated file when PRINT ... command are given. This used
@@ -225,16 +229,22 @@ Changes:
 -   Changed all the TXD_Pulser() to RXD_Pulser()
 -   Minor documentation edit to platformio.ini
 -   Updates to HPIB based Printing (to a file on the SD Card)
--       HpibDisk type becomes HpibDevice type
--       HpibDevice array now includes device type and Talk/Listen address (tla / _tla)
--       New virtual functions close() and getFilename()
--       New function to check device type isType()
+>       HpibDisk type becomes HpibDevice type
+>       HpibDevice array now includes device type and Talk/Listen address (tla / _tla)
+>       New virtual functions close() and getFilename()
+>       New function to check device type isType()
+
 -   Modify HPIBOutput if the character is EOL
 -   Diagnostic terminal "media" command now lists printer output file
 -   Detailed documentaion in EBTKS.cpp describing the issues with FIFO_SDIO mode
     access to the SD Card, and our changing over to DMA_SDIO mode
 
-## Commit \#91 12/??/2020                                                                           Remember to update EBTKS.h
+## Commit \#91 12/29/2020
+
+Changes:
+-   Clean up formatting of this file
+
+## Commit \#92 12/??/2020                                                                           Remember to update EBTKS.h
 
 Changes:
 -   
