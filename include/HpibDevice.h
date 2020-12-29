@@ -1,13 +1,18 @@
 #ifndef _HPIBDEVICE
 #define _HPIBDEVICE
 
-
+// device type enumeration. Poor man's RTTI
+typedef enum {HPDEV_NONE = 0,HPDEV_DISK,HPDEV_PRT} Hpdev_t;
 
 class HpibDevice
     {
     public:
 
-        //virtual HpibDevice(int tla);
+        HpibDevice(int tla, Hpdev_t type)
+        {
+            _type = type;
+            _tla = tla;
+        }
 
         // called when there is a HPIB identify request
         virtual void identify();
@@ -40,6 +45,19 @@ class HpibDevice
         virtual bool setFile(const char *fname);
         virtual bool setFile(int diskNum, const char *fname, bool wprot);
         virtual bool addDisk(int type);
+        virtual bool close(int diskNum);
+        virtual char *getFilename(int diskNum);
+
+        //returns true if the device type is equal to this device
+        //currently used to distinguish between disk and printer devices
+        bool isType(Hpdev_t type)
+        {
+            return (type == _type);
+        }
+
+    protected:
+        Hpdev_t _type;
+        int _tla;
     };
     #endif //_HPIBDEVICE
 

@@ -29,9 +29,8 @@ extern bool isReadBuffMT();
 class HpibDisk : public HpibDevice
     {
     public:
-        HpibDisk(int tla) : HpibDevice()  //  Talker/Listener Address
+        HpibDisk(int tla) : HpibDevice{tla, HPDEV_DISK}  //  Talker/Listener Address
             {
-            _tla = tla;
             _numDisks = 0;
             _readLen = 0;
             _status[0] = 0;
@@ -387,7 +386,6 @@ class HpibDisk : public HpibDevice
 
 
     private:
-        int _tla;
         bool _listen;
         bool _talk;
         uint8_t _prevHPIBCmd;

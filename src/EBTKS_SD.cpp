@@ -367,9 +367,9 @@ uint32_t getFlags(void)
 
 bool loadConfiguration(const char *filename)
 {
-  TXD_Pulser(1);
+  RXD_Pulser(1);
   EBTKS_delay_ns(10000); //  10 us
-  TXD_Pulser(1);
+  RXD_Pulser(1);
   EBTKS_delay_ns(10000); //  10 us
 
   char fname[258];
@@ -439,13 +439,13 @@ bool loadConfiguration(const char *filename)
     machineNum++;
   }
 
-  boot_log_ptr += sprintf(boot_log_ptr, "Mach:%1d ", machineNum);
+  boot_log_ptr += sprintf(boot_log_ptr, "Series 80 Model: %s\n", machineNames[machineNum]);
 
   enHP85RamExp(doc["ram16k"] | false);
-  boot_log_ptr += sprintf(boot_log_ptr, "RAM:%c ", getHP85RamExp() ? 'T':'F');
+  boot_log_ptr += sprintf(boot_log_ptr, "HP85A 16 KB RAM: %s\n", getHP85RamExp() ? "Enabled":"None");
   //bool enScreenEmu = doc["screenEmu"] | false;
   bool tapeEn = doc["tape"]["enable"] | false;
-  boot_log_ptr += sprintf(boot_log_ptr, "Tape:%c\n", tapeEn ? 'T':'F');
+  boot_log_ptr += sprintf(boot_log_ptr, "HP85A/B Tape Emulation: %s\n", tapeEn ? "Yes":"No");
 
   // Copy values from the JsonDocument to the Config
 
@@ -467,11 +467,11 @@ bool loadConfiguration(const char *filename)
   }
   LOGPRINTF("Tape file: %s%s enabled is: %s\n", path, tapeFname, tapeEn ? "Active" : "Inactive");
 
-  TXD_Pulser(1);         //  From beginning of function to here is 23 ms
+  RXD_Pulser(1);         //  From beginning of function to here is 23 ms   ####
   EBTKS_delay_ns(10000); //  10 us
-  TXD_Pulser(1);
+  RXD_Pulser(1);
   EBTKS_delay_ns(10000); //  10 us
-  TXD_Pulser(1);
+  RXD_Pulser(1);
   EBTKS_delay_ns(10000); //  10 us
 
   //  New ROM load code......
@@ -490,7 +490,7 @@ bool loadConfiguration(const char *filename)
 
     strcpy(fname, optionRoms_directory);     //  Base directory for ROMs
     strlcat(fname, filename, sizeof(fname)); //  Add the filename
-    boot_log_ptr += sprintf(boot_log_ptr, "%-12s en:%c", filename, enable ? 'T':'F');
+    boot_log_ptr += sprintf(boot_log_ptr, "%-12s %s", filename, enable ? "On " : "Off");
 
     if (enable == true)
     {
@@ -499,7 +499,7 @@ bool loadConfiguration(const char *filename)
       {
         romIndex++;
       }
-      TXD_Pulser(1); //  Loading ROMs takes between 6.5 and 8.5 ms each (more or less)
+      RXD_Pulser(1); //  Loading ROMs takes between 6.5 and 8.5 ms each (more or less)
       //  EBTKS_delay_ns(10000);    //  10 us
     }
     else
@@ -509,6 +509,7 @@ bool loadConfiguration(const char *filename)
     
   }
   LOGPRINTF("\n");
+  boot_log_ptr += sprintf(boot_log_ptr, "\n");
   //
   // configure the disk drives. currently we only handle one hpib interface
   //
@@ -553,7 +554,7 @@ bool loadConfiguration(const char *filename)
           //form full path/filename
           strcpy(fname, diskDir);                  //get path
           strlcat(fname, filename, sizeof(fname)); //append the filename
-          if ((devices[device] != NULL) && (en == true))
+          if ((devices[device] != NULL) && (en == true) && devices[device]->isType(HPDEV_DISK))
           {
             devices[device]->addDisk((int)type);
             devices[device]->setFile(unitNum, fname, wprot);
@@ -571,7 +572,7 @@ bool loadConfiguration(const char *filename)
 
       if ((devices[device] == NULL) && (enable == true))
       {
-        devices[device] = new HpibPrint(device); //  create a new HPIB printer device 
+        devices[device] = new HpibPrint(device,HPDEV_PRT); //  create a new HPIB printer device 
       }
       JsonObject printer = hpibDevice["printer"];
       const char *filename = printer["filename"]; //printer filename
@@ -621,9 +622,9 @@ failed_to_read_flags:
     file.close();
   }
   
-  TXD_Pulser(1);
+  RXD_Pulser(1);
   EBTKS_delay_ns(10000); //  10 us
-  TXD_Pulser(1);
+  RXD_Pulser(1);
   EBTKS_delay_ns(10000); //  10 us
   return true;           //  maybe we should be more specific about individual successes and failures. Currently only return false if no SD card
 }
@@ -748,7 +749,7 @@ bool remount_drives(const char *filename)
 
       if ((devices[device] == NULL) && (enable == true))
       {
-        devices[device] = new HpibPrint(device);                //  Create a new HPIB printer device
+        devices[device] = new HpibPrint(device, HPDEV_PRT);                //  Create a new HPIB printer device
       }
       JsonObject printer = hpibDevice["printer"];
       const char *filename = printer["filename"];               //  Printer filename
@@ -832,6 +833,17 @@ void printDirectory(File dir, int numTabs)
 static bool       boot_message_displayed = false;
 static bool       dot_already_printed = false;
 
+//
+//  During boot the CRT is unavailable. So we store all the boot status info in
+//  Directory_Listing_Buffer_for_SDDEL[], assuming that it is unlikely that the
+//  user will try and type in a SDDEL command before we have finished with this
+//  array. Once the CRT is available (detected by seeing the HP85 making references
+//  to 000072, which is part of the idle loop), we dump the array to the CRT, and
+//  set boot_message_displayed to true, as displaying the test is a once only event.
+//  Once the display is complete, this function is just overhead in the polling
+//  loop, so we minimize the impact by returning as quickly as possible
+//
+
 void Boot_Message_Poll(void)
 {
   int row, column;
@@ -867,7 +879,7 @@ void Boot_Message_Poll(void)
   {
     return;
   }
-  Serial.printf("\n\nDump of Boot Log\n");
+  Serial.printf("\n\nDump of Boot Log\n\n");
   row = 1;
   column=0;
   //first_char[0] = (*boot_log_ptr) +128;                //  Add an undersdscore
@@ -881,7 +893,7 @@ void Boot_Message_Poll(void)
     Serial.printf("[%s]\n", segment);
     Serial.flush();
     Write_on_CRT_Alpha(row++, column, segment);
-    // delay(50);                                   //  A little delay so they see it happening
+    delay(20);                                      //  A little delay so they see it happening
     if(row > 63)
     {
       row = 63;                                     //  Just over-write the last line. Note we start on line 1, so max lines is 63. We leave line 0 alone.

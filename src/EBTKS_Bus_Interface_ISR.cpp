@@ -218,6 +218,7 @@ bool getHP85RamExp(void)      //  Report true if HP85A RAM expansion is enabled
 //  12/17/2020  Timing analysis, from a single instance of EBTKS board
 //  12/18/2020  Ongoing measurements. Completed top level, and /RC related adjustment in
 //              delay prior to mid-cycle processing
+//  12/28/2020  Testing finished.
 //
 //  Note: There is the overhead of the SET/CLEAR_RXD , SET/CLEAR_TXD. The pair is about 10 ns
 //
@@ -251,7 +252,7 @@ bool getHP85RamExp(void)      //  Report true if HP85A RAM expansion is enabled
 //                                                                                  
 //  Calculated ISR, TP A to TP J MAX                            1107                A..B + C..D + E..F + G..H(260) + I..J
 //                                                                                  25     187    150    265         480
-//  Measured ISR, TP A to TP J   MAX                            1060      027
+//  Measured ISR, TP A to TP J   MAX                            1060      027       Actually 1190 if Tape drive emulation is used
 //
 //  Decided that for best safety margin, without getting too aggressive, I
 //  would adjust the TP G to TP H delay to make the earliest /RC (as seen
@@ -259,23 +260,45 @@ bool getHP85RamExp(void)      //  Report true if HP85A RAM expansion is enabled
 //  200 ns, -38 was seen, but that was with SET_RXD and CLEAR_RXD around
 //  it. So we will have to hunt a bit for the right value with RXD stuff
 //  only at A and J, and direct measurement of /RC so try 222, and verify.
-//  -54 and +162 looks prety good.
+//  -54 and +162 looks pretty good.
+//                                  Update/Sigh: So it turns out that none     #### Tape Drive
+//  of the testing exercised the Tape Drive emulation (remember that, the      #### Tape Drive
+//  original goal of EBTKS). The worst case delay for the start of /RC for     #### Tape Drive
+//  reads of the tape drive status register, readTapeStatus() , is 144 ns      #### Tape Drive
+//  worse than anything else seen, with a latest falling edge of /RC being     #### Tape Drive
+//  306 ns after the rising edge of Phi 2. Still within the requirement of     #### Tape Drive
+//  "less than 380 ns", but with not as much safety margin as everything       #### Tape Drive
+//  else. For now we will just leave it, since it works. If it fails at        #### Tape Drive
+//  some later date, the most likely solution is to pipeline some of the       #### Tape Drive
+//  calculations in readTapeStatus(), and do them at the end of processing     #### Tape Drive
+//  in onPhi_1_Fall(), and adjust the following delay amount to compensate.    #### Tape Drive
 //  
-//  Falling edge of /RC relative to Phi 2 R               -54    162      028,029   With the delay at TP G set to 222
-//  Jitter in assertion time of /RC                       216             030       162 + 54
+//  Falling edge of /RC relative to Phi 2 R               -54    162      028,029   With the delay at TP G set to 222  (does not include #### Tape Drive)
+//  Jitter in assertion time of /RC                       216             030       162 + 54                           (does not include #### Tape Drive)
+//
+//  The above did not involve tape emulation, which takes longer               #### Tape Drive
+//
+//  Falling edge of /RC relative to Phi 2 R, Tape RD             306          080   With the delay at TP G set to 222
+//                                                                                  Still under requirement of max 380 from 1MB5 spec
 //
 //  Although not seen in the 028, 029,030 measurement, the MAX measurement
 //  from 025 (rare outlier) can be applied to this If we assume the spread
 //  is 285 rather than 216, and using the tuned earliest time of -54, then
 //  the unseen latest would be 285 - 54 = 231 ns after the rising edge of
-//  Phi 2. the goal is to maximize the safety margin of the spec of the
+//  Phi 2. The goal is to maximize the safety margin of the spec of the
 //  latest rising edge being 380 ns after Phi 2 R.
-//  Thus we have 380 - 231 = 149 ns margin
+//  Thus we have 380 - 231 = 149 ns margin                                      (does not include #### Tape Drive results. )
 //
 //  Virtual latest /RC falling @ 285 ns after earliest,
 //  and 380 after Phi 2 R:                                       148      031
 //
-//  REMEMBER: All these measurements have an overhead of about 10 ns due to the SET_TXD & CLEAR_TXD
+//  REMEMBER: All these measurements have an overhead of about
+//            10 ns due to the SET_TXD & CLEAR_TXD . The way
+//            the measurements were made, this 10 ns overhead
+//            is non-accumulating (i.e. only 1 set of RXD
+//            SET/CLEAR active at a time) . When we are not
+//            making these measurements. then RXD is used to
+//            track the overall time for pinChange_isr()
 //            All of these numbers are with BOARD-T running
 //
 //  Time point == TP  R == Rising  F == Falling          Duration/Delay   Scope     Description
@@ -303,57 +326,38 @@ bool getHP85RamExp(void)      //  Report true if HP85A RAM expansion is enabled
 //
 //  TP G  to TP H     EBTKS_delay_ns(222)                 227    236      048,049   Re-do of previous measurement with tweaked value
 //
+//  All C? to C? are part of mid_cycle_processing()
 //  TP CA to TP CB    Get bus control signals     }--      61     88      050,051
 //                    Identify Reads and Writes   }
 //                    Identify DMA and Interrupt  }
 //                    Acknowledge                 }
 //  TP CB to TP CC    EMC mid-cycle processing             38     82      052,053
 //  TP CC to TP CD    Schedule Addr inc and load           22     79      054,055
-//  TP CD to TP CE    Read. Is it an EBTKS Resource         8    169      056,057
+//  TP CD to TP CE    Read. Is it an EBTKS Resource         8    169      056,057   See below for TP D? measurements that break this down into specific tasks
 //  TP CE to TP CF    Process Interrupt state              22     57      058,059
 //  TP CF to TP CG    Handle Reads (EBTKS drives bus)       5     55      060,061   Data is put on the bus, /RC asserted
 //  TP CG to TP CH    Logic Analyzer capture sample        55             062
 //  TP CH to TP CI    Process DMA Request                   5     18      063,064
-//  TP CI to TP CJ    Process DMA Acknowledge              11     20      065,066
-
-
-
-//      If Read Cycle, see if it 
-//        Is it a bank switched ROM address
-//          Is it an AUXROM && RAM Window address
-//            Read from RAM Window
-//        Is it a ROM that EBTKS is providing? If so, read the selected ROM
-//        Process Reads from 16 KB RAM on HP85A if enabled and address match
-//        Process any I/O space Reads (may require non-trivial processing)
-
-//      If any resource is being read from EBTKS
-//        While avoiding contention, turn the data bus around and drive
-//        the backplane, put our data on the bus
-//        Assert /RC
-//      Save the Bus Cycle information to be used by the Logic Analyzer
-//      Check for a request for DMA transactions from anywhere else in the EBTKS firmware
-//        Assert /HALT
-//        record that the request is pending
-//      If DMA_Acknowledge && we requested it
-//        Take ownership of the bus by
-//          Stop processing interrupts for Phi 1 Rising edge
-//          Wait for Phi 1 Falling edge (even waste a cycle, just to be sure, but should not ned to)
-//          Take control of the /LMA, /RD, and /WR , while avoiding contention
-//          Start driving the control lines
-//        Indicate to the rest of EBTKS Firmware that we are now in HP85 DMA mode
-//        Disable all EBTKS interrupts. So no USB Serial, no SYSTICK
-
-
-
-
-
-
-
-
-
-
-
+//  TP CI to TP CJ    Process DMA, no DMA Ack              11     20      065,066
+//  TP CI to TP CJ    Process DMA, when DMA ACK                                     It's complicated, but it is entering DMA so no real impact on
+//                                                                                  the normal critical timing that we are researching. Here is the breakdown:
+//                                                       1120             067       TP CI to TP CJ
+//                                                         57             068       TP CI to NVIC_CLEAR_PENDING()
+//                                                          7             069       NVIC_CLEAR_PENDING() duration
+//                                                        992             070       Wait till end of next Phi 1 H, then release /LMA, /RD, /WR
+//                                                         28             071       Change direction of /LMA, /RD, /WR, switch control direction, flag DMA Active
+//                                                         14             072       __disable_irq() and get to TP CJ
 //
+//
+//  onReadData()  (TP CD to TP CE  , 8 to 169 ns) is further analyzed
+//
+//  Time point == TP  R == Rising  F == Falling          Duration/Delay   Scope     Description
+//                                                       Min ns  Max ns   Pic #
+//  TP DA to TP DB    Read ROM                              7     87     073,074    7 ns for Addr non-match, 87 for tests to get to match
+//                                                                                  includes RAM Window accesses
+//  TP DC to TP DD    Read 16 KB RAM on 85A/B              16     41     075,076    Not sure this exercised the 16 KB RAM               
+//  TP DE to TP DF    I/O Read functions, non-tape         10     96     077,078    Apparently Tape I/O takes longer. See next line
+//  TP DE to TP DF    I/O Read for tape                          234     079        Tape Read I/O. This is a surprise. Need to re-check /RC
 //
 //  The heart of EBTKS is this Pin Change Interrupt Service Routine (ISR).
 //  ALL of the following tasks are processed while the processor is
@@ -653,7 +657,7 @@ inline void onPhi_1_Fall(void)
     SET_T4_BUS_TO_INPUT;                //  Set data bus to input on Teensy
     BUS_DIR_FROM_HP;                    //  Change direction of bus buffer/level translator to inbound from I/O bus
                                         //  This also de-asserts /RC  (it goes High)
-//    CLEAR_TXD;                          //  Use this to track /RC timing
+    //CLEAR_TXD;                          //  Use this to track /RC timing
     HP85_Read_Us = false;               //  Doneski
   }
   //CLEAR_TXD;      //  Time point BC
@@ -788,6 +792,8 @@ inline void mid_cycle_processing(void)                             //  This func
   if (schedule_read)
   {           //  Test if address is in our range and if it is , return true and set readData to the data to be sent to the bus
     HP85_Read_Us = onReadData();
+    //CLEAR_TXD;    //  Time point DB
+    //CLEAR_TXD;    //  Time point DF
   }
   //CLEAR_TXD;      //  Time point CE
 
@@ -870,7 +876,7 @@ inline void mid_cycle_processing(void)                             //  This func
     DISABLE_BUS_BUFFER_U2;
     BUS_DIR_TO_HP;                        //  DIR high  !!! may need to delay for 1MA8 to let go of driving bus: See above diagnostic test. Confirmed
                                           //  that starting to drive the data bus (with /RC) at Phi 2 is not going to cause contention
-//  SET_TXD;                              //  Use this to track /RC timing
+    //SET_TXD;                            //  Use this to track /RC timing
 
     SET_T4_BUS_TO_OUTPUT;                 //  set data bus to output      (should be no race condition, since local)
 
@@ -934,10 +940,12 @@ inline void mid_cycle_processing(void)                             //  This func
     PHI_1_and_2_IMR = 0;                  //  Block any interrupts while DMA is happening. This assumes that the ONLY
                                           //  interrupts that can happen in this GPIO group is Phi 1 and Phi 2 rising edge
     PHI_1_and_2_ISR = PHI_1_and_2_ISR;    //  Clear any set bits (should be none)
+    //TOGGLE_TXD;
     NVIC_CLEAR_PENDING(IRQ_GPIO6789);     //  Even though we just masked GPIO interrupts, the NVIC can still
                                           //  have pending interrupts. It shouldn't at this point, but clear
                                           //  them, just to be safe. We will need to do this again, just
                                           //  before ending the DMA activity.
+    //TOGGLE_TXD;
     //
     //  Don't rush to get started, let the Acknowledge cycle finish.
     //  The Acknowledge starts during Phi 1, but here we are in the
@@ -957,6 +965,7 @@ inline void mid_cycle_processing(void)                             //  This func
     RELEASE_LMA;            //  get them in the right state before turning the Teensy pins  around
     RELEASE_RD;
     RELEASE_WR;
+    //TOGGLE_TXD;
     GPIO_DIRECTION_LMA |= (BIT_MASK_LMA | BIT_MASK_RD | BIT_MASK_WR);     //  Switch LMA, RD, and WR to Output
                                                                           //  Assumes/requires that LMA, RD, and WR
                                                                           //  are in the same GPIO group.
@@ -984,7 +993,7 @@ inline void mid_cycle_processing(void)                             //  This func
 
     DMA_Acknowledge = false;
     DMA_Active = true;
-
+    //TOGGLE_TXD;
   //
   //  We now own the bus, the 3 control lines are high, HALT is still asserted, and interrupts are off, we are driving
   //  the data bus with 0xFF
@@ -1034,6 +1043,7 @@ inline bool onReadData(void)                  //  This function is running withi
   //    return false
   //
 
+  //SET_TXD;        //  Time point DA
   if ((addReg & 0xE000) == ROM_PAGE) // ROM page 0x6000..0x7FFF   (8 KB)
   {
     //
@@ -1042,7 +1052,9 @@ inline bool onReadData(void)                  //  This function is running withi
     //
     return readBankRom(addReg & (ROM_PAGE_SIZE - 1));
   }
+  //CLEAR_TXD;      //  Time point DB, if test false
 
+  //SET_TXD;        //  Time point DC
   if (enRam16k)
   {
     //
@@ -1051,13 +1063,17 @@ inline bool onReadData(void)                  //  This function is running withi
     if ((addReg >= HP85A_16K_RAM_module_base_addr) && (addReg < IO_ADDR))
     {
       readData = HP85A_16K_RAM_module[addReg & 0x3FFF];
+      //CLEAR_TXD;      //  Time point DD, if test true, true
       return true;
     }
+    //CLEAR_TXD;      //  Time point DD, if test true, false
   }
+  //CLEAR_TXD;      //  Time point DD, if test false
 
   //
   //  Process I/O reads (data from I/O bus to the CPU)
   //
+  //SET_TXD;        //  Time point DE
   if ((addReg & 0xFF00U) == 0xFF00U)
   {
     return (ioReadFuncs[addReg & 0x00FFU])();  // Call I/O read handler

@@ -4,9 +4,8 @@
 class HpibPrint : public HpibDevice
 {
 public:
-    HpibPrint(int tla) : HpibDevice()
+    HpibPrint(int tla, Hpdev_t type) : HpibDevice {tla,HPDEV_PRT}
     {
-        _tla = tla;
         _fileOpen = false;
         _fileName[0] = '\0';
     }
@@ -78,19 +77,23 @@ public:
         return _fileOpen;
     }
 
-    char * getFile()
+    char * getFilename(int diskNum)
     {
+        (void)diskNum;
         return (_fileOpen) ? _fileName : NULL;
     }
 
-    void close()
+    bool close(int diskNum)
     {
+        (void)diskNum;
         if (_printFile)
         {
             _printFile.close();
             _fileOpen = false;
             _flushTimer = 0;
+            return true;
         }
+        return false;
     }
 
     void flush()
@@ -168,7 +171,6 @@ public:
     }
 
 private:
-    int _tla;
     bool _listen;
     bool _talk;
     uint8_t _prevHPIBCmd;

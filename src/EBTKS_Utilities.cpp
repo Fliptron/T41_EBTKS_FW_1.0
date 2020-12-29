@@ -16,22 +16,22 @@
 #include "Inc_Common_Headers.h"
 #include "HpibDisk.h"
 
-extern HpibDisk *devices[];
+extern HpibDevice *devices[];
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////  Diagnostic Pulse Generation
 //
-//  TXD_Pulser generates the specified number of pulses by Toggling the TXD pin
+//  RXD_Pulser generates the specified number of pulses by Toggling the RXD pin
 //
 //  Each pulse comprises
-//    TXD is toggled immediately on entry
+//    RXD is toggled immediately on entry
 //    wait 5 us
-//    TXD is toggled again
+//    RXD is toggled again
 //    wait 5 us
 //
 //  So it takes 10 us per pulse
 //
 
-void TXD_Pulser(uint8_t count)
+void RXD_Pulser(uint8_t count)
 {
   volatile int32_t timer;
 
@@ -39,7 +39,7 @@ void TXD_Pulser(uint8_t count)
 
   while(count--)
   {
-    TOGGLE_TXD;
+    TOGGLE_RXD;
     for (timer = 0 ; timer < 333 ; timer++)
     {
       //  Do nothing. With timer, itterations, it takes 5 us. So 15 ns per itteration.
@@ -728,23 +728,30 @@ void report_media(void)
   int         HPIB_Select = get_Select_Code();
 
   Serial.printf("Currently mounted virtual drives\n msu   File Path\n");
-  for (device = 0 ; device < 7 ; device++)      //  Actual upper limit is "#define NUM_DEVICES 31"  found in EBTKS_1MB5.cpp
-  {                                             //  Don't do 10 which is the printer that crashes everything
-    if (devices[device])
+  for (device = 0 ; device < NUM_HPIB_DEVICES ; device++)
+  {
+    if (devices[device] && devices[device]->isType(HPDEV_DISK))
     {
       for (disknum = 0 ; disknum < 4 ; disknum++)
       {
-        filename = devices[device]->getFilename(disknum);
+        filename = static_cast<HpibDisk *>(devices[device])->getFilename(disknum);
         if (filename)
         {
           Serial.printf(":D%d%d%d  %s\n", HPIB_Select, device, disknum, filename);
         }
       }
     }
+    if (devices[device] && devices[device]->isType(HPDEV_PRT))
+    {
+      filename = devices[device]->getFilename(0);
+      if (filename)
+      {
+        Serial.printf("%d%.2d  %s\n", HPIB_Select, device, filename);
+      }
+    }
   }
   filename = tape.getFile();
   Serial.printf(":T     %s\n", filename);
-
 }
 
 

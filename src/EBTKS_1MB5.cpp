@@ -90,7 +90,7 @@ volatile uint8_t intReason;
 
 volatile uint8_t selectCode;
 
-void HPIBOutput(uint8_t val, uint8_t ccr);
+void HPIBOutput(uint8_t val, uint8_t ccr, bool eol);
 void HPIBAtnOut(uint8_t val, uint8_t ccr);
 
 uint32_t TA; //talk address bitmap. 1 bit per device
@@ -106,8 +106,7 @@ void processIB(void);
 void requestInterrupt(uint8_t reason);
 bool isReadBuffMT();
 
-#define NUM_DEVICES 31
-HpibDevice *devices[NUM_DEVICES];
+HpibDevice *devices[NUM_HPIB_DEVICES];
 
 //
 // emulated registers - note these run under the interrupt context - keep them short n sweet!
@@ -394,7 +393,7 @@ void loopTranslator(void)
     if (millis() > (TICK_TIME + tick))
     {
         tick = millis();
-        for (int a = 0; a < NUM_DEVICES; a++)
+        for (int a = 0; a < NUM_HPIB_DEVICES; a++)
         {
             if (devices[a])
             {
@@ -429,7 +428,7 @@ void processOB(void)
 
             case 0x10: //input
                 prevCmd = ourOB;
-                for (int a = 0; a < NUM_DEVICES; a++)
+                for (int a = 0; a < NUM_HPIB_DEVICES; a++)
                 {
                     if (devices[a])
                     {
@@ -485,7 +484,7 @@ void processOB(void)
                     while (readOb(&tmp) == false)
                         ; //wait for ending byte. throw it away
 
-                    for (int a = 0; a < NUM_DEVICES; a++)
+                    for (int a = 0; a < NUM_HPIB_DEVICES; a++)
                     {
                         if ((devices[a]) && (LA & (1u << a))) //only listeners
                         {
@@ -527,7 +526,7 @@ void processOB(void)
                     break;
                 case 4: //parallel poll
 
-                    for (int a = 0; a < NUM_DEVICES; a++)
+                    for (int a = 0; a < NUM_HPIB_DEVICES; a++)
                     {
                         if (devices[a])
                         {
@@ -550,6 +549,7 @@ void processOB(void)
 
                 case 7: //send EOL
                     LOGPRINTF_1MB5("Send EOL");
+                    HPIBOutput(0, CCR_CED,true);     //r.b patch
                     break;
 
                 case 8: //break i/o
@@ -642,7 +642,7 @@ void processOB(void)
 
             case 0xa0: //output
                 LOGPRINTF_1MB5(" output");
-                HPIBOutput(ourOB, ourCCR); //in band hpib data
+                HPIBOutput(ourOB, ourCCR,false); //in band hpib data
                 break;
 
             case 0xb0: //send
@@ -666,12 +666,15 @@ void processOB(void)
 //
 //  called with a byte from hpib that is not ATN
 //
-void HPIBOutput(uint8_t val, uint8_t ccr)
+void HPIBOutput(uint8_t val, uint8_t ccr , bool eol)
 {
 
     //put another byte in the buffer
+    if (!eol)
+    {
     cmdBuff[cmdIndex] = val;
     cmdIndex++;
+    }
     if (cmdIndex >= sizeof(cmdBuff))
     {
         cmdIndex = sizeof(cmdBuff) - 1; //peg at max
@@ -686,7 +689,7 @@ void HPIBOutput(uint8_t val, uint8_t ccr)
             cmdBuff[cmdIndex++] = CR[17 + i];
           }
 
-        for (int a = 0; a < NUM_DEVICES; a++)
+        for (int a = 0; a < NUM_HPIB_DEVICES; a++)
         {
             if (devices[a])
             {
@@ -728,7 +731,7 @@ void HPIBAtnOut(uint8_t val, uint8_t ccr)
         cmdIndex = 0; //reset our command buffer when untalked
         LOGPRINTF_1MB5("UNT\n");
     }
-    for (int a = 0; a < NUM_DEVICES; a++)
+    for (int a = 0; a < NUM_HPIB_DEVICES; a++)
     {
         if (devices[a])
         {

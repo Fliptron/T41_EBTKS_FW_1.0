@@ -540,34 +540,39 @@ void setup()
   //
   //	Name							Physical Pin		Suggested use
   //	CORE_PIN_RXD			10							ISR Entry and Exit
+  //																		Also used by RXD_Pulser, which is used to track timing of the Boot sequence,
+  //                                    and should only be called before Pin Change Interrupt is activated
   //	CORE_PIN_TXD			 9							General entry and exit of whatever is currently being debugged, currently DMA
-  //																		Also used by TXD_Pulser, which is used to track timing of the Boot sequence
   //	CORE_PIN_T13			35							Also the on board LED. Toggle when errors are detected in diagnostic tests
   //	CORE_PIN_T33			25							General oscilloscope trigger, used in timing tuning
   //	CORE_PIN_T39			31							No specific use
   //
 
   pinMode(CORE_PIN_RXD, OUTPUT);
-  CLEAR_RXD;                //  RXD tracks entry and exit of the pin_change ISR, at the heart of the bus interface
+  CLEAR_RXD;                          //  RXD tracks entry and exit of the pin_change ISR, at the heart of the bus interface
+                                      //  and also pulses during the boot process, to measure the time various tasks take,
+                                      //  and to identify problems.
+                            
   pinMode(CORE_PIN_TXD, OUTPUT);
-  CLEAR_TXD;                //  TXD is used for any other debug/time tracking. Maybe multiple things at once. Depends on context
+  CLEAR_TXD;                          //  TXD is used for any other debug/time tracking. Maybe multiple things at once. Depends on context
 
   pinMode(CORE_PIN_T13, OUTPUT);
-  //  SET_LED;                //  T13 On Board LED
+  //  SET_LED;                        //  T13 On Board LED
   CLEAR_LED;
+
   pinMode(CORE_PIN_T33, OUTPUT);
-  CLEAR_T33;                //  T33 Diagnostics
+  CLEAR_T33;                          //  T33 Diagnostics
+
   pinMode(CORE_PIN_T39, OUTPUT);
-  CLEAR_T39;                //  T39 Diagnostics
+  CLEAR_T39;                          //  T39 Diagnostics
 
+  ASSERT_PWO_OUT;                     //  Desire glitch free switchover from resistor asserting PWO to Teensy asserting PWO
+  pinMode(CORE_PIN_PWO_O, OUTPUT);    //  Core Pin 36 (Physical pin 28) is pulled high by an external resistor, which turns on the FET,
+                                      //  which pulls the PWO line low, which resets the HP-85
+  ASSERT_PWO_OUT;                     //  Over-ride external pull up resistor, still put High on gate, thus holdimg PWO on I/O bus Low
 
-  ASSERT_PWO_OUT;           //  Desire glitch free switchover from resistor asserting PWO to Teensy asserting PWO
-  pinMode(CORE_PIN_PWO_O, OUTPUT);      //  Core Pin 36 (Physical pin 28) is pulled high by an external resistor, which turns on the FET,
-                            //  which pulls the PWO line low, which resets the HP-85
-  ASSERT_PWO_OUT;           //  Over-ride external pull up resistor, still put High on gate, thus holdimg PWO on I/O bus Low
-
-  //  TXD starts low (see above), pulses 5 times, ends low. Pulses are 10 us apart
-  TXD_Pulser(5);
+  //  RXD starts low (see above), pulses 5 times, ends low. Pulses are 10 us apart, High duration is 5 us
+  RXD_Pulser(5);
   EBTKS_delay_ns(10000);    //  10 us
 
   _VectorsRam[15] = mySystick_isr;
@@ -639,7 +644,7 @@ void setup()
   setIOWriteFunc(0340,&ioWriteAuxROM_Alert);  // AUXROM Alert that a Mailbox/Buffer has been updated
   setIOReadFunc(0340,&onReadAuxROM_Alert);    // Use HEYEBTKS to return identification string
 
-  TXD_Pulser(4);
+  RXD_Pulser(4);
   EBTKS_delay_ns(10000); //  10 us
 
   //extern void OnPress(int key);
@@ -652,15 +657,15 @@ void setup()
   //
   //  Wait till the Virtual terminal is connected
   //
-  while (!Serial) {  };                                               //  Stall startup until the serial terminal is attached. Do this if we need to see startup messages
+  while (!Serial) {  };         //  Stall startup until the serial terminal is attached. Do this if we need to see startup messages
 #endif
 
   //delay(2000);                //  Give me a chance to turn the terminal emulator on, after I hear the USB enumeration Bing.
 
-  Serial.begin(115200);       //  USB Serial Baud value is irrelevant for this serial channel
+  Serial.begin(115200);         //  USB Serial Baud value is irrelevant for this serial channel
 
   Serial.printf("HP-85 EBTKS Board Serial Diagnostics  %-4d\n", message_count++);
-  TXD_Pulser(3);
+  RXD_Pulser(3);
   EBTKS_delay_ns(10000);      //  10 us
 
   Serial.printf("\n%s", LOGLEVEL_GEN_MESSAGE);
@@ -671,25 +676,48 @@ void setup()
   //  Use CONFIG.TXT file on sd card for configuration
 
   Serial.printf("Doing SD.begin\n");
-  TXD_Pulser(2);  SET_TXD;
-  SD_begin_OK = true;
-  //if (!SD.begin(SdioConfig(FIFO_SDIO)))          //  This takes about 115 ms.
-  if (!SD.begin(SdioConfig(DMA_SDIO)))             //  This takes about ??? ms.          ###
+  RXD_Pulser(2);  SET_RXD;                          //  RXD_Pulser does 2 toggles, so this inverts things to give some additional info
+
+  //
+  //  Previously we used the FIFO_SDIO mode, but found that we got random errors because the related
+  //  library code in
+  //      File:       SdioTeensy.cpp
+  //      Function:   bool SdioCard::readData(uint8_t* dst)
+  //      At line:    736
+  //  has a critical section that is guarded by
+  //      noInterrupts();   a macro that is actually __disable_irq()
+  //      interrupts();     a macro that is actually __enable_irq()
+  //
+  //  This caused random delays in the EBTKS pinChange_isr() , sometimes quite long.
+  //  The working theory is that the registers being modified in the critical region
+  //  are in a different clock domain than all the GPIO registers that we read/write
+  //  extensively throughout the EBTKS firmware without significant delays (i.e. the
+  //  GPIO registers are in a 600 MHz domain, but the Sdio registers are in maybe an
+  //  80 MHz, or 50 MHz domain). Depending on the phase of the clock at the time of
+  //  call to SdioCard::readData() , the execution time of the critical region could
+  //  be long enough to corrupt the carefully timed execution of pinChange_isr().
+  //
+  //  The alternative mode, DMA_SDIO , never calls SdioCard::readData(uint8_t* dst),
+  //  but rather uses SdioCard::readSector() which does not have an equivalent
+  //  critical region. Thus, crisis averted.
+  //
+  //  Aside: SdioTeensy.cpp has   bool SdioCard::writeData(const uint8_t* src)  at
+  //         line 885 , which has very similar looking code that is not guarded with
+  //         noInterrupts() / interrupts() .  I should probably report this to the
+  //         developer.
+  //
+  //  Note that DMA_SDIO is not without its own issues, but easily avoided. The
+  //  issue is random failures if the target memory for SD Card Read/Write is
+  //  memory in the EXTMEM region (accessed via its own serial interface).
+  //  So just make sure that all SD Card read/writes are to FASTRUN or DMAMEM memory
+  //
+
+  SD_begin_OK = SD.begin(SdioConfig(DMA_SDIO));     //  This takes about ??? ms.          ###
+  CLEAR_RXD; EBTKS_delay_ns(1000);  RXD_Pulser(2);
+  if (SD_begin_OK)
   {
-    CLEAR_TXD; EBTKS_delay_ns(1000);  TXD_Pulser(2);
-    Serial.println("SD begin failed\nLogfile is not active\n");
-    SD_begin_OK = false;
-    logfile_active = false;
-  }
-  else
-  {
-    CLEAR_TXD; EBTKS_delay_ns(1000);  TXD_Pulser(2);
     logfile_active = open_logfile();
     Serial.printf("logfile_active is %s\n", logfile_active ? "true":"false");
-  }
-
-  if(SD_begin_OK)
-  {
     LOGPRINTF("\n----------------------------------------------------------------------------------------------------------\n");
     LOGPRINTF("\nBegin new Logging session\n");
 
@@ -708,6 +736,8 @@ void setup()
   }
   else
   {
+    Serial.println("SD begin failed\nLogfile is not active\n");
+    logfile_active = false;
     config_success = false;
   }
 
@@ -723,9 +753,9 @@ void setup()
 //                            //  So HP-85 wins the race, so we do need the PWO_OUT to hold it in reset until we are ready
 //  CLEAR_RXD;                //  RXD only used here with the above SET_PWO to do PWO startup timing.
 
-  EBTKS_delay_ns(10000);    //  10 us
-  TXD_Pulser(7);
-  EBTKS_delay_ns(10000);    //  10 us
+  EBTKS_delay_ns(10000);      //  10 us
+  RXD_Pulser(7);              //        We are about to enable Pin Change Interrupts. Once we do, we should not have any more calls to RXD_Pulser()
+  EBTKS_delay_ns(10000);      //  10 us
 
   //delay(10000);   // delay 10 secs to turn on serial monitor
 
@@ -773,7 +803,7 @@ void setup()
   //PHI_1_and_2_IMR = (BIT_MASK_PHASE1 | BIT_MASK_PHASE2);   //  Enable Phi 1 and Phi 2 interrupts
   PHI_1_and_2_IMR = (BIT_MASK_PHASE1);      //  Enable Phi 1 only.  2020_12_06
 
-  delay(10);                                //  Wait 10 ms before falling into loop()  This might be BAD. What if a device op occurs while we are waiting?
+  delay(10);                                //  Wait 10 ms before falling into loop()  This might be BAD. What if a device op occurs while we are waiting?    ########
                                             //  Seems there are some issues of loop functions interfering with the Service ROM initial sanity check,
                                             //  Specifically the call to Three_Shift_Clicks_Poll() which does DMA every 10 ms  (code currently moved to Deprecated_Code.cpp)
 
@@ -782,9 +812,9 @@ void setup()
   //
   //  while (!Serial) {};                       //  wait till the Virtual terminal is connected
   //  Serial.begin(9600);                       //  USB Serial Baud value is irrelevant for this serial channel
-  Serial.printf("HP-85 EBTKS Board Serial Diagnostics  %-4d\n", message_count++);
+  Serial.printf("\nHP-85 EBTKS Board Serial Diagnostics  %-4d\n", message_count++);
   Serial.printf("Access to SD Card is %s\n", SD_begin_OK     ? "true":"false");
-  Serial.printf("Config Success is %s\nWaiting for HP85 to get to prompt\n"   , config_success  ? "true":"false");
+  Serial.printf("Config Success is %s\nWaiting for HP85 to get to prompt\n\n"   , config_success  ? "true":"false");
   Serial.flush();
 
   Logic_Analyzer_Event_Count_Init = -1000;      // Use this to indicate the Logic analyzer has no default values.

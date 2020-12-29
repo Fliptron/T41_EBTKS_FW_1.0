@@ -216,14 +216,28 @@ Changes:
 -   There is an unresolved issue with the MOUNT/UNMOUNT "SDCard" crashing the
     system.
 
-## Commit \#90 12/??/2020                                                                           Remember to update EBTKS.h
+## Commit \#90 12/28/2020
+
+Changes:
+-   More Timing Analysis of the Pin Change Interrupt
+-   Report Series 80 Model during boot, improve other boot messages
+-   Re-organize the code around the SD.Begin()
+-   Changed all the TXD_Pulser() to RXD_Pulser()
+-   Minor documentation edit to platformio.ini
+-   Updates to HPIB based Printing (to a file on the SD Card)
+-       HpibDisk type becomes HpibDevice type
+-       HpibDevice array now includes device type and Talk/Listen address (tla / _tla)
+-       New virtual functions close() and getFilename()
+-       New function to check device type isType()
+-   Modify HPIBOutput if the character is EOL
+-   Diagnostic terminal "media" command now lists printer output file
+-   Detailed documentaion in EBTKS.cpp describing the issues with FIFO_SDIO mode
+    access to the SD Card, and our changing over to DMA_SDIO mode
+
+## Commit \#91 12/??/2020                                                                           Remember to update EBTKS.h
 
 Changes:
 -   
-
-
-
-
 
 
 

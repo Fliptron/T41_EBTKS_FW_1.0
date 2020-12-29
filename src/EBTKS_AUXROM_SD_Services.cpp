@@ -150,7 +150,7 @@
 
 #define MAX_SD_PATH_LENGTH          (256)
 
-extern HpibDisk *devices[];
+extern HpibDevice *devices[];
 
 EXTMEM static char          Current_Path[MAX_SD_PATH_LENGTH  + 2];    //  I don't think initialization of EXTMEM is supported yet
 EXTMEM static char          Resolved_Path[MAX_SD_PATH_LENGTH + 2];

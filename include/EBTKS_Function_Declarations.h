@@ -166,7 +166,7 @@ void AUXROM_EBTKSREV(void);
 //  Utility Functions
 //
 
-void TXD_Pulser(uint8_t count);
+void RXD_Pulser(uint8_t count);
 
 void EBTKS_delay_ns(int32_t count);
 
