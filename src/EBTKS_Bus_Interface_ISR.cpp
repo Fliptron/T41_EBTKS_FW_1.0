@@ -1162,24 +1162,6 @@ void mySystick_isr(void)
   systick_millis_count++;
 }
 
-///////////////////////////////////////////////////////////  Replacement functions for the global IRQ disable and enable in
-///////////////////////////////////////////////////////////  C:\Users\Philip Freidin\.platformio\packages\framework-arduinoteensy\cores\teensy4\usb.c
-///////////////////////////////////////////////////////////
-
-// extern "C" void ebtks_disable_irq(void)
-// {
-//   DMA_Request = true;
-//   while(!DMA_Active){};     //  Wait for acknowledgement, and Bus ownership, and all interrupts disabled
-// }
-
-// extern "C" void ebtks_enable_irq(void)
-// {
-//   release_DMA_request();    //  Release the HP85 bus and enable interrupts
-//   while(DMA_Active){};      //  Wait for release
-// }
-// }
-
-
 #if EMC_SUPPORT
 
 //

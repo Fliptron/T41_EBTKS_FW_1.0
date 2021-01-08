@@ -244,11 +244,12 @@ Changes:
 Changes:
 -   Clean up formatting of this file
 
-## Commit \#92 12/??/2020                                                                           Remember to update EBTKS.h
+## Commit \#92 01/08/2020
 
 Changes:
--   
+-   Ensure at least 5 us delay between consecutive DMA requests
 
+## Commit \#93 01/??/2020                                                                           Remember to update EBTKS.h
 
 
 

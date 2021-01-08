@@ -97,7 +97,21 @@ void EBTKS_delay_for_LMA_start(void)
   asm volatile("mov r0, r0\n\t" "mov r0, r0\n\t" "mov r0, r0\n\t" "mov r0, r0\n\t" "mov r0, r0\n\t" "mov r0, r0\n\t" "mov r0, r0\n\t" "mov r0, r0\n\t" "mov r0, r0\n\t" "mov r0, r0\n\t" "mov r0, r0\n\t" "mov r0, r0\n\t" "mov r0, r0\n\t" "mov r0, r0\n\t" "mov r0, r0\n\t" "mov r0, r0\n\t" );
 }
 
+//
+//  All DMA requests must call this function to set DMA_Request. This should never come from an ISR
+//  This routine delays issuing the request by at least 5 us to make sure that any previous /HALTX
+//  signal that has been de-asserted has reached a logic high (resistive pullup in 1MA8 chip,
+//  probably, based on oscilloscope captures). This was part of a bug hunt on Jan 6th 2021
+//
 
+void assert_DMA_Request(void)
+{
+  EBTKS_delay_ns(1950);     //  This function assumes that EBTKS interrupts are disabled, but when this function
+                            //  is called, that will should not be true. So the value is tweaked to allow for that.
+                            //  i.e. when interrupts are enabled, and pin change interrupts are being serviced while
+                            //  we are waiting, this delay routine will also be interrupted, thus running slower.
+  DMA_Request = true;       //  This specific statement (or equivalent) must only occur in one place in all of this firmware: Here
+}
 
 //
 //  Don't touch this code unless you absolutely can explain each and every line of it.
@@ -650,7 +664,7 @@ uint8_t DMA_Peek8(uint32_t address)
 {
   uint8_t data;
 
-  DMA_Request = true;
+  assert_DMA_Request();
   while(!DMA_Active){}      // Wait for acknowledgement, and Bus ownership
 
   DMA_Read_Block(address , (uint8_t *)&data , 1);
@@ -665,7 +679,7 @@ uint16_t DMA_Peek16(uint32_t address)
 {
   uint16_t data;
 
-  DMA_Request = true;
+  assert_DMA_Request();
   while(!DMA_Active){};     // Wait for acknowledgement, and Bus ownership
   DMA_Read_Block(address , (uint8_t *)&data , 2);
   release_DMA_request();
@@ -678,7 +692,7 @@ uint16_t DMA_Peek16(uint32_t address)
 void DMA_Poke8(uint32_t address, uint8_t val)
 {
 
-  DMA_Request = true;
+  assert_DMA_Request();
   while(!DMA_Active){};     // Wait for acknowledgement, and Bus ownership
   DMA_Write_Block(address , (uint8_t *)&val , 1);
   release_DMA_request();
@@ -688,7 +702,7 @@ void DMA_Poke8(uint32_t address, uint8_t val)
 void DMA_Poke16(uint32_t address, uint16_t val)
 {
 
-  DMA_Request = true;
+  assert_DMA_Request();
   while(!DMA_Active){};     // Wait for acknowledgement, and Bus ownership
   DMA_Write_Block(address , (uint8_t *)&val , 2);
   release_DMA_request();

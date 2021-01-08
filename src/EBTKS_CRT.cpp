@@ -205,7 +205,7 @@ void Write_on_CRT_Alpha(uint16_t row, uint16_t column, const char *  text)
   //  Do the same as above, but do it directly once in DMA mode. Can't do the Serial.printf() though
   //
 
-  DMA_Request = true;
+  assert_DMA_Request();
   while(!DMA_Active){}     // Wait for acknowledgement, and Bus ownership
 
   while(*text)
@@ -280,7 +280,7 @@ void Write_on_CRT_Alpha(uint16_t row, uint16_t column, const char *  text)
 //  int         loops = 1000000;
 //  uint8_t     data;
 //
-//  DMA_Request = true;
+//  assert_DMA_Request();
 //  while(!DMA_Active){};     // Wait for acknowledgement, and Bus ownership. Also locks out interrupts on EBTKS, so can't do USB serial or SD card stuff
 //  while(loops--)
 //  {
@@ -336,7 +336,7 @@ void CRT_Timing_Test_1(void)
   int         loops = 1000000;
   uint8_t     data;
 
-  DMA_Request = true;
+  assert_DMA_Request();
   while(!DMA_Active){};     // Wait for acknowledgement, and Bus ownership. Also locks out interrupts on EBTKS, so can't do USB serial or SD card stuff
   while(loops--)
   {
@@ -377,7 +377,7 @@ void CRT_Timing_Test_2(void)
   uint8_t     data;
   int         index, count;
 
-  DMA_Request = true;
+  assert_DMA_Request();
   while(!DMA_Active){}     // Wait for acknowledgement, and Bus ownership. Also locks out interrupts on EBTKS, so can't do USB serial or SD card stuff
   SET_RXD;
   while(loops--)
@@ -714,7 +714,7 @@ void CRT_restore_screen(void)
   // Serial.printf("Start block DMA\n");         //  no reporting until DMA end, as interrupts are off
 
   //  Start DMA mode
-  DMA_Request = true;
+  assert_DMA_Request();
   while (!DMA_Active)
   {
   } // Wait for acknowledgement, and Bus ownership

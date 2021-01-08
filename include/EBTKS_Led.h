@@ -2,8 +2,10 @@
 #define FASTLED_INTERNAL  // shut up pragma that reports version
 #include <FastLED.h>
 
+
 extern volatile bool DMA_Active;
 extern volatile bool DMA_Request;
+extern void assert_DMA_Request(void);
 extern void release_DMA_request(void);
 
 #define LED_PIN     2
@@ -42,8 +44,8 @@ void update(void)
   //    disable the interrupts and this is the only way we can
   //    achieve this without upsetting the HP85
 
-  //start dma
-  DMA_Request = true;
+  //  start DMA
+  assert_DMA_Request();
   while (!DMA_Active)
     {
     }; // Wait for acknowledgement, and Bus ownership

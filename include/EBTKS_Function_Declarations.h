@@ -63,7 +63,7 @@ uint8_t * getROMEntry(uint8_t romId);
 //  HP-85 Bus interface and ISR functions
 //
 
-
+void assert_DMA_Request(void);
 void release_DMA_request(void);
 FASTRUN void pinChange_isr(void) __attribute__ ((interrupt ("IRQ")));     //  This fixed the keyboard random errors, which was caused by unsaved registers on interrupt
                                                                           //  not being saved by normal function entry
