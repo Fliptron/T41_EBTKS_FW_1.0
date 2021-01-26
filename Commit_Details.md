@@ -249,7 +249,16 @@ Changes:
 Changes:
 -   Ensure at least 5 us delay between consecutive DMA requests
 
-## Commit \#93 01/??/2020                                                                           Remember to update EBTKS.h
+## Commit \#93 01/26/2020
+
+Changes:
+-   Diagnostic code to reveal the actual cache configuration.
+    At about line 725 in EBTKS.cpp  , commented out.
+-   Integer power function, as used in the above diagnostic code.
+-   Flush and delete dcache prior to reading ROM images from SD Card to DMDMEM
+-   ROM storage area in DMAMEM now includes alignment to a 32 byte boundary
+
+## Commit \#94 01/??/2020                                                                           Remember to update EBTKS.h
 
 
 

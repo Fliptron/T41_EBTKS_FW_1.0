@@ -721,6 +721,29 @@ void setup()
     LOGPRINTF("\n----------------------------------------------------------------------------------------------------------\n");
     LOGPRINTF("\nBegin new Logging session\n");
 
+    // uint32_t ccsidr;
+    // SCB_ID_CSSELR = 0;            //  Select the Data Cache     DDI0403E_B_armv7m_arm.pdf page 725
+    // ccsidr = SCB_ID_CCSIDR;       //  Get the size info         DDI0403E_B_armv7m_arm.pdf page 724
+    // LOGPRINTF("\nCache Configuration\n");
+    // LOGPRINTF("Data CCSIDR:               %08X\n"  , (int)ccsidr);
+    // LOGPRINTF("%s", ((ccsidr >> 31) & 1) ? "Data Cache level supports write-through\n" : "");
+    // LOGPRINTF("%s", ((ccsidr >> 30) & 1) ? "Data Cache level supports write-back\n" : "");
+    // LOGPRINTF("%s", ((ccsidr >> 29) & 1) ? "Data Cache level supports read-allocation\n" : "");
+    // LOGPRINTF("%s", ((ccsidr >> 28) & 1) ? "Data Cache level supports write-allocation\n" : "");
+    // LOGPRINTF("Data Cache Sets:              %5d\n", (int)((ccsidr >> 13) & 0x00007FFF) + 1);
+    // LOGPRINTF("Data Cache Associativity:     %5d\n", (int)((ccsidr >>  3) & 0x000003FF) + 1);
+    // LOGPRINTF("Data Cache Line Size Bytes:   %5d\n", int_power(2, ((ccsidr >>  0) & 0x00000007) + 2) * 4 );
+    // SCB_ID_CSSELR = 1;            //  Select the Instruction Cache     DDI0403E_B_armv7m_arm.pdf page 725
+    // ccsidr = SCB_ID_CCSIDR;       //  Get the size info                DDI0403E_B_armv7m_arm.pdf page 724
+    // LOGPRINTF("\nInstruction CCSIDR:               %08X\n"  , (int)ccsidr);
+    // LOGPRINTF("%s", ((ccsidr >> 31) & 1) ? "Instruction Cache level supports write-through\n" : "");
+    // LOGPRINTF("%s", ((ccsidr >> 30) & 1) ? "Instruction Cache level supports write-back\n" : "");
+    // LOGPRINTF("%s", ((ccsidr >> 29) & 1) ? "Instruction Cache level supports read-allocation\n" : "");
+    // LOGPRINTF("%s", ((ccsidr >> 28) & 1) ? "Instruction Cache level supports write-allocation\n" : "");
+    // LOGPRINTF("Instruction Cache Sets:              %5d\n", (int)((ccsidr >> 13) & 0x00007FFF) + 1);
+    // LOGPRINTF("Instruction Cache Associativity:     %5d\n", (int)((ccsidr >>  3) & 0x000003FF) + 1);
+    // LOGPRINTF("Instruction Cache Line Size Bytes:   %5d\n", int_power(2, ((ccsidr >>  0) & 0x00000007) + 2) * 4 );
+
     LOGPRINTF("\nDMA SDIO mode.\n");
     LOGPRINTF("Loading configuration...\n");
     flush_logfile();

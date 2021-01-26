@@ -12,8 +12,13 @@
 volatile uint8_t rselec = 0;                    //holds rom ID currently selected
 uint8_t *currRom;                               //pointer to the currently selected rom data. NULL if not selected
 
-DMAMEM uint8_t roms[MAX_ROMS][ROM_PAGE_SIZE];   //  Array to store the rom images loaded from SD card, in DMA memory
-//uint8_t roms[MAX_ROMS][ROM_PAGE_SIZE];        //  Array to store the rom images loaded from SD card, in FASTRUN memory
+//
+//  Array to store the ROM images loaded from SD card, into DMAMEM memory
+//  This memory is cached by the dcache, and as was discovered, a dcache flush
+//  and delete must be performed prior to doing a DMA transfer from the SD Card into this array
+//
+
+DMAMEM uint8_t roms[MAX_ROMS][ROM_PAGE_SIZE]   __attribute__ ((aligned(32)));
 
 uint8_t *romMap[256];                           //  Hold the pointers to the rom data based on ID as the index
 

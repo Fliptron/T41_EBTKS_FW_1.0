@@ -64,7 +64,7 @@
 //
 
 #define ROM_PAGE                          (0x6000)
-#define ROM_PAGE_SIZE                     (0x2000)
+#define ROM_PAGE_SIZE                     (0x2000)      //  ROM Page size in bytes
 #define MAX_ROMS                          (20)
 #define MAX_ROM_NAME_LENGTH               (32)
 

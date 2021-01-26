@@ -191,6 +191,7 @@ void Simple_Graphics_Test(void);
 
 bool is_HP85_idle(void);
 
+int int_power(int base, int exp);
 
 //
 //  various configuration stuff

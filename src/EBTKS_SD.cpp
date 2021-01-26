@@ -18,6 +18,8 @@ uint32_t Config_Flag_word;
 
 char * boot_log_ptr;
 
+// extern uint8_t roms[MAX_ROMS][ROM_PAGE_SIZE];       //  Just for diag prints
+
 bool loadRom(const char *fname, int slotNum, const char *description)
 {
   uint8_t       header[3];
@@ -28,6 +30,21 @@ bool loadRom(const char *fname, int slotNum, const char *description)
   {
     boot_log_ptr = Directory_Listing_Buffer_for_SDDEL;
   }
+
+  //
+  //  This was used to debug mysteriousfailure to load the first ROM.
+  //  The problem turned out to be that part of DMAMEM was already in the dcache, and the DMA base read of
+  //  the ROM image was not updating/invalidating the dcache.
+  //  Solution was the following line, seen below in the code, just prior to the read of the ROM
+  //    arm_dcache_flush_delete(getRomSlotPtr(slotNum), ROM_PAGE_SIZE);
+  //
+  // unsigned int * roms_diag = (unsigned int *)&roms[0][0];
+  // Serial.printf("!About to load ROM %s into slot %d\n", fname, slotNum);                  // diag for when first ROM got lost
+  // Serial.printf("!Check slot 0 first 4     %08X\n", *(roms_diag));                        // diag for when first ROM got lost
+  // Serial.printf("!Check slot 0+188         %08X\n", *(roms_diag + 188));                  // diag for when first ROM got lost
+  // Serial.printf("!Check slot 1 first 4     %08X\n", *(roms_diag + ROM_PAGE_SIZE/4));      // diag for when first ROM got lost, /4 because pointer is an int *
+  // Serial.printf("!Check address of Slot 0  %08X\n", (unsigned int)roms_diag);             // diag for when first ROM got lost
+
   //
   //  Attempts to read a HP80 ROM file from the SD Card using the given filename
   //  read the file and check the ROM header to verify it is a ROM file and extract
@@ -183,6 +200,14 @@ bool loadRom(const char *fname, int slotNum, const char *description)
 
   //  ROM header looks good, read the ROM file into memory
   rfile.seek(0); //  Rewind the file
+
+  //
+  //  Before loading the ROM into DMAMEM, we must make sure that the target area in DMAMEM is not already
+  //  being shadowed in the dcache. (This was a problem, that was quite difficult to track down)
+  //
+
+  arm_dcache_flush_delete(getRomSlotPtr(slotNum), ROM_PAGE_SIZE);
+
   int flen = rfile.read(getRomSlotPtr(slotNum), ROM_PAGE_SIZE);
   if (flen != ROM_PAGE_SIZE)
   {
