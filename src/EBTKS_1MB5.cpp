@@ -333,7 +333,7 @@ void initTranslator(int selectNum)
     CR[16] = 2;
     CR[17] = 0x0d;
     CR[18] = 0x0a;
-    Serial.printf("HPIB init select code:%d\n", selectNum);
+    //Serial.printf("HPIB init select code:%d\n", selectNum);     // now printed in EBTKS_SD.cpp
     // devices[0] = new HpibDisk(0); //define one disk system as device #0
     //                               //devices[1] = new HpibDisk(1);    //test multiple devices
     //                               //devices[1]->addDisk(DISK_TYPE_5Q);

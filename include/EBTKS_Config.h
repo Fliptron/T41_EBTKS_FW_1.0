@@ -37,9 +37,6 @@
 //
 //  Enables for code modules             THESE ARE IN USE                         <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
-#define DEVELOPMENT_MODE            (1)
-
-
 //
 //  Logging control is one of 3 levels:     LOG_NONE      for no logging
 //                                          LOG_SERIAL    for Serial.printf

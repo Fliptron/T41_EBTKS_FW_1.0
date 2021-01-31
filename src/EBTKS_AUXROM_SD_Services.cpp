@@ -199,7 +199,7 @@ void initialize_SD_functions(void)
   int     i;
 
   strcpy(Current_Path,"/");
-  for (i = 0 ; i < (MAX_AUXROM_SDFILES +1) ; i++)
+  for (i = 0 ; i < (MAX_AUXROM_SDFILES + 1) ; i++)
   {
     Auxrom_Files[i].close();
   }

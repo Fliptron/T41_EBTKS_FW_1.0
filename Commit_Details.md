@@ -258,7 +258,44 @@ Changes:
 -   Flush and delete dcache prior to reading ROM images from SD Card to DMDMEM
 -   ROM storage area in DMAMEM now includes alignment to a 32 byte boundary
 
-## Commit \#94 01/??/2020                                                                           Remember to update EBTKS.h
+## Commit \#94 01/31/2020
+
+Changes:
+-   Remove DEVELOPMENT_MODE that was only used to control requiring the serial
+    terminal to be connected for startup. Now controlled by CONFIG.TXT
+-   Store the messages that might go to the HP85 CRT in a buffer, since PWO is
+    still asserted when these messages are being created, and the CRT can't be
+    accessed if PWO is asserted. Use the first 32 KB of the SDDEL buffer.
+-   Store the initial messages that were going to the serial terminal in a the
+    second half of the SDDEL buffer, 32KB. The use the SDDEL 64 KB buffer for
+    these two message streams is ok, since SDDEL can't be issued, since the HP85
+    has not even started the boot process, and PWO is asserted. 32 KB for each
+    of these two streams should be way more than needed. No checks are made for
+    going off the end of the buffer.
+-   Reporting all the parameter settings at the beginning of CONFIG.TXT to the
+    serial output.
+-   JSON DOC SIZE is now a parameter at the top of EBTKS_SD.cpp
+-   Rename boot_log_ptr to log_to_CRT_ptr which is much clearer, and create a
+    separate pointer for the stuff that will go to the serial port: log_to_serial_ptr
+-   Add support to both reader and writer of the CONFIG.TXT for the new parameters
+-   Resolve the correct combination of ROMs for Floppy emulation, 5 MB hard drive
+    emulation, and whether the system is an HP85A or HP85B. Add comments into the
+    CONFIG.TXT file as well. These are all AMIGO style drives. The Extended Mass
+    Storage ROM (317) is only needed if a real HPIB card is installed and it has
+    a SS/80 type disk drive attached.
+-   Correct some HPIB select code defaults from 7 to 3.
+-   Drive type reported to the serial port now identifies Floppys and 5 MB drives.
+-   msus$ are now reported with the mount reporting to the serial port
+
+
+
+## Commit \#95 02/??/2020                                                                           Remember to update EBTKS.h
+
+
+
+
+
+
 
 
 

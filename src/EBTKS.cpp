@@ -653,29 +653,31 @@ void setup()
 	//keyboard1.attachPress(OnPress);
 	//keyboard2.attachPress(OnPress);
 
-#if DEVELOPMENT_MODE
   //
-  //  Wait till the Virtual terminal is connected
+  //  Initially, we can't write to the CRT because PWO is still asserted, and the HP85 bus
+  //  is not yet active. So collect CRT messages in the first half of the SDDEL buffer.
+  //  At this point we haven't yet read the CONFIG.TXT file, so we don't yet know if we
+  //  should pause bootin up until the serial port is active. Until then, collect messages
+  //  in the second half of the SDDEL buffer
   //
-  while (!Serial) {  };         //  Stall startup until the serial terminal is attached. Do this if we need to see startup messages
-#endif
+  log_to_CRT_ptr    = &Directory_Listing_Buffer_for_SDDEL[0];
+  log_to_serial_ptr = &Directory_Listing_Buffer_for_SDDEL[DIRECTORY_LISTING_BUFFER_SIZE/2];
 
-  //delay(2000);                //  Give me a chance to turn the terminal emulator on, after I hear the USB enumeration Bing.
+  *log_to_CRT_ptr    = 0;
+  *log_to_serial_ptr = 0;
 
-  Serial.begin(115200);         //  USB Serial Baud value is irrelevant for this serial channel
-
-  Serial.printf("HP-85 EBTKS Board Serial Diagnostics  %-4d\n", message_count++);
+  log_to_serial_ptr += sprintf(log_to_serial_ptr, "HP-85 EBTKS Board Serial Diagnostics  %-4d\n", message_count++);
   RXD_Pulser(3);
   EBTKS_delay_ns(10000);      //  10 us
 
-  Serial.printf("\n%s", LOGLEVEL_GEN_MESSAGE);
-  Serial.printf("%s", LOGLEVEL_AUX_MESSAGE);
-  Serial.printf("%s", LOGLEVEL_1MB5_MESSAGE);
-  Serial.printf("%s\n", LOGLEVEL_TAPE_MESSAGE);
+  log_to_serial_ptr += sprintf(log_to_serial_ptr, "\n%s", LOGLEVEL_GEN_MESSAGE);
+  log_to_serial_ptr += sprintf(log_to_serial_ptr, "%s", LOGLEVEL_AUX_MESSAGE);
+  log_to_serial_ptr += sprintf(log_to_serial_ptr, "%s", LOGLEVEL_1MB5_MESSAGE);
+  log_to_serial_ptr += sprintf(log_to_serial_ptr, "%s\n", LOGLEVEL_TAPE_MESSAGE);
 
   //  Use CONFIG.TXT file on sd card for configuration
 
-  Serial.printf("Doing SD.begin\n");
+  log_to_serial_ptr += sprintf(log_to_serial_ptr, "Doing SD.begin\n");
   RXD_Pulser(2);  SET_RXD;                          //  RXD_Pulser does 2 toggles, so this inverts things to give some additional info
 
   //
@@ -717,7 +719,7 @@ void setup()
   if (SD_begin_OK)
   {
     logfile_active = open_logfile();
-    Serial.printf("logfile_active is %s\n", logfile_active ? "true":"false");
+    log_to_serial_ptr += sprintf(log_to_serial_ptr, "logfile_active is %s\n", logfile_active ? "true":"false");
     LOGPRINTF("\n----------------------------------------------------------------------------------------------------------\n");
     LOGPRINTF("\nBegin new Logging session\n");
 
@@ -759,10 +761,18 @@ void setup()
   }
   else
   {
-    Serial.println("SD begin failed\nLogfile is not active\n");
+    log_to_serial_ptr += sprintf(log_to_serial_ptr, "SD begin failed\nLogfile is not active\n");
     logfile_active = false;
     config_success = false;
   }
+
+  if (requireserial)
+  {
+    while (!Serial) {  };         //  Stall startup until the serial terminal is attached.
+                                  //  Do this if we need to see startup messages as they happen
+  }
+
+  Serial.begin(115200);           //  USB Serial Baud value is irrelevant for this serial channel
 
   setupPinChange();           //  Set up the two critical interrupt handlers on Pin Change (rising) on Phi 1 and Phi 2
 
@@ -835,9 +845,31 @@ void setup()
   //
   //  while (!Serial) {};                       //  wait till the Virtual terminal is connected
   //  Serial.begin(9600);                       //  USB Serial Baud value is irrelevant for this serial channel
-  Serial.printf("\nHP-85 EBTKS Board Serial Diagnostics  %-4d\n", message_count++);
-  Serial.printf("Access to SD Card is %s\n", SD_begin_OK     ? "true":"false");
-  Serial.printf("Config Success is %s\nWaiting for HP85 to get to prompt\n\n"   , config_success  ? "true":"false");
+  log_to_serial_ptr += sprintf(log_to_serial_ptr, "\nHP-85 EBTKS Board Serial Diagnostics  %-4d\n", message_count++);
+  log_to_serial_ptr += sprintf(log_to_serial_ptr, "Access to SD Card is %s\n", SD_begin_OK     ? "true":"false");
+  log_to_serial_ptr += sprintf(log_to_serial_ptr, "Config Success is %s\nWaiting for HP85 to get to prompt\n\n"   , config_success  ? "true":"false");
+
+  //
+  //  Ok, time to flush messages to the serial terminal
+  //
+  log_to_serial_ptr = &Directory_Listing_Buffer_for_SDDEL[DIRECTORY_LISTING_BUFFER_SIZE/2];
+  Serial.printf("%s", log_to_serial_ptr);
+  log_to_serial_ptr = &Directory_Listing_Buffer_for_SDDEL[DIRECTORY_LISTING_BUFFER_SIZE/2];
+  *log_to_serial_ptr = 0;         //  This should be the end of our usage of this buffer for these startup messages
+                                  //  All future messages just use Serial.printf()
+  Serial.printf("\nParameters from the CONFIG.TXT (or defaults)\n");
+  Serial.printf("Machine number   %d\n", machineNum);
+  Serial.printf("Machine type     %s\n", machineType);
+  Serial.printf("Require Serial   %s\n", requireserial ? "true":"false");
+  Serial.printf("Repeat Serial    %d secs\n", repeatserial);
+  Serial.printf("CRT Verbose      %s\n", CRTVerbose ? "true":"false");
+  Serial.printf("EMS Support      %s\n", EMS_Support ? "true":"false");
+  Serial.printf("EMS Size         %d KB\n", EMSSize);
+  Serial.printf("EMS Base         %d KB\n", EMSbase);
+  Serial.printf("Screen Emul.     %s\n", screenEmu ? "true":"false");
+  Serial.printf("Remote CRT       %s\n", CRTRemote ? "true":"false");
+  Serial.printf("85A 16 KB RAM    %s\n", getHP85RamExp() ? "true":"false");
+
   Serial.flush();
 
   Logic_Analyzer_Event_Count_Init = -1000;      // Use this to indicate the Logic analyzer has no default values.
@@ -858,7 +890,6 @@ void setup()
   leds.setLedColor(1,{0,10,0});
   
   leds.update();
-
 }
 
 //  Is it possible with Teensy powered by USB for the double LMA to get out of sync?  Scenario: Power cycle HP-85 after first

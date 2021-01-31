@@ -1,7 +1,8 @@
 //
-//	06/27/2020	All this wonderful code came from Russell.
+//	06/27/2020    All this wonderful code came from Russell.
 //
-//              And then Philip made many changes.
+//  2020 & 2021   And then Philip made many changes.
+//
 
 #include <Arduino.h>
 #include <ArduinoJson.h>
@@ -11,12 +12,11 @@
 #include "HpibDisk.h"
 #include "HpibPrint.h"
 
+#include <strings.h>
+
+#define JSON_DOC_SIZE   5000
+
 extern HpibDevice *devices[];
-
-int machineNum = 0;
-uint32_t Config_Flag_word;
-
-char * boot_log_ptr;
 
 // extern uint8_t roms[MAX_ROMS][ROM_PAGE_SIZE];       //  Just for diag prints
 
@@ -25,14 +25,14 @@ bool loadRom(const char *fname, int slotNum, const char *description)
   uint8_t       header[3];
   uint8_t       id;
 
-  //  boot_log_ptr should already be setup, but just in case it isn't we set it up here, so that we don't have writes going somewhere dangerous
-  if (boot_log_ptr == NULL)
+  //  log_to_CRT_ptr should already be setup, but just in case it isn't we set it up here, so that we don't have writes going somewhere dangerous
+  if (log_to_CRT_ptr == NULL)
   {
-    boot_log_ptr = Directory_Listing_Buffer_for_SDDEL;
+    log_to_CRT_ptr = Directory_Listing_Buffer_for_SDDEL;
   }
 
   //
-  //  This was used to debug mysteriousfailure to load the first ROM.
+  //  This was used to debug mysterious failure to load the first ROM.
   //  The problem turned out to be that part of DMAMEM was already in the dcache, and the DMA base read of
   //  the ROM image was not updating/invalidating the dcache.
   //  Solution was the following line, seen below in the code, just prior to the read of the ROM
@@ -53,7 +53,7 @@ bool loadRom(const char *fname, int slotNum, const char *description)
   if (slotNum > MAX_ROMS)
   {
     LOGPRINTF("ROM slot number too large %d\n", slotNum);
-    boot_log_ptr += sprintf(boot_log_ptr, "Slot error\n");
+    log_to_CRT_ptr += sprintf(log_to_CRT_ptr, "Slot error\n");
     return false;
   }
 
@@ -62,7 +62,7 @@ bool loadRom(const char *fname, int slotNum, const char *description)
   if (!rfile)
   {
     LOGPRINTF("ROM failed to Open %s\n", fname);
-    boot_log_ptr += sprintf(boot_log_ptr, "Can't Open ROM File\n");
+    log_to_CRT_ptr += sprintf(log_to_CRT_ptr, "Can't Open ROM File\n");
     rfile.close(); //  Is this right??? if it failed to open, and rfile is null (0) , the what would this statement do???
     return false;
   }
@@ -74,7 +74,7 @@ bool loadRom(const char *fname, int slotNum, const char *description)
   if (rfile.read(header, 3) != 3)
   {
     LOGPRINTF("ROM file read error %s\n", fname);
-    boot_log_ptr += sprintf(boot_log_ptr, "Can't read ROM header %s\n", fname);
+    log_to_CRT_ptr += sprintf(log_to_CRT_ptr, "Can't read ROM header %s\n", fname);
     rfile.close();
     return false;
   }
@@ -113,11 +113,11 @@ bool loadRom(const char *fname, int slotNum, const char *description)
   LOGPRINTF("%03o %3d  %02X   %02X    %02X   ", id, id, id, header[1], (uint8_t)(id + header[1]));
   if(id < 0362)
   {
-    boot_log_ptr += sprintf(boot_log_ptr, " ID: %03o ", id);            //  Primary AUXROM and normal ROMs have ID in first byte
+    log_to_CRT_ptr += sprintf(log_to_CRT_ptr, " ID: %03o ", id);            //  Primary AUXROM and normal ROMs have ID in first byte
   }
   else
   {
-    boot_log_ptr += sprintf(boot_log_ptr, " ID: %03o ", header[1]);     //  Secondary AUXROMs have ID in second byte
+    log_to_CRT_ptr += sprintf(log_to_CRT_ptr, " ID: %03o ", header[1]);     //  Secondary AUXROMs have ID in second byte
   }
   
   //
@@ -145,7 +145,7 @@ bool loadRom(const char *fname, int slotNum, const char *description)
   {
     id = header[0] = header[1];
     header[1] = header[2];
-    //  Serial.printf("AUX HEADER ROM# %03o\n", id);
+    //  log_to_serial_ptr += sprintf(log_to_serial_ptr, "AUX HEADER ROM# %03o\n", id);
   }
   if ((id >= AUXROM_SECONDARY_ID_START) && (id <= AUXROM_SECONDARY_ID_END)) //  Note, not testing Primary AUXROM at ID = 361
   {
@@ -164,7 +164,7 @@ bool loadRom(const char *fname, int slotNum, const char *description)
     if (header[1] != (comp | (uint8_t)0360)) //  Check the ID check byte
     {
       LOGPRINTF("Secondary AUXROM file header error %02X %02X\n", id, (uint8_t)header[1]);
-      boot_log_ptr += sprintf(boot_log_ptr, "HeaderError\n");
+      log_to_CRT_ptr += sprintf(log_to_CRT_ptr, "HeaderError\n");
       rfile.close();
       return false;
     }
@@ -176,7 +176,7 @@ bool loadRom(const char *fname, int slotNum, const char *description)
       if (id != (uint8_t)(~header[1])) //  now test normal ROM ID's , including the AUXROM Primary.
       {
         LOGPRINTF("ROM file header error first two bytes %02X %02X   Expect One's Complement\n", id, (uint8_t)header[1]);
-        boot_log_ptr += sprintf(boot_log_ptr, "HeaderError\n");
+        log_to_CRT_ptr += sprintf(log_to_CRT_ptr, "HeaderError\n");
         rfile.close();
         return false;
       }
@@ -186,7 +186,7 @@ bool loadRom(const char *fname, int slotNum, const char *description)
       if (id != (uint8_t)(-header[1])) //  now test normal ROM ID's , including the AUXROM Primary.
       {
         LOGPRINTF("ROM file header error first two bytes %02X %02X   Expect Two's Complement\n", id, (uint8_t)header[1]);
-        boot_log_ptr += sprintf(boot_log_ptr, "HeaderError\n");
+        log_to_CRT_ptr += sprintf(log_to_CRT_ptr, "HeaderError\n");
         rfile.close();
         return false;
       }
@@ -194,7 +194,7 @@ bool loadRom(const char *fname, int slotNum, const char *description)
     else
     {
       LOGPRINTF("ERROR Unsupported Machine type\n");
-      boot_log_ptr += sprintf(boot_log_ptr, "Mach???\n");
+      log_to_CRT_ptr += sprintf(log_to_CRT_ptr, "Mach???\n");
     }
   }
 
@@ -212,13 +212,13 @@ bool loadRom(const char *fname, int slotNum, const char *description)
   if (flen != ROM_PAGE_SIZE)
   {
     LOGPRINTF("ROM file length error length: %d\n", flen);
-    boot_log_ptr += sprintf(boot_log_ptr, "Length Error\n");
+    log_to_CRT_ptr += sprintf(log_to_CRT_ptr, "Length Error\n");
     rfile.close();
     return false;
   }
 
   //  We got this far, update the rom mapping table to say we're here
-  boot_log_ptr += sprintf(boot_log_ptr, "OK\n");
+  log_to_CRT_ptr += sprintf(log_to_CRT_ptr, "OK\n");
   setRomMap(id, slotNum);
 
   LOGPRINTF("%-1s\n", description);
@@ -249,91 +249,117 @@ void saveConfiguration(const char *filename)
   //  Don't forget to change the capacity to match your requirements.
   //  Use arduinojson.org/assistant to compute the capacity.
   //
-  //  On 10/1/2020, report is 1720
+  //  On 10/01/2020, report is 1720
+  //  On 01/26/2021, report is 3947
+  //  On 01/30/2021, report is 4005
   //
 
-  StaticJsonDocument<3000> doc;
+  StaticJsonDocument<JSON_DOC_SIZE> doc;
 
-  Serial.printf("\n\nError reading CONFIG.TXT   Recreating default Configuration\n\n");
+  log_to_serial_ptr += sprintf(log_to_serial_ptr, "\n\nError reading CONFIG.TXT   Recreating default Configuration\n\n");
 
   // Set the values in the document
-  doc["machineName"] = "HP85A";
-  doc["flags"] = 173368985; //  0x0A556699    Hex constants are not allowed with this SdFat library
-  doc["ram16k"] = false;    //  For safety, since we don't know what machine we are plugged into
-  doc["screenEmu"] = false;
+  doc["machineName"]   = "HP85A";
+  doc["requireserial"] = false;
+  doc["repeatserial"]  = 0;
+  doc["CRTVerbose"]    = true;
+  doc["EMS"]           = false;       //  Implement EMS memory
+  doc["EMSSize"]       = 256;         //  Size of implemented EMS memory in KB (1024)
+  doc["EMSbase"]       = 32;          //  Address of the start of EMS memory, depends on what is already implemented on motherboard, in KB (85AIF:0 , 85B:32 , 86:? , 87:? , 87XM:?)
+  doc["screenEmu"]     = false;       //  Track all CRT operations
+  doc["CRTRemote"]     = false;       //  Transmit screen via WiFi to browser
+  doc["ram16k"]        = true;        //  For safety, since we don't know what machine we are plugged into
 
   // tape drive
 
   JsonObject tape = doc.createNestedObject("tape");
-  tape["enable"] = false; //  For safety, since we don't know what machine we are plugged into
-  tape["filename"] = "tape1.tap";
+  tape["enable"] = false;             //  For safety, since we don't know what machine we are plugged into
   tape["directory"] = "/tapes/";
+  tape["filename"] = "tape1.tap";
 
-  // option roms
+  //  Option ROMs
 
   JsonObject optRoms = doc.createNestedObject("optionRoms");
   optRoms["directory"] = "/roms/";
   JsonArray romx = optRoms.createNestedArray("roms");
 
-  // add roms
+  //  Add ROMs
 
   JsonObject rom0 = romx.createNestedObject();
   rom0["description"] = "Service ROM 340 AUXROM Aware";
-  rom0["filename"] = "340aux.bin";
-  rom0["enable"] = true;
+  rom0["filename"] = "rom340aux";
+  rom0["enable"] = false;
 
   JsonObject rom1 = romx.createNestedObject();
   rom1["description"] = "Assembler ROM";
   rom1["filename"] = "rom050";
-  rom1["enable"] = true;
-
+  rom1["enable"] = false;
+  
   JsonObject rom2 = romx.createNestedObject();
   rom2["description"] = "I/O ROM";
   rom2["filename"] = "rom300B";
-  rom2["enable"] = true;
-
+  rom2["enable"] = false;
+  
   JsonObject rom3 = romx.createNestedObject();
-  rom3["description"] = "Extended Mass Storage ROM 85B variant";
-  rom3["filename"] = "ROM317.85B";
-  rom3["enable"] = true;
-
+  rom3["Note"] = "For 85A floppys, disable rom317, rom320B, rom321B";
+  rom3["description"] = "Mass Storage";
+  rom3["filename"] = "rom320";
+  rom3["enable"] = false;
+  
   JsonObject rom4 = romx.createNestedObject();
-  rom4["description"] = "Mass Storage";
-  rom4["filename"] = "320RevB.bin";
-  rom4["enable"] = true;
-
+  rom4["Note"] = "For SS/80 disk, with real HPIB and real SS/80 disk. Use with rom320B, rom321B";
+  rom4["description"] = "Extended Mass Storage";
+  rom4["filename"] = "rom317";
+  rom4["enable"] = false;
+  
   JsonObject rom5 = romx.createNestedObject();
-  rom5["description"] = "EDisk";
-  rom5["filename"] = "rom321B";
+  rom5["Note"] = "For 85B floppys and 5, 10 MB hard disk. Use with rom321B, can be used on 85A";
+  rom5["description"] = "85B Mass Storage";
+  rom5["filename"] = "rom320B";
   rom5["enable"] = true;
-
+  
   JsonObject rom6 = romx.createNestedObject();
-  rom6["description"] = "Advanced Programming";
-  rom6["filename"] = "rom350";
+  rom6["description"] = "EDisk";
+  rom6["filename"] = "rom321B";
   rom6["enable"] = true;
-
+  
   JsonObject rom7 = romx.createNestedObject();
-  rom7["description"] = "AUXROM Primary 2020_09_28";
-  rom7["filename"] = "85aux1.bin";
-  rom7["enable"] = true;
-
+  rom7["description"] = "Advanced Programming";
+  rom7["filename"] = "rom350";
+  rom7["enable"] = false;
+  
   JsonObject rom8 = romx.createNestedObject();
-  rom8["description"] = "AUXROM Secondary 1 2020_09_28";
-  rom8["filename"] = "85aux2.bin";
-  rom8["enable"] = true;
-
+  rom8["description"] = "Printer/Plotter";
+  rom8["filename"] = "rom360";
+  rom8["enable"] = false;
+  
   JsonObject rom9 = romx.createNestedObject();
-  rom9["description"] = "AUXROM Secondary 2 2020_09_28";
-  rom9["filename"] = "85aux3.bin";
+  rom9["description"] = "AUXROM Primary 2020_11_28";
+  rom9["filename"] = "rom361";
   rom9["enable"] = true;
+  
+  JsonObject rom10 = romx.createNestedObject();
+  rom10["description"] = "AUXROM Secondary 1 2020_11_28";
+  rom10["filename"] = "rom362";
+  rom10["enable"] = true;
+  
+  JsonObject rom11 = romx.createNestedObject();
+  rom11["description"] = "AUXROM Secondary 2 2020_11_28";
+  rom11["filename"] = "rom363";
+  rom11["enable"] = true;
+  
+  JsonObject rom12 = romx.createNestedObject();
+  rom12["description"] = "AUXROM Secondary 3 2020_11_28";
+  rom12["filename"] = "rom364";
+  rom12["enable"] = true;
 
   // hpib devices
 
   JsonArray hpib = doc.createNestedArray("hpib");
   JsonObject device = hpib.createNestedObject();
-  device["select"] = 7; //  HPIB Select code
-  device["type"] = 0;   //  Disk type - currently an enumeration
-  device["device"] = 0; //  First device 0..31
+  device["select"] = 3;                           //  HPIB Select code
+  device["type"] = 0;                             //  Disk type - currently an enumeration
+  device["device"] = 0;                           //  First device 0..31
   device["directory"] = "/disks/";
   device["enable"] = true;
 
@@ -352,9 +378,9 @@ void saveConfiguration(const char *filename)
   drive1["enable"] = true;
 
   JsonObject printer = hpib.createNestedObject();
-  device["select"] = 7; //  HPIB Select code
-  device["type"] = 0;   //  printer type - currently an enumeration
-  device["device"] = 10; // device 0..31
+  device["select"] = 3;                           //  HPIB Select code
+  device["type"] = 0;                             //  printer type - currently an enumeration
+  device["device"] = 10;                          // device 0..31
   device["directory"] = "/printers/";
   device["enable"] = true;
   JsonObject printer0 = printer.createNestedObject("printer");
@@ -362,28 +388,26 @@ void saveConfiguration(const char *filename)
 
   serializeJsonPretty(doc, Serial);
 
+  //
   // Serialize JSON to file
+  //
   if (serializeJsonPretty(doc, file) == 0)
   {
-    LOGPRINTF("Failed to write to file\n"); //  This is probably pointless, since if we can't write to CONFIG.TXT file
-                                            //  what is the probability that Log File stuff is working?
+    LOGPRINTF("Failed to write to file\n");     //  This is probably pointless, since if we can't write to CONFIG.TXT file
+                                                //  what is the probability that Log File stuff is working?
   }
-  // Close the file
-  Serial.printf("\n\n");
+  //  Close the file
+  log_to_serial_ptr += sprintf(log_to_serial_ptr, "\n\n");
   file.close();
 }
 
 //
-//  returns the enumeration of the machine name selected in the config file
+//  Returns the enumeration of the machine name selected in the config file
+//  ##############  this needs more work with the complete range of Series 80 computers
 //
 int getMachineNum(void)
 {
   return machineNum;
-}
-
-uint32_t getFlags(void)
-{
-  return Config_Flag_word;
 }
 
 //
@@ -392,16 +416,15 @@ uint32_t getFlags(void)
 
 bool loadConfiguration(const char *filename)
 {
-  RXD_Pulser(1);
-  EBTKS_delay_ns(10000); //  10 us
-  RXD_Pulser(1);
-  EBTKS_delay_ns(10000); //  10 us
-
   char fname[258];
-  
-  boot_log_ptr = Directory_Listing_Buffer_for_SDDEL;            //  use this buffer during boot (when it can't be in use) to log messages to be displayed once system has started
 
-  //  boot_log_ptr += sprintf(boot_log_ptr, "Boot Log\n");
+  RXD_Pulser(1);
+  EBTKS_delay_ns(10000); //  10 us
+  RXD_Pulser(1);
+  EBTKS_delay_ns(10000); //  10 us
+
+
+  machineNum = 0;
 
   LOGPRINTF("Opening Config File [%s]\n", filename);
 
@@ -412,20 +435,24 @@ bool loadConfiguration(const char *filename)
                                                                 //  Except this happens before the PWO is released
   if (!file)
   {
-    boot_log_ptr += sprintf(boot_log_ptr, "Couldn't open %s\n", filename);
+    log_to_CRT_ptr += sprintf(log_to_CRT_ptr, "Couldn't open %s\n", filename);
   }
 
-  // Allocate a temporary JsonDocument
-  // Don't forget to change the capacity to match your requirements.
-  // Use arduinojson.org/v6/assistant to compute the capacity.
-  StaticJsonDocument<5000> doc;
+  //
+  //  Allocate a temporary JsonDocument
+  //  Don't forget to change the capacity to match your requirements.
+  //  Use arduinojson.org/v6/assistant to compute the capacity.
+  //
+  StaticJsonDocument<JSON_DOC_SIZE> doc;
 
+  //
   // Deserialize the JSON document
+  //
   DeserializationError error = deserializeJson(doc, file);
   if (error)
   {
     file.close();
-    boot_log_ptr += sprintf(boot_log_ptr, "deserializeJson failed\n");
+    log_to_CRT_ptr += sprintf(log_to_CRT_ptr, "deserializeJson failed\n");
 
     saveConfiguration(filename);                                                        //  ####  This is dangerous, since we don't know 85/86/87  ####
     LOGPRINTF("Failed to read file, using default configuration\n");
@@ -436,20 +463,27 @@ bool loadConfiguration(const char *filename)
     DeserializationError error = deserializeJson(doc, file);
     if (error)
     { //  Failed a second time, give up
-      boot_log_ptr += sprintf(boot_log_ptr, "deserializeJson failed twice\n");
+      log_to_CRT_ptr += sprintf(log_to_CRT_ptr, "deserializeJson failed twice\n");
       LOGPRINTF("Failed to read (or write) the default configuration. Giving up\n");
       return false;
     }
     //  else fall into the normal config processing with the defaults we just created
   }
 
-  Config_Flag_word = doc["flags"] | 0;
+  machineType   = doc["machineName"]   | "HP85A";
+  requireserial = doc["requireserial"] | false;
+  repeatserial  = doc["repeatserial"]  | 0;
+  CRTVerbose    = doc["CRTVerbose"]    | true;
+  EMS_Support   = doc["EMS"]           | false;
+  EMSSize       = doc["EMSSize"]       | 256;
+  EMSbase       = doc["EMSbase"]       | 32;
+  screenEmu     = doc["screenEmu"]     | false;
+  CRTRemote     = doc["CRTRemote"]     | false;
 
-  // read machineType string
-  // valid strings are:
-  const char *machineNames[] = {"HP85A", "HP85B", "HP86", "HP87"};
+  //  Read machineType string
+  //  Valid strings are:
+  const char *machineNames[] = {"HP85A", "HP85B", "HP86", "HP87"};    //  ##### this needs to cover more models, 86A, 86B, 87XM
 
-  const char *machineType = doc["machineName"] | "HP85A";
   //
   //  look through table to find a match to enumerate the machineType
   //
@@ -462,15 +496,15 @@ bool loadConfiguration(const char *filename)
       break; //found it!
     }
     machineNum++;
-  }
+  }                                             //  ################  need to report failure to find machine name
 
-  boot_log_ptr += sprintf(boot_log_ptr, "Series 80 Model: %s\n", machineNames[machineNum]);
+  log_to_CRT_ptr += sprintf(log_to_CRT_ptr, "Series 80 Model: %s\n", machineNames[machineNum]);
 
   enHP85RamExp(doc["ram16k"] | false);
-  boot_log_ptr += sprintf(boot_log_ptr, "HP85A 16 KB RAM: %s\n", getHP85RamExp() ? "Enabled":"None");
+  log_to_CRT_ptr += sprintf(log_to_CRT_ptr, "HP85A 16 KB RAM: %s\n", getHP85RamExp() ? "Enabled":"None");
   //bool enScreenEmu = doc["screenEmu"] | false;
   bool tapeEn = doc["tape"]["enable"] | false;
-  boot_log_ptr += sprintf(boot_log_ptr, "HP85A/B Tape Emulation: %s\n", tapeEn ? "Yes":"No");
+  log_to_CRT_ptr += sprintf(log_to_CRT_ptr, "HP85A/B Tape Emulation: %s\n", tapeEn ? "Yes":"No");
 
   // Copy values from the JsonDocument to the Config
 
@@ -499,13 +533,12 @@ bool loadConfiguration(const char *filename)
   RXD_Pulser(1);
   EBTKS_delay_ns(10000); //  10 us
 
-  //  New ROM load code......
   const char *optionRoms_directory = doc["optionRoms"]["directory"] | "/roms/";
   int romIndex = 0;
 
   LOGPRINTF("\nLoading ROMs from directory %s\n", optionRoms_directory);
   LOGPRINTF("Name         ID: Oct Dec Hex  Compl  Sum  Description\n");
-  boot_log_ptr += sprintf(boot_log_ptr, "ROM Dir %s\n", optionRoms_directory);
+  log_to_CRT_ptr += sprintf(log_to_CRT_ptr, "ROM Dir %s\n", optionRoms_directory);
 
   for (JsonVariant theRom : doc["optionRoms"]["roms"].as<JsonArray>())
   {
@@ -515,7 +548,7 @@ bool loadConfiguration(const char *filename)
 
     strcpy(fname, optionRoms_directory);     //  Base directory for ROMs
     strlcat(fname, filename, sizeof(fname)); //  Add the filename
-    boot_log_ptr += sprintf(boot_log_ptr, "%-12s %s", filename, enable ? "On " : "Off");
+    log_to_CRT_ptr += sprintf(log_to_CRT_ptr, "%-12s %s", filename, enable ? "On " : "Off");
 
     if (enable == true)
     {
@@ -529,12 +562,12 @@ bool loadConfiguration(const char *filename)
     }
     else
     {
-      boot_log_ptr += sprintf(boot_log_ptr, "\n");
+      log_to_CRT_ptr += sprintf(log_to_CRT_ptr, "\n");
     }
     
   }
   LOGPRINTF("\n");
-  boot_log_ptr += sprintf(boot_log_ptr, "\n");
+  log_to_CRT_ptr += sprintf(log_to_CRT_ptr, "\n");
   //
   // configure the disk drives. currently we only handle one hpib interface
   //
@@ -553,12 +586,26 @@ bool loadConfiguration(const char *filename)
     int device = hpibDevice["device"] | 0;      //  HPIB device number 0..31 (can contain up to 4 drives)
     bool enable = hpibDevice["enable"] | false; //are we enabled?
 
-    //  boot_log_ptr += sprintf(boot_log_ptr, "HPIB Sel %d Dev %d En %d\n", select, device, enable);
+    //  log_to_CRT_ptr += sprintf(log_to_CRT_ptr, "HPIB Sel %d Dev %d En %d\n", select, device, enable);
 
     if (hpibDevice["drives"]) //if the device is a disk drive
     {
       const char *diskDir = hpibDevice["directory"] | "/disks/"; //disk image folder/directory
       int type = hpibDevice["type"] | 0;                         //  disk drive type 0 = 5 1/4"
+
+      char  type_text[10];
+      switch(type)
+      {
+        case 0:
+          strcpy(type_text, "Floppy");
+          break;
+        case 4:
+          strcpy(type_text, "5 MB  ");
+          break;
+        default:
+          strcpy(type_text, "Unknown");
+          break;
+      }
 
       if ((devices[device] == NULL) && (enable == true))
       {
@@ -583,8 +630,9 @@ bool loadConfiguration(const char *filename)
           {
             devices[device]->addDisk((int)type);
             devices[device]->setFile(unitNum, fname, wprot);
-            LOGPRINTF("Add Drive type: %d to Device: %d as Unit: %d with image file: %s\r\n", type, device, unitNum, fname);
-            boot_log_ptr += sprintf(boot_log_ptr, "%d%d%d %s\n", select, device, unitNum, fname);
+            LOGPRINTF(                                      "Add Drive %s to msus$ D:%d%d%d with image file: %s\r\n", type_text, select, device, unitNum, fname);
+            log_to_serial_ptr += sprintf(log_to_serial_ptr, "Add Drive %s to msus$ D:%d%d%d with image file: %s\r\n", type_text, select, device, unitNum, fname);
+            log_to_CRT_ptr += sprintf(log_to_CRT_ptr, "%d%d%d %s\n", select, device, unitNum, fname);
           }
         }
       }
@@ -608,8 +656,8 @@ bool loadConfiguration(const char *filename)
       if ((devices[device] != NULL) && (enable == true))
       {
         devices[device]->setFile((char *)fname);
-        LOGPRINTF("Add Printer type: %d to Device: %d with print file: %s\r\n", type, device, fname);
-        Serial.printf("Add Printer type: %d to Device: %d with print file: %s\r\n", type, device, fname);
+        LOGPRINTF("Add Printer type: %d to Device %1d%2d with print file: %s\r\n", type, select, device, fname);
+        log_to_serial_ptr += sprintf(log_to_serial_ptr, "Add Printer type: %d to Device %1d%2d with print file: %s\r\n", type, select, device, fname);
       }
     }
   }
@@ -624,7 +672,7 @@ bool loadConfiguration(const char *filename)
   if (!(file = SD.open("/AUXROM_FLAGS.TXT", READ_ONLY)))
   {   //  File does not exist, so create it with default contents
 failed_to_read_flags:
-    Serial.printf("Creating /AUXROM_FLAGS.TXT with default contents of 00000000 because it does not exist\n");
+    log_to_serial_ptr += sprintf(log_to_serial_ptr, "Creating /AUXROM_FLAGS.TXT with default contents of 00000000 because it does not exist\n");
     file = SD.open("/AUXROM_FLAGS.TXT", O_RDWR | O_TRUNC | O_CREAT);
     file.write("00000000\r\n", 10);
     file.close();
@@ -683,7 +731,7 @@ bool remount_drives(const char *filename)
   // Allocate a temporary JsonDocument
   // Don't forget to change the capacity to match your requirements.
   // Use arduinojson.org/v6/assistant to compute the capacity.
-  StaticJsonDocument<5000> doc;
+  StaticJsonDocument<JSON_DOC_SIZE> doc;
 
   // Deserialize the JSON document
   DeserializationError error = deserializeJson(doc, file);
@@ -734,6 +782,20 @@ bool remount_drives(const char *filename)
       const char *diskDir = hpibDevice["directory"] | "/disks/"; //disk image folder/directory
       int type = hpibDevice["type"] | 0;                         //  disk drive type 0 = 5 1/4"
 
+      char  type_text[10];
+      switch(type)
+      {
+        case 0:
+          strcpy(type_text, "Floppy");
+          break;
+        case 4:
+          strcpy(type_text, "5 MB  ");
+          break;
+        default:
+          strcpy(type_text, "Unknown");
+          break;
+      }
+
       if ((devices[device] == NULL) && (enable == true))
       {
         devices[device] = new HpibDisk(device);                 //  create a new HPIB device (can contain up to 4 drives)
@@ -760,8 +822,8 @@ bool remount_drives(const char *filename)
           {
             devices[device]->addDisk((int)type);
             devices[device]->setFile(unitNum, fname, wprot);
-            LOGPRINTF("Add Drive type: %d to Device: %d as Unit: %d with image file: %s\r\n", type, device, unitNum, fname);
-            Serial.printf("Add Drive type: %d to Device: %d as Unit: %d with image file: %s\r\n", type, device, unitNum, fname);
+            LOGPRINTF(    "Add Drive %s to msus$ D:%d%d%d with image file: %s\r\n", type_text, select, device, unitNum, fname);
+            Serial.printf("Add Drive %s to msus$ D:%d%d%d with image file: %s\r\n", type_text, select, device, unitNum, fname);
           }
         }
       }
@@ -786,8 +848,8 @@ bool remount_drives(const char *filename)
       if ((devices[device] != NULL) && (enable == true))
       {
         devices[device]->setFile((char *)fname);
-        LOGPRINTF("Add Printer type: %d to Device: %d with print file: %s\r\n", type, device, fname);
-        Serial.printf("Add Printer type: %d to Device: %d with print file: %s\r\n", type, device, fname);
+        LOGPRINTF("Add Printer type: %d to Device %1d%2d with print file: %s\r\n", type, select, device, fname);
+        Serial.printf("Add Printer type: %d to Device %1d%2d with print file: %s\r\n", type, select, device, fname);
       }
     }
   }
@@ -899,22 +961,22 @@ void Boot_Message_Poll(void)
   //  Write_on_CRT_Alpha(8, 0, "Please wait, checking ROMs");     //  Haven't figured out how to display this once at the right time,
   //                                                                  without interfeering with the HP85 boot up and ROM check process.
 
-  boot_log_ptr = Directory_Listing_Buffer_for_SDDEL;
-  if (strlen(boot_log_ptr) == 0)
+  log_to_CRT_ptr = Directory_Listing_Buffer_for_SDDEL;
+  if (strlen(log_to_CRT_ptr) == 0)
   {
     return;
   }
   Serial.printf("\n\nDump of Boot Log\n\n");
   row = 1;
   column=0;
-  //first_char[0] = (*boot_log_ptr) +128;                //  Add an undersdscore
+  //first_char[0] = (*log_to_CRT_ptr) +128;                //  Add an undersdscore
   //first_char[1] = 0;
 
-  while (*boot_log_ptr)
+  while (*log_to_CRT_ptr)
   {
-    seg_length = strcspn(boot_log_ptr,"\n");        //  Number of chars not in second string, so does not count the '\n'
-    strlcpy(segment, boot_log_ptr, seg_length+1);   //  Copies the segment, and appends a 0x00
-    boot_log_ptr += seg_length+1;                   //  Skip over the segment and the trailing '\n'
+    seg_length = strcspn(log_to_CRT_ptr,"\n");        //  Number of chars not in second string, so does not count the '\n'
+    strlcpy(segment, log_to_CRT_ptr, seg_length+1);   //  Copies the segment, and appends a 0x00
+    log_to_CRT_ptr += seg_length+1;                   //  Skip over the segment and the trailing '\n'
     Serial.printf("[%s]\n", segment);
     Serial.flush();
     Write_on_CRT_Alpha(row++, column, segment);

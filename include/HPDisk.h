@@ -20,28 +20,28 @@ enum DISK_TYPE
 /// Return: (heads,cyls,secs/cyl/total secs are all DECIMAL numbers)
     ///
     /// From the 85A MS ROM source listing (thus what the 85A supports):
-    ///												HEADS	CYLS	SECS/CYL	TOTAL_SECS
-    ///		x01,x04 mini-floppy (82901/9121)		2		33		32			1056
-    ///		x00,x81 8" (9134A/9895A)				2		75		60			4320
-    ///		x01,x05 quad mini						4		68		32			2176
+    ///                                         HEADS CYLS  SECS/CYL  TOTAL_SECS
+    ///   x01,x04 mini-floppy (82901/9121)        2    33      32        1056
+    ///   x00,x81 8" (9134A/9895A)                2    75      60        4320
+    ///   x01,x05 quad mini                       4    68      32        2176
     ///
-    ///	From the 85B MS ROM source listing (thus what the 85B supports):
-    ///												HEADS	CYLS	SECS/CYL	TOTAL_SECS
-    ///		x01,x04 mini-floppy (82901/9121)		2		33		32			1056
-    ///		x00,x81 8" (9134A/9895A)				2		75		60			4320
-    ///		x01,x06 5 MB hard disk (9135A OPT 10)	4		152		124			18848
-    ///		x01,x0A 10 MB hard disk (9134B)			4		305		124			37820
+    /// From the 85B MS ROM source listing (thus what the 85B supports):
+    ///                                         HEADS CYLS  SECS/CYL  TOTAL_SECS
+    ///   x01,x04 mini-floppy (82901/9121)        2    33      32        1056
+    ///   x00,x81 8" (9134A/9895A)                2    75      60        4320
+    ///   x01,x06 5 MB hard disk (9135A OPT 10)   4   152     124       18848
+    ///   x01,x0A 10 MB hard disk (9134B)         4   305     124       37820
     ///
-    ///	From the 87 MS ROM source listing (thus what the 87 supports):
-    ///												HEADS	CYLS	SECS/CYL	TOTAL_SECS
-    ///		x01,x04 mini-floppy (82901/9121)		2		33		32			1056
-    ///		x00,x81 8" (9134A/9895A)				2		75		60			4320
-    ///		x01,x06 5 MB hard disk (9135A OPT 10)	4		153		124			18972
+    /// From the 87 MS ROM source listing (thus what the 87 supports):
+    ///                                         HEADS CYLS  SECS/CYL  TOTAL_SECS
+    ///   x01,x04 mini-floppy (82901/9121)        2    33      32        1056 
+    ///   x00,x81 8" (9134A/9895A)                2    75      60        4320
+    ///   x01,x06 5 MB hard disk (9135A OPT 10)   4   153     124       18972
     ///
     /// NOTES:
-    ///		1) The 85A supports an ID of 1,5 (quad mini) that the other two do not.
-    ///		2) The 85B adds support for a 5MB and 10MB hard disk.
-    ///		3) The 87 drops support for the 10MB disk and increases the 5MB disk's cylinder count by 1.
+    ///   1) The 85A supports an ID of 1,5 (quad mini) that the other two do not.
+    ///   2) The 85B adds support for a 5MB and 10MB hard disk.
+    ///   3) The 87 drops support for the 10MB disk and increases the 5MB disk's cylinder count by 1.
     ///
 class HPDisk
     {

@@ -182,9 +182,6 @@ EXTERN  volatile bool globalIntEn;           // global interrupt enable
 typedef void (*ioWriteFuncPtr_t)(uint8_t);
 typedef bool (*ioReadFuncPtr_t)(void);
 
-
-
-
 //
 //  Log file support
 //
@@ -234,10 +231,42 @@ EXTERN  Print_Splitter PS_SDDEL;
 EXTERN  EXTMEM char Directory_Listing_Buffer_for_SDCAT[DIRECTORY_LISTING_BUFFER_SIZE];    //  Normally this should be inside the Class as private, but I don't
                                                                                           //  know if the EXTMEM can be done within a class, and we certainly
                                                                                           //  don't want this buffer to be dynamically allocated on heap either.
-EXTERN  EXTMEM char Directory_Listing_Buffer_for_SDDEL[DIRECTORY_LISTING_BUFFER_SIZE];
+
+EXTERN  EXTMEM char Directory_Listing_Buffer_for_SDDEL[DIRECTORY_LISTING_BUFFER_SIZE];    //  This buffer is used for the SDDEL command to hold a copy of the
+                                                                                          //  directory while we process wild card matching.
+                                                                                          //  During system boot, we use this bufer to store text that will be
+                                                                                          //  sent to the serial terminal and to the HP85 CRT. We split the buffer
+                                                                                          //  in half for this. Be careful, there are no checks for running off
+                                                                                          //  the end, or the first half overwriting the beginning of the second
+                                                                                          //  half.
+                                                                                          //  Given that (at time of writing this note) DIRECTORY_LISTING_BUFFER_SIZE
+                                                                                          //  is 65536, this will result in 32 KB for each text buffer, which
+                                                                                          //  should be plenty. The following two pointers are used for these
+                                                                                          //  temporary text buffers.
+
+EXTERN char *     log_to_CRT_ptr;                                                         //  Use delete directory buffer during boot (when it can't be in use)
+                                                                                          //  to log messages to be displayed on the HP85 CRT, once system has started.
+
+EXTERN char *     log_to_serial_ptr;                                                      //  Use delete directory buffer during boot (when it can't be in use)
+                                                                                          //  to log messages to be displayed on the USB Serial port, once system
+                                                                                          //  has started.
 
 EXTERN  EXTMEM char dir_line[258];                                                        //  Leave room for a trailing 0x00 (that is not included in the passed max length of PS.get_line)
 
+//
+//  Parameters from the CONFIG.TXT file
+//
+
+EXTERN  int           machineNum;
+EXTERN  const char *  machineType;
+EXTERN  bool          requireserial;
+EXTERN  int           repeatserial;
+EXTERN  bool          CRTVerbose;
+EXTERN  bool          EMS_Support;
+EXTERN  int           EMSSize;
+EXTERN  int           EMSbase;
+EXTERN  bool          screenEmu;
+EXTERN  bool          CRTRemote;
 
 ///////////////////////////////////////////////////  Initialized Globals.  /////////////////////////////////////////////////////////////////
 
