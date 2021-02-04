@@ -338,7 +338,8 @@ Changes:
 -   Improved reporting of mount/unmount of LIF images to the Serial port,
     with the name of the LIF image. Now also correctly displays the
     virtual printer and tape assignment.
--   FYI: CygWin wc of include directory:  3456  12788 130393
+-   FYI:
+>         CygWin wc of include directory:  3456  12788 130393
 >                      src     directory: 11925  59107 491150
 >                      --------------------------------------
 >                      total              15381 lines of code and comments
@@ -353,6 +354,11 @@ Changes:
 -   Spell check this file
 
 ## Commit \#96 02/03/2020
+
+Changes:
+-   Fix display of table in commit 95
+
+## Commit \#97 02/03/2020
 
 Changes:
 -   Fix display of table in commit 95
