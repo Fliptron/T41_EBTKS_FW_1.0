@@ -505,21 +505,20 @@ GPIO9   33         7           CORE_PIN33_PORTREG
 //                  We pull down on PWO for 500 ms anyway, then release our pulling it low
 //                  and wait for whatever else is pulling it low to stop. i.e. wait for high
 //
-//  Startup timing
-//
-//
-//
-//
-//
+
+bool              is_hp85_idle(void);
+void              repeat_serial_boot_text(void);
+void              Boot_Messages_to_CRT(void);
 
 static uint32_t   one_second_timer = 0;
-static   bool  SD_begin_OK;
+static bool       SD_begin_OK;
+static bool       CRT_Boot_Message_Pending = true;
+static int        loop_count = 0;
 
 void setup()
 {
 
   int   setjmp_reason;
-  int   message_count = 0;
   bool  config_success;
 
   setjmp_reason = setjmp(PWO_While_Running);
@@ -639,10 +638,10 @@ void setup()
   initRoms();
   initCrtEmu();
 
-  leds.begin();
+  leds.begin();                               //  This is being run when no interrupts have been enabled
 
-  setIOWriteFunc(0340,&ioWriteAuxROM_Alert);  // AUXROM Alert that a Mailbox/Buffer has been updated
-  setIOReadFunc(0340,&onReadAuxROM_Alert);    // Use HEYEBTKS to return identification string
+  setIOWriteFunc(0340,&ioWriteAuxROM_Alert);  //  AUXROM Alert that a Mailbox/Buffer has been updated
+  setIOReadFunc(0340,&onReadAuxROM_Alert);    //  Use HEYEBTKS to return identification string
 
   RXD_Pulser(4);
   EBTKS_delay_ns(10000); //  10 us
@@ -666,18 +665,18 @@ void setup()
   *log_to_CRT_ptr    = 0;
   *log_to_serial_ptr = 0;
 
-  log_to_serial_ptr += sprintf(log_to_serial_ptr, "HP-85 EBTKS Board Serial Diagnostics  %-4d\n", message_count++);
+  log_to_serial_ptr += sprintf(log_to_serial_ptr, "EBTKS Firmware built on %s\n\n", EBTKS_COMPILE_TIME);
   RXD_Pulser(3);
   EBTKS_delay_ns(10000);      //  10 us
 
-  log_to_serial_ptr += sprintf(log_to_serial_ptr, "\n%s", LOGLEVEL_GEN_MESSAGE);
+  log_to_serial_ptr += sprintf(log_to_serial_ptr, "%s", LOGLEVEL_GEN_MESSAGE);
   log_to_serial_ptr += sprintf(log_to_serial_ptr, "%s", LOGLEVEL_AUX_MESSAGE);
   log_to_serial_ptr += sprintf(log_to_serial_ptr, "%s", LOGLEVEL_1MB5_MESSAGE);
-  log_to_serial_ptr += sprintf(log_to_serial_ptr, "%s\n", LOGLEVEL_TAPE_MESSAGE);
+  log_to_serial_ptr += sprintf(log_to_serial_ptr, "%s", LOGLEVEL_TAPE_MESSAGE);
 
   //  Use CONFIG.TXT file on sd card for configuration
 
-  log_to_serial_ptr += sprintf(log_to_serial_ptr, "Doing SD.begin\n");
+  log_to_serial_ptr += sprintf(log_to_serial_ptr, "\nDoing SD.begin\n");
   RXD_Pulser(2);  SET_RXD;                          //  RXD_Pulser does 2 toggles, so this inverts things to give some additional info
 
   //
@@ -716,6 +715,9 @@ void setup()
 
   SD_begin_OK = SD.begin(SdioConfig(DMA_SDIO));     //  This takes about ??? ms.          ###
   CLEAR_RXD; EBTKS_delay_ns(1000);  RXD_Pulser(2);
+
+  log_to_serial_ptr += sprintf(log_to_serial_ptr, "Access to SD Card is %s\n", SD_begin_OK     ? "true":"false");
+
   if (SD_begin_OK)
   {
     logfile_active = open_logfile();
@@ -761,7 +763,7 @@ void setup()
   }
   else
   {
-    log_to_serial_ptr += sprintf(log_to_serial_ptr, "SD begin failed\nLogfile is not active\n");
+    log_to_serial_ptr += sprintf(log_to_serial_ptr, "Logfile is not active\n");
     logfile_active = false;
     config_success = false;
   }
@@ -792,7 +794,7 @@ void setup()
 
   //delay(10000);   // delay 10 secs to turn on serial monitor
 
-  RELEASE_PWO_OUT;          // This should allow the HP-85 to start up, and we are ready to serve
+  RELEASE_PWO_OUT;          // This should allow the HP-85 to start up, and we are ready to serve. Note that this asynchronous.
   //
   //  Hold off enabling interrupts until PWO has gone high (other devices or the Power supply may be asserting it)
   //
@@ -845,67 +847,77 @@ void setup()
   //
   //  while (!Serial) {};                       //  wait till the Virtual terminal is connected
   //  Serial.begin(9600);                       //  USB Serial Baud value is irrelevant for this serial channel
-  log_to_serial_ptr += sprintf(log_to_serial_ptr, "\nHP-85 EBTKS Board Serial Diagnostics  %-4d\n", message_count++);
-  log_to_serial_ptr += sprintf(log_to_serial_ptr, "Access to SD Card is %s\n", SD_begin_OK     ? "true":"false");
-  log_to_serial_ptr += sprintf(log_to_serial_ptr, "Config Success is %s\nWaiting for HP85 to get to prompt\n\n"   , config_success  ? "true":"false");
+
+  log_to_serial_ptr += sprintf(log_to_serial_ptr, "Config Success is %s\n"   , config_success  ? "true":"false");
+
+  log_to_serial_ptr += sprintf(log_to_serial_ptr, "Parameters from the CONFIG.TXT (or defaults)\n");
+  log_to_serial_ptr += sprintf(log_to_serial_ptr, "Machine number   %d\n", machineNum);
+  log_to_serial_ptr += sprintf(log_to_serial_ptr, "Machine type     %s\n", machineType);
+  log_to_serial_ptr += sprintf(log_to_serial_ptr, "Require Serial   %s\n", requireserial ? "true":"false");
+  log_to_serial_ptr += sprintf(log_to_serial_ptr, "Repeat Serial    %d secs\n", (int)repeatserial);
+  log_to_serial_ptr += sprintf(log_to_serial_ptr, "CRT Verbose      %s\n", CRTVerbose ? "true":"false");
+  log_to_serial_ptr += sprintf(log_to_serial_ptr, "EMS Support      %s\n", EMS_Support ? "true":"false");
+  log_to_serial_ptr += sprintf(log_to_serial_ptr, "EMS Size         %d KB\n", EMSSize);
+  log_to_serial_ptr += sprintf(log_to_serial_ptr, "EMS Base         %d KB\n", EMSbase);
+  log_to_serial_ptr += sprintf(log_to_serial_ptr, "Screen Emul.     %s\n", screenEmu ? "true":"false");
+  log_to_serial_ptr += sprintf(log_to_serial_ptr, "Remote CRT       %s\n", CRTRemote ? "true":"false");
+  log_to_serial_ptr += sprintf(log_to_serial_ptr, "85A 16 KB RAM    %s\n", getHP85RamExp() ? "true":"false");
+
 
   //
-  //  Ok, time to flush messages to the serial terminal
+  //  Ok, time to flush messages to the serial terminal.
+  //  If requireserial is true , then the serial port via the USB link must have been established
+  //  and all of the following output will get to the serial terminal screen.
+  //  If requireserial is false, we didn't wait for the serial conection to be established
+  //  before continuing with the boot process (all the above code). Therefore the following
+  //  Serial.printf() may just be dumping its output on the floor. The repeatserial if non-zero
+  //  will give this text a second chance in the number of seconds specified by repeatserial.
   //
   log_to_serial_ptr = &Directory_Listing_Buffer_for_SDDEL[DIRECTORY_LISTING_BUFFER_SIZE/2];
   Serial.printf("%s", log_to_serial_ptr);
   log_to_serial_ptr = &Directory_Listing_Buffer_for_SDDEL[DIRECTORY_LISTING_BUFFER_SIZE/2];
-  *log_to_serial_ptr = 0;         //  This should be the end of our usage of this buffer for these startup messages
-                                  //  All future messages just use Serial.printf()
-  Serial.printf("\nParameters from the CONFIG.TXT (or defaults)\n");
-  Serial.printf("Machine number   %d\n", machineNum);
-  Serial.printf("Machine type     %s\n", machineType);
-  Serial.printf("Require Serial   %s\n", requireserial ? "true":"false");
-  Serial.printf("Repeat Serial    %d secs\n", repeatserial);
-  Serial.printf("CRT Verbose      %s\n", CRTVerbose ? "true":"false");
-  Serial.printf("EMS Support      %s\n", EMS_Support ? "true":"false");
-  Serial.printf("EMS Size         %d KB\n", EMSSize);
-  Serial.printf("EMS Base         %d KB\n", EMSbase);
-  Serial.printf("Screen Emul.     %s\n", screenEmu ? "true":"false");
-  Serial.printf("Remote CRT       %s\n", CRTRemote ? "true":"false");
-  Serial.printf("85A 16 KB RAM    %s\n", getHP85RamExp() ? "true":"false");
+  //
+  //  This should be the end of our writing to this buffer for these startup messages.
+  //  We still need it if repeatserial is non-zero.
+  //  All future messages just use Serial.printf()
+  //
 
   Serial.flush();
 
-  Logic_Analyzer_Event_Count_Init = -1000;      // Use this to indicate the Logic analyzer has no default values.
+  Serial.printf("Waiting for HP85 to get to prompt\n");
 
-  delay(100);
-  if (!SD_begin_OK)
-  {
-    delay(3000);                                //  Let the HP85 get up to speed
-    no_SD_card_message();
-    //  delay(10000);
-  }
+  Logic_Analyzer_Event_Count_Init = -1000;      // Use this to indicate the Logic analyzer has no default values.
 
   //leds.setLedColor(0,CRGB::Purple);
   //leds.setLedColor(1,CRGB::Blue);
   //
   //  alternately, hard code the brightness in 
-  leds.setLedColor(0,{10,0,0});  //r,g,b. 10 is a reasonable brighness
+  leds.setLedColor(0,{10,0,0});     //  R, G, B  --  10 is a reasonable brighness
   leds.setLedColor(1,{0,10,0});
-  
   leds.update();
+
+  //  Fall into loop()
+
 }
 
-//  Is it possible with Teensy powered by USB for the double LMA to get out of sync?  Scenario: Power cycle HP-85 after first
-//  cycle but before second. Teensy is running in loop() and is un-aware that HP-85 has restarted.
-//  Could handle this by resetting the First/Second address byte flags if a non LMA cycle is seen???
-//  A related issue is that since Teensy is in loop(), it has state that may not be correct for the power cycled HP-85
-//  Maybe a better solution is to have Teensy only powered by HP-85, even if USB is connected, so Teensy is always
-//  reset when the power is cycled, and Teensy could also monitor PWO (and only drive it in setup()  )
-//  See the commented code at the beginning of loop() that is a failed attempt at this issue.
+//
+//  Is it possible with Teensy powered by USB for the double LMA to get out of sync?
+//  
+//  Scenario: Power cycle HP-85 after first cycle but before second. Teensy is running
+//            in loop() and is un-aware that HP- 85 has restarted. Could handle this by
+//            resetting the First/Second address byte flags if a non LMA cycle is seen???
+//            A related issue is that since Teensy is in loop(), it has state that may
+//            not be correct for the power cycled HP-85 Maybe a better solution is to
+//            have Teensy only powered by HP-85, even if USB is connected, so Teensy
+//            is always reset when the power is cycled, and Teensy could also monitor
+//            PWO (and only drive it in setup()  ) See the commented code at the
+//            beginning of loop() that is a failed attempt at this issue.
+//
 
 //
 //      All the background tasks live here. They are triggered by flags set in the interrupt handlers
 //      and they are serviced here in a round-robin sequence
 //
-
-static int  loop_count = 0;
 
 void loop()
 {
@@ -952,24 +964,137 @@ void loop()
   AUXROM_Poll();
   Logic_Analyzer_Poll();
   loopTranslator();     //  1MB5 / HPIB / DISK poll
-  if(SD_begin_OK)
-  {
-    Boot_Message_Poll();
-  }
-  //myusb.Task();
 
+  if (CRT_Boot_Message_Pending)
+  {
+    if (is_hp85_idle())
+    {
+      if (!SD_begin_OK)
+      {
+        no_SD_card_message();
+      }
+      else
+      {
+        Boot_Messages_to_CRT();
+      }
+      CRT_Boot_Message_Pending = false;
+    }
+    else
+    {
+      //  See below for some dots //
+    }
+  }
 
   //
   //  Here are things we do no more than once per second
   //
 
-  if (one_second_timer < (systick_millis_count + 1000))
-  {
-    logfile.flush();
+  if ((one_second_timer + 1000) < systick_millis_count)     //  systick_millis_count rolls over about every 49 days
+  {                                                         //  and so does one_second_timer
     one_second_timer = systick_millis_count;
+
+    //  Serial.printf("tick\n");
+    logfile.flush();
+    if (CRT_Boot_Message_Pending)
+    {
+      Serial.printf(".");
+    }
+
+    if (repeatserial)
+    {
+      Serial.printf("%d ", repeatserial - (systick_millis_count/1000));     //  Countdown to repeating serial output.
+      if ((repeatserial * 1000) <= one_second_timer)
+      {
+        repeatserial = 0;     //  so we only do this once
+        Serial.printf("\n");
+        repeat_serial_boot_text();
+      }
+    }
   }
 
-  loop_count++;
+  loop_count++;               //  Keep track of how many times we loop. We dont currently use this for anything,
+                              //  and it probably overflows somewhere between hourly to daily.
 }
 
+void repeat_serial_boot_text(void)
+{
+  log_to_serial_ptr = &Directory_Listing_Buffer_for_SDDEL[DIRECTORY_LISTING_BUFFER_SIZE/2];
+  Serial.printf("%s", log_to_serial_ptr);
+  log_to_serial_ptr = &Directory_Listing_Buffer_for_SDDEL[DIRECTORY_LISTING_BUFFER_SIZE/2];
+  *log_to_serial_ptr = 0;         //  This should be the end of our use of this buffer
 
+}
+
+//
+//  The HP85 idle loop includes label "EXEC" at address 000072. This is a relatively
+//  tight loop. On any given call to this function, there is a random chance that the
+//  current value of the address register is this address. If we call this function
+//  in a "tight" loop, eventually we will get a hit. This is reasonable, since this
+//  function is only called from one place, it is a tight loop, and we don't have
+//  anything better to do, until the HP85 gets to its idle loop.
+//
+
+bool is_hp85_idle(void)
+{
+  if (addReg == 000072)
+  {
+    return true;
+  }
+  else
+  {
+    return false;
+  }
+}
+
+//
+//  During boot the CRT is unavailable. So we store all the boot status info in
+//  Directory_Listing_Buffer_for_SDDEL[], assuming that it is unlikely that the
+//  user will try and type in a SDDEL command before we have finished with this
+//  array. Once the CRT is available (detected by seeing the HP85 making references
+//  to 000072, which is part of the EXEC loop), we dump the array to the CRT
+//
+
+void Boot_Messages_to_CRT(void)
+{
+
+  int row, column;
+  int seg_length;
+  char segment[100];
+
+  log_to_CRT_ptr = Directory_Listing_Buffer_for_SDDEL;
+  if ((strlen(log_to_CRT_ptr) == 0) || (!CRTVerbose))
+  {
+    return;
+  }
+
+  Serial.printf("\n\nDump of Boot Log to CRT\n\n---------------\n");
+
+  row = 1;
+  column=0;
+
+  while (*log_to_CRT_ptr)
+  {
+    seg_length = strcspn(log_to_CRT_ptr,"\n");        //  Number of chars not in second string, so does not count the '\n'
+    strlcpy(segment, log_to_CRT_ptr, seg_length+1);   //  Copies the segment, and appends a 0x00
+    log_to_CRT_ptr += seg_length+1;                   //  Skip over the segment and the trailing '\n'
+    Serial.printf("%s\n", segment);
+    Serial.flush();
+    Write_on_CRT_Alpha(row++, column, segment);
+    if (row < 16)                                     // While on screen, add some delay between lines. After line 16, no need for delays, since it isn't seen
+      {
+        delay(40);                                    //  A little delay so they see it happening
+      }
+    if(row > 63)
+    {
+      row = 63;                                     //  Just over-write the last line. Note we start on line 1, so max lines is 63. We leave line 0 alone.
+    }
+  }
+  // Write_on_CRT_Alpha(0,0, first_char);
+  while (DMA_Peek8(CRTSTS) & 0x80) {};              //  Wait until video controller is ready
+  DMA_Poke16(CRTBAD, 0);
+  while (DMA_Peek8(CRTSTS) & 0x80) {};              //  Wait until video controller is ready
+  DMA_Poke16(CRTSAD, 0);
+
+Serial.printf("---------------\n");
+
+}

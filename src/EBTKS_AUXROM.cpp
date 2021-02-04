@@ -103,7 +103,7 @@ void ioWriteAuxROM_Alert(uint8_t val)                 //  This function is runni
 //  Return the identification string, 1 character per call
 //
 
-static char         identification_string[] = "EBTKS V2.0  2020 (C) Philip Freidin, Russell Bull, Everett Kaser";
+static char         identification_string[] = "EBTKS V1.0  2021 (C) Philip Freidin, Russell Bull, Everett Kaser";
 static int          ident_string_index = 0;
 
 bool onReadAuxROM_Alert(void)

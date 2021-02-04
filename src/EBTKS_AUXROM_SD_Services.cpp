@@ -2589,18 +2589,25 @@ void AUXROM_UNMOUNT(void)
 
   //
   //  Special case to UNMOUNT the SD Card.
-  //    closes the log file
-  //    closes all msus
+  //    Closes the log file
+  //    Closes all msus
+  //    Closes tape-file
   //
   if (strcasecmp(p_buffer, "SDCard") == 0)
   {
+    //
+    //  Close the LogFile
+    //
     if (logfile_active)
     {
       flush_logfile();
       close_logfile();      //  Also does logfile_active = false;
       Serial.printf("Closed logfile\n");
     }
-    for (device = 0 ; device < 31 ; device++)      //  actual upper limit is "#define NUM_DEVICES 31"  found in EBTKS_1MB5.cpp
+    //
+    //  Close any open Disk images    only works for device numbers 0..7 because 8 and 9 aren't used, and 10 is the printer
+    //
+    for (device = 0 ; device <= 7 ; device++)      //  actual upper limit is "#define NUM_DEVICES 31"  found in EBTKS_1MB5.cpp
     {
       if (devices[device])
       {
@@ -2609,28 +2616,57 @@ void AUXROM_UNMOUNT(void)
           filename = devices[device]->getFilename(disknum);
           if (filename)
           {
+            Serial.printf("Closing MSUS :D%d%d%d   media: %s\n", HPIB_Select, device, disknum, filename);
             if (!devices[device]->close(disknum))
             {
               post_custom_error_message("UNMOUNT Disk error", 491);
               goto Unmount_exit;
             }
-            Serial.printf("Closed MSUS :D%d%d%d   media: %s\n", HPIB_Select, device, disknum, filename);
           }
         }
         devices[device] = NULL;             //  Need to discuss with RB  #########
       }
     }
+    //
+    //  Close any printer file, currently only check for device 310 (i.e. HPIB select code 3, device 10)
+    //
+    device  = 10;
+    disknum =  0;
+    if (devices[device])
+    {
+      filename = devices[device]->getFilename(disknum);
+      if (filename)
+      {
+        Serial.printf("Closing Printer device %.1d10   media: %s\n", HPIB_Select, filename);
+        if (!devices[device]->close(disknum))
+        {
+          post_custom_error_message("UNMOUNT Printer error", 491);        //    #############  this is the wrong code number. need to assign a new one
+          goto Unmount_exit;
+        }
+      }
+      devices[device] = NULL;             //  Need to discuss with RB  #########
+    }
+
+    //
+    //  Close any Tape-file
+    //
+ 
     filename = tape.getFile();
     if(filename)
     {
-      tape_handle_UNMOUNT();
+      Serial.printf("Closing Tape drive  media: %s\n", filename);
+      tape_handle_UNMOUNT();                                                //  Will get a spurious "Closing tape" message, which is not worth fixing
     }
     goto Unmount_exit;
-  }                         //  End of UNMOUNT "SDCard"    --- not case sensitive
+  }                         //  End of UNMOUNT "SDCard"    --- not case-sensitive
+
+  //
+  //  Unmount an msus$
+  //
 
   if (!parse_MSU(p_buffer))
   {
-    post_custom_error_message("UNMOUNT MSU$ error", 490);
+    post_custom_error_message("UNMOUNT msus$ error", 490);
     goto Unmount_exit;
   }
   if (msu_is_tape)
@@ -2918,6 +2954,8 @@ void AUXROM_SDEXISTS(void)
 //  Return the EBTKS Firmware Revision string
 //
 
+static char  date_time[25];
+
 void AUXROM_EBTKSREV(void)
 {
 
@@ -2925,13 +2963,13 @@ void AUXROM_EBTKSREV(void)
   Serial.printf("Call to EBTKSREV\n");
 #endif
 
-  strcpy(p_buffer, EBTKS_FIRMWARE_VERSION);                                   //  Copies version string including trailing 0x00
+  strcpy(date_time, EBTKS_COMPILE_TIME);
+  sprintf(p_buffer, "EBTKS built %.19s", date_time);
   *p_len = strlen(p_buffer);
   *p_usage    = 0;                                                            //  SDEXISTS successful
   *p_mailbox  = 0;                                                            //  Indicate we are done
   return;
 }
-
 
 //
 //  This function takes New_Path and appends it to Current_Path (if it is a relative path) and

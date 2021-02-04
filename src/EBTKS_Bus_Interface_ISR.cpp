@@ -42,13 +42,10 @@
 //    If it ever turns out this is too soon, we could add a 100 ns delat (thus mid Phi 1 pulse) which should fix things.
 //
 
-
 #include <Arduino.h>
 #include <setjmp.h>
 
 #include "Inc_Common_Headers.h"
-
-#define EMC_SUPPORT           (1)
 
 inline bool onReadData(void);
 inline void mid_cycle_processing(void);
@@ -59,7 +56,7 @@ inline void onPhi_1_Fall(void);
 ioReadFuncPtr_t ioReadFuncs[256];      //ensure the setup() code initialises this!
 ioWriteFuncPtr_t ioWriteFuncs[256];
 
-#if EMC_SUPPORT
+#if ENABLE_EMS_MEMORY
 //
 //  Variables for the EMC (extended memory controller)
 //
@@ -134,7 +131,7 @@ void initIOfuncTable(void)
   setIOWriteFunc(0x40, &onWriteInterrupt);        //  177500 1MB5 INTEN
   setIOWriteFunc(0, &onWriteGIE);                 //  Global interrupt enable
 
-#if EMC_SUPPORT
+#if ENABLE_EMS_MEMORY
   emc_init();
 #endif
 
@@ -662,7 +659,7 @@ inline void onPhi_1_Fall(void)
   }
   //CLEAR_TXD;      //  Time point BC
 
-#if EMC_SUPPORT
+#if ENABLE_EMS_MEMORY
   //SET_TXD;      //  Time point BC
   if (schedule_read || schedule_write)
   {
@@ -759,7 +756,7 @@ inline void mid_cycle_processing(void)                             //  This func
   Interrupt_Acknowledge = wr && rd && lma;                    //  Decode interrupt acknowlege state
   //CLEAR_TXD;      //  Time point CB
 
-#if EMC_SUPPORT
+#if ENABLE_EMS_MEMORY
   //SET_TXD;        //  Time point CB
   ifetch = !(GPIO_PAD_STATUS_REG_IFETCH & BIT_MASK_IFETCH);   //  Grab the instruction fetch bit. Only exists on HP85B, 86 and 87
                                                               //  Used for tracking instructions for the extended memory controller
@@ -1162,7 +1159,7 @@ void mySystick_isr(void)
   systick_millis_count++;
 }
 
-#if EMC_SUPPORT
+#if ENABLE_EMS_MEMORY
 
 //
 //  extended memory code. It's here because it is tightly coupled with the bus cycles

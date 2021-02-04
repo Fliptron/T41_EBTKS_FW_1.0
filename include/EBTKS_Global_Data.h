@@ -258,9 +258,9 @@ EXTERN  EXTMEM char dir_line[258];                                              
 //
 
 EXTERN  int           machineNum;
-EXTERN  const char *  machineType;
+EXTERN  char          machineType[10];
 EXTERN  bool          requireserial;
-EXTERN  int           repeatserial;
+EXTERN  uint32_t      repeatserial;
 EXTERN  bool          CRTVerbose;
 EXTERN  bool          EMS_Support;
 EXTERN  int           EMSSize;

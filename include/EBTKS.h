@@ -19,12 +19,14 @@
 //  EBTKS_Global_Data.h
 //                          Depends on #defines in EBTKS_Config.h
 //
-//
+//  Easter Egg message is in EBTKS_AUXROM.cpp . look for identification_string
 //
 //
 //
 
-#define EBTKS_FIRMWARE_VERSION    "2021_01_31 @ 03:18 PST"
+#define EBTKS_COMPILE_TIME        __DATE__ " @ " __TIME__
+
+#define EBTKS_COMPILE_TIME_CONDENSED      date_time,&(date_time[4]),&(date_time[9]),&(date_time[14])
 
 #define CORE_PIN_BUFEN            ( 0)
 #define CORE_PIN_CTRL_DIR         ( 1)

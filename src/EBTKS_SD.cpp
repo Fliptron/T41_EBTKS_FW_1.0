@@ -470,7 +470,7 @@ bool loadConfiguration(const char *filename)
     //  else fall into the normal config processing with the defaults we just created
   }
 
-  machineType   = doc["machineName"]   | "HP85A";
+  strlcpy (machineType, (doc["machineName"]   | "HP85A") , 10);
   requireserial = doc["requireserial"] | false;
   repeatserial  = doc["repeatserial"]  | 0;
   CRTVerbose    = doc["CRTVerbose"]    | true;
@@ -491,7 +491,7 @@ bool loadConfiguration(const char *filename)
   machineNum = 0;
   while (machineNum < MACH_NUM)
   {
-    if (strcmp(machineNames[machineNum], machineType) == 0)
+    if (strcasecmp(machineNames[machineNum], machineType) == 0)
     {
       break; //found it!
     }
@@ -914,84 +914,4 @@ void printDirectory(File dir, int numTabs)
       Serial.println(entry.size(), DEC);
     }
   }
-}
-
-
-static bool       boot_message_displayed = false;
-static bool       dot_already_printed = false;
-
-//
-//  During boot the CRT is unavailable. So we store all the boot status info in
-//  Directory_Listing_Buffer_for_SDDEL[], assuming that it is unlikely that the
-//  user will try and type in a SDDEL command before we have finished with this
-//  array. Once the CRT is available (detected by seeing the HP85 making references
-//  to 000072, which is part of the idle loop), we dump the array to the CRT, and
-//  set boot_message_displayed to true, as displaying the test is a once only event.
-//  Once the display is complete, this function is just overhead in the polling
-//  loop, so we minimize the impact by returning as quickly as possible
-//
-
-void Boot_Message_Poll(void)
-{
-  int row, column;
-  int seg_length;
-  char segment[100];
-
-  if(boot_message_displayed)        //  If Boot message has been displayed, we don't do it ever again (untill next boot)
-  {
-    return;
-  }
-
-  if (addReg != 000072)             //  Sneaky check to see if we are in the EXEC loop in the system ROM
-  {                                 //  Hold off displaying boot message until we are in the EXEC loop
-    if ((systick_millis_count % 200) == 0 && !dot_already_printed)
-    {
-      Serial.printf(".");             //  Waiting for HP85 to boot and get to BASIC prompt, so that boot messages
-      dot_already_printed = true;
-    }
-    if ((systick_millis_count % 200) != 0)
-    {
-      dot_already_printed = false;
-    }
-    
-                                    //  don't screw things up
-    return;                         //  We may miss the first occurrence, but we should see it pretty quickly
-  }
-
-  //  Write_on_CRT_Alpha(8, 0, "Please wait, checking ROMs");     //  Haven't figured out how to display this once at the right time,
-  //                                                                  without interfeering with the HP85 boot up and ROM check process.
-
-  log_to_CRT_ptr = Directory_Listing_Buffer_for_SDDEL;
-  if (strlen(log_to_CRT_ptr) == 0)
-  {
-    return;
-  }
-  Serial.printf("\n\nDump of Boot Log\n\n");
-  row = 1;
-  column=0;
-  //first_char[0] = (*log_to_CRT_ptr) +128;                //  Add an undersdscore
-  //first_char[1] = 0;
-
-  while (*log_to_CRT_ptr)
-  {
-    seg_length = strcspn(log_to_CRT_ptr,"\n");        //  Number of chars not in second string, so does not count the '\n'
-    strlcpy(segment, log_to_CRT_ptr, seg_length+1);   //  Copies the segment, and appends a 0x00
-    log_to_CRT_ptr += seg_length+1;                   //  Skip over the segment and the trailing '\n'
-    Serial.printf("[%s]\n", segment);
-    Serial.flush();
-    Write_on_CRT_Alpha(row++, column, segment);
-    delay(20);                                      //  A little delay so they see it happening
-    if(row > 63)
-    {
-      row = 63;                                     //  Just over-write the last line. Note we start on line 1, so max lines is 63. We leave line 0 alone.
-    }
-  }
-  // Write_on_CRT_Alpha(0,0, first_char);
-  while (DMA_Peek8(CRTSTS) & 0x80) {}; //wait until video controller is ready
-  DMA_Poke16(CRTBAD, 0);
-  while (DMA_Peek8(CRTSTS) & 0x80) {}; //wait until video controller is ready
-  DMA_Poke16(CRTSAD, 0);
-
-  boot_message_displayed = true;
-
 }

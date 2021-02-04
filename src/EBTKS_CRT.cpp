@@ -158,8 +158,8 @@ void Write_on_CRT_Alpha(uint16_t row, uint16_t column, const char *  text)
 
   if (crtControl & 0x80)
   {
-    return;                     //  CRT is in Graphics mode, so just ignore for now. Maybe later we will allow writing text to the Graphics screen (Implies a Character ROM) 
-  }  
+    return;                     //  CRT is in Graphics mode, so just ignore for now. Maybe later we will allow writing text to the Graphics screen (Implies a Character ROM)
+  }
 
   badAddr_restore = badAddr;
   //Serial.printf("WoCA: R=%2d  C=%2d  badAddr = %04x  timeout %6d\n", row, column, badAddr, timeout);
@@ -173,40 +173,11 @@ void Write_on_CRT_Alpha(uint16_t row, uint16_t column, const char *  text)
 
   local_badAddr = (sadAddr + (column & 0x1F) * 2 + (row & 0x3F) * 64 ) & 0x0FFF;
   //  Serial.printf("\nWoCA: local_badAddr %04X   ", local_badAddr);
-
+  while (DMA_Peek8(CRTSTS) & 0x80) {};          //  Wait until video controller is ready
   DMA_Poke16(CRTBAD, local_badAddr);
 
-  //
-  //  This code occasionally fails by putting the last character of a line on the first               #######
-  //  character of the next line. Which is impossible and makes no sense. Or maybe somehow
-  //  CRTSAD is getting corrupted. I could not isolate the problem. Any way among the working
-  //  guesses, is that the multiple going in and out of DMA while polling the Busy bit,
-  //  and then storing the single character into video memory was stressing something.
-  //  So the logically correct code is the next 8 lines of code that fail randomly.
-  //  The alternate code that follows is functionally identical. But since we are not
-  //  going in and out of DMA (In just once at the start, Out just once at the end),
-  //  the responsiveness is much faster from detecting that the CRT controller is not busy
-  //  to when we write to the CRTDAT register
-  //
-  // while(*text)
-  // {
-  //   Serial.printf("%02X ", *text);
-  //   while(DMA_Peek8(CRTSTS) & 0x80) {};     //  Wait while CRT is Busy, wait
-  //   DMA_Poke8 (CRTDAT, *text);
-  //   text++;
-  // }
-  // DMA_Poke16(CRTBAD, badAddr_restore);         //  Restore the CRTBAD register in the CRT controller
-  
-  //  A month or two later: Maybe we need to check the busy flag before writing CRTBAD and CRTSAD              ####### documented elsewhere that SYSROMS check BUSY
-  //                                                                                                                   See comments in CRT_restore_screen()
-
-  //  See above comments for how this code is a re-implementation of the above 8 lines of code
-  //  Alternate approach with 1 long DMA block rather than going in and out of DMA for each character
-  //  Do the same as above, but do it directly once in DMA mode. Can't do the Serial.printf() though
-  //
-
   assert_DMA_Request();
-  while(!DMA_Active){}     // Wait for acknowledgement, and Bus ownership
+  while(!DMA_Active){}     // Wait for acknowledgment, and Bus ownership
 
   while(*text)
   {
@@ -281,7 +252,7 @@ void Write_on_CRT_Alpha(uint16_t row, uint16_t column, const char *  text)
 //  uint8_t     data;
 //
 //  assert_DMA_Request();
-//  while(!DMA_Active){};     // Wait for acknowledgement, and Bus ownership. Also locks out interrupts on EBTKS, so can't do USB serial or SD card stuff
+//  while(!DMA_Active){};     // Wait for acknowledgment, and Bus ownership. Also locks out interrupts on EBTKS, so can't do USB serial or SD card stuff
 //  while(loops--)
 //  {
 //    DMA_Read_Block(CRTSTS , &data , 1);
@@ -337,7 +308,7 @@ void CRT_Timing_Test_1(void)
   uint8_t     data;
 
   assert_DMA_Request();
-  while(!DMA_Active){};     // Wait for acknowledgement, and Bus ownership. Also locks out interrupts on EBTKS, so can't do USB serial or SD card stuff
+  while(!DMA_Active){};     // Wait for acknowledgment, and Bus ownership. Also locks out interrupts on EBTKS, so can't do USB serial or SD card stuff
   while(loops--)
   {
     DMA_Read_Block(CRTSTS , &data , 1);
@@ -378,7 +349,7 @@ void CRT_Timing_Test_2(void)
   int         index, count;
 
   assert_DMA_Request();
-  while(!DMA_Active){}     // Wait for acknowledgement, and Bus ownership. Also locks out interrupts on EBTKS, so can't do USB serial or SD card stuff
+  while(!DMA_Active){}     // Wait for acknowledgment, and Bus ownership. Also locks out interrupts on EBTKS, so can't do USB serial or SD card stuff
   SET_RXD;
   while(loops--)
   {
@@ -499,9 +470,8 @@ void writePixel(int x, int y, int color)
 
   // calculate write address
   int offs = (x >> 3) + (y * 32);
-  while (DMA_Peek8(CRTSTS) & 0x80)
-  {
-  }; //wait until video controller is ready
+
+  while (DMA_Peek8(CRTSTS) & 0x80) {}; //wait until video controller is ready
   DMA_Poke16(CRTBAD, 0x1000U + (offs * 2));
 
   uint8_t val = vram[offs];
@@ -515,7 +485,7 @@ void writePixel(int x, int y, int color)
   {
     val &= ~(1 << ((x ^ 7) & 7));
   }
-  
+
   vram[offs] = val;
   while (DMA_Peek8(CRTSTS) & 0x80)
   {
@@ -703,10 +673,9 @@ void CRT_capture_screen(void)
 void CRT_restore_screen(void)
 {
   //copy 2k of alpha data back to the HP85 video controller
-  while (DMA_Peek8(CRTSTS) & 0x80)              //  I thought this wait might not be necessary, but the code in the system ROMs checks the busy bit
-  {                                             //  before writing to CRTBAD. It also does it before writing to CRTSAD, but only if a CRTBAD write is adjacent.
-  }   //wait until video controller is ready       Best guess is it is only needed for CRTBAD.  Also seems that if it knows retrace is happening, then a write is ok.
+  while (DMA_Peek8(CRTSTS) & 0x80) {};              //  Wait until video controller is ready
   DMA_Poke16(CRTBAD, 0);
+  while (DMA_Peek8(CRTSTS) & 0x80) {};              //  Wait until video controller is ready
   DMA_Poke16(CRTSAD, 0);
 
   // Serial.printf("CRTBAD and CRTBAD set to 0\n");
@@ -717,7 +686,7 @@ void CRT_restore_screen(void)
   assert_DMA_Request();
   while (!DMA_Active)
   {
-  } // Wait for acknowledgement, and Bus ownership
+  } // Wait for acknowledgment, and Bus ownership
 
   //  Bus is now ours, All interrupts are disabled on Teensy
 
@@ -729,11 +698,11 @@ void CRT_restore_screen(void)
       DMA_Read_Block(CRTSTS,&data, 1);
     }  // Wait until video controller is ready
 
-    DMA_Write_Block(CRTDAT, &captured_screen.vram[ch], 1);              
+    DMA_Write_Block(CRTDAT, &captured_screen.vram[ch], 1);
     }
-        
+
   release_DMA_request();
-        
+
   while (DMA_Active)
   {
   } //  Wait for release
@@ -743,16 +712,15 @@ void CRT_restore_screen(void)
   // delay(1000);
   // Serial.printf("Restoring CRTBAD, CRTSAD, and CRTSTS\n");         //  no reporting until DMA end, as interrupts are off
 
-  while (DMA_Peek8(CRTSTS) & 0x80)
-  {
-  } ;   //wait until video controller is ready
-  DMA_Poke16(CRTBAD, captured_screen.badAddr); 
+  while (DMA_Peek8(CRTSTS) & 0x80) {};              //  Wait until video controller is ready
+  DMA_Poke16(CRTBAD, captured_screen.badAddr);
+  while (DMA_Peek8(CRTSTS) & 0x80) {};              //  Wait until video controller is ready
   DMA_Poke16(CRTSAD, captured_screen.sadAddr);
   DMA_Poke8(CRTSTS,captured_screen.ctrl);
   //
   //  Update what BASIC thinks these variables are
   //
-  // DMA_Poke16(CRTBYT, captured_screen.badAddr); 
+  // DMA_Poke16(CRTBYT, captured_screen.badAddr);
   // DMA_Poke16(CRTRAM, captured_screen.sadAddr);
   // DMA_Poke8(CRTWRS,captured_screen.ctrl);
 }

@@ -665,7 +665,7 @@ uint8_t DMA_Peek8(uint32_t address)
   uint8_t data;
 
   assert_DMA_Request();
-  while(!DMA_Active){}      // Wait for acknowledgement, and Bus ownership
+  while(!DMA_Active){}      // Wait for acknowledgment, and Bus ownership
 
   DMA_Read_Block(address , (uint8_t *)&data , 1);
 
@@ -680,7 +680,7 @@ uint16_t DMA_Peek16(uint32_t address)
   uint16_t data;
 
   assert_DMA_Request();
-  while(!DMA_Active){};     // Wait for acknowledgement, and Bus ownership
+  while(!DMA_Active){};     // Wait for acknowledgment, and Bus ownership
   DMA_Read_Block(address , (uint8_t *)&data , 2);
   release_DMA_request();
   while(DMA_Active){};      // Wait for release
@@ -693,7 +693,7 @@ void DMA_Poke8(uint32_t address, uint8_t val)
 {
 
   assert_DMA_Request();
-  while(!DMA_Active){};     // Wait for acknowledgement, and Bus ownership
+  while(!DMA_Active){};     // Wait for acknowledgment, and Bus ownership
   DMA_Write_Block(address , (uint8_t *)&val , 1);
   release_DMA_request();
   while(DMA_Active){};      // Wait for release
@@ -703,7 +703,7 @@ void DMA_Poke16(uint32_t address, uint16_t val)
 {
 
   assert_DMA_Request();
-  while(!DMA_Active){};     // Wait for acknowledgement, and Bus ownership
+  while(!DMA_Active){};     // Wait for acknowledgment, and Bus ownership
   DMA_Write_Block(address , (uint8_t *)&val , 2);
   release_DMA_request();
   while(DMA_Active){};      // Wait for release

@@ -312,7 +312,7 @@ void Serial_Command_Poll(void)
   //  Serial.printf(  "                          serial_string_length    %2d  serial_string [%s]   ", serial_string_length, serial_string);
 
   strcpy(lc_serial_command, serial_string);
-  str_tolower(lc_serial_command);               //  Lower case version for easier command matching. Mixed case still available in serial_command
+  str_tolower(lc_serial_command);               //  Lower case version for easier command matching. Mixed case still available in serial_command    #### this needs to be cleaned up since we use strcasecmp() below
   serial_string_used();                         //  Throw away the mixed case version
   //  Serial.printf("lower case command [%s]\n", lc_serial_command);
   if (strlen(lc_serial_command) == 0) return;    //  Not interested in zero length commands
@@ -321,13 +321,13 @@ void Serial_Command_Poll(void)
   while(1)
   {
     //  Serial.printf("1"); delay(100);
-    if (strcmp(Command_Table[command_index].command_name , "TABLE_END") == 0)
+    if (strcasecmp(Command_Table[command_index].command_name , "TABLE_END") == 0)
     {
       Serial.printf("\nUnrecognized Command [%s].  Flushing command\n", lc_serial_command);
       help_0();
       return;
     }
-    if (strcmp(Command_Table[command_index].command_name , lc_serial_command) == 0)
+    if (strcasecmp(Command_Table[command_index].command_name , lc_serial_command) == 0)
     {
       (* Command_Table[command_index].f_ptr)();
       return;
@@ -432,7 +432,7 @@ bool is_HP85_idle(void)
 
 void help_0(void)
 {
-  Serial.printf("\nEBTKS Control commands - not case sensitive\n\n");
+  Serial.printf("\nEBTKS Control commands - not case-sensitive\n\n");
   Serial.printf("0     Help for the help levels\n");
   Serial.printf("1     Help for Tape/Disk commands\n");
   Serial.printf("2     Help for Assorted Utility commands\n");
@@ -925,7 +925,7 @@ void no_SD_card_message(void)
 void ulisp(void)
 {
 #if ENABLE_LISP
-  if (strcmp("ulisp"  , lc_serial_command) == 0)
+  if (strcasecmp("ulisp"  , lc_serial_command) == 0)
   {
     lisp_setup();
     while(1)
@@ -1585,7 +1585,7 @@ void jay_pi(void)
       //  with  1,000,000 slices:  jay_pi execution time is  273 ms , answer is 3.14159265 241386
       //  with 10,000,000 slices:  jay_pi execution time is 2759 ms , answer is 3.1415926535 5335
       //
-      if (strcmp("jay_pi"  , lc_serial_command) == 0)
+      if (strcasecmp("jay_pi"  , lc_serial_command) == 0)
       {
         double    radius;
         double    radiusSquared;

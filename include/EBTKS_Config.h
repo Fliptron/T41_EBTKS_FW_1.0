@@ -43,6 +43,22 @@
 //                                          LOG_FILE      for LOG File
 //
 
+//
+//  WARNING, WARNING, WARNING, WARNING, WARNING, WARNING, WARNING, WARNING, WARNING
+//
+//  The settings below (LOG_FILE, LOG_NONE, LOG_NONE, LOG_NONE) for the four LOGLEVEL_...
+//  are the ones used during most of the debugging phase leading up to the Beta release
+//  in Feb 2021. Changing the LOG_NONE entries to LOG_FILE should not cause any unexpected
+//  behavior. Changing any of these to LOG_SERIAL may not give intended results because
+//  after all this logging code was written, the serial output that wasn't part of the
+//  logging code, got changed to the code that uses log_to_serial_ptr. This is the
+//  the code that collects the messages and depending on CONFIG.TXT settings, may send
+//  the messages to the serial port both during initial startup and again (maybe) later.
+//  If any of these are set to serial (LOG_SERIAL), then the CONFIG.TXT setting for
+//  requireserial should probably be set to true, for best (least surprising) results.
+//  This has not been tested.
+//
+
 #define LOG_NONE                  (0)
 #define LOG_SERIAL                (1)
 #define LOG_FILE                  (2)
