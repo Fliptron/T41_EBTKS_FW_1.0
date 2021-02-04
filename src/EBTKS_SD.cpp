@@ -12,7 +12,7 @@
 #include "HpibDisk.h"
 #include "HpibPrint.h"
 
-#include <strings.h>
+#include <strings.h>                //  needed for strcasecmp() prototype
 
 #define JSON_DOC_SIZE   5000
 
@@ -418,9 +418,9 @@ bool loadConfiguration(const char *filename)
 {
   char fname[258];
 
-  RXD_Pulser(1);
+  SCOPE_1_Pulser(1);
   EBTKS_delay_ns(10000); //  10 us
-  RXD_Pulser(1);
+  SCOPE_1_Pulser(1);
   EBTKS_delay_ns(10000); //  10 us
 
 
@@ -526,11 +526,11 @@ bool loadConfiguration(const char *filename)
   }
   LOGPRINTF("Tape file: %s%s enabled is: %s\n", path, tapeFname, tapeEn ? "Active" : "Inactive");
 
-  RXD_Pulser(1);         //  From beginning of function to here is 23 ms   ####
+  SCOPE_1_Pulser(1);         //  From beginning of function to here is 23 ms   ####
   EBTKS_delay_ns(10000); //  10 us
-  RXD_Pulser(1);
+  SCOPE_1_Pulser(1);
   EBTKS_delay_ns(10000); //  10 us
-  RXD_Pulser(1);
+  SCOPE_1_Pulser(1);
   EBTKS_delay_ns(10000); //  10 us
 
   const char *optionRoms_directory = doc["optionRoms"]["directory"] | "/roms/";
@@ -557,7 +557,7 @@ bool loadConfiguration(const char *filename)
       {
         romIndex++;
       }
-      RXD_Pulser(1); //  Loading ROMs takes between 6.5 and 8.5 ms each (more or less)
+      SCOPE_1_Pulser(1); //  Loading ROMs takes between 6.5 and 8.5 ms each (more or less)
       //  EBTKS_delay_ns(10000);    //  10 us
     }
     else
@@ -695,9 +695,9 @@ failed_to_read_flags:
     file.close();
   }
   
-  RXD_Pulser(1);
+  SCOPE_1_Pulser(1);
   EBTKS_delay_ns(10000); //  10 us
-  RXD_Pulser(1);
+  SCOPE_1_Pulser(1);
   EBTKS_delay_ns(10000); //  10 us
   return true;           //  maybe we should be more specific about individual successes and failures. Currently only return false if no SD card
 }

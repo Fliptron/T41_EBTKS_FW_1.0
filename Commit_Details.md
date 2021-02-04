@@ -363,4 +363,19 @@ Changes:
 Changes:
 -   Fix display of table in commit 95
 
+## Commit \#98 02/04/2020
+
+Changes:
+-   Change all diagnostics that used TXD and RXD on Teensy Physical pins 9 and 10
+    to instead use physical pin 25 (core pin 33) as SCOPE_1 and physical
+    pin 31 (core pin 39) as SCOPE_2.
+    Change all references RXD to SCOPE_1 and all references to TXD to SCOPE_2
+    Doing this because these pins were intended for communications with the ESP32.
+    About 100 edits affecting 9 files
+
+
+
+
+
+
 

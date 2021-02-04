@@ -15,23 +15,24 @@
 #include <Arduino.h>
 #include "Inc_Common_Headers.h"
 #include "HpibDisk.h"
+#include <strings.h>                //  needed for strcasecmp() prototype
 
 extern HpibDevice *devices[];
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////  Diagnostic Pulse Generation
 //
-//  RXD_Pulser generates the specified number of pulses by Toggling the RXD pin
+//  SCOPE_1_Pulser generates the specified number of pulses by Toggling the SCOPE_1 pin
 //
 //  Each pulse comprises
-//    RXD is toggled immediately on entry
+//    SCOPE_1 is toggled immediately on entry
 //    wait 5 us
-//    RXD is toggled again
+//    SCOPE_1 is toggled again
 //    wait 5 us
 //
 //  So it takes 10 us per pulse
 //
 
-void RXD_Pulser(uint8_t count)
+void SCOPE_1_Pulser(uint8_t count)
 {
   volatile int32_t timer;
 
@@ -39,7 +40,7 @@ void RXD_Pulser(uint8_t count)
 
   while(count--)
   {
-    TOGGLE_RXD;
+    TOGGLE_SCOPE_1;
     for (timer = 0 ; timer < 333 ; timer++)
     {
       //  Do nothing. With timer, itterations, it takes 5 us. So 15 ns per itteration.
@@ -85,20 +86,20 @@ void EBTKS_delay_ns(int32_t count)
 //  while(1)
 //  {
 //    __disable_irq();
-//    TOGGLE_T33; EBTKS_delay_ns(   50); TOGGLE_T33; EBTKS_delay_ns(100);  //    53 ns
-//    TOGGLE_T33; EBTKS_delay_ns(   60); TOGGLE_T33; EBTKS_delay_ns(100);  //    49 ns
-//    TOGGLE_T33; EBTKS_delay_ns(   68); TOGGLE_T33; EBTKS_delay_ns(100);  //    49 ns
-//    TOGGLE_T33; EBTKS_delay_ns(   69); TOGGLE_T33; EBTKS_delay_ns(100);  //    71 ns
-//    TOGGLE_T33; EBTKS_delay_ns(   70); TOGGLE_T33; EBTKS_delay_ns(100);  //    71 ns
-//    TOGGLE_T33; EBTKS_delay_ns(   80); TOGGLE_T33; EBTKS_delay_ns(100);  //    81 ns
-//    TOGGLE_T33; EBTKS_delay_ns(   90); TOGGLE_T33; EBTKS_delay_ns(100);  //    91 ns
-//    TOGGLE_T33; EBTKS_delay_ns(   95); TOGGLE_T33; EBTKS_delay_ns(100);  //    91 ns
-//    TOGGLE_T33; EBTKS_delay_ns(  100); TOGGLE_T33; EBTKS_delay_ns(100);  //    98 ns
-//    TOGGLE_T33; EBTKS_delay_ns(  200); TOGGLE_T33; EBTKS_delay_ns(100);  //   201 ns
-//    TOGGLE_T33; EBTKS_delay_ns(  227); TOGGLE_T33; EBTKS_delay_ns(100);  //   221 ns
-//    TOGGLE_T33; EBTKS_delay_ns(  318); TOGGLE_T33; EBTKS_delay_ns(100);  //   311 ns
-//    TOGGLE_T33; EBTKS_delay_ns( 1000); TOGGLE_T33; EBTKS_delay_ns(100);  //  1001 ns
-//    TOGGLE_T33; EBTKS_delay_ns( 2000); TOGGLE_T33; EBTKS_delay_ns(100);  //  2000 ns
+//    TOGGLE_SCOPE_1; EBTKS_delay_ns(   50); TOGGLE_SCOPE_1; EBTKS_delay_ns(100);  //    53 ns
+//    TOGGLE_SCOPE_1; EBTKS_delay_ns(   60); TOGGLE_SCOPE_1; EBTKS_delay_ns(100);  //    49 ns
+//    TOGGLE_SCOPE_1; EBTKS_delay_ns(   68); TOGGLE_SCOPE_1; EBTKS_delay_ns(100);  //    49 ns
+//    TOGGLE_SCOPE_1; EBTKS_delay_ns(   69); TOGGLE_SCOPE_1; EBTKS_delay_ns(100);  //    71 ns
+//    TOGGLE_SCOPE_1; EBTKS_delay_ns(   70); TOGGLE_SCOPE_1; EBTKS_delay_ns(100);  //    71 ns
+//    TOGGLE_SCOPE_1; EBTKS_delay_ns(   80); TOGGLE_SCOPE_1; EBTKS_delay_ns(100);  //    81 ns
+//    TOGGLE_SCOPE_1; EBTKS_delay_ns(   90); TOGGLE_SCOPE_1; EBTKS_delay_ns(100);  //    91 ns
+//    TOGGLE_SCOPE_1; EBTKS_delay_ns(   95); TOGGLE_SCOPE_1; EBTKS_delay_ns(100);  //    91 ns
+//    TOGGLE_SCOPE_1; EBTKS_delay_ns(  100); TOGGLE_SCOPE_1; EBTKS_delay_ns(100);  //    98 ns
+//    TOGGLE_SCOPE_1; EBTKS_delay_ns(  200); TOGGLE_SCOPE_1; EBTKS_delay_ns(100);  //   201 ns
+//    TOGGLE_SCOPE_1; EBTKS_delay_ns(  227); TOGGLE_SCOPE_1; EBTKS_delay_ns(100);  //   221 ns
+//    TOGGLE_SCOPE_1; EBTKS_delay_ns(  318); TOGGLE_SCOPE_1; EBTKS_delay_ns(100);  //   311 ns
+//    TOGGLE_SCOPE_1; EBTKS_delay_ns( 1000); TOGGLE_SCOPE_1; EBTKS_delay_ns(100);  //  1001 ns
+//    TOGGLE_SCOPE_1; EBTKS_delay_ns( 2000); TOGGLE_SCOPE_1; EBTKS_delay_ns(100);  //  2000 ns
 //    __enable_irq();
 //    delay(1);
 //  }

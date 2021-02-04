@@ -138,7 +138,7 @@
 
 #include <Arduino.h>
 #include <string.h>
-#include <strings.h>
+#include <strings.h>                //  needed for strcasecmp() prototype
 #include <math.h>
 #include <stdlib.h>
 
@@ -1241,9 +1241,9 @@ bool copy_sd_file(const char * Source_Path, const char * Destination_Path)
 
   while(1)
   {
-    //SET_TXD;
+    //SET_SCOPE_2;
     chars_read = Source.read(Copy_buffer, COPY_BUFFER_SIZE);
-    //CLEAR_TXD;
+    //CLEAR_SCOPE_2;
     if (chars_read == COPY_BUFFER_SIZE)
     {
       Serial.printf(".");

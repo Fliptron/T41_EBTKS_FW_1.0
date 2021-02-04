@@ -59,7 +59,7 @@ void ioWriteCrtSad(uint8_t val)                 //  This function is running wit
     sadAddr = (uint16_t)val;
   }
   sadFlag = !sadFlag;                           //  Toggle the flag
-  TOGGLE_T33;
+  TOGGLE_SCOPE_1;
 }
 
 //
@@ -191,12 +191,12 @@ void Write_on_CRT_Alpha(uint16_t row, uint16_t column, const char *  text)
       }
     }
     //  Busy de-asserted
-    //SET_TXD;
+    //SET_SCOPE_2;
     DMA_Write_Block(CRTDAT , (uint8_t *)text , 1);
     current_screen.vram[local_badAddr>>1] = *text;
     local_badAddr += 2;
     text++;
-    //CLEAR_TXD;
+    //CLEAR_SCOPE_2;
   }
   DMA_Write_Block(CRTBAD , (uint8_t *)&badAddr_restore , 2);
   release_DMA_request();
@@ -238,7 +238,7 @@ void Write_on_CRT_Alpha(uint16_t row, uint16_t column, const char *  text)
 
 //
 //  Go into DMA mode and for about 6 seconds, read CRTSTS and copy bit 1 (display time) to
-//  the RXD pin and bit 7 (busy) to the TXD pin  for Oscilloscope monitoring and measurement
+//  the SCOPE_1 pin and bit 7 (busy) to the SCOPE_2 pin  for Oscilloscope monitoring and measurement
 //
 //  Results:  Bit 1, Display Time is a very simple square wave, 16.67 ms cycle time (59.98 Hz), High for 12.85 ms
 //            and low for 3.818ms
@@ -258,20 +258,20 @@ void Write_on_CRT_Alpha(uint16_t row, uint16_t column, const char *  text)
 //    DMA_Read_Block(CRTSTS , &data , 1);
 //    if (data & 0x02)
 //    {
-//      SET_RXD;
+//      SET_SCOPE_1;
 //    }
 //    else
 //    {
-//      CLEAR_RXD;
+//      CLEAR_SCOPE_1;
 //    }
 //
 //    if (data & 0x80)
 //    {
-//      TOGGLE_TXD;           //  While busy, toggle TXD
+//      TOGGLE_SCOPE_2;           //  While busy, toggle SCOPE_2
 //    }
 //    else
 //    {
-//      CLEAR_TXD;
+//      CLEAR_SCOPE_2;
 //    }
 //  }
 //  release_DMA_request();
@@ -296,10 +296,10 @@ void Write_on_CRT_Alpha(uint16_t row, uint16_t column, const char *  text)
 //              will be delayed till the start of the retrace time. I will also bet the 5 ms window starts at the beginning of the
 //              vertical front porch and ends with the end of the vertical back porch.
 //
-//        Slight change 10/29/2020    Change from toggling TXD to just showing BUSY state
+//        Slight change 10/29/2020    Change from toggling SCOPE_2 to just showing BUSY state
 //
-//  Mode 1    RXD (Scope CH 1)  CRTSTS bit 1 , Retrace Time when low, Display time when high
-//            TXD (Scope CH 2)  CRTSTS bit 7 , Not Busy when low,  Busy when high
+//  Mode 1    SCOPE_1 (Scope CH 1)  CRTSTS bit 1 , Retrace Time when low, Display time when high
+//            SCOPE_2 (Scope CH 2)  CRTSTS bit 7 , Not Busy when low,  Busy when high
 //
 
 void CRT_Timing_Test_1(void)
@@ -314,20 +314,20 @@ void CRT_Timing_Test_1(void)
     DMA_Read_Block(CRTSTS , &data , 1);
     if (data & 0x02)
     {
-      SET_RXD;
+      SET_SCOPE_1;
     }
     else
     {
-      CLEAR_RXD;
+      CLEAR_SCOPE_1;
     }
 
     if (data & 0x80)
     {
-      SET_TXD;          // Busy
+      SET_SCOPE_2;          // Busy
     }
     else
     {
-      CLEAR_TXD;        // Not busy
+      CLEAR_SCOPE_2;        // Not busy
       DMA_Write_Block(CRTDAT , (uint8_t *)&"X" , 1);      //  Write an 'X' occasionally
     }
   }
@@ -350,7 +350,7 @@ void CRT_Timing_Test_2(void)
 
   assert_DMA_Request();
   while(!DMA_Active){}     // Wait for acknowledgment, and Bus ownership. Also locks out interrupts on EBTKS, so can't do USB serial or SD card stuff
-  SET_RXD;
+  SET_SCOPE_1;
   while(loops--)
   {
     //
@@ -372,13 +372,13 @@ void CRT_Timing_Test_2(void)
         break;  //  Start of Retrace
       }
     }
-    CLEAR_RXD;
+    CLEAR_SCOPE_1;
     count = 0;
     index = 0;
     //
     //  These 74 characters take 728 us  (or maybe 719 us)
     //
-    SET_TXD;
+    SET_SCOPE_2;
     while(count < 74)         //  This loop that puts characters on the screen takes 9.8 us per character
     {
       DMA_Write_Block(CRTDAT, (uint8_t *)&test_message[index++], 1);
@@ -389,10 +389,10 @@ void CRT_Timing_Test_2(void)
       EBTKS_delay_ns(3000);   // Fails at 1300, works at 1400, Fails at 2000, use 3000, but need to
       count++;                // test all around 2000 to 4000 and find a sweet spot or a point where it always works
     }
-    CLEAR_TXD;
+    CLEAR_SCOPE_2;
 
     EBTKS_delay_ns(200000);   //  Skip Blip 1   //  wait 200 us
-    SET_TXD;
+    SET_SCOPE_2;
     count = 0;
     while(count < 135)         //  This loop that puts characters on the screen takes 9.8 us per character. Does it for 1.32 ms
     {
@@ -404,7 +404,7 @@ void CRT_Timing_Test_2(void)
       EBTKS_delay_ns(3000);   // Fails at 1300, works at 1400, Fails at 2000, use 3000, but need to
       count++;                // test all around 2000 to 4000 and find a sweet spot or a point where it always works
     }
-    CLEAR_TXD;
+    CLEAR_SCOPE_2;
 
   }
   release_DMA_request();

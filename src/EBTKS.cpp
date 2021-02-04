@@ -239,6 +239,46 @@
 //      A2-2            
 //      A2-1            
 //      A2-0            
+//
+//
+//      Logic Analyzer Configuration 7 for TLA5201      moved signals used for diags off RXD/TXD
+//                    01/04/2021                        and put them on core pins 33 and 39. See SCOPE_1 and SCOPE_2
+//
+//      C3-7            B7X         On Extender board
+//      C3-6            B6X         On Extender board
+//      C3-5            B5X         On Extender board
+//      C3-4            B4X         On Extender board
+//      C3-3            B3X         On Extender board
+//      C3-2            B2X         On Extender board
+//      C3-1            B1X         On Extender board
+//      C3-0            B0X         On Extender board
+//
+//      C2-7            IF          On Extender board
+//      C2-6            LMA         On Extender board
+//      C2-5            RD          On Extender board
+//      C2-4            WR          On Extender board
+//      C2-3            RC          On Extender board
+//      C2-2            BUFEN       On Teensy Physical Pin  2
+//      C2-1            SCOPE_1     On Teensy Physical Pin 25
+//      C2-0            SCOPE_2     On Teensy Physical Pin 31
+//
+//      A3-7            Phi1        On Extender board
+//      A3-6            Phi2        On Extender board
+//      A3-5            IRLX        On Extender board
+//      A3-4            PRIL        On Extender board
+//      A3-3            PRIH        On Extender board
+//      A3-2            PWO         On Extender board
+//      A3-1            HALTX       On Extender board
+//      A3-0            TEENSYRC    On Teensy Physical Pin 19
+//
+//      A2-7            CTRLEN      On Teensy Physical Pin 21
+//      A2-6            CTRLDIR     On Teensy Physical Pin  3
+//      A2-5            INTPRI      On Teensy Physical Pin  5
+//      A2-4            
+//      A2-3            
+//      A2-2            
+//      A2-1            
+//      A2-0            
 
 //
 //
@@ -313,13 +353,13 @@ NEOPIX_TSY        2           23      RD
       3.3V        3.3V        GND     GND
        SCL        24          41      DB5
        SDA        25          40      DB4
-       T26        26          39      T39
+       T26        26          39      SCOPE_2
     DIR_RC        27          38      PHASE2
      HALTX        28          37      INTERRUPT
     CTRLEN        29          36      PWO_O
   IPRIH_IN        30          35      PHASE21
       PWO_L       31   SD     34      PHASE12
-     IFETCH       32  Card    33      T33
+     IFETCH       32  Card    33      SCOPE_1
 
 
 EBTKS           Core               Bit      GPIO        IOMUX
@@ -359,13 +399,13 @@ CTRLEN          CORE_PIN29_BIT     31       GPIO9       IOMUXC_SW_MUX_CTL_PAD_GP
 IPRIH_IN        CORE_PIN30_BIT     23       GPIO8       IOMUXC_SW_MUX_CTL_PAD_GPIO_EMC_37
 PWO_L           CORE_PIN31_BIT     22       GPIO8       IOMUXC_SW_MUX_CTL_PAD_GPIO_EMC_36
 IFETCH          CORE_PIN32_BIT     12       GPIO7       IOMUXC_SW_MUX_CTL_PAD_GPIO_B0_12
-T33             CORE_PIN33_BIT      7       GPIO9       IOMUXC_SW_MUX_CTL_PAD_GPIO_EMC_07
+SCOPE_1         CORE_PIN33_BIT      7       GPIO9       IOMUXC_SW_MUX_CTL_PAD_GPIO_EMC_07
 PHASE12         CORE_PIN34_BIT     29       GPIO7       IOMUXC_SW_MUX_CTL_PAD_GPIO_B1_13
 PHASE21         CORE_PIN35_BIT     28       GPIO7       IOMUXC_SW_MUX_CTL_PAD_GPIO_B1_12
 PWO_O           CORE_PIN36_BIT     18       GPIO7       IOMUXC_SW_MUX_CTL_PAD_GPIO_B1_02
 INTERRUPT       CORE_PIN37_BIT     19       GPIO7       IOMUXC_SW_MUX_CTL_PAD_GPIO_B1_03
 PHASE2          CORE_PIN38_BIT     28       GPIO6       IOMUXC_SW_MUX_CTL_PAD_GPIO_AD_B1_12
-T39             CORE_PIN39_BIT     29       GPIO6       IOMUXC_SW_MUX_CTL_PAD_GPIO_AD_B1_13
+SCOPE_2         CORE_PIN39_BIT     29       GPIO6       IOMUXC_SW_MUX_CTL_PAD_GPIO_AD_B1_13
 DB4             CORE_PIN40_BIT     20       GPIO6       IOMUXC_SW_MUX_CTL_PAD_GPIO_AD_B1_04
 DB5             CORE_PIN41_BIT     21       GPIO6       IOMUXC_SW_MUX_CTL_PAD_GPIO_AD_B1_05
 
@@ -538,40 +578,33 @@ void setup()
   //  Diagnostic Pins
   //
   //	Name							Physical Pin		Suggested use
-  //	CORE_PIN_RXD			10							ISR Entry and Exit
-  //																		Also used by RXD_Pulser, which is used to track timing of the Boot sequence,
+  //	CORE_PIN_SCOPE_1  25							ISR Entry and Exit. SCOPE_1
+  //																		Also used by SCOPE_1_Pulser, which is used to track timing of the Boot sequence,
   //                                    and should only be called before Pin Change Interrupt is activated
-  //	CORE_PIN_TXD			 9							General entry and exit of whatever is currently being debugged, currently DMA
+  //	CORE_PIN_SCOPE_2	31							General entry and exit of whatever is currently being debugged, currently DMA, SCOPE_2
   //	CORE_PIN_T13			35							Also the on board LED. Toggle when errors are detected in diagnostic tests
-  //	CORE_PIN_T33			25							General oscilloscope trigger, used in timing tuning
-  //	CORE_PIN_T39			31							No specific use
-  //
 
-  pinMode(CORE_PIN_RXD, OUTPUT);
-  CLEAR_RXD;                          //  RXD tracks entry and exit of the pin_change ISR, at the heart of the bus interface
-                                      //  and also pulses during the boot process, to measure the time various tasks take,
-                                      //  and to identify problems.
-                            
-  pinMode(CORE_PIN_TXD, OUTPUT);
-  CLEAR_TXD;                          //  TXD is used for any other debug/time tracking. Maybe multiple things at once. Depends on context
+  pinMode(CORE_PIN_RXD, INPUT);       //  Communications with the ESP32
+  pinMode(CORE_PIN_TXD, INPUT);       //  Communications with the ESP32   one of these needs to be an output.
 
   pinMode(CORE_PIN_T13, OUTPUT);
   //  SET_LED;                        //  T13 On Board LED
   CLEAR_LED;
 
-  pinMode(CORE_PIN_T33, OUTPUT);
-  CLEAR_T33;                          //  T33 Diagnostics
-
-  pinMode(CORE_PIN_T39, OUTPUT);
-  CLEAR_T39;                          //  T39 Diagnostics
+  pinMode(CORE_PIN_SCOPE_1, OUTPUT);
+  CLEAR_SCOPE_1;                      //  SCOPE_1 tracks entry and exit of the pin_change ISR, at the heart of the bus interface
+                                      //  and also pulses during the boot process, to measure the time various tasks take,
+                                      //  and to identify problems.
+  pinMode(CORE_PIN_SCOPE_2, OUTPUT);
+  CLEAR_SCOPE_2;                      //  SCOPE_2
 
   ASSERT_PWO_OUT;                     //  Desire glitch free switchover from resistor asserting PWO to Teensy asserting PWO
   pinMode(CORE_PIN_PWO_O, OUTPUT);    //  Core Pin 36 (Physical pin 28) is pulled high by an external resistor, which turns on the FET,
                                       //  which pulls the PWO line low, which resets the HP-85
   ASSERT_PWO_OUT;                     //  Over-ride external pull up resistor, still put High on gate, thus holdimg PWO on I/O bus Low
 
-  //  RXD starts low (see above), pulses 5 times, ends low. Pulses are 10 us apart, High duration is 5 us
-  RXD_Pulser(5);
+  //  SCOPE_1 starts low (see above), pulses 5 times, ends low. Pulses are 10 us apart, High duration is 5 us
+  SCOPE_1_Pulser(5);
   EBTKS_delay_ns(10000);    //  10 us
 
   _VectorsRam[15] = mySystick_isr;
@@ -643,7 +676,7 @@ void setup()
   setIOWriteFunc(0340,&ioWriteAuxROM_Alert);  //  AUXROM Alert that a Mailbox/Buffer has been updated
   setIOReadFunc(0340,&onReadAuxROM_Alert);    //  Use HEYEBTKS to return identification string
 
-  RXD_Pulser(4);
+  SCOPE_1_Pulser(4);
   EBTKS_delay_ns(10000); //  10 us
 
   //extern void OnPress(int key);
@@ -666,7 +699,7 @@ void setup()
   *log_to_serial_ptr = 0;
 
   log_to_serial_ptr += sprintf(log_to_serial_ptr, "EBTKS Firmware built on %s\n\n", EBTKS_COMPILE_TIME);
-  RXD_Pulser(3);
+  SCOPE_1_Pulser(3);
   EBTKS_delay_ns(10000);      //  10 us
 
   log_to_serial_ptr += sprintf(log_to_serial_ptr, "%s", LOGLEVEL_GEN_MESSAGE);
@@ -677,7 +710,7 @@ void setup()
   //  Use CONFIG.TXT file on sd card for configuration
 
   log_to_serial_ptr += sprintf(log_to_serial_ptr, "\nDoing SD.begin\n");
-  RXD_Pulser(2);  SET_RXD;                          //  RXD_Pulser does 2 toggles, so this inverts things to give some additional info
+  SCOPE_1_Pulser(2);  SET_SCOPE_1;                          //  SCOPE_1_Pulser does 2 toggles, so this inverts things to give some additional info
 
   //
   //  Previously we used the FIFO_SDIO mode, but found that we got random errors because the related
@@ -714,7 +747,7 @@ void setup()
   //
 
   SD_begin_OK = SD.begin(SdioConfig(DMA_SDIO));     //  This takes about ??? ms.          ###
-  CLEAR_RXD; EBTKS_delay_ns(1000);  RXD_Pulser(2);
+  CLEAR_SCOPE_1; EBTKS_delay_ns(1000);  SCOPE_1_Pulser(2);
 
   log_to_serial_ptr += sprintf(log_to_serial_ptr, "Access to SD Card is %s\n", SD_begin_OK     ? "true":"false");
 
@@ -778,18 +811,18 @@ void setup()
 
   setupPinChange();           //  Set up the two critical interrupt handlers on Pin Change (rising) on Phi 1 and Phi 2
 
-//  SET_RXD;                  //  RXD normally indicates we are in the ISR. But during PWO testing, this will show the startup
+//  SET_SCOPE_1;                  //  SCOPE_1 normally indicates we are in the ISR. But during PWO testing, this will show the startup
 //                            //  race between Teensy and the HP-85
 //                            //  Results: With Firmware.hex at 96 KB, RAM 87K , Flash 35K, from power up, indicated by 6V
 //                            //  power supply powering Teensy, which in turn provides 3.3V to the pull-up resistor for
-//                            //  PWO_out, to this SET_RXD is 252 ms == Teensy boot time. Total PWO time is 352ms because
+//                            //  PWO_out, to this SET_SCOPE_1 is 252 ms == Teensy boot time. Total PWO time is 352ms because
 //                            //  of the 20 ms delay below.
 //                            //  Without Teensy, HP-85A PWO time is from 5V rising to PWO rising is 156 to 158 ms
 //                            //  So HP-85 wins the race, so we do need the PWO_OUT to hold it in reset until we are ready
-//  CLEAR_RXD;                //  RXD only used here with the above SET_PWO to do PWO startup timing.
+//  CLEAR_SCOPE_1;                //  SCOPE_1 only used here with the above SET_PWO to do PWO startup timing.
 
   EBTKS_delay_ns(10000);      //  10 us
-  RXD_Pulser(7);              //        We are about to enable Pin Change Interrupts. Once we do, we should not have any more calls to RXD_Pulser()
+  SCOPE_1_Pulser(7);              //        We are about to enable Pin Change Interrupts. Once we do, we should not have any more calls to SCOPE_1_Pulser()
   EBTKS_delay_ns(10000);      //  10 us
 
   //delay(10000);   // delay 10 secs to turn on serial monitor

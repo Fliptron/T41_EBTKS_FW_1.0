@@ -8,7 +8,7 @@
 //  Header file contents and dependencies
 //
 //  EBTKS.h                 Pin definitions, I/O port control, Macros for Bus buffers and DMA control,
-//                          Macros for diagnostic pins: RXD, TXD, T33, T39, LED, Macros for ISRs,
+//                          Macros for diagnostic pins: SCOPE_1, SCOPE_2, LED, Macros for ISRs,
 //                          enums for bus cycles and the Logic Analyzer (simple code trace)
 //                          HP85 I/O registers, and reserved RAM locations
 //
@@ -61,13 +61,13 @@
 #define CORE_PIN_IPRIH_IN         (30)
 #define CORE_PIN_PWO_L            (31)
 #define CORE_PIN_IFETCH           (32)
-#define CORE_PIN_T33              (33)
+#define CORE_PIN_SCOPE_1          (33)
 #define CORE_PIN_PHASE12          (34)
 #define CORE_PIN_PHASE21          (35)
 #define CORE_PIN_PWO_O            (36)
 #define CORE_PIN_INTERRUPT        (37)
 #define CORE_PIN_PHASE2           (38)
-#define CORE_PIN_T39              (39)
+#define CORE_PIN_SCOPE_2          (39)
 #define CORE_PIN_DB4              (40)
 #define CORE_PIN_DB5              (41)
 
@@ -104,13 +104,13 @@
 #define GPIO_DR_IPRIH_IN          GPIO8_DR
 #define GPIO_DR_PWO_L             GPIO8_DR
 #define GPIO_DR_IFETCH            GPIO7_DR
-#define GPIO_DR_T33               GPIO9_DR
+#define GPIO_DR_SCOPE_1           GPIO9_DR
 #define GPIO_DR_PHASE12           GPIO7_DR
 #define GPIO_DR_PHASE21           GPIO7_DR
 #define GPIO_DR_PWO_O             GPIO7_DR
 #define GPIO_DR_INTERRUPT         GPIO7_DR
 #define GPIO_DR_PHASE2            GPIO6_DR
-#define GPIO_DR_T39               GPIO6_DR
+#define GPIO_DR_SCOPE_2           GPIO6_DR
 #define GPIO_DR_DB4               GPIO6_DR
 #define GPIO_DR_DB5               GPIO6_DR
 
@@ -147,13 +147,13 @@
 #define BIT_POSITION_IPRIH_IN     (23)
 #define BIT_POSITION_PWO_L        (22)
 #define BIT_POSITION_IFETCH       (12)
-#define BIT_POSITION_T33          ( 7)
+#define BIT_POSITION_SCOPE_1      ( 7)
 #define BIT_POSITION_PHASE12      (29)
 #define BIT_POSITION_PHASE21      (28)
 #define BIT_POSITION_PWO_O        (18)
 #define BIT_POSITION_INTERRUPT    (19)
 #define BIT_POSITION_PHASE2       (28)
-#define BIT_POSITION_T39          (29)
+#define BIT_POSITION_SCOPE_2      (29)
 #define BIT_POSITION_DB4          (20)
 #define BIT_POSITION_DB5          (21)
 
@@ -190,13 +190,13 @@
 #define BIT_MASK_IPRIH_IN          (1 << BIT_POSITION_IPRIH_IN  )
 #define BIT_MASK_PWO_L             (1 << BIT_POSITION_PWO_L     )
 #define BIT_MASK_IFETCH            (1 << BIT_POSITION_IFETCH    )
-#define BIT_MASK_T33               (1 << BIT_POSITION_T33       )
+#define BIT_MASK_SCOPE_1           (1 << BIT_POSITION_SCOPE_1   )
 #define BIT_MASK_PHASE12           (1 << BIT_POSITION_PHASE12   )
 #define BIT_MASK_PHASE21           (1 << BIT_POSITION_PHASE21   )
 #define BIT_MASK_PWO_O             (1 << BIT_POSITION_PWO_O     )
 #define BIT_MASK_INTERRUPT         (1 << BIT_POSITION_INTERRUPT )
 #define BIT_MASK_PHASE2            (1 << BIT_POSITION_PHASE2    )
-#define BIT_MASK_T39               (1 << BIT_POSITION_T39       )
+#define BIT_MASK_SCOPE_2           (1 << BIT_POSITION_SCOPE_2   )
 #define BIT_MASK_DB4               (1 << BIT_POSITION_DB4       )
 #define BIT_MASK_DB5               (1 << BIT_POSITION_DB5       )
 
@@ -233,13 +233,13 @@
 #define GPIO_DR_SET_IPRIH_IN      GPIO8_DR_SET
 #define GPIO_DR_SET_PWO_L         GPIO8_DR_SET
 #define GPIO_DR_SET_IFETCH        GPIO7_DR_SET
-#define GPIO_DR_SET_T33           GPIO9_DR_SET
+#define GPIO_DR_SET_SCOPE_1       GPIO9_DR_SET
 #define GPIO_DR_SET_PHASE12       GPIO7_DR_SET
 #define GPIO_DR_SET_PHASE21       GPIO7_DR_SET
 #define GPIO_DR_SET_PWO_O         GPIO7_DR_SET
 #define GPIO_DR_SET_INTERRUPT     GPIO7_DR_SET
 #define GPIO_DR_SET_PHASE2        GPIO6_DR_SET
-#define GPIO_DR_SET_T39           GPIO6_DR_SET
+#define GPIO_DR_SET_SCOPE_2       GPIO6_DR_SET
 #define GPIO_DR_SET_DB4           GPIO6_DR_SET
 #define GPIO_DR_SET_DB5           GPIO6_DR_SET
 
@@ -276,13 +276,13 @@
 #define GPIO_DR_CLEAR_IPRIH_IN      GPIO8_DR_CLEAR
 #define GPIO_DR_CLEAR_PWO_L         GPIO8_DR_CLEAR
 #define GPIO_DR_CLEAR_IFETCH        GPIO7_DR_CLEAR
-#define GPIO_DR_CLEAR_T33           GPIO9_DR_CLEAR
+#define GPIO_DR_CLEAR_SCOPE_1       GPIO9_DR_CLEAR
 #define GPIO_DR_CLEAR_PHASE12       GPIO7_DR_CLEAR
 #define GPIO_DR_CLEAR_PHASE21       GPIO7_DR_CLEAR
 #define GPIO_DR_CLEAR_PWO_O         GPIO7_DR_CLEAR
 #define GPIO_DR_CLEAR_INTERRUPT     GPIO7_DR_CLEAR
 #define GPIO_DR_CLEAR_PHASE2        GPIO6_DR_CLEAR
-#define GPIO_DR_CLEAR_T39           GPIO6_DR_CLEAR
+#define GPIO_DR_CLEAR_SCOPE_2       GPIO6_DR_CLEAR
 #define GPIO_DR_CLEAR_DB4           GPIO6_DR_CLEAR
 #define GPIO_DR_CLEAR_DB5           GPIO6_DR_CLEAR
 
@@ -319,13 +319,13 @@
 #define GPIO_DR_TOGGLE_IPRIH_IN     GPIO8_DR_TOGGLE
 #define GPIO_DR_TOGGLE_PWO_L        GPIO8_DR_TOGGLE
 #define GPIO_DR_TOGGLE_IFETCH       GPIO7_DR_TOGGLE
-#define GPIO_DR_TOGGLE_T33          GPIO9_DR_TOGGLE
+#define GPIO_DR_TOGGLE_SCOPE_1      GPIO9_DR_TOGGLE
 #define GPIO_DR_TOGGLE_PHASE12      GPIO7_DR_TOGGLE
 #define GPIO_DR_TOGGLE_PHASE21      GPIO7_DR_TOGGLE
 #define GPIO_DR_TOGGLE_PWO_O        GPIO7_DR_TOGGLE
 #define GPIO_DR_TOGGLE_INTERRUPT    GPIO7_DR_TOGGLE
 #define GPIO_DR_TOGGLE_PHASE2       GPIO6_DR_TOGGLE
-#define GPIO_DR_TOGGLE_T39          GPIO6_DR_TOGGLE
+#define GPIO_DR_TOGGLE_SCOPE_2      GPIO6_DR_TOGGLE
 #define GPIO_DR_TOGGLE_DB4          GPIO6_DR_TOGGLE
 #define GPIO_DR_TOGGLE_DB5          GPIO6_DR_TOGGLE
 
@@ -362,13 +362,13 @@
 #define GPIO_DIRECTION_IPRIH_IN     GPIO8_GDIR
 #define GPIO_DIRECTION_PWO_L        GPIO8_GDIR
 #define GPIO_DIRECTION_IFETCH       GPIO7_GDIR
-#define GPIO_DIRECTION_T33          GPIO9_GDIR
+#define GPIO_DIRECTION_SCOPE_1      GPIO9_GDIR
 #define GPIO_DIRECTION_PHASE12      GPIO7_GDIR
 #define GPIO_DIRECTION_PHASE21      GPIO7_GDIR
 #define GPIO_DIRECTION_PWO_O        GPIO7_GDIR
 #define GPIO_DIRECTION_INTERRUPT    GPIO7_GDIR
 #define GPIO_DIRECTION_PHASE2       GPIO6_GDIR
-#define GPIO_DIRECTION_T39          GPIO6_GDIR
+#define GPIO_DIRECTION_SCOPE_2      GPIO6_GDIR
 #define GPIO_DIRECTION_DB4          GPIO6_GDIR
 #define GPIO_DIRECTION_DB5          GPIO6_GDIR
 
@@ -405,13 +405,13 @@
 #define GPIO_PAD_STATUS_REG_IPRIH_IN     GPIO8_PSR
 #define GPIO_PAD_STATUS_REG_PWO_L        GPIO8_PSR
 #define GPIO_PAD_STATUS_REG_IFETCH       GPIO7_PSR
-#define GPIO_PAD_STATUS_REG_T33          GPIO9_PSR
+#define GPIO_PAD_STATUS_REG_SCOPE_1      GPIO9_PSR
 #define GPIO_PAD_STATUS_REG_PHASE12      GPIO7_PSR
 #define GPIO_PAD_STATUS_REG_PHASE21      GPIO7_PSR
 #define GPIO_PAD_STATUS_REG_PWO_O        GPIO7_PSR
 #define GPIO_PAD_STATUS_REG_INTERRUPT    GPIO7_PSR
 #define GPIO_PAD_STATUS_REG_PHASE2       GPIO6_PSR
-#define GPIO_PAD_STATUS_REG_T39          GPIO6_PSR
+#define GPIO_PAD_STATUS_REG_SCOPE_2      GPIO6_PSR
 #define GPIO_PAD_STATUS_REG_DB4          GPIO6_PSR
 #define GPIO_PAD_STATUS_REG_DB5          GPIO6_PSR
 
@@ -448,13 +448,13 @@
 #define IOMUX_CTRL_IPRIH_IN             IOMUXC_SW_MUX_CTL_PAD_GPIO_EMC_37
 #define IOMUX_CTRL_PWO_L                IOMUXC_SW_MUX_CTL_PAD_GPIO_EMC_36
 #define IOMUX_CTRL_IFETCH               IOMUXC_SW_MUX_CTL_PAD_GPIO_B0_12
-#define IOMUX_CTRL_T33                  IOMUXC_SW_MUX_CTL_PAD_GPIO_EMC_07
+#define IOMUX_CTRL_SCOPE_1              IOMUXC_SW_MUX_CTL_PAD_GPIO_EMC_07
 #define IOMUX_CTRL_PHASE12              IOMUXC_SW_MUX_CTL_PAD_GPIO_B1_13
 #define IOMUX_CTRL_PHASE21              IOMUXC_SW_MUX_CTL_PAD_GPIO_B1_12
 #define IOMUX_CTRL_PWO_O                IOMUXC_SW_MUX_CTL_PAD_GPIO_B1_02
 #define IOMUX_CTRL_INTERRUPT            IOMUXC_SW_MUX_CTL_PAD_GPIO_B1_03
 #define IOMUX_CTRL_PHASE2               IOMUXC_SW_MUX_CTL_PAD_GPIO_AD_B1_12
-#define IOMUX_CTRL_T39                  IOMUXC_SW_MUX_CTL_PAD_GPIO_AD_B1_13
+#define IOMUX_CTRL_SCOPE_2              IOMUXC_SW_MUX_CTL_PAD_GPIO_AD_B1_13
 #define IOMUX_CTRL_DB4                  IOMUXC_SW_MUX_CTL_PAD_GPIO_AD_B1_04
 #define IOMUX_CTRL_DB5                  IOMUXC_SW_MUX_CTL_PAD_GPIO_AD_B1_05
 
@@ -537,24 +537,23 @@
 //  Use the TX5/RX5 on Teensy pins 20 1nd 21 as diag pins. Bit 26 is RXD on Pin 20
 //                                                         Bit 27 is TXD on Pin 21
 //
-//  Note that the RXD and TXD implied direction is from the ESP-32 point of view. So if we were doing serial,
-//  Bit 26 on pin 20 is actually teensy's TXD5
 
-#define SET_RXD                            (GPIO_DR_SET_RXD    = BIT_MASK_RXD)
-#define CLEAR_RXD                          (GPIO_DR_CLEAR_RXD  = BIT_MASK_RXD)
-#define TOGGLE_RXD                         (GPIO_DR_TOGGLE_RXD = BIT_MASK_RXD)
+//      RXD and TXD were used for diagnostics, but not any more
+//#define SET_RXD                            (GPIO_DR_SET_RXD    = BIT_MASK_RXD)
+//#define CLEAR_RXD                          (GPIO_DR_CLEAR_RXD  = BIT_MASK_RXD)
+//#define TOGGLE_RXD                         (GPIO_DR_TOGGLE_RXD = BIT_MASK_RXD)
+//
+//#define SET_TXD                            (GPIO_DR_SET_TXD    = BIT_MASK_TXD)
+//#define CLEAR_TXD                          (GPIO_DR_CLEAR_TXD  = BIT_MASK_TXD)
+//#define TOGGLE_TXD                         (GPIO_DR_TOGGLE_TXD = BIT_MASK_TXD)
 
-#define SET_TXD                            (GPIO_DR_SET_TXD    = BIT_MASK_TXD)
-#define CLEAR_TXD                          (GPIO_DR_CLEAR_TXD  = BIT_MASK_TXD)
-#define TOGGLE_TXD                         (GPIO_DR_TOGGLE_TXD = BIT_MASK_TXD)
+#define SET_SCOPE_1                        (GPIO_DR_SET_SCOPE_1    = BIT_MASK_SCOPE_1)
+#define CLEAR_SCOPE_1                      (GPIO_DR_CLEAR_SCOPE_1  = BIT_MASK_SCOPE_1)
+#define TOGGLE_SCOPE_1                     (GPIO_DR_TOGGLE_SCOPE_1 = BIT_MASK_SCOPE_1)
 
-#define SET_T33                            (GPIO_DR_SET_T33    = BIT_MASK_T33)
-#define CLEAR_T33                          (GPIO_DR_CLEAR_T33  = BIT_MASK_T33)
-#define TOGGLE_T33                         (GPIO_DR_TOGGLE_T33 = BIT_MASK_T33)
-
-#define SET_T39                            (GPIO_DR_SET_T39    = BIT_MASK_T39)
-#define CLEAR_T39                          (GPIO_DR_CLEAR_T39  = BIT_MASK_T39)
-#define TOGGLE_T39                         (GPIO_DR_TOGGLE_T39 = BIT_MASK_T39)
+#define SET_SCOPE_2                        (GPIO_DR_SET_SCOPE_2    = BIT_MASK_SCOPE_2)
+#define CLEAR_SCOPE_2                      (GPIO_DR_CLEAR_SCOPE_2  = BIT_MASK_SCOPE_2)
+#define TOGGLE_SCOPE_2                     (GPIO_DR_TOGGLE_SCOPE_2 = BIT_MASK_SCOPE_2)
 
 #define SET_LED                            (GPIO_DR_SET_T13    = BIT_MASK_T13)
 #define CLEAR_LED                          (GPIO_DR_CLEAR_T13  = BIT_MASK_T13)

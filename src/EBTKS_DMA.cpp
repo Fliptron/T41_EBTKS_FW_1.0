@@ -218,7 +218,7 @@ int32_t DMA_Read_Block(uint32_t DMA_Target_Address, uint8_t buffer[], uint32_t b
   CTRL_START_RD_TWEAK;                //  Extremely finely tuned so that the falling edge of /RD will arrive at pin 17 of 1MB1 130 ns after rising edge of Phi 1
                                       //  Tuned 2020_07_14                                                                  DMA_Tweak_5_for_RD_Falling_edge_2020_07_14_132_ns.png
   ASSERT_RD;                          //  /RDX goes low During Phi 1 High
-  //SET_T33;                            //  Trigger for timing /RD   matching CLEAR_T33 is in DMA_Read_Burst()
+  //SET_some_pin;                     //  Trigger for timing /RD   matching CLEAR_some_pin is in DMA_Read_Burst()   ////  some_pin not currently assigned
   WAIT_WHILE_PHI_1_HIGH;              
   OUTPUT_DATA_HOLD_TWEAK;             //  Hold time of High address byte after falling edge of Phi 1. The 1MB5 spec indicates a hold time of
                                       //  40 to 150 ns. We are going to target 100 ns, which will be tweaked here and similar code sequences                                 <<<<<<<<<<<<<<<<<<<<<<
@@ -332,7 +332,7 @@ static void DMA_Preamble(uint16_t DMA_Target_Address)
               }
               //  Phi 1 is now low (or worst case has just gone high)
               WAIT_WHILE_PHI_1_LOW;
-              //SET_T33;                             //  TIME_MARKER_1    From here to exit from this function, it takes 2.808            DMA_preamble_after_sync_Duration_2020_07_14_2808_ns.png
+              //SET_some_pin;                             //  TIME_MARKER_1    From here to exit from this function, it takes 2.808            DMA_preamble_after_sync_Duration_2020_07_14_2808_ns.png
               //
               //  Phi 1 has just gone high
               //  Allowing for assorted overhead, try and place the falling
@@ -344,7 +344,7 @@ static void DMA_Preamble(uint16_t DMA_Target_Address)
                                                     //  Tuned 2020_07_14                                                                  DMA_Tweak_1_for_LMA_Falling_edge_2020_07_14_127_ns.png
 /* [01] */    ASSERT_LMA;                           //  /LMAX goes low During Phi 1 High
               WAIT_WHILE_PHI_2_LOW;
-              //SET_T33;                              //  Trigger for timing the previous ASSERT_LMA and the next. A twofer
+              //SSET_some_pin;                              //  Trigger for timing the previous ASSERT_LMA and the next. A twofer
               WAIT_WHILE_PHI_2_HIGH;                //  After this we are just after Phi 2 falling.
                                                     //  Put the low byte of the address on the local bus,
                                                     //  change the direction of the bus buffer (which also assert /RC)
@@ -370,7 +370,7 @@ static void DMA_Preamble(uint16_t DMA_Target_Address)
                                                     //  this generates a 1.160 ns /LMA on the processor bus, measured at the 1MB1, pin 16
                                                     //  Tuned 2020_07_14                                                                  DMA_Tweak_3_for_LMA_Duration_1_2020_07_14_1160_ns.png
 /* [08] */    RELEASE_LMA;
-              //CLEAR_T33;                            //  Clear the trigger for timing LMA
+              //CLEAR_some_pin;                            //  Clear the trigger for timing LMA
               //
               //  Do the second LMA pulse, note the first byte of the address is still driven onto the bus, and /RC is still asserted
               //
@@ -401,7 +401,7 @@ static void DMA_Preamble(uint16_t DMA_Target_Address)
               CTRL_END_LMA_TWEAK_4;                 //  After going through the I/O bus cable and 1MA8, plus the delay of the above code,
                                                     //  Tuned 2020_07_14                                                                   DMA_Tweak_4_for_LMA_Duration_2_2020_07_14_1161_ns.png
 /* [15] */    RELEASE_LMA;
-              //CLEAR_T33;                          //  TIME_MARKER_2
+              //CLEAR_some_pin;                          //  TIME_MARKER_2
 
 //
 //  At the time we exit, the High byte of the address is still being sent,
@@ -443,7 +443,7 @@ static int32_t DMA_Read_Burst(uint8_t buffer[], uint32_t bytecount)
     //  The bus buffer/level translator U2 is enabled and set for reading the I/O bus (BUS_DIR_FROM_HP)
     //
     WAIT_WHILE_PHI_2_LOW;
-    //CLEAR_T33;                        //  Clear Trigger for timing
+    //CLEAR_some_pin;                        //  Clear Trigger for timing
     WAIT_WHILE_PHI_2_HIGH;              //  After this we are just after Phi 2 falling.
     CTRL_END_RD_TWEAK;                  //  After going through the I/O bus cable and 1MA8, plus the delay of the above code,
                                         //  this generates a nominal 1.160 ns /RD on the processor bus, sensed on 1MB1 pin 17
@@ -515,7 +515,7 @@ int32_t DMA_Write_Block(uint32_t DMA_Target_Address, uint8_t buffer[], uint32_t 
   CTRL_START_WR_TWEAK;           //  Extremely finely tuned so that the falling edge of /WR will arrive at pin 15 of 1MB1 130 ns after rising edge of Phi 1
                                  //  Tuned 2020_07_14                                                                  DMA_Tweak_7_for_WR_Falling_edge_2020_07_14_132_ns.png
   ASSERT_WR;                     //  /WRX goes low During Phi 1 High
-  //SET_T33;                       //  Trigger for timing /WR   matching CLEAR_T33 is in DMA_Write_Burst()
+  //SET_some_pin;                       //  Trigger for timing /WR   matching CLEAR_some_pin is in DMA_Write_Burst()
   WAIT_WHILE_PHI_1_HIGH;
   OUTPUT_DATA_HOLD_TWEAK;        //  Hold time of High address byte after falling edge of Phi 1. The 1MB5 spec indicates a hold time of
                                  //  40 to 150 ns. We are going to target 100 ns, which will be tweaked here and similar code sequences                                 <<<<<<<<<<<<<<<<<<<<<<
@@ -598,7 +598,7 @@ static int32_t DMA_Write_Burst(uint8_t buffer[], uint32_t bytecount)
     //
     WAIT_WHILE_PHI_2_LOW;
 
-    //CLEAR_T33;                        //  Clear Trigger for timing
+    //CLEAR_some_pin;                        //  Clear Trigger for timing
     DISABLE_BUS_BUFFER_U2;                       //  This is probably redundant
     SET_T4_BUS_TO_OUTPUT;                        //  Set Teensy's local bus to output (should be no race condition, since local and we just disabled the external Buffer/Translator)
                                                  //  Use clear/set regs to output the bits we want without touching any others - not sure if this is the fastest method

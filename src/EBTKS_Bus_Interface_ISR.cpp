@@ -217,16 +217,16 @@ bool getHP85RamExp(void)      //  Report true if HP85A RAM expansion is enabled
 //              delay prior to mid-cycle processing
 //  12/28/2020  Testing finished.
 //
-//  Note: There is the overhead of the SET/CLEAR_RXD , SET/CLEAR_TXD. The pair is about 10 ns
+//  Note: There is the overhead of the SET/CLEAR_SCOPE_1 , SET/CLEAR_SCOPE_2. The pair is about 10 ns
 //
 //  Test program during measurements is BOARD-T (12/17/2020 version)
 //
 //  Time point == TP  R == Rising  F == Falling          Duration/Delay   Scope     Description
 //                                                       Min ns  Max ns   Pic #     
-//  From Phi 1 rising to first instruction (SET_RXD)       52     73      001,002   Interrupt response time
+//  From Phi 1 rising to first instruction (SET_SCOPE_1)   52     73      001,002   Interrupt response time
 //  From Phi 1 rising to TP C (TP B suppressed)            76    102      003,004   Interrupt to start of processing
 //  From Phi 1 rising to TP C (TP A,B suppressed)          68     90      005,006   Interrupt to start of processing
-//  Delta of above 2 lines                                  8     12       -   -    Overhead for the SET_RXD at TP A
+//  Delta of above 2 lines                                  8     12       -   -    Overhead for the SET_SCOPE_1 at TP A
 //  TP A to TP B                                           25     25      007       Time to clear interrupts
 //  TP C to TP D   onPhi_1_Rise()                          72    187      008,009   Time to process Phi 1 Rising edge
 //  onPhi_1_Rise() execution time max-min                 115             010       Variability in processing time of Phi 1 Rising edge
@@ -254,8 +254,8 @@ bool getHP85RamExp(void)      //  Report true if HP85A RAM expansion is enabled
 //  Decided that for best safety margin, without getting too aggressive, I
 //  would adjust the TP G to TP H delay to make the earliest /RC (as seen
 //  on the bus) to be 50 ns before the rising edge of Phi 2. With delay of
-//  200 ns, -38 was seen, but that was with SET_RXD and CLEAR_RXD around
-//  it. So we will have to hunt a bit for the right value with RXD stuff
+//  200 ns, -38 was seen, but that was with SET_SCOPE_1 and CLEAR_SCOPE_1 around
+//  it. So we will have to hunt a bit for the right value with SCOPE_1 stuff
 //  only at A and J, and direct measurement of /RC so try 222, and verify.
 //  -54 and +162 looks pretty good.
 //                                  Update/Sigh: So it turns out that none     #### Tape Drive
@@ -290,11 +290,11 @@ bool getHP85RamExp(void)      //  Report true if HP85A RAM expansion is enabled
 //  and 380 after Phi 2 R:                                       148      031
 //
 //  REMEMBER: All these measurements have an overhead of about
-//            10 ns due to the SET_TXD & CLEAR_TXD . The way
+//            10 ns due to the SET_SCOPE_2 & CLEAR_SCOPE_2 . The way
 //            the measurements were made, this 10 ns overhead
-//            is non-accumulating (i.e. only 1 set of RXD
+//            is non-accumulating (i.e. only 1 set of SCOPE_1
 //            SET/CLEAR active at a time) . When we are not
-//            making these measurements. then RXD is used to
+//            making these measurements. Then SCOPE_1 is used to
 //            track the overall time for pinChange_isr()
 //            All of these numbers are with BOARD-T running
 //
@@ -439,31 +439,31 @@ FASTRUN void pinChange_isr(void)      //  This function is an ISR, keep it short
 
   uint32_t interrupts;
 
-  SET_RXD;        //  Time point A
+  SET_SCOPE_1;        //  Time point A
   interrupts = PHI_1_and_2_ISR;         //  This is a GPIO ISR Register
   PHI_1_and_2_ISR = interrupts;         //  This clears the interrupts
-  //CLEAR_RXD;    //  Time point B
+  //CLEAR_SCOPE_1;    //  Time point B
 
-  //SET_TXD;      //  Time point C
+  //SET_SCOPE_2;      //  Time point C
   onPhi_1_Rise();
-  //CLEAR_TXD;    //  Time point D
+  //CLEAR_SCOPE_2;    //  Time point D
   WAIT_WHILE_PHI_1_HIGH;          //  While Phi_1 is high, just hang around, not worth doing a return from interrupt
                                   //  and then having an interrupt on the falling edge.
                                   //  Note that if onPhi_1_Rise() takes more than 200 ns minus the time it took
                                   //  to get to the call to onPhi_1_Rise(), the call to onPhi_1_Fall() will occur
                                   //  after the edge by that excess time. This does occur.
 
-  //SET_RXD;      //  Time point E
+  //SET_SCOPE_1;      //  Time point E
   onPhi_1_Fall();
-  //CLEAR_RXD;    //  Time point F
+  //CLEAR_SCOPE_1;    //  Time point F
 
-  //SET_TXD;      //  Time point G
+  //SET_SCOPE_2;      //  Time point G
   EBTKS_delay_ns(222);
-  //CLEAR_TXD;    //  Time point H
+  //CLEAR_SCOPE_2;    //  Time point H
 
-  //SET_RXD;      //  Time point I
+  //SET_SCOPE_1;      //  Time point I
   mid_cycle_processing();
-  CLEAR_RXD;      //  Time point J
+  CLEAR_SCOPE_1;      //  Time point J
 
 }
 
@@ -501,16 +501,16 @@ inline void onPhi_1_Rise(void)                  //  This function is running wit
 {
   uint32_t data_from_IO_bus;
 
-  //SET_TXD;        //  Time point AA
+  //SET_SCOPE_2;        //  Time point AA
   data_from_IO_bus = (GPIO_PAD_STATUS_REG_DB0 >> BIT_POSITION_DB0) & 0x000000FFU;       //  Requires that data bits are contiguous and in the right order
-  //CLEAR_TXD;      //  Time point AB
+  //CLEAR_SCOPE_2;      //  Time point AB
 
-  //SET_TXD;        //  Time point AB
+  //SET_SCOPE_2;        //  Time point AB
   if (intrState)
     {
       ASSERT_INTPRI;                            //  If we have asserted /IRL, assert our priority in the chain
     }
-  //CLEAR_TXD;      //  Time point AC
+  //CLEAR_SCOPE_2;      //  Time point AC
 
 //
 //  Read the local data bus. Regardless of whether we are idle, providing data, or receiving data,
@@ -546,15 +546,15 @@ inline void onPhi_1_Rise(void)                  //  This function is running wit
 //  such as recognizing that the HP85 is in the IDLE state
 //
 
-  //SET_TXD;        //  Time point AC
+  //SET_SCOPE_2;        //  Time point AC
   Logic_Analyzer_main_sample =  data_from_IO_bus |                            //  See above for constraints for this to work.
                                 (addReg << 8)    |                            //  because we are very fast, it is ok to take
                                 Logic_Analyzer_current_bus_cycle_state_LA;    //  data on Phi 1 Rising edge, unlike HP-85 that    Logic_Analyzer_current_bus_cycle_state_LA is setup in the Phi 2 code
                                                                               //  uses the falling edge.
   Logic_Analyzer_aux_sample  =  getRselec() & 0x000000FF;                     //  Get the Bank switched ROM select code
-  //CLEAR_TXD;      //  Time point AD
+  //CLEAR_SCOPE_2;      //  Time point AD
 
-  //SET_TXD;        //  Time point AD
+  //SET_SCOPE_2;        //  Time point AD
   if (Logic_Analyzer_State == ANALYZER_ACQUIRING)
   {
     //
@@ -569,10 +569,10 @@ inline void onPhi_1_Rise(void)                  //  This function is running wit
       if (Logic_Analyzer_Valid_Samples >= Logic_Analyzer_Pre_Trigger_Samples)
       { //  Triggering is allowed
 
-        //  Enable this to toggle TXD on a reference to HEYEBTKS by the HP85
+        //  Enable this to toggle SCOPE_2 on a reference to HEYEBTKS by the HP85
         // if (((Logic_Analyzer_main_sample) & 0x00FFFF00) == (HEYEBTKS << 8))
         // {
-        //   TOGGLE_TXD;
+        //   TOGGLE_SCOPE_2;
         // }
 
         if ( ((Logic_Analyzer_main_sample & Logic_Analyzer_Trigger_Mask_1) == Logic_Analyzer_Trigger_Value_1) &&
@@ -582,7 +582,7 @@ inline void onPhi_1_Rise(void)                  //  This function is running wit
           {
             Logic_Analyzer_Triggered = true;
             Logic_Analyzer_Index_of_Trigger = Logic_Analyzer_Data_index;    //  Record the buffer index at time of trigger
-            //  SET_TXD;                                                    //  Trigger an external logic analyzer
+            //  SET_SCOPE_2;                                                    //  Trigger an external logic analyzer
           }
         }
       }
@@ -602,22 +602,22 @@ inline void onPhi_1_Rise(void)                  //  This function is running wit
       if (--Logic_Analyzer_Samples_Till_Done == 0)
       {
         Logic_Analyzer_State = ANALYZER_ACQUISITION_DONE;
-        //  CLEAR_TXD;                                                    //  End of Trigger of an external logic analyzer
+        //  CLEAR_SCOPE_2;                                                    //  End of Trigger of an external logic analyzer
       }
     }
   }
-  //CLEAR_TXD;      //  Time point AE
+  //CLEAR_SCOPE_2;      //  Time point AE
 
 //
 //  If this is a Write cycle to EBTKS, this is where it is handled
 //
 
-  //SET_TXD;        //  Time point AE
+  //SET_SCOPE_2;        //  Time point AE
   if (schedule_write)
   {
     onWriteData(addReg, data_from_IO_bus);                      //  Need to document max time
   }
-  //CLEAR_TXD;      //  Time point AF
+  //CLEAR_SCOPE_2;      //  Time point AF
 }
 
 //
@@ -627,7 +627,7 @@ inline void onPhi_1_Rise(void)                  //  This function is running wit
 //  Depending on the execution time of onPhi_1_Rise(), this may
 //  start later than the name implies (with jitter)
 //
-//  This function has been timed (see commented SET_TXD/CLEAR_TXD) and it takes from ?? ns to ?? ns to execute    ##########  timing neeeds to be redone
+//  This function has been timed (see commented SET_SCOPE_2/CLEAR_SCOPE_2) and it takes from ?? ns to ?? ns to execute    ##########  timing neeeds to be redone
 //  The earliest start of this function is ?? ns after the falling edge of Phi 1
 //  The latest start is ?? ns after the falling edge of Phi 1
 //  The earliest end of this function is ?? ns after the falling edge of Phi 1
@@ -640,11 +640,11 @@ inline void onPhi_1_Fall(void)
   uint32_t data_from_IO_bus;
 
   //  ### this is duplicate code to onPhi_1_Rise() , using local variables. Might be more efficient due to local variable in a reg vs a shared static var.
-  //SET_TXD;      //  Time point BA
+  //SET_SCOPE_2;      //  Time point BA
   data_from_IO_bus = (GPIO_PAD_STATUS_REG_DB0 >> BIT_POSITION_DB0) & 0x000000FFU;       //  Requires that data bits are contiguous and in the right order
-  //CLEAR_TXD;      //  Time point BB
+  //CLEAR_SCOPE_2;      //  Time point BB
 
-  //SET_TXD;      //  Time point BB
+  //SET_SCOPE_2;      //  Time point BB
   if (HP85_Read_Us)                     //  If a processor read was getting data from this board, we just finished doing it. This was set in mid_cycle_processing()
   {
                                         //  According to the 1MB5 specification, data should be held for a minimum of 40 ns
@@ -654,13 +654,13 @@ inline void onPhi_1_Fall(void)
     SET_T4_BUS_TO_INPUT;                //  Set data bus to input on Teensy
     BUS_DIR_FROM_HP;                    //  Change direction of bus buffer/level translator to inbound from I/O bus
                                         //  This also de-asserts /RC  (it goes High)
-    //CLEAR_TXD;                          //  Use this to track /RC timing
+    //CLEAR_SCOPE_2;                          //  Use this to track /RC timing
     HP85_Read_Us = false;               //  Doneski
   }
-  //CLEAR_TXD;      //  Time point BC
+  //CLEAR_SCOPE_2;      //  Time point BC
 
 #if ENABLE_EMS_MEMORY
-  //SET_TXD;      //  Time point BC
+  //SET_SCOPE_2;      //  Time point BC
   if (schedule_read || schedule_write)
   {
     cycleNdx++;                         //  Keep track of the bus cycle count
@@ -677,21 +677,21 @@ inline void onPhi_1_Fall(void)
     }
     m_emc_mult = data_from_IO_bus & 1u;         //  Set if multiple byte instruction
   }
-  //CLEAR_TXD;      //  Time point BD
+  //CLEAR_SCOPE_2;      //  Time point BD
 #endif
 
-  //SET_TXD;      //  Time point BD
+  //SET_SCOPE_2;      //  Time point BD
   if (schedule_address_load)            //  Load the address registers. Current data_from_IO_bus is the second byte of
                                         //  the address, top 8 bits. Already got the low 8 bits in pending_address_low_byte
   {
     addReg  = data_from_IO_bus << 8;    //  Rely on zero fill for bottom 8 bits
     addReg |= pending_address_low_byte; //  Should always be only bottom 8 bits
-    //CLEAR_TXD;      //  Time point BE
+    //CLEAR_SCOPE_2;      //  Time point BE
     return;                             //  Early exit.
   }
-  //CLEAR_TXD;      //  Time point BE
+  //CLEAR_SCOPE_2;      //  Time point BE
 
-  //SET_TXD;      //  Time point BE
+  //SET_SCOPE_2;      //  Time point BE
   if (schedule_address_increment)       //  Increment address register. Happens for Read and Write cycles, unless address is being loaded, or address register is I/O space
   {
     addReg++;
@@ -701,11 +701,11 @@ inline void onPhi_1_Fall(void)
                                         //  PMF to RB 12/03/2020 at 2:08 am
                                         //    "You know, if we started the Phi 2 processing on the falling edge of Phi 12, a lot of our timing issues would disappear. "
   }
-  //CLEAR_TXD;      //  Time point BF
+  //CLEAR_SCOPE_2;      //  Time point BF
 
-  //SET_TXD;      //  Time point BF
+  //SET_SCOPE_2;      //  Time point BF
   pending_address_low_byte = data_from_IO_bus;    // Load this every cycle, in case we need it, avoiding an if ()
-  //CLEAR_TXD;      //  Time point BG
+  //CLEAR_SCOPE_2;      //  Time point BG
 
 }
 
@@ -745,7 +745,7 @@ inline void mid_cycle_processing(void)                             //  This func
 //
 //  This is Russell's code with some minor edits.
 //
-  //SET_TXD;        //  Time point CA
+  //SET_SCOPE_2;        //  Time point CA
   bus_cycle_info = GPIO_PAD_STATUS_REG_LMA;                   //  All 3 control bits are in the same GPIO register
   lma = !(bus_cycle_info & BIT_MASK_LMA);                     //  Invert the bits so they are active high
   rd  = !(bus_cycle_info & BIT_MASK_RD );
@@ -754,10 +754,10 @@ inline void mid_cycle_processing(void)                             //  This func
   schedule_write = wr && !rd;
   DMA_Acknowledge = wr && rd && !lma;                         //  Decode DMA acknowlege state
   Interrupt_Acknowledge = wr && rd && lma;                    //  Decode interrupt acknowlege state
-  //CLEAR_TXD;      //  Time point CB
+  //CLEAR_SCOPE_2;      //  Time point CB
 
 #if ENABLE_EMS_MEMORY
-  //SET_TXD;        //  Time point CB
+  //SET_SCOPE_2;        //  Time point CB
   ifetch = !(GPIO_PAD_STATUS_REG_IFETCH & BIT_MASK_IFETCH);   //  Grab the instruction fetch bit. Only exists on HP85B, 86 and 87
                                                               //  Used for tracking instructions for the extended memory controller
   //if ((rd != schedule_read) || (wr != schedule_write))      //  Reset on any change of read or write
@@ -774,29 +774,29 @@ inline void mid_cycle_processing(void)                             //  This func
   {
     m_emc_lmard = false;
   }
-  //CLEAR_TXD;      //  Time point CC
+  //CLEAR_SCOPE_2;      //  Time point CC
 #endif
 
-  //SET_TXD;        //  Time point CC
+  //SET_SCOPE_2;        //  Time point CC
   schedule_address_increment = ((addReg >> 8) != 0xff) &&
                                 !(!schedule_address_load & delayed_lma) &&
                                 (schedule_read | schedule_write);         //  Only increment addr on a non i/o address
   schedule_address_load = !schedule_address_load && delayed_lma;          //  Load address reg flag
   delayed_lma = lma;                                                      //  Delayed lma
-  //CLEAR_TXD;      //  Time point CD
+  //CLEAR_SCOPE_2;      //  Time point CD
 
-  //SET_TXD;        //  Time point CD
+  //SET_SCOPE_2;        //  Time point CD
   if (schedule_read)
   {           //  Test if address is in our range and if it is , return true and set readData to the data to be sent to the bus
     HP85_Read_Us = onReadData();
-    //CLEAR_TXD;    //  Time point DB
-    //CLEAR_TXD;    //  Time point DF
+    //CLEAR_SCOPE_2;    //  Time point DB
+    //CLEAR_SCOPE_2;    //  Time point DF
   }
-  //CLEAR_TXD;      //  Time point CE
+  //CLEAR_SCOPE_2;      //  Time point CE
 
 //  if (HP85_Read_Us && just_once)
 //  {
-//    SET_TXD;
+//    SET_SCOPE_2;
 //    Serial.printf("The address register is %06o\n", addReg);
 //    just_once = 0;
 //  }
@@ -804,7 +804,7 @@ inline void mid_cycle_processing(void)                             //  This func
 //  NOT Tested yet
 //
 
-  //SET_TXD;        //  Time point CE
+  //SET_SCOPE_2;        //  Time point CE
   switch(intrState)
   {
     case 0:                                         //  Test for a request or see if there is an intack
@@ -838,7 +838,7 @@ inline void mid_cycle_processing(void)                             //  This func
       }
       break;
   }
-  //CLEAR_TXD;      //  Time point CF
+  //CLEAR_SCOPE_2;      //  Time point CF
 
   //
   //  For a Read Cycle (I/O bus to CPU on main board), this is where we turn the data bus around
@@ -849,7 +849,7 @@ inline void mid_cycle_processing(void)                             //  This func
   //  which is when the data is read. Actually latched by Phi 1, so another 200 ns margin.
   //
 
-  //SET_TXD;        //  Time point CF
+  //SET_SCOPE_2;        //  Time point CF
   if (HP85_Read_Us)
   {
     //
@@ -863,9 +863,9 @@ inline void mid_cycle_processing(void)                             //  This func
     //          of the above 375 ns, then it drive the actual address, starting 120 ns before Phi 1
     //          rising, and continuing for 400 ns, and ending at 80 ns after Phi 1 falling edge (i.e. 80 ns hold)
     //
-    //  SET_TXD;
+    //  SET_SCOPE_2;
     //  EBTKS_delay_ns(100);              //  This is used as a trigger, and delays us driving the bus for 100 ns,
-    //  CLEAR_TXD;                        //  which we believe is a "don't care" due to long setup time
+    //  CLEAR_SCOPE_2;                        //  which we believe is a "don't care" due to long setup time
     //
 
     //  Set bus to output data
@@ -873,7 +873,7 @@ inline void mid_cycle_processing(void)                             //  This func
     DISABLE_BUS_BUFFER_U2;
     BUS_DIR_TO_HP;                        //  DIR high  !!! may need to delay for 1MA8 to let go of driving bus: See above diagnostic test. Confirmed
                                           //  that starting to drive the data bus (with /RC) at Phi 2 is not going to cause contention
-    //SET_TXD;                            //  Use this to track /RC timing
+    //SET_SCOPE_2;                            //  Use this to track /RC timing
 
     SET_T4_BUS_TO_OUTPUT;                 //  set data bus to output      (should be no race condition, since local)
 
@@ -888,16 +888,16 @@ inline void mid_cycle_processing(void)                             //  This func
 
     ENABLE_BUS_BUFFER_U2; // !OE low.
   }
-  //CLEAR_TXD;      //  Time point CG
+  //CLEAR_SCOPE_2;      //  Time point CG
 
-  //SET_TXD;        //  Time point CG
+  //SET_SCOPE_2;        //  Time point CG
   Logic_Analyzer_current_bus_cycle_state_LA = bus_cycle_info  &           //  Yes, this is supposed to be a single &
                                               (BIT_MASK_WR | BIT_MASK_RD | BIT_MASK_LMA);      //  Require bus cycle state to be in bits 24, 25, and 26 of GPIO register
 
   Logic_Analyzer_current_bus_cycle_state_LA |=  ((GPIO_PAD_STATUS_REG_T04    & BIT_MASK_T04)    << (29 - BIT_POSITION_T04   )) |    //  T04 is monitoring bus /IRLX
                                                 ((GPIO_PAD_STATUS_REG_T05    & BIT_MASK_T05)    << (28 - BIT_POSITION_T05   )) |    //  T05 is monitoring bus /HALTX
                                                 ((GPIO_PAD_STATUS_REG_IFETCH & BIT_MASK_IFETCH) << (30 - BIT_POSITION_IFETCH)) ;
-  //CLEAR_TXD;      //  Time point CH
+  //CLEAR_SCOPE_2;      //  Time point CH
 
   //
   //  ALL DMA requests are handled here
@@ -905,7 +905,7 @@ inline void mid_cycle_processing(void)                             //  This func
   //                                                                    500 ns after the Rising edge of Phi2. (implies at least 300 ns before Phi 1 rise)
   //
 
-  //SET_TXD;        //  Time point CH
+  //SET_SCOPE_2;        //  Time point CH
   if (DMA_Request)
   {
     //WAIT_WHILE_PHI_2_HIGH;              //  While Phi_2 is high, just hang around
@@ -916,13 +916,13 @@ inline void mid_cycle_processing(void)                             //  This func
     DMA_Request = false;                  //  Only request once
     DMA_has_been_Requested = true;        //  Record that a request has occured on the bus, but has not yet been acknowledged
   }
-  //CLEAR_TXD;      //  Time point CI
+  //CLEAR_SCOPE_2;      //  Time point CI
 
 //
 //  ##### In the following section, the are multiple references to interrupts coming from both Phi 1 and Phi 2 rising edges.
 //        As of 12/8/2020 it is only Phi 1. Old comments are retained for now in case we need to go back to the old scheme
 //
-  //SET_TXD;        //  Time point CI
+  //SET_SCOPE_2;        //  Time point CI
   if (DMA_Acknowledge && DMA_has_been_Requested)
   {
     DMA_has_been_Requested = false;       //  Bus DMA request is no longer pending
@@ -937,12 +937,12 @@ inline void mid_cycle_processing(void)                             //  This func
     PHI_1_and_2_IMR = 0;                  //  Block any interrupts while DMA is happening. This assumes that the ONLY
                                           //  interrupts that can happen in this GPIO group is Phi 1 and Phi 2 rising edge
     PHI_1_and_2_ISR = PHI_1_and_2_ISR;    //  Clear any set bits (should be none)
-    //TOGGLE_TXD;
+    //TOGGLE_SCOPE_2;
     NVIC_CLEAR_PENDING(IRQ_GPIO6789);     //  Even though we just masked GPIO interrupts, the NVIC can still
                                           //  have pending interrupts. It shouldn't at this point, but clear
                                           //  them, just to be safe. We will need to do this again, just
                                           //  before ending the DMA activity.
-    //TOGGLE_TXD;
+    //TOGGLE_SCOPE_2;
     //
     //  Don't rush to get started, let the Acknowledge cycle finish.
     //  The Acknowledge starts during Phi 1, but here we are in the
@@ -962,7 +962,7 @@ inline void mid_cycle_processing(void)                             //  This func
     RELEASE_LMA;            //  get them in the right state before turning the Teensy pins  around
     RELEASE_RD;
     RELEASE_WR;
-    //TOGGLE_TXD;
+    //TOGGLE_SCOPE_2;
     GPIO_DIRECTION_LMA |= (BIT_MASK_LMA | BIT_MASK_RD | BIT_MASK_WR);     //  Switch LMA, RD, and WR to Output
                                                                           //  Assumes/requires that LMA, RD, and WR
                                                                           //  are in the same GPIO group.
@@ -990,7 +990,7 @@ inline void mid_cycle_processing(void)                             //  This func
 
     DMA_Acknowledge = false;
     DMA_Active = true;
-    //TOGGLE_TXD;
+    //TOGGLE_SCOPE_2;
   //
   //  We now own the bus, the 3 control lines are high, HALT is still asserted, and interrupts are off, we are driving
   //  the data bus with 0xFF
@@ -1010,7 +1010,7 @@ inline void mid_cycle_processing(void)                             //  This func
   //
 
   }
-  //CLEAR_TXD;      //  Time point CJ
+  //CLEAR_SCOPE_2;      //  Time point CJ
 
   //EBTKS_delay_ns(120);    //  We seem to be exiting so fast that the external logic analyzer is missing this ISR
                             //  Upgraded logic analyzer. No more problem
@@ -1040,7 +1040,7 @@ inline bool onReadData(void)                  //  This function is running withi
   //    return false
   //
 
-  //SET_TXD;        //  Time point DA
+  //SET_SCOPE_2;        //  Time point DA
   if ((addReg & 0xE000) == ROM_PAGE) // ROM page 0x6000..0x7FFF   (8 KB)
   {
     //
@@ -1049,9 +1049,9 @@ inline bool onReadData(void)                  //  This function is running withi
     //
     return readBankRom(addReg & (ROM_PAGE_SIZE - 1));
   }
-  //CLEAR_TXD;      //  Time point DB, if test false
+  //CLEAR_SCOPE_2;      //  Time point DB, if test false
 
-  //SET_TXD;        //  Time point DC
+  //SET_SCOPE_2;        //  Time point DC
   if (enRam16k)
   {
     //
@@ -1060,17 +1060,17 @@ inline bool onReadData(void)                  //  This function is running withi
     if ((addReg >= HP85A_16K_RAM_module_base_addr) && (addReg < IO_ADDR))
     {
       readData = HP85A_16K_RAM_module[addReg & 0x3FFF];
-      //CLEAR_TXD;      //  Time point DD, if test true, true
+      //CLEAR_SCOPE_2;      //  Time point DD, if test true, true
       return true;
     }
-    //CLEAR_TXD;      //  Time point DD, if test true, false
+    //CLEAR_SCOPE_2;      //  Time point DD, if test true, false
   }
-  //CLEAR_TXD;      //  Time point DD, if test false
+  //CLEAR_SCOPE_2;      //  Time point DD, if test false
 
   //
   //  Process I/O reads (data from I/O bus to the CPU)
   //
-  //SET_TXD;        //  Time point DE
+  //SET_SCOPE_2;        //  Time point DE
   if ((addReg & 0xFF00U) == 0xFF00U)
   {
     return (ioReadFuncs[addReg & 0x00FFU])();  // Call I/O read handler
@@ -1316,23 +1316,23 @@ void emc_w(uint8_t val)
 }
 #endif
 //
-//  If you need TXD and RXD diag pins in non-EBTKS code (like the SdFat library), then
+//  If you need SCOPE_2 and SCOPE_1 diag pins in non-EBTKS code (like the SdFat library), then
 //  the following should be helpful
 //
-//  #define GPIO_DR_SET_TXD                     GPIO7_DR_SET
-//  #define GPIO_DR_CLEAR_TXD                   GPIO7_DR_CLEAR
-//  #define GPIO_DR_TOGGLE_TXD                  GPIO7_DR_TOGGLE
-//  #define BIT_POSITION_TXD                    (17)
-//  #define BIT_MASK_TXD                        (1 << BIT_POSITION_TXD       )
-//  #define SET_TXD                             (GPIO_DR_SET_TXD    = BIT_MASK_TXD)
-//  #define CLEAR_TXD                           (GPIO_DR_CLEAR_TXD  = BIT_MASK_TXD)
-//  #define TOGGLE_TXD                          (GPIO_DR_TOGGLE_TXD = BIT_MASK_TXD)
+//  #define GPIO_DR_SET_SCOPE_2                     GPIO6_DR_SET
+//  #define GPIO_DR_CLEAR_SCOPE_2                   GPIO6_DR_CLEAR
+//  #define GPIO_DR_TOGGLE_SCOPE_2                  GPIO6_DR_TOGGLE
+//  #define BIT_POSITION_SCOPE_2                    (29)
+//  #define BIT_MASK_SCOPE_2                        (1 << BIT_POSITION_SCOPE_2       )
+//  #define SET_SCOPE_2                             (GPIO_DR_SET_SCOPE_2    = BIT_MASK_SCOPE_2)
+//  #define CLEAR_SCOPE_2                           (GPIO_DR_CLEAR_SCOPE_2  = BIT_MASK_SCOPE_2)
+//  #define TOGGLE_SCOPE_2                          (GPIO_DR_TOGGLE_SCOPE_2 = BIT_MASK_SCOPE_2)
 //
-//  #define GPIO_DR_SET_RXD                     GPIO7_DR_SET
-//  #define GPIO_DR_CLEAR_RXD                   GPIO7_DR_CLEAR
-//  #define GPIO_DR_TOGGLE_RXD                  GPIO7_DR_TOGGLE
-//  #define BIT_POSITION_RXD                    (16)
-//  #define BIT_MASK_RXD                        (1 << BIT_POSITION_RXD       )
-//  #define SET_RXD                             (GPIO_DR_SET_RXD    = BIT_MASK_RXD)
-//  #define CLEAR_RXD                           (GPIO_DR_CLEAR_RXD  = BIT_MASK_RXD)
-//  #define TOGGLE_RXD                          (GPIO_DR_TOGGLE_RXD = BIT_MASK_RXD)
+//  #define GPIO_DR_SET_SCOPE_1                     GPIO9_DR_SET
+//  #define GPIO_DR_CLEAR_SCOPE_1                   GPIO9_DR_CLEAR
+//  #define GPIO_DR_TOGGLE_SCOPE_1                  GPIO9_DR_TOGGLE
+//  #define BIT_POSITION_SCOPE_1                    (7)
+//  #define BIT_MASK_SCOPE_1                        (1 << BIT_POSITION_SCOPE_1       )
+//  #define SET_SCOPE_1                             (GPIO_DR_SET_SCOPE_1    = BIT_MASK_SCOPE_1)
+//  #define CLEAR_SCOPE_1                           (GPIO_DR_CLEAR_SCOPE_1  = BIT_MASK_SCOPE_1)
+//  #define TOGGLE_SCOPE_1                          (GPIO_DR_TOGGLE_SCOPE_1 = BIT_MASK_SCOPE_1)
