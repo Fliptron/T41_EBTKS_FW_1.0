@@ -339,9 +339,10 @@ Changes:
     with the name of the LIF image. Now also correctly displays the
     virtual printer and tape assignment.
 -   FYI: CygWin wc of include directory:  3456  12788 130393
-                      src     directory: 11925  59107 491150
-                      --------------------------------------
-                      total              15381 lines of code and comments
+>                      src     directory: 11925  59107 491150
+>                      --------------------------------------
+>                      total              15381 lines of code and comments
+
 -   Added some diagnostics to EBTKS_LED.h to try and figure out why
     sending 0,0,0 doesn't turn the LED off. TLA5201 shows that all bytes
     sent have the LSB set regardless of the value (tested with 0 and 170
@@ -351,7 +352,9 @@ Changes:
     and debug FASTLED.
 -   Spell check this file
 
-## Commit \#96 02/??/2020
+## Commit \#96 02/03/2020
 
+Changes:
+-   Fix display of table in commit 95
 
 
