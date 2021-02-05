@@ -190,6 +190,14 @@ void Simple_Graphics_Test(void);
 
 bool is_HP85_idle(void);
 
+#if (ENABLE_FASTLED_VERSION == 0)
+void WS2812_init(void);
+void setLedColor(uint8_t led, uint8_t r, uint8_t g, uint8_t b);
+void WS2812_update(void);
+#endif
+
+
+
 int int_power(int base, int exp);
 
 //

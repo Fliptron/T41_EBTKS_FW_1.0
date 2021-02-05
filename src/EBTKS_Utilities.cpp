@@ -1575,6 +1575,170 @@ int int_power(int base, int exp)
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+//
+//  Philip's replacement of the FASTLED library
+//
+#if (ENABLE_FASTLED_VERSION == 0)
+uint8_t   led_data[6];
+
+#define WS2812_0_ON_VAL          300
+#define WS2812_0_OFF_VAL        1300
+#define WS2812_1_ON_VAL         1300
+#define WS2812_1_OFF_VAL         300
+#define WS2812_FRAME_OFF_VAL  300000
+
+#define SET_NEOPIX              (GPIO_DR_SET_NEOPIX_TSY    = BIT_MASK_NEOPIX_TSY)
+#define CLEAR_NEOPIX            (GPIO_DR_CLEAR_NEOPIX_TSY  = BIT_MASK_NEOPIX_TSY)
+#define TOGGLE_NEOPIX           (GPIO_DR_TOGGLE_NEOPIX_TSY = BIT_MASK_NEOPIX_TSY)
+
+void WS2812_init(void)
+{
+  led_data[0] = 0;    //  LED 1 G     //  GRB is the data sequence that the WS2812B/E require , nor RGB
+  led_data[1] = 0;    //  LED 1 R
+  led_data[2] = 0;    //  LED 1 B
+  led_data[3] = 0;    //  LED 2 G
+  led_data[4] = 0;    //  LED 2 R
+  led_data[5] = 0;    //  LED 2 B
+  WS2812_update();
+}
+
+void setLedColor(uint8_t led, uint8_t r, uint8_t g, uint8_t b)
+{
+  if (led == 0)
+  {
+    led_data[1] = r;   //  Red
+    led_data[0] = g;   //  Green
+    led_data[2] = b;   //  Blue
+  }
+  else
+  {
+    led_data[4] = r;   //  Red
+    led_data[3] = g;   //  Green
+    led_data[5] = b;   //  Blue
+  }
+}
+
+void WS2812_update(void)
+{
+  int     i,j;
+
+  assert_DMA_Request();
+  while(!DMA_Active){}     // Wait for acknowledgment, and Bus ownership
+
+  for(i = 0 ; i < 6 ; i++)
+  {
+    j = 8;
+    while(j)
+    {
+      j--;
+      SET_NEOPIX;
+      if(led_data[i] & (1 << j))      //  pick off the bits, starting at the MSB
+      {   //  Selected bit is a 1
+        EBTKS_delay_ns(WS2812_1_ON_VAL);
+        CLEAR_NEOPIX;
+        EBTKS_delay_ns(WS2812_1_OFF_VAL);
+      }
+      else
+      {   //  Selected bit is a 0
+        EBTKS_delay_ns(WS2812_0_ON_VAL);
+        CLEAR_NEOPIX;
+        EBTKS_delay_ns(WS2812_0_OFF_VAL);
+      }
+    }
+  }
+  EBTKS_delay_ns(WS2812_FRAME_OFF_VAL);
+
+  release_DMA_request();
+  while(DMA_Active){}       // Wait for release
+}
+
+//    Memory usage analysis of FASTLED library (that needs inverted data, and has LSB of all data stuck high)
+//    versus the above purpose built code for EBTKS
+//    
+//    TLDR: FASTLED library is 7 KB and doesn't work
+//          This code is 320 bytes and works great.
+//
+//    ------------------
+//    FASTLED Library memory usage
+//    
+//    section                size         addr
+//    .text.progmem          6960   1610612736
+//    .text.itcm           125088            0
+//    .fini                     4       125088
+//    .ARM.exidx                8       125092
+//    .text.itcm.padding     5972       125100
+//    .data                 21808    536870912
+//    .bss                  73104    536892720
+//    .bss.dma             178912    538968064
+//    .bss.extram          135990   1879048192
+//    .debug_frame           5884            0
+//    .ARM.attributes          46            0
+//    .comment                110            0
+//    Total                553886
+//    
+//    ------------------
+//    
+//    Adding a simple #define to EBTKS_Config.h
+//    
+//    section                size         addr
+//    .text.progmem          6960   1610612736
+//    .text.itcm           125088            0
+//    .fini                     4       125088
+//    .ARM.exidx                8       125092
+//    .text.itcm.padding     5972       125100
+//    .data                 21792    536870912  was 21808 so -16
+//    .bss                  73120    536892704  was 73104 so +16
+//    .bss.dma             178912    538968064
+//    .bss.extram          135990   1879048192
+//    .debug_frame           5884            0
+//    .ARM.attributes          46            0
+//    .comment                110            0
+//    Total                553886               same
+//    
+//    ------------------
+//    
+//    Disable FASTLED code (including the small amount of code that references it)
+//    
+//    section                size         addr
+//    .text.progmem          6960   1610612736
+//    .text.itcm           117984            0  -7104
+//    .fini                     4       117984
+//    .ARM.exidx                8       117988
+//    .text.itcm.padding    13076       117996  +7104
+//    .data                 21776    536870912  -16
+//    .bss                  73136    536892688  +16
+//    .bss.dma             178912    538968064
+//    .bss.extram          135990   1879048192
+//    .debug_frame           5884            0
+//    .ARM.attributes          46            0
+//    .comment                110            0
+//    Total                553886
+//    
+//    so FASTLED library is approximately 7 KB
+//    
+//    ------------------
+//    
+//    Disabled FASTLED code, installed PMF replacement
+//    
+//    section                size         addr
+//    .text.progmem          6960   1610612736
+//    .text.itcm           118304            0  +320
+//    .fini                     4       118304
+//    .ARM.exidx                8       118308
+//    .text.itcm.padding    12756       118316  -320
+//    .data                 21744    536870912  - 32
+//    .bss                  73168    536892656  + 32
+//    .bss.dma             178912    538968064
+//    .bss.extram          135990   1879048192
+//    .debug_frame           5884            0
+//    .ARM.attributes          46            0
+//    .comment                110            0
+//    Total                553886
+
+#endif
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void jay_pi(void)
 {
       //

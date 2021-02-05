@@ -2767,6 +2767,7 @@ void AUXROM_SETLED(void)
   Serial.printf("Call to SETLED\n");
 #endif
 
+#if ENABLE_FASTLED_VERSION
   if ((AUXROM_RAM_Window.as_struct.AR_Opts[0] == 1) || (AUXROM_RAM_Window.as_struct.AR_Opts[0] == 3))
   {
     leds.setLedColor(0,{AUXROM_RAM_Window.as_struct.AR_Opts[1],
@@ -2780,6 +2781,22 @@ void AUXROM_SETLED(void)
                         AUXROM_RAM_Window.as_struct.AR_Opts[3]  });
   }
   leds.update();
+#else
+  if ((AUXROM_RAM_Window.as_struct.AR_Opts[0] == 1) || (AUXROM_RAM_Window.as_struct.AR_Opts[0] == 3))
+  {
+    setLedColor(0,  AUXROM_RAM_Window.as_struct.AR_Opts[1],   //  Red
+                    AUXROM_RAM_Window.as_struct.AR_Opts[2],   //  Green
+                    AUXROM_RAM_Window.as_struct.AR_Opts[3]);  //  Blue
+  }
+  if ((AUXROM_RAM_Window.as_struct.AR_Opts[0] == 2) || (AUXROM_RAM_Window.as_struct.AR_Opts[0] == 3))
+  {
+    setLedColor(1,  AUXROM_RAM_Window.as_struct.AR_Opts[1],   //  Red
+                    AUXROM_RAM_Window.as_struct.AR_Opts[2],   //  Green
+                    AUXROM_RAM_Window.as_struct.AR_Opts[3]);  //  Blue
+  }
+  WS2812_update();
+
+#endif
 }
 
 //

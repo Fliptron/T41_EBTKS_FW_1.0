@@ -373,6 +373,10 @@ Changes:
     Doing this because these pins were intended for communications with the ESP32.
     About 100 edits affecting 9 files
 
+## Commit \#99 02/05/2020
+
+Changes:
+-   Wrote an EBTKS specific RGB LED driver to replace the FASTLED Library
 
 
 

@@ -1,4 +1,8 @@
 #include <Arduino.h>
+#include "EBTKS_Config.h"
+
+#if ENABLE_FASTLED_VERSION
+
 #define FASTLED_INTERNAL  // shut up pragma that reports version
 #include <FastLED.h>
 
@@ -83,3 +87,5 @@ void setLedColor(int ledNum, CRGB color)
 private:
     CRGB _leds[NUM_LEDS];
 };
+
+#endif

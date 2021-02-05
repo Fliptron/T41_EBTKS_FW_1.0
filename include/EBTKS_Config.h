@@ -73,6 +73,10 @@
 #define ENABLE_LISP               (0)
 
 //
+//
+#define ENABLE_FASTLED_VERSION    (0)
+
+//
 //    HP85 banked switched ROM emulation
 //
 
