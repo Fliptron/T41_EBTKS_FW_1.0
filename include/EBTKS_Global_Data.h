@@ -168,7 +168,6 @@ EXTERN  volatile uint8_t interruptVector;       // vector value used by intack
 EXTERN  jmp_buf   PWO_While_Running;
 
 EXTERN  char  serial_string[SERIAL_STRING_MAX_LENGTH + 2];
-EXTERN  char  lc_serial_command[SERIAL_COMMAND_MAX_LENGTH + 2];
 
 EXTERN  volatile  uint8_t   just_once;       // This is used to trigger a temporary diagnostic function in a piece of code, where dumping with Serial.printf() is not an option
 EXTERN  volatile bool globalIntAck;          // set when our interrupt was acknowleged
@@ -269,6 +268,13 @@ EXTERN  int           EMSSize;
 EXTERN  int           EMSbase;
 EXTERN  bool          screenEmu;
 EXTERN  bool          CRTRemote;
+
+//
+//  Some counters that might be useful for something
+//
+
+EXTERN  uint32_t      loop_count;
+EXTERN  uint32_t      pin_isr_count;
 
 ///////////////////////////////////////////////////  Initialized Globals.  /////////////////////////////////////////////////////////////////
 

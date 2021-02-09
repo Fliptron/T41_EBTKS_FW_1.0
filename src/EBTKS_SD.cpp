@@ -526,7 +526,7 @@ bool loadConfiguration(const char *filename)
   }
   LOGPRINTF("Tape file: %s%s enabled is: %s\n", path, tapeFname, tapeEn ? "Active" : "Inactive");
 
-  SCOPE_1_Pulser(1);         //  From beginning of function to here is 23 ms   ####
+  SCOPE_1_Pulser(1);         //  From beginning of function to here is 15 ms , measured 2/7/2021
   EBTKS_delay_ns(10000); //  10 us
   SCOPE_1_Pulser(1);
   EBTKS_delay_ns(10000); //  10 us
@@ -557,7 +557,7 @@ bool loadConfiguration(const char *filename)
       {
         romIndex++;
       }
-      SCOPE_1_Pulser(1); //  Loading ROMs takes between 6.5 and 8.5 ms each (more or less)
+      SCOPE_1_Pulser(1); //  Loading ROMs takes between 6.5 and 8.5 ms each (more or less), measured 2/7/2021
       //  EBTKS_delay_ns(10000);    //  10 us
     }
     else
@@ -695,11 +695,11 @@ failed_to_read_flags:
     file.close();
   }
   
+  SCOPE_1_Pulser(1);      //  2/7/2021 Time for the whole function, with 7 ROMs loaded is 88ms
+  EBTKS_delay_ns(10000);  //  10 us
   SCOPE_1_Pulser(1);
-  EBTKS_delay_ns(10000); //  10 us
-  SCOPE_1_Pulser(1);
-  EBTKS_delay_ns(10000); //  10 us
-  return true;           //  maybe we should be more specific about individual successes and failures. Currently only return false if no SD card
+  EBTKS_delay_ns(10000);  //  10 us
+  return true;            //  maybe we should be more specific about individual successes and failures. Currently only return false if no SD card
 }
 
 //

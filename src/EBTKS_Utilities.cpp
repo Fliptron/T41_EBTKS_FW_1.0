@@ -15,7 +15,7 @@
 #include <Arduino.h>
 #include "Inc_Common_Headers.h"
 #include "HpibDisk.h"
-#include <strings.h>                //  needed for strcasecmp() prototype
+#include <strings.h>                //  needed for strcasecmp() and strncasecmp() prototype
 
 extern HpibDevice *devices[];
 
@@ -62,7 +62,7 @@ void SCOPE_1_Pulser(uint8_t count)
 //  without breaks after each case
 //
 
-#define FIXED_OVERHEAD    (59)  //  Seems the fixed overhead is xx
+#define FIXED_OVERHEAD    (59)  //  Seems the fixed overhead is close to 59
 #define SCALE_FACTOR      (10)
 
 void EBTKS_delay_ns(int32_t count)
@@ -131,12 +131,9 @@ void diag_sdread_1(void);
 void Setup_Logic_analyzer(void);
 void Logic_analyzer_go(void);
 void Simple_Graphics_Test(void);
-void show_logfile(void);
 void clean_logfile(void);
 void proc_addr(void);
 void proc_auxint(void);
-void show_mailboxes_and_usage(void);
-void show_file(void);
 void just_once_func(void);
 void pulse_PWO(void);
 void dump_ram_window(void);
@@ -148,8 +145,7 @@ void diag_dir_roms(void);
 void diag_dir_root(void);
 void list_mount(void);
 
-
-
+void show(void);
 
 struct S_Command_Entry
 {
@@ -186,12 +182,9 @@ struct S_Command_Entry Command_Table[] =
   {"la setup",         Setup_Logic_Analyzer},
   {"la go",            Logic_analyzer_go},
   {"addr",             proc_addr},
-  {"show logfile",     show_logfile},
   {"clean logfile",    clean_logfile},
-  {"show file",        show_file},
   {"pwo",              pulse_PWO},
   {"reset",            pulse_PWO},
-  {"show mb",          show_mailboxes_and_usage},
   {"dump ram window",  dump_ram_window},                  //  Currently broken
   {"graphics test",    Simple_Graphics_Test},
   {"jay pi",           jay_pi},
@@ -309,14 +302,29 @@ void Serial_Command_Poll(void)
   get_serial_string_poll();
   if (!serial_string_available) return;          //  Don't hang around here if there isn't a command to be processed
 
-  //  Serial.printf("\nSerial_Command_Poll diag: serial_string_available %1d\n", serial_string_available);
-  //  Serial.printf(  "                          serial_string_length    %2d  serial_string [%s]   ", serial_string_length, serial_string);
+  //Serial.printf("\nSerial_Command_Poll diag: serial_string_available %1d\n", serial_string_available);
+  //Serial.printf(  "                          serial_string_length    %2d  serial_string [%s]   ", serial_string_length, serial_string);
+  //delay(2000);
+  //
+  //  Most commands are fixed strings, but some have parameters, which we special case first.
+  //
 
-  strcpy(lc_serial_command, serial_string);
-  str_tolower(lc_serial_command);               //  Lower case version for easier command matching. Mixed case still available in serial_command    #### this needs to be cleaned up since we use strcasecmp() below
-  serial_string_used();                         //  Throw away the mixed case version
-  //  Serial.printf("lower case command [%s]\n", lc_serial_command);
-  if (strlen(lc_serial_command) == 0) return;    //  Not interested in zero length commands
+  if(strncasecmp(serial_string , "show ", 5) == 0)
+  {
+    show();
+    serial_string_used();
+    return;
+  }
+
+  //
+  //  All commands from here on are fixed strings with no parameters
+  //
+
+  if (strlen(serial_string) == 0)
+  {
+    serial_string_used();
+    return;    //  Not interested in zero length commands
+  }
 
   command_index = 0;
   while(1)
@@ -324,16 +332,110 @@ void Serial_Command_Poll(void)
     //  Serial.printf("1"); delay(100);
     if (strcasecmp(Command_Table[command_index].command_name , "TABLE_END") == 0)
     {
-      Serial.printf("\nUnrecognized Command [%s].  Flushing command\n", lc_serial_command);
+      Serial.printf("\nUnrecognized Command [%s].  Flushing command\n", serial_string);
       help_0();
+      serial_string_used();
       return;
     }
-    if (strcasecmp(Command_Table[command_index].command_name , lc_serial_command) == 0)
+    if (strcasecmp(Command_Table[command_index].command_name , serial_string) == 0)
     {
       (* Command_Table[command_index].f_ptr)();
+      serial_string_used();
       return;
     }
     command_index++;
+  }
+}
+
+//
+//  Show one of several predefined objects, or a user specified file
+//  Predefined are: log, boot, config, mb
+//  If the parameter does not match one of the above, treat it as a file path
+//
+
+void show(void)
+{
+  int   size;
+  char  next_char;
+  int   i;
+
+  //
+  //  handle the special cases first: log, boot, config, mb
+  //
+
+  if(strcasecmp(serial_string + 5, "log") == 0)      //  Not strncasecmp() so nothing after log
+  {
+    if (logfile_active)
+    {
+      logfile.flush();
+      Serial.printf("Log file size:   %d\n", size = logfile.size());
+      logfile.seek(0);
+      while(logfile.read(&next_char, 1) == 1)
+      {
+        Serial.printf("%c", next_char);   //  We are assuming the log file has text and line endings
+      }
+      logfile.seek(size);
+    }
+    else
+    {
+      Serial.printf("Sorry, there is no Logfile\n");
+    }
+    return;
+  }
+
+  if(strcasecmp(serial_string + 5, "boot") == 0)       //  Not strncasecmp() so nothing after boot
+  {
+    //  Handle dumping boot messages   ######
+  }
+
+  if(strcasecmp(serial_string + 5, "config") == 0)     //  Not strncasecmp() so nothing after config
+  {
+    strcpy(serial_string, "show /CONFIG.TXT");    //  Just change to non-shortform. Then fall into
+                                                  //  other code, which will see it as a file name
+                                                  //  version of the show command
+  }
+
+  if(strcasecmp(serial_string + 5, "mb") == 0)         //  Not strncasecmp() so nothing after mb
+  {
+    Serial.printf("\nFirst 8 mailboxes, usages, lengths, and some buffer\n  #  MB    Usage  Length  Buffer\n");
+    for (i = 0 ; i < 8 ; i++)
+    {
+      Serial.printf("  %1d   %1d   %4d   %4d     ", i, AUXROM_RAM_Window.as_struct.AR_Mailboxes[i], AUXROM_RAM_Window.as_struct.AR_Usages[i], AUXROM_RAM_Window.as_struct.AR_Lengths[i]);
+      HexDump_T41_mem((uint32_t)&AUXROM_RAM_Window.as_struct.AR_Buffer_0[i*256], 8, false, true);
+    }
+    Serial.printf("\nAR_Opts:  ");
+    for (i = 0 ; i < 16 ; i++)
+    {
+      Serial.printf("%02x ", AUXROM_RAM_Window.as_struct.AR_Opts[i]);
+    }
+    Serial.printf("\n");
+    return;
+  }
+
+  //
+  //  If we get here, we didn't match any of the predefined specials (well, maybe config)
+  //  so we will treat the parameter as a filename, including maybe path elements
+  //
+
+  if (SD.exists(serial_string + 5))
+  {
+    File showfile = SD.open(serial_string + 5, FILE_READ);
+    if(!showfile)
+    {
+      Serial.printf("File open for %s failed\n", serial_string + 5);
+      return;
+    }
+    while(showfile.read(&next_char, 1) == 1)
+    {
+      Serial.printf("%c", next_char);           //  We are assuming the file has text and line endings
+    }
+    showfile.close();
+    return;
+  }
+  else
+  {
+    Serial.printf("Sorry, file does not exist\n");
+    return;
   }
 }
 
@@ -439,7 +541,7 @@ void help_0(void)
   Serial.printf("2     Help for Assorted Utility commands\n");
   Serial.printf("3     Help for Directory Commands\n");
 //  Serial.printf("4     Help for Auxiliary programs\n");
-//  Serial.printf("5     Help for Diagnostic commands\n");
+  Serial.printf("5     Help for Developers\n");
   Serial.printf("6     Help for Demo\n");
 //  Serial.printf("7     Help for Transient commands\n");
   Serial.printf("\n");
@@ -463,19 +565,19 @@ void help_2(void)
   //uint16_t    i;
 
   Serial.printf("Commands for Diagnostic\n");
-  Serial.printf("crt 1         Try and understand CRT Busy status timing\n");
-  Serial.printf("crt 2         Fast CRT Write Experiments\n");
-  Serial.printf("crt 3         Normal CRT Write Experiments\n");
-  Serial.printf("crt 4         Test screen Save and Restore\n");
   Serial.printf("sdreadtimer   Test Reading with different start positions\n");
   Serial.printf("la setup      Set up the logic analyzer\n");
   Serial.printf("la go         Start the logic analyzer\n");
   Serial.printf("addr          Instantly show where HP85 is executing\n");
-  Serial.printf("show logfile  Show the logfile\n");
+  Serial.printf("show param    Show commands have a parameter after exactly 1 space\n");
+  Serial.printf("     log      Show the logfile.  Exactly 1 space after show\n");
+  Serial.printf("     boot     Show the messages from the boot process\n");
+  Serial.printf("     config   Show the CONFIG.TXT file\n");
+  Serial.printf("     mb       Display current mailboxes and related data\n");
+  Serial.printf("     other    Anything else is a file name path\n");
   Serial.printf("clean logfile Clean_logfile\n");
-  Serial.printf("show file     You will be prompted for a file path/name to be displayed\n");
   Serial.printf("pwo           Pulse PWO, resetting HP85 and EBTKS\n");
-  Serial.printf("show mb       Display current mailboxes and related data\n");
+  
 //Serial.printf("dump ram window Start(8) Len(8)   Dump RAM in ROM window\n");                          //  Currently broken because of parsing
 //Serial.printf("reset #Reset HP85 and EBTKS\n");
   Serial.printf("\n");
@@ -526,7 +628,11 @@ void help_4(void)
 
 void help_5(void)
 {
-  Serial.printf("Commands for xxx\n");
+  Serial.printf("Commands for Developers (mostly Philip)\n");
+  Serial.printf("crt 1         Try and understand CRT Busy status timing\n");
+  Serial.printf("crt 2         Fast CRT Write Experiments\n");
+  Serial.printf("crt 3         Normal CRT Write Experiments\n");
+  Serial.printf("crt 4         Test screen Save and Restore\n");
   Serial.printf("\n");
 }
 
@@ -796,24 +902,6 @@ void proc_auxint(void)
   ASSERT_INT;
 }
 
-void show_mailboxes_and_usage(void)
-{
-  int     i;
-
-  Serial.printf("First 8 mailboxes, usages, lengths, and some buffer\n  #  MB    Usage  Length  Buffer\n");
-  for (i = 0 ; i < 8 ; i++)
-  {
-    Serial.printf("  %1d   %1d   %4d   %4d     ", i, AUXROM_RAM_Window.as_struct.AR_Mailboxes[i], AUXROM_RAM_Window.as_struct.AR_Usages[i], AUXROM_RAM_Window.as_struct.AR_Lengths[i]);
-    HexDump_T41_mem((uint32_t)&AUXROM_RAM_Window.as_struct.AR_Buffer_0[i*256], 8, false, true);
-  }
-  Serial.printf("\nAR_Opts:  ");
-  for (i = 0 ; i < 16 ; i++)
-  {
-    Serial.printf("%02x ", AUXROM_RAM_Window.as_struct.AR_Opts[i]);
-  }
-  Serial.printf("\n");
-}
-
 void just_once_func(void)
 {
   if (just_once) return;
@@ -888,8 +976,8 @@ void dump_ram_window(void)      //  dump_ram_window Start(8) Len(8)    dump memo
   //
   //  The dump command may only have white space separators "dump_ram_window Start(8) Len(8)"
   //
-  Serial.printf("Command to parse  [%s]\n", lc_serial_command);
-  sscanf(lc_serial_command, "%s %o %o", &junque[0], (unsigned int*)&dump_start, (unsigned int*)&dump_len );
+  Serial.printf("Command to parse  [%s]\n", serial_string);
+  sscanf(serial_string, "%s %o %o", &junque[0], (unsigned int*)&dump_start, (unsigned int*)&dump_len );
   dump_start &= 07760;  dump_len &= 07777;    //  Somewhat constrain start address and length to be in the AUXROM RAM window. Not precise, but I'm in a hurry. Note start is forced to 16 byte boundary
   Serial.printf("Dumping AUXROM RAM from %06o for %06o bytes\n", dump_start, dump_len);   // and addresses start at 0000 for dump == 070000 for the HP-85
   Serial.printf("%04o: ", dump_start);
@@ -926,7 +1014,7 @@ void no_SD_card_message(void)
 void ulisp(void)
 {
 #if ENABLE_LISP
-  if (strcasecmp("ulisp"  , lc_serial_command) == 0)
+  if (strcasecmp("ulisp"  , serial_string) == 0)
   {
     lisp_setup();
     while(1)
@@ -1406,8 +1494,6 @@ void Logic_Analyzer_Poll(void)
                     Logic_Analyzer_Trigger_Value_1, Logic_Analyzer_Trigger_Value_2,
                     Logic_Analyzer_Event_Count, getRselec());
 
-    //Serial.printf("Mailboxes 0..6  :");
-    //show_mailboxes_and_usage();
 
     //
     //  Logic Analyzer can timeout if maybe it gets stuck in DMA, Or maybe something else. Very hard to test this code
@@ -1460,7 +1546,8 @@ la_display_results:
   Serial.printf("Logic Analyzer results\n\n");
   Serial.printf("Buffer Length %d  Address Mask  %d\n" , Logic_Analyzer_Current_Buffer_Length, Logic_Analyzer_Current_Index_Mask);
   Serial.printf("Trigger Index %d  Pre Trigger Samples %d\n\n", Logic_Analyzer_Index_of_Trigger, Logic_Analyzer_Pre_Trigger_Samples);
-  show_mailboxes_and_usage();
+  strcpy(serial_string , "show mb");
+  show();
   Serial.printf("The LA was triggered: %s and the trigger index is %5d\n", Logic_Analyzer_Triggered ? "true":"false" , Logic_Analyzer_Index_of_Trigger);
   Serial.printf("ENABLE_BUS_BUFFER_U2 = %d\n", GET_DISABLE_BUS_BUFFER_U2);
   Serial.printf("BUS_DIR_TO_HP        = %d\n", GET_BUS_DIR_TO_HP);
@@ -1647,7 +1734,11 @@ void WS2812_update(void)
       }
     }
   }
-  EBTKS_delay_ns(WS2812_FRAME_OFF_VAL);
+  //  EBTKS_delay_ns(WS2812_FRAME_OFF_VAL);   The > 280 us end of frame delay that moves the shifted
+  //                                          data into the LED control registers is not needed, because
+  //                                          the fastest HP85 BASIC code with back-to-back calls to SETLED LED,R,G,B
+  //                                          takes about 4 ms. So BASIC cant generate LED updates too quickly that
+  //                                          we have to expressly generate the 280+ us delay
 
   release_DMA_request();
   while(DMA_Active){}       // Wait for release
@@ -1750,7 +1841,7 @@ void jay_pi(void)
       //  with  1,000,000 slices:  jay_pi execution time is  273 ms , answer is 3.14159265 241386
       //  with 10,000,000 slices:  jay_pi execution time is 2759 ms , answer is 3.1415926535 5335
       //
-      if (strcasecmp("jay_pi"  , lc_serial_command) == 0)
+      if (strcasecmp("jay_pi"  , serial_string) == 0)
       {
         double    radius;
         double    radiusSquared;

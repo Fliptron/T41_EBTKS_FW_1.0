@@ -378,6 +378,26 @@ Changes:
 Changes:
 -   Wrote an EBTKS specific RGB LED driver to replace the FASTLED Library
 
+## Commit \#100 02/09/2020
+
+Changes:
+-   Add a 10 second timeout to waiting for the serial terminal, using Systick
+    which has been confirmed to be running by the time we get to the Serial.begin().
+-   Rewrote utility command Show, deprecated a few others and merged in to Show
+-   Removed the code in utility commands to create a lower case version, and instead
+    changed all string compares to strcasecmp() and strncasecmp()
+-   Added detection of HP85 power off, and forced reset. Now stalls in setup() if
+    the HP85 is not powered, but Teensy 4.1 on EBTKS is powered by the USB cable.
+    Blinks the orange LED in this condition
+-   Detect PWO low in loop(), and force a reset. This was previous code that was
+    uncertain if it worked as intended. Now confirmed functional.
+-   Removed setjmp()/longjmp() code that was involved in the PWO low detection.
+-   Detailed timing analysis of all steps in loop() . 440 ns (or 1200 ns if a Phi 1 ISR occurs)
+-   Updated timing analysis in various other parts of the code
+-   Removed 280 us delay at end of WS2812B/E RGB LED driver since the HP85 can't send
+    requests fast enough for this to be an issue.
+-   Added a counter to the Phi 1 ISR. Don't have a use for it yet.
+-   Made the loop() counter global. Don't have a use for it yet.
 
 
 

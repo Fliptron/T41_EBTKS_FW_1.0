@@ -455,6 +455,7 @@ FASTRUN void pinChange_isr(void)      //  This function is an ISR, keep it short
 
   //SET_SCOPE_1;      //  Time point E
   onPhi_1_Fall();
+  pin_isr_count++;    //  Used to detect that HP85 power is off
   //CLEAR_SCOPE_1;    //  Time point F
 
   //SET_SCOPE_2;      //  Time point G
@@ -1157,6 +1158,8 @@ void mySystick_isr(void)
 {
   systick_cycle_count = ARM_DWT_CYCCNT;
   systick_millis_count++;
+  //  TOGGLE_SCOPE_2;     //  Used during debug to see when Systick interrupts start. Answer: Some time shortly after setup() starts.
+                          //  i.e. It is running as soon as the Teensy boot processor passes control to startup.c
 }
 
 #if ENABLE_EMS_MEMORY

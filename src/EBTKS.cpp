@@ -553,26 +553,36 @@ void              Boot_Messages_to_CRT(void);
 static uint32_t   one_second_timer = 0;
 static bool       SD_begin_OK;
 static bool       CRT_Boot_Message_Pending = true;
-static int        loop_count = 0;
+static uint32_t   last_pin_isr_count;                         //  These are used to detect that the HP85 power is off, and Teensy should be reset
+static uint32_t   count_of_pin_isr_count_not_changing;        //  or if we arent in loop(), we should stall boot.
 
 void setup()
 {
 
-  int   setjmp_reason;
-  bool  config_success;
+//  int         setjmp_reason;
+  bool        config_success;
+  uint32_t    require_serial_timeout;
+  uint32_t    Phi_1_high_count;
+  uint32_t    Phi_1_low_count;
+  uint32_t    i;
 
-  setjmp_reason = setjmp(PWO_While_Running);
-  if (setjmp_reason == 99)
-  {
-    //
-    //  We are here from a PWO while running. Someone has the covers off, and is forcing a restart.
-    //  While setjmp unwinds the stack etc, it doesn't reset any of the processor state. So do some cleanup here
-    //
-    NVIC_DISABLE_IRQ(IRQ_GPIO6789);   //  This seems the most important one. there are probably other things.
-                                      //  Add them as needed
-                                      //  - for example, the Service ROM test fails because it reads back FF, FF
-                                      //    so that means we aren't yet doing initializing correctly
-  }
+//  setjmp_reason = setjmp(PWO_While_Running);
+//  if (setjmp_reason == 99)                    //  This code is from the longjmp() in loop(). But it also has a processor reset
+//  {                                           //  function, so maybe this never occurs.
+//    //
+//    //  We are here from a PWO while running. Someone has the covers off, and is forcing a restart.
+//    //  While setjmp unwinds the stack etc, it doesn't reset any of the processor state. So do some cleanup here
+//    //
+//    NVIC_DISABLE_IRQ(IRQ_GPIO6789);   //  This seems the most important one. there are probably other things.
+//                                      //  Add them as needed
+//                                      //  - for example, the Service ROM test fails because it reads back FF, FF
+//                                      //    so that means we aren't yet doing initializing correctly
+//  }
+
+  loop_count = 0;
+  pin_isr_count = 0;
+  last_pin_isr_count = 0;
+  count_of_pin_isr_count_not_changing = 0;
 
   //
   //  Diagnostic Pins
@@ -666,6 +676,41 @@ void setup()
   pinMode(CORE_PIN_DB6, INPUT);   //  DB6
   pinMode(CORE_PIN_DB7, INPUT);   //  DB7
 
+  //
+  //  Before we proceed with boot, make sure the HP85 is powered on and the clocks are running
+  //  We do this by counting the number of times CORE_PIN_PHASE1 is high or low in a loop for 100 us
+  //  Empirical measurement of this code shows values around 4733 for low count and 700 for high count
+  //
+
+  while(1)
+  {
+    Phi_1_high_count = Phi_1_low_count = 0;
+    for (i = 0 ; i < 5435 ; i++)            //  constant adjusted with SCOPE_2 to run for 100 us
+    {
+      if (IS_PHI_1_HIGH)
+      {
+        Phi_1_high_count++;
+      }
+      else
+      {
+        Phi_1_low_count++;
+      }
+    }
+
+    if ((Phi_1_high_count < 350) || (Phi_1_low_count < 2000))
+    {   //  Teensy is powered, but clock not running, so probably teensy powered over USB and HP85 is off. Flash the TEENSY Orange LED on Core pin 13
+      SET_LED;
+      delay(2);
+      CLEAR_LED;
+      delay(2000);
+    //SCB_AIRCR = 0x05FA0004;           //  Forum info indicates this does a processor reset, so we don't get to the next line.
+    }
+    else
+    {
+      break;                            //  Looks like the HP85 clock is running, so we can proceed
+    }
+  }
+
   // setup io function calls
   initIOfuncTable();
   initRoms();
@@ -680,7 +725,7 @@ void setup()
   setIOWriteFunc(0340,&ioWriteAuxROM_Alert);  //  AUXROM Alert that a Mailbox/Buffer has been updated
   setIOReadFunc(0340,&onReadAuxROM_Alert);    //  Use HEYEBTKS to return identification string
 
-  SCOPE_1_Pulser(4);
+  SCOPE_1_Pulser(4);                          //  2/7/2021 This occurs about 285 us after the previous call to Pulser(5) (inc 10 us delay)
   EBTKS_delay_ns(10000); //  10 us
 
   //extern void OnPress(int key);
@@ -703,7 +748,7 @@ void setup()
   *log_to_serial_ptr = 0;
 
   log_to_serial_ptr += sprintf(log_to_serial_ptr, "EBTKS Firmware built on %s\n\n", EBTKS_COMPILE_TIME);
-  SCOPE_1_Pulser(3);
+  SCOPE_1_Pulser(3);                          //  2/7/2021 This occurs about 18 us after the previous call to Pulser(4) (inc 10 us delay)
   EBTKS_delay_ns(10000);      //  10 us
 
   log_to_serial_ptr += sprintf(log_to_serial_ptr, "%s", LOGLEVEL_GEN_MESSAGE);
@@ -711,11 +756,13 @@ void setup()
   log_to_serial_ptr += sprintf(log_to_serial_ptr, "%s", LOGLEVEL_1MB5_MESSAGE);
   log_to_serial_ptr += sprintf(log_to_serial_ptr, "%s", LOGLEVEL_TAPE_MESSAGE);
 
+  log_to_serial_ptr += sprintf(log_to_serial_ptr, "Phi_1_high_count = %lu   Phi_1_low_count = %lu", Phi_1_high_count, Phi_1_low_count);
+
   //  Use CONFIG.TXT file on sd card for configuration
 
   log_to_serial_ptr += sprintf(log_to_serial_ptr, "\nDoing SD.begin\n");
-  SCOPE_1_Pulser(2);  SET_SCOPE_1;                          //  SCOPE_1_Pulser does 2 toggles, so this inverts things to give some additional info
-
+  SCOPE_1_Pulser(2);  SET_SCOPE_1;            //  SCOPE_1_Pulser does 2 toggles, so this inverts things to give some additional info
+                                              //  2/7/2021 This occurs about 16 us after the previous call to Pulser(3) (inc 10 us delay)
   //
   //  Previously we used the FIFO_SDIO mode, but found that we got random errors because the related
   //  library code in
@@ -750,8 +797,10 @@ void setup()
   //  So just make sure that all SD Card read/writes are to FASTRUN or DMAMEM memory
   //
 
-  SD_begin_OK = SD.begin(SdioConfig(DMA_SDIO));     //  This takes about ??? ms.          ###
-  CLEAR_SCOPE_1; EBTKS_delay_ns(1000);  SCOPE_1_Pulser(2);
+  SD_begin_OK = SD.begin(SdioConfig(DMA_SDIO));   //  This takes about 9 ms.
+  CLEAR_SCOPE_1;                                  //  2/7/2021 This occurs about 9 ms after the previous call to Pulser(2)
+  EBTKS_delay_ns(1000);
+  SCOPE_1_Pulser(2);
 
   log_to_serial_ptr += sprintf(log_to_serial_ptr, "Access to SD Card is %s\n", SD_begin_OK     ? "true":"false");
 
@@ -793,10 +842,11 @@ void setup()
 
     // the configuration will init the required devices in most cases.....
 
-                                //  It took 74 ms to get to here from SD.begin (open logfile, send some stuff, Init HPIB/Disk)
-                                //  With 9 ROMs being loaded and JSON parsing of CONFIG.TXT , loadConfiguration()  takes 108ms
+                                //  It took 18 ms to get to here from SD.begin (open logfile, send some stuff, Init HPIB/Disk)
+                                //  With 7 ROMs being loaded and JSON parsing of CONFIG.TXT , loadConfiguration()  takes 108ms
     config_success = loadConfiguration(Config_filename);  //  Reports success even if SD.begin() failed, as it uses default config
                                                           //  This is probably not a good decission
+                                                          //  2/7/2021 Time for the whole function, with 7 ROMs loaded is 88ms
   }
   else
   {
@@ -805,10 +855,23 @@ void setup()
     config_success = false;
   }
 
+  //
+  //  For some diagnostic scenarios, it would be nice to delay startup until the serial terminal is connected.
+  //  This is controlled by a parameter in CONFIG.TXT  .  But there is also the scenario where that parameter
+  //  has been set accidentally by a user that is unfamiliar with this feature, so the following code includes
+  //  a timeout, so the HP85 is not permanently waiting. 10 seconds seems to not too little and not too much.
+  //
+
+  require_serial_timeout = systick_millis_count + 10000;    //  set timeout for serial to 10 seconds from now
   if (requireserial)
   {
-    while (!Serial) {  };         //  Stall startup until the serial terminal is attached.
-                                  //  Do this if we need to see startup messages as they happen
+    while (!Serial)
+    {
+      if (require_serial_timeout < systick_millis_count)
+      {
+        break;                                              //  Give up, we have waited long enough for the serial terminal to connect
+      }
+    };
   }
 
   Serial.begin(115200);           //  USB Serial Baud value is irrelevant for this serial channel
@@ -826,7 +889,8 @@ void setup()
 //  CLEAR_SCOPE_1;                //  SCOPE_1 only used here with the above SET_PWO to do PWO startup timing.
 
   EBTKS_delay_ns(10000);      //  10 us
-  SCOPE_1_Pulser(7);              //        We are about to enable Pin Change Interrupts. Once we do, we should not have any more calls to SCOPE_1_Pulser()
+  SCOPE_1_Pulser(7);          //        We are about to enable Pin Change Interrupts. Once we do, we should not have any more calls to SCOPE_1_Pulser()
+                              //        2/7/2021 This occurs about XXXX ms after the previous call to Pulser(2)
   EBTKS_delay_ns(10000);      //  10 us
 
   //delay(10000);   // delay 10 secs to turn on serial monitor
@@ -962,12 +1026,18 @@ void setup()
 //      and they are serviced here in a round-robin sequence
 //
 
+//
+//  Loop execution time analysis when the HP85 is idle. 2/8/2021:
+//      Apparently bi-modal during idle: 440 ns and 1220 ns
+//      Turns out the difference is whether a Phi 1 interrupt occurs during the loop
+//      which adds about 800 ns.
+//
+
 void loop()
 {
-
-  if (IS_PWO_LOW)                    //  Not sure if this works reliably, but seems to work
+  if (IS_PWO_LOW)                     //  Not sure if this works reliably, but seems to work
   {
-    longjmp(PWO_While_Running, 99);
+    SCB_AIRCR = 0x05FA0004;           //  Forum info indicates this does a processor reset, so we don't get to the next line.
   }
 
 //
@@ -980,18 +1050,6 @@ void loop()
 //    SCB_AIRCR = 0x05FA0004;
 //  }
 
-  // delay(200);   //  Delay for 200 ms, so loop about 5 times per second
-
-  //print out the address reg and RSELEC values so we can get an idea of activity
-
-  //Serial.printf("Address reg: %04X R_SELECT %02X\n", addReg, rselec);
-
-  // if (crtControl & (1 << 1))  //wipe screen flag
-  //     {
-  //       crtControl &= ~(1 << 1);
-  //       memset(&Mirror_Video_RAM, 0, sizeof(Mirror_Video_RAM));
-  //     }
-
   /*   delay(200);
 
   writeCRTflag = false;
@@ -1002,14 +1060,15 @@ void loop()
                             // to speed things up
  */
 
-	Serial_Command_Poll();
-  tape.poll();
-  AUXROM_Poll();
-  Logic_Analyzer_Poll();
-  loopTranslator();     //  1MB5 / HPIB / DISK poll
+	Serial_Command_Poll();    //  84 ns when idle, but 800 ns ish if Phi 1 interrupt occurs while running
+  tape.poll();              //  72 ns when idle, but 800 ns ish if Phi 1 interrupt occurs while running
+  AUXROM_Poll();            //  32 ns when idle, but 760 ns ish if Phi 1 interrupt occurs while running
+  Logic_Analyzer_Poll();    //  54 ns when idle, but 780 ns ish if Phi 1 interrupt occurs while running
+  loopTranslator();         //  1MB5 / HPIB / DISK poll
+                            //  150 ns when idle, but 920 ns ish if Phi 1 interrupt occurs while running
 
-  if (CRT_Boot_Message_Pending)
-  {
+  if (CRT_Boot_Message_Pending)     //  8 ns after boot message sent, but 800 ns ish if Phi 1 interrupt occurs while running
+  {                                 //  which is quite rare because the window is so narrow
     if (is_hp85_idle())
     {
       if (!SD_begin_OK)
@@ -1032,9 +1091,9 @@ void loop()
   //  Here are things we do no more than once per second
   //
 
-  if ((one_second_timer + 1000) < systick_millis_count)     //  systick_millis_count rolls over about every 49 days
-  {                                                         //  and so does one_second_timer
-    one_second_timer = systick_millis_count;
+  if ((one_second_timer + 1000) < systick_millis_count)     //  systick_millis_count rolls over about every 49 days and so does one_second_timer
+  {                                                         //  12 ns mostly, but 800 ns ish if Phi 1 interrupt occurs while running
+    one_second_timer = systick_millis_count;                //  which is quite rare because the window is so narrow
 
     //  Serial.printf("tick\n");
     logfile.flush();
@@ -1055,7 +1114,7 @@ void loop()
     }
   }
 
-  loop_count++;               //  Keep track of how many times we loop. We dont currently use this for anything,
+  loop_count++;               //  Keep track of how many times we loop. We don't currently use this for anything,
                               //  and it probably overflows somewhere between hourly to daily.
 }
 
@@ -1065,7 +1124,6 @@ void repeat_serial_boot_text(void)
   Serial.printf("%s", log_to_serial_ptr);
   log_to_serial_ptr = &Directory_Listing_Buffer_for_SDDEL[DIRECTORY_LISTING_BUFFER_SIZE/2];
   *log_to_serial_ptr = 0;         //  This should be the end of our use of this buffer
-
 }
 
 //
