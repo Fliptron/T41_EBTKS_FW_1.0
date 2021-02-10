@@ -28,7 +28,7 @@ bool loadRom(const char *fname, int slotNum, const char *description)
   //  log_to_CRT_ptr should already be setup, but just in case it isn't we set it up here, so that we don't have writes going somewhere dangerous
   if (log_to_CRT_ptr == NULL)
   {
-    log_to_CRT_ptr = Directory_Listing_Buffer_for_SDDEL;
+    log_to_CRT_ptr = &CRT_Log_Buffer[0];
   }
 
   //

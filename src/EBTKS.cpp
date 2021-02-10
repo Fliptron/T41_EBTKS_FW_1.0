@@ -547,21 +547,22 @@ GPIO9   33         7           CORE_PIN33_PORTREG
 //
 
 bool              is_hp85_idle(void);
-void              repeat_serial_boot_text(void);
 void              Boot_Messages_to_CRT(void);
 
 static uint32_t   one_second_timer = 0;
 static bool       SD_begin_OK;
-static bool       CRT_Boot_Message_Pending = true;
+static bool       CRT_Boot_Message_Pending;
+static bool       CRT_Boot_Message_Pending_to_Serial;
+static bool       Serial_Log_Message_Pending;
 static uint32_t   last_pin_isr_count;                         //  These are used to detect that the HP85 power is off, and Teensy should be reset
 static uint32_t   count_of_pin_isr_count_not_changing;        //  or if we arent in loop(), we should stall boot.
+static bool       HP85_has_been_off;
 
 void setup()
 {
 
 //  int         setjmp_reason;
   bool        config_success;
-  uint32_t    require_serial_timeout;
   uint32_t    Phi_1_high_count;
   uint32_t    Phi_1_low_count;
   uint32_t    i;
@@ -579,10 +580,12 @@ void setup()
 //                                      //    so that means we aren't yet doing initializing correctly
 //  }
 
-  loop_count = 0;
   pin_isr_count = 0;
   last_pin_isr_count = 0;
   count_of_pin_isr_count_not_changing = 0;
+  CRT_Boot_Message_Pending = true;
+  CRT_Boot_Message_Pending_to_Serial = true;
+  Serial_Log_Message_Pending = true;
 
   //
   //  Diagnostic Pins
@@ -682,9 +685,13 @@ void setup()
   //  Empirical measurement of this code shows values around 4733 for low count and 700 for high count
   //
 
+  HP85_has_been_off = false;                //  We haven't tested it yet
+  loop_count = 0;                           //  This normally used in loop() , but we need a counter, and loop() is not yet running, so ...
+
   while(1)
   {
     Phi_1_high_count = Phi_1_low_count = 0;
+    loop_count++;
     for (i = 0 ; i < 5435 ; i++)            //  constant adjusted with SCOPE_2 to run for 100 us
     {
       if (IS_PHI_1_HIGH)
@@ -699,14 +706,31 @@ void setup()
 
     if ((Phi_1_high_count < 350) || (Phi_1_low_count < 2000))
     {   //  Teensy is powered, but clock not running, so probably teensy powered over USB and HP85 is off. Flash the TEENSY Orange LED on Core pin 13
-      SET_LED;
-      delay(2);
-      CLEAR_LED;
-      delay(2000);
-    //SCB_AIRCR = 0x05FA0004;           //  Forum info indicates this does a processor reset, so we don't get to the next line.
+      HP85_has_been_off =true;
+      //
+      //  Don't be too annoying, flash LED once approximately every 10 seconds
+      //
+      if (loop_count % 10 == 0)
+      {
+        SET_LED;
+        delay(1);                       //  Pulse LED for 1 ms, so not too many photons.
+        CLEAR_LED;
+      }
+      delay(1000);                      //  Wait 1 seconds till we test again
+    //
     }
     else
     {
+      if (HP85_has_been_off)
+      {
+        //
+        //  The HP85 has transitioned from off to on, so we need to force a reset of Teensy
+        //
+        SCB_AIRCR = 0x05FA0004;         //  Forum info indicates this does a processor reset, so we don't get to the next line.
+      }
+      //
+      //  If we get here, it means that the HP85 was already powered either before or concurrently with Teensy, so no need for a forced reset
+      //
       break;                            //  Looks like the HP85 clock is running, so we can proceed
     }
   }
@@ -741,8 +765,8 @@ void setup()
   //  should pause bootin up until the serial port is active. Until then, collect messages
   //  in the second half of the SDDEL buffer
   //
-  log_to_CRT_ptr    = &Directory_Listing_Buffer_for_SDDEL[0];
-  log_to_serial_ptr = &Directory_Listing_Buffer_for_SDDEL[DIRECTORY_LISTING_BUFFER_SIZE/2];
+  log_to_CRT_ptr    = &CRT_Log_Buffer[0];
+  log_to_serial_ptr = &Serial_Log_Buffer[0];
 
   *log_to_CRT_ptr    = 0;
   *log_to_serial_ptr = 0;
@@ -855,24 +879,24 @@ void setup()
     config_success = false;
   }
 
-  //
-  //  For some diagnostic scenarios, it would be nice to delay startup until the serial terminal is connected.
-  //  This is controlled by a parameter in CONFIG.TXT  .  But there is also the scenario where that parameter
-  //  has been set accidentally by a user that is unfamiliar with this feature, so the following code includes
-  //  a timeout, so the HP85 is not permanently waiting. 10 seconds seems to not too little and not too much.
-  //
-
-  require_serial_timeout = systick_millis_count + 10000;    //  set timeout for serial to 10 seconds from now
-  if (requireserial)
-  {
-    while (!Serial)
-    {
-      if (require_serial_timeout < systick_millis_count)
-      {
-        break;                                              //  Give up, we have waited long enough for the serial terminal to connect
-      }
-    };
-  }
+//  //
+//  //  For some diagnostic scenarios, it would be nice to delay startup until the serial terminal is connected.
+//  //  This is controlled by a parameter in CONFIG.TXT  .  But there is also the scenario where that parameter
+//  //  has been set accidentally by a user that is unfamiliar with this feature, so the following code includes
+//  //  a timeout, so the HP85 is not permanently waiting. 10 seconds seems to not too little and not too much.
+//  //
+//
+//  require_serial_timeout = systick_millis_count + 10000;    //  set timeout for serial to 10 seconds from now
+//  if (requireserial)
+//  {
+//    while (!Serial)
+//    {
+//      if (require_serial_timeout < systick_millis_count)
+//      {
+//        break;                                              //  Give up, we have waited long enough for the serial terminal to connect
+//      }
+//    };
+//  }
 
   Serial.begin(115200);           //  USB Serial Baud value is irrelevant for this serial channel
 
@@ -964,22 +988,8 @@ void setup()
   log_to_serial_ptr += sprintf(log_to_serial_ptr, "Remote CRT       %s\n", CRTRemote ? "true":"false");
   log_to_serial_ptr += sprintf(log_to_serial_ptr, "85A 16 KB RAM    %s\n", getHP85RamExp() ? "true":"false");
 
-
-  //
-  //  Ok, time to flush messages to the serial terminal.
-  //  If requireserial is true , then the serial port via the USB link must have been established
-  //  and all of the following output will get to the serial terminal screen.
-  //  If requireserial is false, we didn't wait for the serial conection to be established
-  //  before continuing with the boot process (all the above code). Therefore the following
-  //  Serial.printf() may just be dumping its output on the floor. The repeatserial if non-zero
-  //  will give this text a second chance in the number of seconds specified by repeatserial.
-  //
-  log_to_serial_ptr = &Directory_Listing_Buffer_for_SDDEL[DIRECTORY_LISTING_BUFFER_SIZE/2];
-  Serial.printf("%s", log_to_serial_ptr);
-  log_to_serial_ptr = &Directory_Listing_Buffer_for_SDDEL[DIRECTORY_LISTING_BUFFER_SIZE/2];
   //
   //  This should be the end of our writing to this buffer for these startup messages.
-  //  We still need it if repeatserial is non-zero.
   //  All future messages just use Serial.printf()
   //
 
@@ -1004,6 +1014,7 @@ void setup()
   WS2812_update();
 #endif
   //  Fall into loop()
+  loop_count = 0;
 
 }
 
@@ -1035,9 +1046,9 @@ void setup()
 
 void loop()
 {
-  if (IS_PWO_LOW)                     //  Not sure if this works reliably, but seems to work
+  if (IS_PWO_LOW)
   {
-    SCB_AIRCR = 0x05FA0004;           //  Forum info indicates this does a processor reset, so we don't get to the next line.
+    SCB_AIRCR = 0x05FA0004;           //  Do a processor reset, so we don't get to the next line.
   }
 
 //
@@ -1083,7 +1094,7 @@ void loop()
     }
     else
     {
-      //  See below for some dots //
+      //  Nothing to do, keep waiting
     }
   }
 
@@ -1094,36 +1105,40 @@ void loop()
   if ((one_second_timer + 1000) < systick_millis_count)     //  systick_millis_count rolls over about every 49 days and so does one_second_timer
   {                                                         //  12 ns mostly, but 800 ns ish if Phi 1 interrupt occurs while running
     one_second_timer = systick_millis_count;                //  which is quite rare because the window is so narrow
-
-    //  Serial.printf("tick\n");
-    logfile.flush();
-    if (CRT_Boot_Message_Pending)
+    //
+    //  Things to check
+    //
+    //  1   If Serial is active and the serial log has not been sent, send it now.
+    //  2   If the text sent to the CRT has not yet ben also sent to Serial, send it now.
+    //
+    if (Serial)
     {
-      Serial.printf(".");
-    }
-
-    if (repeatserial)
-    {
-      Serial.printf("%d ", repeatserial - (systick_millis_count/1000));     //  Countdown to repeating serial output.
-      if ((repeatserial * 1000) <= one_second_timer)
+      if(Serial_Log_Message_Pending)
       {
-        repeatserial = 0;     //  so we only do this once
-        Serial.printf("\n");
-        repeat_serial_boot_text();
+        if (strlen(Serial_Log_Buffer) > SERIAL_LOG_BUFFER_SIZE)
+        {
+           Serial.printf("\nWarning Warning Warning Warning Warning Warning Warning SERIAL_LOG_BUFFER_SIZE is too small\n");
+        }
+        Serial.printf("\nSerial Log buffer usage is %d of %d charcters\n\n", strlen(Serial_Log_Buffer), SERIAL_LOG_BUFFER_SIZE);
+        Serial.printf("%s\n", Serial_Log_Buffer);
+        Serial_Log_Message_Pending = false;
+      }
+      if(CRT_Boot_Message_Pending_to_Serial)
+      {
+        if (strlen(CRT_Log_Buffer) > CRT_LOG_BUFFER_SIZE)
+        {
+           Serial.printf("\nWarning Warning Warning Warning Warning Warning Warning CRT_LOG_BUFFER_SIZE is too small\n");
+        }
+        Serial.printf("\nCRT Log buffer usage is %d of %d charcters\n\n", strlen(CRT_Log_Buffer), CRT_LOG_BUFFER_SIZE);
+        Serial.printf("%s\n", CRT_Log_Buffer);
+        CRT_Boot_Message_Pending_to_Serial = false;
       }
     }
+    flush_logfile();
   }
 
   loop_count++;               //  Keep track of how many times we loop. We don't currently use this for anything,
                               //  and it probably overflows somewhere between hourly to daily.
-}
-
-void repeat_serial_boot_text(void)
-{
-  log_to_serial_ptr = &Directory_Listing_Buffer_for_SDDEL[DIRECTORY_LISTING_BUFFER_SIZE/2];
-  Serial.printf("%s", log_to_serial_ptr);
-  log_to_serial_ptr = &Directory_Listing_Buffer_for_SDDEL[DIRECTORY_LISTING_BUFFER_SIZE/2];
-  *log_to_serial_ptr = 0;         //  This should be the end of our use of this buffer
 }
 
 //
@@ -1149,9 +1164,8 @@ bool is_hp85_idle(void)
 
 //
 //  During boot the CRT is unavailable. So we store all the boot status info in
-//  Directory_Listing_Buffer_for_SDDEL[], assuming that it is unlikely that the
-//  user will try and type in a SDDEL command before we have finished with this
-//  array. Once the CRT is available (detected by seeing the HP85 making references
+//  CRT_Log_Buffer.
+//  Once the CRT is available (detected by seeing the HP85 making references
 //  to 000072, which is part of the EXEC loop), we dump the array to the CRT
 //
 
@@ -1162,13 +1176,11 @@ void Boot_Messages_to_CRT(void)
   int seg_length;
   char segment[100];
 
-  log_to_CRT_ptr = Directory_Listing_Buffer_for_SDDEL;
+  log_to_CRT_ptr    = &CRT_Log_Buffer[0];
   if ((strlen(log_to_CRT_ptr) == 0) || (!CRTVerbose))
   {
     return;
   }
-
-  Serial.printf("\n\nDump of Boot Log to CRT\n\n---------------\n");
 
   row = 1;
   column=0;
@@ -1178,8 +1190,6 @@ void Boot_Messages_to_CRT(void)
     seg_length = strcspn(log_to_CRT_ptr,"\n");        //  Number of chars not in second string, so does not count the '\n'
     strlcpy(segment, log_to_CRT_ptr, seg_length+1);   //  Copies the segment, and appends a 0x00
     log_to_CRT_ptr += seg_length+1;                   //  Skip over the segment and the trailing '\n'
-    Serial.printf("%s\n", segment);
-    Serial.flush();
     Write_on_CRT_Alpha(row++, column, segment);
     if (row < 16)                                     // While on screen, add some delay between lines. After line 16, no need for delays, since it isn't seen
       {
@@ -1195,7 +1205,5 @@ void Boot_Messages_to_CRT(void)
   DMA_Poke16(CRTBAD, 0);
   while (DMA_Peek8(CRTSTS) & 0x80) {};              //  Wait until video controller is ready
   DMA_Poke16(CRTSAD, 0);
-
-Serial.printf("---------------\n");
 
 }

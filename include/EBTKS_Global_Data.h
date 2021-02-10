@@ -245,6 +245,10 @@ EXTERN  EXTMEM char Directory_Listing_Buffer_for_SDDEL[DIRECTORY_LISTING_BUFFER_
                                                                                           //  should be plenty. The following two pointers are used for these
                                                                                           //  temporary text buffers.
 
+EXTERN  EXTMEM char CRT_Log_Buffer[CRT_LOG_BUFFER_SIZE];
+
+EXTERN  EXTMEM char Serial_Log_Buffer[SERIAL_LOG_BUFFER_SIZE];
+
 EXTERN char *     log_to_CRT_ptr;                                                         //  Use delete directory buffer during boot (when it can't be in use)
                                                                                           //  to log messages to be displayed on the HP85 CRT, once system has started.
 

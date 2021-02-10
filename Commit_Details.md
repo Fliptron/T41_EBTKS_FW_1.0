@@ -244,12 +244,12 @@ Changes:
 Changes:
 -   Clean up formatting of this file
 
-## Commit \#92 01/08/2020
+## Commit \#92 01/08/2021
 
 Changes:
 -   Ensure at least 5 us delay between consecutive DMA requests
 
-## Commit \#93 01/26/2020
+## Commit \#93 01/26/2021
 
 Changes:
 -   Diagnostic code to reveal the actual cache configuration.
@@ -258,7 +258,7 @@ Changes:
 -   Flush and delete dcache prior to reading ROM images from SD Card to DMAMEM
 -   ROM storage area in DMAMEM now includes alignment to a 32 byte boundary
 
-## Commit \#94 01/31/2020
+## Commit \#94 01/31/2021
 
 Changes:
 -   Remove DEVELOPMENT_MODE that was only used to control requiring the serial
@@ -289,7 +289,7 @@ Changes:
 
 
 
-## Commit \#95 02/03/2020
+## Commit \#95 02/03/2021
 
 Changes:
 -   Fixed random writing of characters to wrong location on CRT. Issue
@@ -353,17 +353,17 @@ Changes:
     and debug FASTLED.
 -   Spell check this file
 
-## Commit \#96 02/03/2020
+## Commit \#96 02/03/2021
 
 Changes:
 -   Fix display of table in commit 95
 
-## Commit \#97 02/03/2020
+## Commit \#97 02/03/2021
 
 Changes:
 -   Fix display of table in commit 95
 
-## Commit \#98 02/04/2020
+## Commit \#98 02/04/2021
 
 Changes:
 -   Change all diagnostics that used TXD and RXD on Teensy Physical pins 9 and 10
@@ -373,12 +373,12 @@ Changes:
     Doing this because these pins were intended for communications with the ESP32.
     About 100 edits affecting 9 files
 
-## Commit \#99 02/05/2020
+## Commit \#99 02/05/2021
 
 Changes:
 -   Wrote an EBTKS specific RGB LED driver to replace the FASTLED Library
 
-## Commit \#100 02/09/2020
+## Commit \#100 02/09/2021
 
 Changes:
 -   Add a 10 second timeout to waiting for the serial terminal, using Systick
@@ -398,6 +398,27 @@ Changes:
     requests fast enough for this to be an issue.
 -   Added a counter to the Phi 1 ISR. Don't have a use for it yet.
 -   Made the loop() counter global. Don't have a use for it yet.
+
+## Commit \#101 02/10/2021
+
+Changes:
+-   Correct the year in the above commits 92 to 100
+-   Change the HP85 no power code some more, so we aren't doing repeated resets
+    which generates repeated USB enumeration, which on a Windows host may lead
+    to annoying sound of the disconnect/reconnect alert sound every few seconds.
+-   Move the buffers for CRT Log and Serial Log into their own buffers, which
+    allows them to be viewed at any time after boot. Uses new Show command.
+-   Removed all of the repeatserial and requireserial related code,
+    other than the loading the parameter from the CONFIG.TXT file. It
+    was really annoying. Now we just check for the Serial channel to
+    become valid in loop(), and then dump a copy of both the serial
+    log and the CRT message, just once. Check is once per second so
+    quite low overhead in loop. Added both to the Show command so you
+    can always see it later.
+
+
+
+
 
 
 

@@ -156,6 +156,9 @@ struct S_Command_Entry
 //
 //  This table must come after the functions listed to avoid undefined function name errors
 //
+//  Not in this table because they have parameters:
+//      Show
+//
 
 struct S_Command_Entry Command_Table[] =
 {
@@ -182,7 +185,7 @@ struct S_Command_Entry Command_Table[] =
   {"la setup",         Setup_Logic_Analyzer},
   {"la go",            Logic_analyzer_go},
   {"addr",             proc_addr},
-  {"clean logfile",    clean_logfile},
+  {"clean log",        clean_logfile},
   {"pwo",              pulse_PWO},
   {"reset",            pulse_PWO},
   {"dump ram window",  dump_ram_window},                  //  Currently broken
@@ -385,7 +388,14 @@ void show(void)
 
   if(strcasecmp(serial_string + 5, "boot") == 0)       //  Not strncasecmp() so nothing after boot
   {
-    //  Handle dumping boot messages   ######
+    Serial.printf("%s\n", Serial_Log_Buffer);
+    return;
+  }
+
+  if(strcasecmp(serial_string + 5, "CRT") == 0)       //  Not strncasecmp() so nothing after CRT
+  {
+    Serial.printf("%s\n", CRT_Log_Buffer);
+    return;
   }
 
   if(strcasecmp(serial_string + 5, "config") == 0)     //  Not strncasecmp() so nothing after config
@@ -569,13 +579,14 @@ void help_2(void)
   Serial.printf("la setup      Set up the logic analyzer\n");
   Serial.printf("la go         Start the logic analyzer\n");
   Serial.printf("addr          Instantly show where HP85 is executing\n");
-  Serial.printf("show param    Show commands have a parameter after exactly 1 space\n");
-  Serial.printf("     log      Show the logfile.  Exactly 1 space after show\n");
+  Serial.printf("show -----    Show commands have a parameter after exactly 1 space\n");
+  Serial.printf("     log      Show the System Logfile\n");
   Serial.printf("     boot     Show the messages from the boot process\n");
+  Serial.printf("     CRT      Show the messages sent to the CRT at startup\n");
   Serial.printf("     config   Show the CONFIG.TXT file\n");
   Serial.printf("     mb       Display current mailboxes and related data\n");
   Serial.printf("     other    Anything else is a file name path\n");
-  Serial.printf("clean logfile Clean_logfile\n");
+  Serial.printf("clean log     Clean the Logfile on the SD Card\n");
   Serial.printf("pwo           Pulse PWO, resetting HP85 and EBTKS\n");
   
 //Serial.printf("dump ram window Start(8) Len(8)   Dump RAM in ROM window\n");                          //  Currently broken because of parsing
