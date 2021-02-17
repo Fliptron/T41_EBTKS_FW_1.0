@@ -416,7 +416,36 @@ Changes:
     quite low overhead in loop. Added both to the Show command so you
     can always see it later.
 
+## Commit \#102 02/17/2021
 
+Changes:
+-   There were two versions of is_HP85_idle(). The one with lower case
+    hp is better and is retained. The HP upper case version is
+    commented out for now
+-   Started work on a setup process for boot time Logic Analyzer.
+    Solved the issue it was intended to be used to debug, before it
+    was completed. So far all the setup is in
+    Setup_Boot_Time_Logic_Analyzer(), but actually setting it going
+    (after serial is connected) and handling the results is un-
+    implemented. If this gets future effort, consider pulling
+    parameters from a JSON file.
+-   Rewrote the Serial terminal "Show" command that now has a variable
+    parameter. There are several reserved param values that speed
+    things up, and if no match it becomes a file lister. Updated menu
+    2 to document this.
+-   Fixed bug in Logic Analyzer Setup that was asking for the first
+    parameter twice.
+-   Fixed bug in error message of copy_sd_file() , since sometimes it
+    is opening a Tape file
+-   Fixed bug in MOUNT when creating a new Tape image by copying
+    blank_T.tap
+-   In EBTKS_Tape_Drive.cpp made a change to tapeInCount that seems to
+    resolve the issue of Automatically running a program on boot,
+    "Autost". The runable must be on a tape and for performance
+    reasons, preferably near the beginning. The rest of the extensive
+    changes to this file are just formatting, changing from 4 spaces
+    per indent to 2, to be compatible with most of the rest of the
+    code. Some other files will get the same treatment in the future.
 
 
 

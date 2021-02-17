@@ -514,31 +514,31 @@ void HexDump_HP85_mem(uint32_t start_address, uint32_t count, bool show_addr, bo
 //    }
 
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////  Poll for tripple click of Shift key while in Idle
-
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////  Poll for tripple click of Shift key while in Idle
 //
-//  We can recognize that the HP85 is IDLE (CSTAT / R16 == 0) by detecting address 102434 occuring during execution
-//  If we are in IDLE, this occurs every 67 us . So with a little fiddling, we can monitor
+////
+////  We can recognize that the HP85 is IDLE (CSTAT / R16 == 0) by detecting address 102434 occuring during execution
+////  If we are in IDLE, this occurs every 67 us . So with a little fiddling, we can monitor
+////
 //
-
-bool is_HP85_idle(void)
-{
-  int32_t       loops;      //  This set to take about 100us, so if we are in IDLE, we will catch the RMIDLE address being issued
-
-  loops = 9940;             //  This value was derived by measuring the execution time of this function, and making it 100 us
-  //
-  //  Logic_Analyzer_main_sample is updated in the Phi 1 interrupt handler every bus cycle. As this function is running outside
-  //  of interrupt context, Logic_Analyzer_main_sample is always a valid sample.
-  //
-  while(loops--)
-  {
-    if ((Logic_Analyzer_main_sample & 0x00FFFF00U) == (RMIDLE << 8))
-    {
-      return true;
-    }
-  }
-  return false;
-}
+//bool is_HP85_idle(void)   &&&&  ####
+//{
+//  int32_t       loops;      //  This set to take about 100us, so if we are in IDLE, we will catch the RMIDLE address being issued
+//
+//  loops = 9940;             //  This value was derived by measuring the execution time of this function, and making it 100 us
+//  //
+//  //  Logic_Analyzer_main_sample is updated in the Phi 1 interrupt handler every bus cycle. As this function is running outside
+//  //  of interrupt context, Logic_Analyzer_main_sample is always a valid sample.
+//  //
+//  while(loops--)
+//  {
+//    if ((Logic_Analyzer_main_sample & 0x00FFFF00U) == (RMIDLE << 8))
+//    {
+//      return true;
+//    }
+//  }
+//  return false;
+//}
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////  All the simple commands
@@ -906,6 +906,130 @@ void proc_addr(void)
 
 }
 
+void Setup_Boot_Time_Logic_Analyzer(void)
+{
+  //
+  //  Setup the Boot Time Logic Analyzer settings in these initializers. Same value format as the serial terminal.
+  //
+
+  char boot_time_wr       = 1;        //  Asserted values are 0
+  char boot_time_rd       = 1;
+  char boot_time_lma      = 1;
+  char boot_time_wr_mask  = 0;        //  Mask == 1 to enable
+  char boot_time_rd_mask  = 0;
+  char boot_time_lma_mask = 0;
+
+  unsigned int  boot_time_address         = 0000072;      //  Octal address
+  unsigned int  boot_time_address_mask    = 0177777;      //  Octal address mask
+
+  unsigned int  boot_time_data            = 0000;         //  Octal data
+  unsigned int  boot_time_data_mask       = 0000;         //  Octal data mask
+
+  unsigned int  boot_time_rselec          = 0000;         //  Octal rselec
+  unsigned int  boot_time_rselec_mask     = 0000;         //  Octal rselec mask
+
+  unsigned int  boot_time_buffer_length   = 1024;         //  Must be power of two.               This is not checked, so get it right
+  unsigned int  boot_time_pre_trigger     =  512;         //  Number of pre-trigger samples.      This is not checked, must be greater than 2, less than (boot_time_buffer_length - 2)
+  unsigned int  boot_time_event_count     =    1;         //  Number of pattern matches before triggering
+
+  //
+  //  Setup Trigger Pattern
+  //
+
+  if (boot_time_wr)
+    Logic_Analyzer_Trigger_Value_1 |= BIT_MASK_WR;
+  else
+    Logic_Analyzer_Trigger_Value_1 &= ~BIT_MASK_WR;
+  if (boot_time_rd)
+    Logic_Analyzer_Trigger_Value_1 |= BIT_MASK_RD;
+  else
+    Logic_Analyzer_Trigger_Value_1 &= ~BIT_MASK_RD;
+  if (boot_time_lma)
+    Logic_Analyzer_Trigger_Value_1 |= BIT_MASK_LMA;
+  else
+    Logic_Analyzer_Trigger_Value_1 &= ~BIT_MASK_LMA;
+  if (boot_time_wr_mask)
+    Logic_Analyzer_Trigger_Mask_1 |= BIT_MASK_WR;
+  else
+    Logic_Analyzer_Trigger_Mask_1 &= ~BIT_MASK_WR;
+  if (boot_time_rd_mask)
+    Logic_Analyzer_Trigger_Mask_1 |= BIT_MASK_RD;
+  else
+    Logic_Analyzer_Trigger_Mask_1 &= ~BIT_MASK_RD;
+  if (boot_time_lma_mask)
+    Logic_Analyzer_Trigger_Mask_1 |= BIT_MASK_LMA;
+  else
+    Logic_Analyzer_Trigger_Mask_1 &= ~BIT_MASK_LMA;
+
+  boot_time_address &= 0x0000FFFF;
+  Logic_Analyzer_Trigger_Value_1 &= 0xFF0000FF;
+  Logic_Analyzer_Trigger_Value_1 |= (boot_time_address << 8);
+  boot_time_address_mask &= 0x0000FFFF;
+  Logic_Analyzer_Trigger_Mask_1 &= 0xFF0000FF;
+  Logic_Analyzer_Trigger_Mask_1 |= (boot_time_address_mask << 8);
+
+  boot_time_data &= 0x000000FF;
+  Logic_Analyzer_Trigger_Value_1 &= 0xFFFFFF00;
+  Logic_Analyzer_Trigger_Value_1 |= (boot_time_data << 0);
+  boot_time_data_mask &= 0x000000FF;
+  Logic_Analyzer_Trigger_Mask_1 &= 0xFFFFFF00;
+  Logic_Analyzer_Trigger_Mask_1 |= (boot_time_data_mask << 0);
+
+  boot_time_rselec &= 0x000000FF;
+  Logic_Analyzer_Trigger_Value_2 &= 0xFFFFFF00;
+  Logic_Analyzer_Trigger_Value_2 |= (boot_time_rselec << 0);
+  boot_time_rselec_mask &= 0x000000FF;
+  Logic_Analyzer_Trigger_Mask_2 &= 0xFFFFFF00;
+  Logic_Analyzer_Trigger_Mask_2 |= (boot_time_rselec_mask << 0);
+
+  Serial.printf("Match Value                        Mask Value\nCycle  Addr  Data  RSelec  State   Cycle  Addr  Data  RSelec  State\n");
+  Serial.printf(" %c%c%c  ", ((Logic_Analyzer_Trigger_Value_1 >> 26) & 0x01) ? '1' : '0',
+                             ((Logic_Analyzer_Trigger_Value_1 >> 25) & 0x01) ? '1' : '0',
+                             ((Logic_Analyzer_Trigger_Value_1 >> 24) & 0x01) ? '1' : '0'  );
+  Serial.printf("%06o  %03o    %03o",
+                              (Logic_Analyzer_Trigger_Value_1 >>  8) & 0x0000FFFF,
+                              (Logic_Analyzer_Trigger_Value_1 >>  0) & 0x000000FF,
+                              (Logic_Analyzer_Trigger_Value_2 >>  0) & 0x000000FF  );
+  Serial.printf("    %c%c%c%c    ", ((Logic_Analyzer_Trigger_Value_1 >> 31) & 0x01) ? '1' : '0',
+                                    ((Logic_Analyzer_Trigger_Value_1 >> 30) & 0x01) ? '1' : '0',
+                                    ((Logic_Analyzer_Trigger_Value_1 >> 29) & 0x01) ? '1' : '0',
+                                    ((Logic_Analyzer_Trigger_Value_1 >> 28) & 0x01) ? '1' : '0'  );
+
+  Serial.printf("%c%c%c  ", ((Logic_Analyzer_Trigger_Mask_1 >> 26) & 0x01) ? '1' : '0',
+                            ((Logic_Analyzer_Trigger_Mask_1 >> 25) & 0x01) ? '1' : '0',
+                            ((Logic_Analyzer_Trigger_Mask_1 >> 24) & 0x01) ? '1' : '0'  );
+  Serial.printf("%06o  %03o    %03o",
+                              (Logic_Analyzer_Trigger_Mask_1 >>  8) & 0x0000FFFF,
+                              (Logic_Analyzer_Trigger_Mask_1 >>  0) & 0x000000FF,
+                              (Logic_Analyzer_Trigger_Mask_2 >>  0) & 0x000000FF  );
+  Serial.printf("    %c%c%c%c\n\n", ((Logic_Analyzer_Trigger_Mask_1 >> 31) & 0x01) ? '1' : '0',
+                                    ((Logic_Analyzer_Trigger_Mask_1 >> 30) & 0x01) ? '1' : '0',
+                                    ((Logic_Analyzer_Trigger_Mask_1 >> 29) & 0x01) ? '1' : '0',
+                                    ((Logic_Analyzer_Trigger_Mask_1 >> 28) & 0x01) ? '1' : '0'  );
+
+  Logic_Analyzer_Current_Buffer_Length  = boot_time_buffer_length;
+  Logic_Analyzer_Current_Index_Mask     = Logic_Analyzer_Current_Buffer_Length - 1;
+
+  Logic_Analyzer_Pre_Trigger_Samples    = boot_time_pre_trigger;
+  Logic_Analyzer_Samples_Till_Done      = Logic_Analyzer_Current_Buffer_Length - Logic_Analyzer_Pre_Trigger_Samples;
+
+  Logic_Analyzer_Event_Count = Logic_Analyzer_Event_Count_Init = boot_time_event_count;
+
+  //
+  //  These are always initialized when this function is called
+  //
+
+  Logic_Analyzer_State = ANALYZER_IDLE;
+  Logic_Analyzer_Data_index             = 0;
+  Logic_Analyzer_Valid_Samples          = 0;
+  Logic_Analyzer_Index_of_Trigger       = -1;             //  A negative value means that if we display the buffer without a trigger event (time out) we won't display the Trigger message
+  Logic_Analyzer_Triggered              = false;
+
+  Logic_Analyzer_Samples_Till_Done      = Logic_Analyzer_Current_Buffer_Length - Logic_Analyzer_Pre_Trigger_Samples;
+  
+}
+
+
 void proc_auxint(void)
 {
   interruptVector = 0x12; //SPAR1
@@ -934,32 +1058,32 @@ void just_once_func(void)
 //  Serial.printf("\n");
 }
 
+////
+////  Prompt for a file to be dumped (as text) to the diag terminal
+////
 //
-//  Prompt for a file to be dumped (as text) to the diag terminal
-//
-
-void show_file(void)
-{
-  File          file;
-  int           character;
-  Serial.printf("\nEnter filename including path to be displayed: ");
-  if (!wait_for_serial_string())       //  Hang here till we get a file name (hopefully)
-  {
-    return;                           //  Got a Ctrl-C , so abort command
-  }
-  if (!(file = SD.open(serial_string)))
-  {   // Failed to open
-    Serial.printf("Can't open file\n");
-    return;
-  }
-  while((character = file.read()) > 0)
-  {
-    Serial.printf("%c", character);
-  }
-  file.close();
- 
-  serial_string_used();
-}
+//void show_file(void)
+//{
+//  File          file;
+//  int           character;
+//  Serial.printf("\nEnter filename including path to be displayed: ");
+//  if (!wait_for_serial_string())       //  Hang here till we get a file name (hopefully)
+//  {
+//    return;                           //  Got a Ctrl-C , so abort command
+//  }
+//  if (!(file = SD.open(serial_string)))
+//  {   // Failed to open
+//    Serial.printf("Can't open file\n");
+//    return;
+//  }
+//  while((character = file.read()) > 0)
+//  {
+//    Serial.printf("%c", character);
+//  }
+//  file.close();
+// 
+//  serial_string_used();
+//}
 
 
 void pulse_PWO(void)
@@ -1064,6 +1188,8 @@ void Setup_Logic_Analyzer(void)
 {
   unsigned int      address;
   unsigned int      data;
+
+  serial_string_used();
 
   //
   //  Not all of these initializations are needed, but this makes sure I've got all these

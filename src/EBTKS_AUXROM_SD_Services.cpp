@@ -1222,7 +1222,7 @@ bool copy_sd_file(const char * Source_Path, const char * Destination_Path)
   File Source = SD.open(Source_Path, FILE_READ);
   if (!Source)
   {
-    Serial.printf("Couldn't open ref disk image for Read\n");
+    Serial.printf("Couldn't open [%s] for Read\n", Source_Path);
     post_custom_error_message("Couldn't open Ref Disk", 417);
     return false;
   }
@@ -1538,7 +1538,7 @@ mount_a_disk:
       { //  Create and mount for tape
 Mount_create_and_mount_tape:
         Serial.printf("   Create and mount a tape\n");
-        if (!copy_sd_file("/Original_images/blank_T.dsk", Resolved_Path))     //  If this fails, the error status and message has already been setup in create_tape_image()
+        if (!copy_sd_file("/Original_images/blank_T.tap", Resolved_Path))     //  If this fails, the error status and message has already been setup in create_tape_image()
         {                                                                     //  Possible errors are 426 , 427 , and 428
           if (AUXROM_RAM_Window.as_struct.AR_ERR_NUM == 417)
           {

@@ -1078,7 +1078,7 @@ void loop()
   loopTranslator();         //  1MB5 / HPIB / DISK poll
                             //  150 ns when idle, but 920 ns ish if Phi 1 interrupt occurs while running
 
-  if (CRT_Boot_Message_Pending)     //  8 ns after boot message sent, but 800 ns ish if Phi 1 interrupt occurs while running
+  if (CRT_Boot_Message_Pending)     //  8 ns test is false, but 800 ns ish if Phi 1 interrupt occurs while running
   {                                 //  which is quite rare because the window is so narrow
     if (is_hp85_idle())
     {
