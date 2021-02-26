@@ -447,6 +447,12 @@ Changes:
     per indent to 2, to be compatible with most of the rest of the
     code. Some other files will get the same treatment in the future.
 
+## Commit \#103 02/26/2021
+
+Changes:
+-   Remove all references to FastLED library, which is buggy for the simple
+    case of a single string of two WS2812B RGB LEDs.
+
 
 
 

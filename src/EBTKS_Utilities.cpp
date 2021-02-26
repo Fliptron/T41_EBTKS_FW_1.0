@@ -1803,7 +1803,6 @@ int int_power(int base, int exp)
 //
 //  Philip's replacement of the FASTLED library
 //
-#if (ENABLE_FASTLED_VERSION == 0)
 uint8_t   led_data[6];
 
 #define WS2812_0_ON_VAL          300
@@ -1964,7 +1963,6 @@ void WS2812_update(void)
 //    .comment                110            0
 //    Total                553886
 
-#endif
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void jay_pi(void)

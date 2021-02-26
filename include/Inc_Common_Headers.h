@@ -6,7 +6,6 @@
 #include "EBTKS.h"
 #include "EBTKS_Tape_Drive.h"
 #include "Print_Splitter.h"
-#include "EBTKS_Led.h"
 #include "EBTKS_Global_Data.h"
 #include "SdFat.h"
 #include "sdios.h"

@@ -27,6 +27,15 @@
 //  11/xx/2020        lots of work, forgot to update this
 //  11/25/2020        SPRINTF
 //
+//  02/26/2021        Undid 100's of edits, so they could be staged to github in a more reasonable manner.
+//                    Did this by cloning from Github, Commit 102 of 2/17/2021
+//                    On trying to build the cloned project, got multiple errors in EBTKS_AUXROM_SD_Services.cpp
+//                    like:   src\EBTKS_AUXROM_SD_Services.cpp:565:19: error: 'File {aka class FsFile}' has no member named 'isReadOnly'
+//                    The fix is to edit D:\2021\HP-85_EBTKS_V1.0\Firmware\.pio\libdeps\teensy41\SdFat\src\SdFatConfig.h at line 78
+//                    and change it from
+//                        #define SDFAT_FILE_TYPE 3
+//                    to
+//                        #define SDFAT_FILE_TYPE 1     // PMF and RB was 3, but caused library problems like can't find isReadOnly()
 
 /////////////////////On error message / error codes.  Go see email log for this text in context
 //
@@ -562,7 +571,7 @@ void AUXROM_SDCAT(void)
     strcat(temp_file_path, p_buffer);
     //  Serial.printf("Read only test of %s\n", temp_file_path);
     temp_file = SD.open(temp_file_path);                                                  //  SD.open() does not mind the trailing slash if the name is a directory
-    if (temp_file.isReadOnly())
+    if (temp_file.isReadOnly())                                                           //  If this throws an error (no member named isReadOnly) see note at top of this file
     {
       *(uint32_t *)(AUXROM_RAM_Window.as_struct.AR_Opts + 4) |= 0x02;                     //  Indicate the file is read only
     }
@@ -2767,21 +2776,6 @@ void AUXROM_SETLED(void)
   Serial.printf("Call to SETLED\n");
 #endif
 
-#if ENABLE_FASTLED_VERSION
-  if ((AUXROM_RAM_Window.as_struct.AR_Opts[0] == 1) || (AUXROM_RAM_Window.as_struct.AR_Opts[0] == 3))
-  {
-    leds.setLedColor(0,{AUXROM_RAM_Window.as_struct.AR_Opts[1],
-                        AUXROM_RAM_Window.as_struct.AR_Opts[2],
-                        AUXROM_RAM_Window.as_struct.AR_Opts[3]  });
-  }
-  if ((AUXROM_RAM_Window.as_struct.AR_Opts[0] == 2) || (AUXROM_RAM_Window.as_struct.AR_Opts[0] == 3))
-  {
-    leds.setLedColor(1,{AUXROM_RAM_Window.as_struct.AR_Opts[1],
-                        AUXROM_RAM_Window.as_struct.AR_Opts[2],
-                        AUXROM_RAM_Window.as_struct.AR_Opts[3]  });
-  }
-  leds.update();
-#else
   if ((AUXROM_RAM_Window.as_struct.AR_Opts[0] == 1) || (AUXROM_RAM_Window.as_struct.AR_Opts[0] == 3))
   {
     setLedColor(0,  AUXROM_RAM_Window.as_struct.AR_Opts[1],   //  Red
@@ -2796,7 +2790,6 @@ void AUXROM_SETLED(void)
   }
   WS2812_update();
 
-#endif
 }
 
 //

@@ -740,11 +740,7 @@ void setup()
   initRoms();
   initCrtEmu();
 
-#if ENABLE_FASTLED_VERSION
-  leds.begin();                               //  This is being run when no interrupts have been enabled
-#else
   pinMode(CORE_PIN_NEOPIX_TSY, OUTPUT);       //  The single pin interface to the two WS2812B/E RGB LEDs
-#endif
 
   setIOWriteFunc(0340,&ioWriteAuxROM_Alert);  //  AUXROM Alert that a Mailbox/Buffer has been updated
   setIOReadFunc(0340,&onReadAuxROM_Alert);    //  Use HEYEBTKS to return identification string
@@ -1004,15 +1000,10 @@ void setup()
   //
   //  alternately, hard code the brightness in 
 
-#if ENABLE_FASTLED_VERSION
-  leds.setLedColor(0,{10,0,0});     //  R, G, B  --  10 is a reasonable brighness
-  leds.setLedColor(1,{0,10,0});
-  leds.update();
-#else
   setLedColor(0, 10,  0,  0);
   setLedColor(1,  0, 10,  0);
   WS2812_update();
-#endif
+
   //  Fall into loop()
   loop_count = 0;
 

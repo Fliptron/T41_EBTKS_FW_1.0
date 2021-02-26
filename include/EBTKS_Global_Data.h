@@ -222,10 +222,6 @@ EXTERN  Tape tape;
 
 EXTERN  SdFat SD;
 
-#if ENABLE_FASTLED_VERSION
-EXTERN  LED leds;
-#endif
-
 EXTERN  Print_Splitter PS_SDCAT;
 EXTERN  Print_Splitter PS_SDDEL;
 
