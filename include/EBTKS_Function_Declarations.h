@@ -160,6 +160,9 @@ void AUXROM_SDCOPY(void);
 void AUXROM_SDEOF(void);
 void AUXROM_SDEXISTS(void);
 void AUXROM_EBTKSREV(void);
+void AUXROM_RMIDLE(void);
+void AUXROM_SDBATCH(void);
+void AUXROM_BOOT(void);
 
 //
 //  Utility Functions
@@ -191,6 +194,9 @@ void Simple_Graphics_Test(void);
 void WS2812_init(void);
 void setLedColor(uint8_t led, uint8_t r, uint8_t g, uint8_t b);
 void WS2812_update(void);
+void initialize_RMIDLE_processing(void);
+void load_text_for_RMIDLE(char * text);
+bool open_RMIDLE_file(char * SD_filename);
 
 int int_power(int base, int exp);
 

@@ -2982,6 +2982,196 @@ void AUXROM_EBTKSREV(void)
 }
 
 //
+//          RMIDLE Processing
+//
+//  AUXROM_RMIDLE() gets called whenever the EXEC loop on the HP85 gets to the RMIDLE hook
+//  The purpose of the hook in this case is to insert characters into the keyboard stream
+//  If there are no characters to insert, just return with *p_usage = 0;
+//  Otherwise, return the next available character from the rmidle_text[] buffer.
+//  The rmidle_text[] buffer is either pre-loaded with a string, maybe from CONGFIG.TXT
+//  or it is associated with a file on the SD card.
+//
+//  If rmidle_file_active is true, when the rmidle_text[] buffer is consumed, get more
+//  from the file until we get to the end of file. 
+//
+
+#define isoctal(x)  ((x)>='0'&&(x)<='7')
+
+bool RMIDLE_seen = false;
+File RMIDLE_source;
+bool RMIDLE_file_active;
+char RMIDLE_text[258];        //  That should be enough, bad news as no checking is done.
+char * RMIDLE_text_ptr;
+
+void initialize_RMIDLE_processing(void)
+{
+  RMIDLE_text_ptr = &RMIDLE_text[0];
+  *RMIDLE_text_ptr = 0x00;
+}
+
+void load_text_for_RMIDLE(char * text)
+{
+  strlcpy(RMIDLE_text, text, 257);
+}
+
+bool open_RMIDLE_file(char * SD_filename)
+{
+  int   read_length;
+
+  RMIDLE_text_ptr = RMIDLE_text;
+  *RMIDLE_text_ptr = 0;
+  RMIDLE_file_active = true;
+  RMIDLE_source = SD.open(SD_filename, FILE_READ);
+  if (RMIDLE_source)
+  {
+    read_length = RMIDLE_source.read(RMIDLE_text, 256);
+    if (read_length < 0)                //  Read error
+    {
+      RMIDLE_source.close();
+      RMIDLE_file_active = false;
+      return false;
+    }
+    if (read_length == 0)               //  File opened, but it is zero length
+    {
+      RMIDLE_source.close();
+      RMIDLE_file_active = false;
+      return true;                      //  Successful, but useless
+    }
+    //
+    //  Successful read. Stick a 0x00 at the end
+    //
+    RMIDLE_text[read_length] = 0x00;
+    return true;
+  }
+  //
+  //  if we get here, we couldn't open the file
+  //
+  RMIDLE_file_active = false;
+  return false;
+}
+
+void close_RMIDLE_file(void)
+{
+  RMIDLE_source.close();
+  RMIDLE_file_active = false;
+}
+
+//
+//  If we are pulling RMIDLE text from a file, and we reach the end of the RMIDLE_text[] buffer,
+//  this function reads the next chunk.
+//
+
+void RMIDLE_file_read_next_record(void)
+{
+  int   read_length;
+
+  RMIDLE_text_ptr = RMIDLE_text;          //  Reset the pointer o the beginning of the buffer
+  *RMIDLE_text_ptr = 0;                   //  and set the first character to 0x00 , just in case.
+                                          //  It will be overwritten with a successful read.
+
+  read_length = RMIDLE_source.read(RMIDLE_text, 256);
+  if (read_length <= 0)                  //  Read error, or end of file
+  {
+    close_RMIDLE_file();
+    return;
+  }
+  //
+  //  Successful read. Stick a 0x00 at the end
+  //
+  RMIDLE_text[read_length] = 0x00;
+  return;
+}
+
+//
+//  Here is the actual RMIDLE processing (EBTKS end)
+//
+
+void AUXROM_RMIDLE(void)
+{
+  char    i, j;
+  char    * start_of_octal_const;
+
+  RMIDLE_seen = true;
+  if (*RMIDLE_text_ptr == 0x00)
+  {
+    goto RMIDLE_no_char;                      //  We are done, unless we are getting text from a file.
+  }
+
+  j = *RMIDLE_text_ptr++;
+  if (j != '\\')
+  {
+    //
+    //  Not a slash, so check for LF and CR,LF
+    //        LF            CR                           LF
+    if ((j == 10) || ((j == 13)  && (*RMIDLE_text_ptr == 10) ))
+    {
+      if(j == 13)
+      {                                         //  Handle CR, LF
+        RMIDLE_text_ptr++;
+      }
+      j = 0232;                                 //  Replace LF or CR,LF with HP85 'ENDLINE' . We don't handle LF,CR
+    }
+    goto RMIDLE_char_in_j;                      //  Normal character, or translater LF or CR,LF
+  }
+  //
+  //  Got a slash. If two, we just return 1. If 1, then expect 3 octal digits next
+  //
+  if (*RMIDLE_text_ptr == '\\' )	              //  Handle "\\" for a single '\'
+  {
+    ++RMIDLE_text_ptr;
+    goto RMIDLE_char_in_j;                      //  Result is a single '\'
+  }
+  //
+  //  If we get here, we have a single '\' which means an octal constant
+  //
+  start_of_octal_const = RMIDLE_text_ptr - 1;     //  May need this to report an error
+                                                  //  Handle \ooo  3 digit octal number
+  for (i = j = 0; (i < 3) && isoctal(*RMIDLE_text_ptr) ; i++)
+  {
+    j = (j << 3) + (*RMIDLE_text_ptr++ - '0');
+  }
+  if (i == 3)
+  {
+    goto RMIDLE_char_in_j;
+  }
+  //
+  //  If we get here, we didn't get 3 octal digits
+  //
+  Serial.printf("RMIDLE bad Octal constant [%.4s]\n", start_of_octal_const);
+  *RMIDLE_text_ptr = 0;                           //  Kill off any further processing of the string
+  if (RMIDLE_file_active)
+  {
+    close_RMIDLE_file();
+  }
+  goto RMIDLE_no_char;
+
+RMIDLE_char_in_j:
+    AUXROM_RAM_Window.as_struct.AR_Opts[0] = j;
+    *p_usage = 1;
+    *p_mailbox  = 0;
+    return;
+
+RMIDLE_no_char:
+    *p_usage = 0;
+    *p_mailbox  = 0;
+    return;
+}
+
+void AUXROM_SDBATCH(void)
+{
+
+}
+
+extern void pulse_PWO(void);        //  Declared and implemented in EBTKS_Utilities.cpp
+
+void AUXROM_BOOT(void)
+{
+  pulse_PWO();
+}
+
+
+
+//
 //  This function takes New_Path and appends it to Current_Path (if it is a relative path) and
 //  puts the result in Resolved_Path. It handles both Absolute and Relative strings in New_Path,
 //  and can be used for directory paths as well as file paths. The result is in Resolved_Path

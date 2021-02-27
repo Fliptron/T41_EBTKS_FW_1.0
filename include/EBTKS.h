@@ -631,7 +631,6 @@
 #define ASSERT_WR                          (GPIO_DR_CLEAR_WR = BIT_MASK_WR)
 #define RELEASE_WR                         (GPIO_DR_SET_WR   = BIT_MASK_WR)
 
-
 //    Simple Logic Analyzer
 //
 //  This implements a simple Logic Analyzer that traces bus transactions and some program state

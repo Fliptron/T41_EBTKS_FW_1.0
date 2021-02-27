@@ -438,9 +438,9 @@ bool Tape::is_tape_loaded(void)
 void tape_handle_command_load(void)
 {
   Serial.printf("\nLoad new tape file. Enter filename including path: ");
-  if (!wait_for_serial_string())       //  Hang here till we get a file name (hopefully)
+  if (!wait_for_serial_string())                                //  Hang here till we get a file name (hopefully)
   {
-    return;                           //  Got a Ctrl-C , so abort command
+    return;                                                     //  Got a Ctrl-C , so abort command
   }
   Serial.printf("\nOpening tape: %s\n", serial_string);
   tape.close();

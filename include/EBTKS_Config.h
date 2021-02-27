@@ -54,9 +54,6 @@
 //  logging code, got changed to the code that uses log_to_serial_ptr. This is the
 //  the code that collects the messages and depending on CONFIG.TXT settings, may send
 //  the messages to the serial port both during initial startup and again (maybe) later.
-//  If any of these are set to serial (LOG_SERIAL), then the CONFIG.TXT setting for
-//  requireserial should probably be set to true, for best (least surprising) results.
-//  This has not been tested.
 //
 
 #define LOG_NONE                  (0)

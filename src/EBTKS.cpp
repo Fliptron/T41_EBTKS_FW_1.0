@@ -767,6 +767,7 @@ void setup()
   *log_to_CRT_ptr    = 0;
   *log_to_serial_ptr = 0;
 
+  initialize_RMIDLE_processing();             //  This must be done before we get to CONFIG.TXT processing
   log_to_serial_ptr += sprintf(log_to_serial_ptr, "EBTKS Firmware built on %s\n\n", EBTKS_COMPILE_TIME);
   SCOPE_1_Pulser(3);                          //  2/7/2021 This occurs about 18 us after the previous call to Pulser(4) (inc 10 us delay)
   EBTKS_delay_ns(10000);      //  10 us
@@ -864,6 +865,7 @@ void setup()
 
                                 //  It took 18 ms to get to here from SD.begin (open logfile, send some stuff, Init HPIB/Disk)
                                 //  With 7 ROMs being loaded and JSON parsing of CONFIG.TXT , loadConfiguration()  takes 108ms
+                                //  Note: The "CONFIG.TXT" file name is specified in EBTKS_Global_Data.h
     config_success = loadConfiguration(Config_filename);  //  Reports success even if SD.begin() failed, as it uses default config
                                                           //  This is probably not a good decission
                                                           //  2/7/2021 Time for the whole function, with 7 ROMs loaded is 88ms

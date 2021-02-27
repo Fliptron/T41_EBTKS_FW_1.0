@@ -463,8 +463,13 @@ Changes:
     functions to allow access.
 -   Start changing over EMC support by changing parameters from CONFIG.TXT
 
+## Commit \#105 02/26/2021
 
-
+Changes:
+-   RMIDLE processing to support AutoStart commands and Batch processing
+    and related CONFIG.TXT processing to support this.
+-   Disable (in prep for removal) writing of a default CONFIG.TXT
+-   More EMC support in CONFIG.TXT handling in EBTKS_SD.cpp
 
 
 

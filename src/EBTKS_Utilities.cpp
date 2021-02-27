@@ -446,6 +446,7 @@ void show(void)
     dump_keys(false, false);
     return;
   }
+
   //
   //  If we get here, we didn't match any of the predefined specials (well, maybe config)
   //  so we will treat the parameter as a filename, including maybe path elements
@@ -2109,6 +2110,7 @@ bool MatchesPattern(char *pT, char *pP)
   }
   return false;
 }
+
 
 //
 //  Print out Special Keys in decimal or octal, for HP85 and HP87. Data structure lifted from Everett's Emulator

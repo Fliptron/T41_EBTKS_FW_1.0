@@ -29,6 +29,7 @@ bool          AutoStartEn;
 bool          EMC_Enable;
 int           EMC_NumBanks;
 int           EMC_StartBank;
+
 //
 //  Read machineType string (must match enum machine_numbers {})
 //  Valid strings are:
@@ -50,7 +51,7 @@ enum machine_numbers{
 
 extern HpibDevice *devices[];
 
-// extern uint8_t roms[MAX_ROMS][ROM_PAGE_SIZE];       //  Just for diag prints
+// extern uint8_t roms[MAX_ROMS][ROM_PAGE_SIZE];        //  Just for diag prints
 
 bool loadRom(const char *fname, int slotNum, const char *description)
 {
@@ -179,7 +180,7 @@ bool loadRom(const char *fname, int slotNum, const char *description)
     header[1] = header[2];
     //  log_to_serial_ptr += sprintf(log_to_serial_ptr, "AUX HEADER ROM# %03o\n", id);
   }
-  if ((id >= AUXROM_SECONDARY_ID_START) && (id <= AUXROM_SECONDARY_ID_END)) //  Note, not testing Primary AUXROM at ID = 361
+  if ((id >= AUXROM_SECONDARY_ID_START) && (id <= AUXROM_SECONDARY_ID_END))         //  Note, not testing Primary AUXROM at ID = 361
   {
     //
     //  Special check for the the non-primary AUXROMs.  Note that these are not recognized by the HP-85 at boot time scan (by design)
@@ -193,7 +194,7 @@ bool loadRom(const char *fname, int slotNum, const char *description)
     //
     uint8_t comp = ((uint8_t)(~id)) + ((machineNum==2 || machineNum==3) ? 1 : 0);
 
-    if (header[1] != (comp | (uint8_t)0360)) //  Check the ID check byte
+    if (header[1] != (comp | (uint8_t)0360))                                      //  Check the ID check byte
     {
       LOGPRINTF("Secondary AUXROM file header error %02X %02X\n", id, (uint8_t)header[1]);
       log_to_CRT_ptr += sprintf(log_to_CRT_ptr, "HeaderError\n");
@@ -231,7 +232,7 @@ bool loadRom(const char *fname, int slotNum, const char *description)
   }
 
   //  ROM header looks good, read the ROM file into memory
-  rfile.seek(0); //  Rewind the file
+  rfile.seek(0);                                                    //  Rewind the file
 
   //
   //  Before loading the ROM into DMAMEM, we must make sure that the target area in DMAMEM is not already
@@ -258,179 +259,182 @@ bool loadRom(const char *fname, int slotNum, const char *description)
   return true;
 }
 
+// //
+// //  Saves the configuration to a file
+// //
+
+// void saveConfiguration(const char *filename)
+// {
+//   // Delete existing file, otherwise the configuration is appended to the file
+//   SD.remove(filename);
+
+//   // Open file for writing
+//   File file = SD.open(filename, FILE_WRITE);
+//   if (!file)
+//   {
+//     LOGPRINTF("Failed to create file\n"); //  This is probably pointless, since if we can't create a CONFIG.TXT file
+//                                           //  what is the probability that Log File stuff is working?
+//     return;
+//   }
+
+//   //
+//   //  Allocate a temporary JsonDocument
+//   //  Don't forget to change the capacity to match your requirements.
+//   //  Use arduinojson.org/assistant to compute the capacity.
+//   //
+//   //  On 10/01/2020, report is 1720
+//   //  On 01/26/2021, report is 3947
+//   //  On 01/30/2021, report is 4005
+//   //
+
+//   StaticJsonDocument<JSON_DOC_SIZE> doc;
+
+//   log_to_serial_ptr += sprintf(log_to_serial_ptr, "\n\nError reading CONFIG.TXT   Recreating default Configuration\n\n");
+
+//   // Set the values in the document
+//   doc["machineName"]   = "HP85A";
+//   doc["CRTVerbose"]    = true;
+//   doc["EMS"]           = false;       //  Implement EMS memory
+//   doc["EMSSize"]       = 256;         //  Size of implemented EMS memory in KB (1024)
+//   doc["EMSbase"]       = 32;          //  Address of the start of EMS memory, depends on what is already implemented on motherboard, in KB (85AIF:0 , 85B:32 , 86:? , 87:? , 87XM:?)
+//   doc["screenEmu"]     = false;       //  Track all CRT operations
+//   doc["CRTRemote"]     = false;       //  Transmit screen via WiFi to browser
+//   doc["ram16k"]        = true;        //  For safety, since we don't know what machine we are plugged into
+
+//   // tape drive
+
+//   JsonObject tape = doc.createNestedObject("tape");
+//   tape["enable"] = false;             //  For safety, since we don't know what machine we are plugged into
+//   tape["directory"] = "/tapes/";
+//   tape["filename"] = "tape1.tap";
+
+//   //  Option ROMs
+
+//   JsonObject optRoms = doc.createNestedObject("optionRoms");
+//   optRoms["directory"] = "/roms/";
+//   JsonArray romx = optRoms.createNestedArray("roms");
+
+//   //  Add ROMs
+
+//   JsonObject rom0 = romx.createNestedObject();
+//   rom0["description"] = "Service ROM 340 AUXROM Aware";
+//   rom0["filename"] = "rom340aux";
+//   rom0["enable"] = false;
+
+//   JsonObject rom1 = romx.createNestedObject();
+//   rom1["description"] = "Assembler ROM";
+//   rom1["filename"] = "rom050";
+//   rom1["enable"] = false;
+  
+//   JsonObject rom2 = romx.createNestedObject();
+//   rom2["description"] = "I/O ROM";
+//   rom2["filename"] = "rom300B";
+//   rom2["enable"] = false;
+  
+//   JsonObject rom3 = romx.createNestedObject();
+//   rom3["Note"] = "For 85A floppys, disable rom317, rom320B, rom321B";
+//   rom3["description"] = "Mass Storage";
+//   rom3["filename"] = "rom320";
+//   rom3["enable"] = false;
+  
+//   JsonObject rom4 = romx.createNestedObject();
+//   rom4["Note"] = "For SS/80 disk, with real HPIB and real SS/80 disk. Use with rom320B, rom321B";
+//   rom4["description"] = "Extended Mass Storage";
+//   rom4["filename"] = "rom317";
+//   rom4["enable"] = false;
+  
+//   JsonObject rom5 = romx.createNestedObject();
+//   rom5["Note"] = "For 85B floppys and 5, 10 MB hard disk. Use with rom321B, can be used on 85A";
+//   rom5["description"] = "85B Mass Storage";
+//   rom5["filename"] = "rom320B";
+//   rom5["enable"] = true;
+  
+//   JsonObject rom6 = romx.createNestedObject();
+//   rom6["description"] = "EDisk";
+//   rom6["filename"] = "rom321B";
+//   rom6["enable"] = true;
+  
+//   JsonObject rom7 = romx.createNestedObject();
+//   rom7["description"] = "Advanced Programming";
+//   rom7["filename"] = "rom350";
+//   rom7["enable"] = false;
+  
+//   JsonObject rom8 = romx.createNestedObject();
+//   rom8["description"] = "Printer/Plotter";
+//   rom8["filename"] = "rom360";
+//   rom8["enable"] = false;
+  
+//   JsonObject rom9 = romx.createNestedObject();
+//   rom9["description"] = "AUXROM Primary 2020_11_28";
+//   rom9["filename"] = "rom361";
+//   rom9["enable"] = true;
+  
+//   JsonObject rom10 = romx.createNestedObject();
+//   rom10["description"] = "AUXROM Secondary 1 2020_11_28";
+//   rom10["filename"] = "rom362";
+//   rom10["enable"] = true;
+  
+//   JsonObject rom11 = romx.createNestedObject();
+//   rom11["description"] = "AUXROM Secondary 2 2020_11_28";
+//   rom11["filename"] = "rom363";
+//   rom11["enable"] = true;
+  
+//   JsonObject rom12 = romx.createNestedObject();
+//   rom12["description"] = "AUXROM Secondary 3 2020_11_28";
+//   rom12["filename"] = "rom364";
+//   rom12["enable"] = true;
+
+//   // hpib devices
+
+//   JsonArray hpib = doc.createNestedArray("hpib");
+//   JsonObject device = hpib.createNestedObject();
+//   device["select"] = 3;                           //  HPIB Select code
+//   device["type"] = 0;                             //  Disk type - currently an enumeration
+//   device["device"] = 0;                           //  First device 0..31
+//   device["directory"] = "/disks/";
+//   device["enable"] = true;
+
+//   JsonArray drives = device.createNestedArray("drives");
+
+//   JsonObject drive0 = drives.createNestedObject();
+//   drive0["unit"] = 0;
+//   drive0["filename"] = "85Games1.dsk";
+//   drive0["writeProtect"] = false;
+//   drive0["enable"] = true;
+
+//   JsonObject drive1 = drives.createNestedObject();
+//   drive1["unit"] = 1;
+//   drive1["filename"] = "85Games2.dsk";
+//   drive1["writeProtect"] = false;
+//   drive1["enable"] = true;
+
+//   JsonObject printer = hpib.createNestedObject();
+//   device["select"] = 3;                           //  HPIB Select code
+//   device["type"] = 0;                             //  printer type - currently an enumeration
+//   device["device"] = 10;                          // device 0..31
+//   device["directory"] = "/printers/";
+//   device["enable"] = true;
+//   JsonObject printer0 = printer.createNestedObject("printer");
+//   printer0["filename"] = "printerFile.txt";
+
+//   serializeJsonPretty(doc, Serial);
+
+//   //
+//   // Serialize JSON to file
+//   //
+//   if (serializeJsonPretty(doc, file) == 0)
+//   {
+//     LOGPRINTF("Failed to write to file\n");     //  This is probably pointless, since if we can't write to CONFIG.TXT file
+//                                                 //  what is the probability that Log File stuff is working?
+//   }
+//   //  Close the file
+//   log_to_serial_ptr += sprintf(log_to_serial_ptr, "\n\n");
+//   file.close();
+// }
+
 //
-//  Saves the configuration to a file
+//  Returns the enumeration of the machine name selected in the config file
 //
-
-void saveConfiguration(const char *filename)
-{
-  // Delete existing file, otherwise the configuration is appended to the file
-  SD.remove(filename);
-
-  // Open file for writing
-  File file = SD.open(filename, FILE_WRITE);
-  if (!file)
-  {
-    LOGPRINTF("Failed to create file\n"); //  This is probably pointless, since if we can't create a CONFIG.TXT file
-                                          //  what is the probability that Log File stuff is working?
-    return;
-  }
-
-  //
-  //  Allocate a temporary JsonDocument
-  //  Don't forget to change the capacity to match your requirements.
-  //  Use arduinojson.org/assistant to compute the capacity.
-  //
-  //  On 10/01/2020, report is 1720
-  //  On 01/26/2021, report is 3947
-  //  On 01/30/2021, report is 4005
-  //
-
-  StaticJsonDocument<JSON_DOC_SIZE> doc;
-
-  log_to_serial_ptr += sprintf(log_to_serial_ptr, "\n\nError reading CONFIG.TXT   Recreating default Configuration\n\n");
-
-  // Set the values in the document
-  doc["machineName"]   = "HP85A";
-  doc["CRTVerbose"]    = true;
-  doc["EMS"]           = false;       //  Implement EMS memory
-  doc["EMSSize"]       = 256;         //  Size of implemented EMS memory in KB (1024)
-  doc["EMSbase"]       = 32;          //  Address of the start of EMS memory, depends on what is already implemented on motherboard, in KB (85AIF:0 , 85B:32 , 86:? , 87:? , 87XM:?)
-  doc["screenEmu"]     = false;       //  Track all CRT operations
-  doc["CRTRemote"]     = false;       //  Transmit screen via WiFi to browser
-  doc["ram16k"]        = true;        //  For safety, since we don't know what machine we are plugged into
-
-  // tape drive
-
-  JsonObject tape = doc.createNestedObject("tape");
-  tape["enable"] = false;             //  For safety, since we don't know what machine we are plugged into
-  tape["directory"] = "/tapes/";
-  tape["filename"] = "tape1.tap";
-
-  //  Option ROMs
-
-  JsonObject optRoms = doc.createNestedObject("optionRoms");
-  optRoms["directory"] = "/roms/";
-  JsonArray romx = optRoms.createNestedArray("roms");
-
-  //  Add ROMs
-
-  JsonObject rom0 = romx.createNestedObject();
-  rom0["description"] = "Service ROM 340 AUXROM Aware";
-  rom0["filename"] = "rom340aux";
-  rom0["enable"] = false;
-
-  JsonObject rom1 = romx.createNestedObject();
-  rom1["description"] = "Assembler ROM";
-  rom1["filename"] = "rom050";
-  rom1["enable"] = false;
-  
-  JsonObject rom2 = romx.createNestedObject();
-  rom2["description"] = "I/O ROM";
-  rom2["filename"] = "rom300B";
-  rom2["enable"] = false;
-  
-  JsonObject rom3 = romx.createNestedObject();
-  rom3["Note"] = "For 85A floppys, disable rom317, rom320B, rom321B";
-  rom3["description"] = "Mass Storage";
-  rom3["filename"] = "rom320";
-  rom3["enable"] = false;
-  
-  JsonObject rom4 = romx.createNestedObject();
-  rom4["Note"] = "For SS/80 disk, with real HPIB and real SS/80 disk. Use with rom320B, rom321B";
-  rom4["description"] = "Extended Mass Storage";
-  rom4["filename"] = "rom317";
-  rom4["enable"] = false;
-  
-  JsonObject rom5 = romx.createNestedObject();
-  rom5["Note"] = "For 85B floppys and 5, 10 MB hard disk. Use with rom321B, can be used on 85A";
-  rom5["description"] = "85B Mass Storage";
-  rom5["filename"] = "rom320B";
-  rom5["enable"] = true;
-  
-  JsonObject rom6 = romx.createNestedObject();
-  rom6["description"] = "EDisk";
-  rom6["filename"] = "rom321B";
-  rom6["enable"] = true;
-  
-  JsonObject rom7 = romx.createNestedObject();
-  rom7["description"] = "Advanced Programming";
-  rom7["filename"] = "rom350";
-  rom7["enable"] = false;
-  
-  JsonObject rom8 = romx.createNestedObject();
-  rom8["description"] = "Printer/Plotter";
-  rom8["filename"] = "rom360";
-  rom8["enable"] = false;
-  
-  JsonObject rom9 = romx.createNestedObject();
-  rom9["description"] = "AUXROM Primary 2020_11_28";
-  rom9["filename"] = "rom361";
-  rom9["enable"] = true;
-  
-  JsonObject rom10 = romx.createNestedObject();
-  rom10["description"] = "AUXROM Secondary 1 2020_11_28";
-  rom10["filename"] = "rom362";
-  rom10["enable"] = true;
-  
-  JsonObject rom11 = romx.createNestedObject();
-  rom11["description"] = "AUXROM Secondary 2 2020_11_28";
-  rom11["filename"] = "rom363";
-  rom11["enable"] = true;
-  
-  JsonObject rom12 = romx.createNestedObject();
-  rom12["description"] = "AUXROM Secondary 3 2020_11_28";
-  rom12["filename"] = "rom364";
-  rom12["enable"] = true;
-
-  // hpib devices
-
-  JsonArray hpib = doc.createNestedArray("hpib");
-  JsonObject device = hpib.createNestedObject();
-  device["select"] = 3;                           //  HPIB Select code
-  device["type"] = 0;                             //  Disk type - currently an enumeration
-  device["device"] = 0;                           //  First device 0..31
-  device["directory"] = "/disks/";
-  device["enable"] = true;
-
-  JsonArray drives = device.createNestedArray("drives");
-
-  JsonObject drive0 = drives.createNestedObject();
-  drive0["unit"] = 0;
-  drive0["filename"] = "85Games1.dsk";
-  drive0["writeProtect"] = false;
-  drive0["enable"] = true;
-
-  JsonObject drive1 = drives.createNestedObject();
-  drive1["unit"] = 1;
-  drive1["filename"] = "85Games2.dsk";
-  drive1["writeProtect"] = false;
-  drive1["enable"] = true;
-
-  JsonObject printer = hpib.createNestedObject();
-  device["select"] = 3;                           //  HPIB Select code
-  device["type"] = 0;                             //  printer type - currently an enumeration
-  device["device"] = 10;                          // device 0..31
-  device["directory"] = "/printers/";
-  device["enable"] = true;
-  JsonObject printer0 = printer.createNestedObject("printer");
-  printer0["filename"] = "printerFile.txt";
-
-  serializeJsonPretty(doc, Serial);
-
-  //
-  // Serialize JSON to file
-  //
-  if (serializeJsonPretty(doc, file) == 0)
-  {
-    LOGPRINTF("Failed to write to file\n");     //  This is probably pointless, since if we can't write to CONFIG.TXT file
-                                                //  what is the probability that Log File stuff is working?
-  }
-  //  Close the file
-  log_to_serial_ptr += sprintf(log_to_serial_ptr, "\n\n");
-  file.close();
-}
-
 int get_MachineNum(void)
 {
   return machineNum;
@@ -495,8 +499,8 @@ bool loadConfiguration(const char *filename)
   File file = SD.open(filename);
   machineNum = -1;                                                    //  In case we have an early exit, make sure this is an invalid value
 
-  LOGPRINTF("Open was [%s]\n", file ? "Successful" : "Failed"); //  We need to probably push this to the screen if it fails
-                                                                //  Except this happens before the PWO is released
+  LOGPRINTF("Open was [%s]\n", file ? "Successful" : "Failed");       //  We need to probably push this to the screen if it fails
+                                                                      //  Except this happens before the PWO is released
   if (!file)
   {
     log_to_CRT_ptr += sprintf(log_to_CRT_ptr, "Couldn't open %s\n", filename);
@@ -511,38 +515,33 @@ bool loadConfiguration(const char *filename)
   StaticJsonDocument<JSON_DOC_SIZE> doc;
 
   //
-  // Deserialize the JSON document
+  //  Deserialize the JSON document
   //
+
   DeserializationError error = deserializeJson(doc, file);
   if (error)
   {
     file.close();
-    log_to_CRT_ptr += sprintf(log_to_CRT_ptr, "deserializeJson failed\n");
-
-    saveConfiguration(filename);                                                        //  ####  This is dangerous, since we don't know 85/86/87  ####
-    LOGPRINTF("Failed to read file, using default configuration\n");
-    //
-    //  Try number 2:  Read the file we hopefully just wrote
-    //
-    file = SD.open(filename);
-    DeserializationError error = deserializeJson(doc, file);
-    if (error)
-    { //  Failed a second time, give up
-      log_to_CRT_ptr += sprintf(log_to_CRT_ptr, "deserializeJson failed twice\n");
-      LOGPRINTF("Failed to read (or write) the default configuration. Giving up\n");
+    log_to_CRT_ptr += sprintf(log_to_CRT_ptr, "Config Error: %s\n", filename);
+    LOGPRINTF("Failed to read configuration file %s\n", filename);
+    // //
+    // //  Try number 2:  Read the file we hopefully just wrote
+    // //
+    // file = SD.open(filename);
+    // DeserializationError error = deserializeJson(doc, file);
+    // if (error)
+    // { //  Failed a second time, give up
+    //   log_to_CRT_ptr += sprintf(log_to_CRT_ptr, "deserializeJson failed twice\n");
+    //   LOGPRINTF("Failed to read (or write) the default configuration. Giving up\n");
       return false;
-    }
+    // }
     //  else fall into the normal config processing with the defaults we just created
   }
 
   strlcpy (machineType, (doc["machineName"]   | "error") , 10);
-  screenEmu     = doc["screenEmu"]     | false;
-  CRTRemote     = doc["CRTRemote"]     | false;
-
   //
   //  look through table to find a match to enumerate the machineType
   //
-
   machineNum = 0;     //  HP85A
   while (machineNum < MACH_NUM)
   {
@@ -572,13 +571,76 @@ bool loadConfiguration(const char *filename)
     LOGPRINTF("HP85A 16 KB RAM: %s\n", getHP85RamExp() ? "Enabled":"None");
   }
 
-  //bool enScreenEmu = doc["screenEmu"] | false;
+  screenEmu     = doc["screenEmu"]     | false;
+  LOGPRINTF("Screen Emulation:     %s\n", get_screenEmu() ? "Active" : "Inactive");
+
+  CRTRemote     = doc["CRTRemote"]     | false;
+
+  AutoStartEn = doc["AutoStart"]["enable"] | false;
+  initialize_RMIDLE_processing();                       //  Initialize to no text, and pointer points at 0x00
+  if (AutoStartEn)
+  {
+    if ((strlen(doc["AutoStart"]["command"] | "") != 0) && (strlen(doc["AutoStart"]["batch"] | "") != 0))
+    {
+      log_to_CRT_ptr += sprintf(log_to_CRT_ptr, "Error AutoStart Command & Batch\n");
+      LOGPRINTF("Error AutoStart Command & Batch\n");
+      //
+      //  Can't have both, so ignore
+      //
+    }
+    else if (strlen(doc["AutoStart"]["command"] | "") != 0)
+    {
+      load_text_for_RMIDLE(doc["AutoStart"]["command"]);
+      log_to_CRT_ptr += sprintf(log_to_CRT_ptr, "AutoStart with Command\n");
+      LOGPRINTF("AutoStart with Command\n");
+    }
+    else if (strlen(doc["AutoStart"]["batch"] | "") != 0)
+    {
+      if (open_RMIDLE_file(doc["AutoStart"]["batch"]))
+      {
+        log_to_CRT_ptr += sprintf(log_to_CRT_ptr, "AutoStart with Batch file\n");
+        LOGPRINTF("AutoStart with Batch file\n");
+      }
+      else
+      {
+        log_to_CRT_ptr += sprintf(log_to_CRT_ptr, "AutoStart with Batch Failed\n");
+        LOGPRINTF("AutoStart with Batch Failed\n");        
+      }
+    }
+    else
+    {
+      //  Sigh, enabled, but both command and batch are empty
+      log_to_CRT_ptr += sprintf(log_to_CRT_ptr, "AutoStart: No Command or Batch\n");
+      LOGPRINTF("AutoStart: No Command or Batch\n");
+    }
+  }
+
+  //
+  //  EMC Support                         From HP 1983 and 1984 Catalog, page 592
+  //
+  //  Model       Built in EMC memory     Notes
+  //  HP85A       0 * 32 K banks          Only works with IF mod to HP85A I/O bus backplane, and then only provides EDisk (with appropriate ROMS)
+  //  HP85B       1 * 32 K banks          Makes minimal sense, and then only provides EDisk (with appropriate ROMS). Why would you want it, given performance of SD Card file system
+  //  HP86A       1 * 32 K banks   \                 (need some text here so line does not end in a backslash)
+  //  HP86B       3 * 32 K banks    \     EMC memory can be used for EDisk or as program/data memory
+  //  HP87        3 * 32 K banks    /
+  //  HP87XM      3 * 32 K banks   /
+  //
+
+  EMC_Enable    = doc["EMC"]["enable"] | false;
+  EMC_NumBanks  = doc["EMC"]["NumBanks"] | 0;
+  EMC_StartBank = doc["EMC"]["StartBank"] | 5;      //  This would be right for a system with 128K DRAM pre-installed
+  //
+  //  EMC configuration checking should be (somehow) by the EMC init code, maybe probing memory to see what is there
+  //  and make sure the config is valid. Although if this could be done, then autoconfig should also be possible.
+  //  I wonder if we could monitor the interrupt priority chain after first /LMA (tricky, because it depend on what
+  //  slot EBTKS is in). Could EBTKS participate in the EMC autoconfig dance?
+  //
+
   bool tapeEn = doc["tape"]["enable"] | false;
   log_to_CRT_ptr += sprintf(log_to_CRT_ptr, "HP85A/B Tape Emulation: %s\n", tapeEn ? "Yes":"No");
 
 
-
-  LOGPRINTF("Screen Emulation:     %s\n", (doc["screenEmu"] | false) ? "Active" : "Inactive");
 
   //LOGPRINTF("Tape Drive Emulation: %s\n", tapeEn ? "Active" : "Inactive");
 
@@ -625,8 +687,8 @@ bool loadConfiguration(const char *filename)
       {
         romIndex++;
       }
-      SCOPE_1_Pulser(1); //  Loading ROMs takes between 6.5 and 8.5 ms each (more or less), measured 2/7/2021
-      //  EBTKS_delay_ns(10000);    //  10 us
+      SCOPE_1_Pulser(1);                                          //  Loading ROMs takes between 6.5 and 8.5 ms each (more or less), measured 2/7/2021
+      //  EBTKS_delay_ns(10000);                                  //  10 us
     }
     else
     {
@@ -698,8 +760,8 @@ bool loadConfiguration(const char *filename)
           {
             devices[device]->addDisk((int)type);
             devices[device]->setFile(unitNum, fname, wprot);
-            LOGPRINTF(                                      "Add Drive %s to msus$ D:%d%d%d with image file: %s\r\n", type_text, select, device, unitNum, fname);
-            log_to_serial_ptr += sprintf(log_to_serial_ptr, "Add Drive %s to msus$ D:%d%d%d with image file: %s\r\n", type_text, select, device, unitNum, fname);
+            LOGPRINTF(                                      "Add Drive %s to msus$ D:%d%d%d with image file: %s\n", type_text, select, device, unitNum, fname);
+            log_to_serial_ptr += sprintf(log_to_serial_ptr, "Add Drive %s to msus$ D:%d%d%d with image file: %s\n", type_text, select, device, unitNum, fname);
             log_to_CRT_ptr += sprintf(log_to_CRT_ptr, "%d%d%d %s\n", select, device, unitNum, fname);
           }
         }
@@ -724,10 +786,16 @@ bool loadConfiguration(const char *filename)
       if ((devices[device] != NULL) && (enable == true))
       {
         devices[device]->setFile((char *)fname);
-        LOGPRINTF("Add Printer type: %d to Device %1d%2d with print file: %s\r\n", type, select, device, fname);
-        log_to_serial_ptr += sprintf(log_to_serial_ptr, "Add Printer type: %d to Device %1d%2d with print file: %s\r\n", type, select, device, fname);
+        LOGPRINTF("Add Printer type: %d to Device %1d%2d with print file: %s\n", type, select, device, fname);
+        log_to_serial_ptr += sprintf(log_to_serial_ptr, "Add Printer type: %d to Device %1d%2d with print file: %s\n", type, select, device, fname);
+        log_to_CRT_ptr    += sprintf(log_to_CRT_ptr, "Printer %1d%2d %s\n", select, device, fname);
       }
     }
+  }
+
+  if (tapeEn)
+  {
+    log_to_CRT_ptr += sprintf(log_to_CRT_ptr, ":T  %s\n", tape.getFile());
   }
 
   // Close the file (Curiously, File's destructor doesn't close the file)
@@ -780,6 +848,7 @@ failed_to_read_flags:
 //
 
 //   ################   this needs to be a call to a single block of shared code   ################
+
 bool remount_drives(const char *filename)
 {
   char fname[258];

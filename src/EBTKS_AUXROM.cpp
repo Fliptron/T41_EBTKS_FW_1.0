@@ -45,9 +45,11 @@
 #define  AUX_USAGE_SDEOF         ( 25)      //  SDEOF                                             Returns number of characters from current position to the end of the file
 #define  AUX_USAGE_SDEXISTS      ( 26)      //  SDEXISTS                                          Returns True (1) if file exists
 #define  AUX_USAGE_EBTKSREV      ( 27)      //  EBTKSREV$                                         Returns a revision string, The string is defined at the top of EBTKS.h
+#define  AUX_USAGE_RMIDLE        ( 28)      //  none                                              Called from the RMIDLE loop on the HP85. EBTKS can return a KeyCode in AR_Opts[0], and set usage to 1
+#define  AUX_USAGE_SDBATCH       ( 29)      //  SDBATCH
+#define  AUX_USAGE_BOOT          ( 30)      //  BOOT
 
 
-//#define  AUX_USAGE_RDSTR         ( 18)      //  RDSTR                                             read a LF or CR/LF terminated string from an SD file
 
 
 //      These Keywords don't have assigned Usage codes as they do not require any EBTKS support functions
@@ -231,6 +233,15 @@ void AUXROM_Poll(void)
       break;
     case AUX_USAGE_EBTKSREV:
       AUXROM_EBTKSREV();
+      break;
+    case AUX_USAGE_RMIDLE:
+      AUXROM_RMIDLE();
+      break;
+    case AUX_USAGE_SDBATCH:
+      AUXROM_SDBATCH();
+      break;
+    case AUX_USAGE_BOOT:
+      AUXROM_BOOT();
       break;
     default:
       *p_usage = 1;               //  Failure, unrecognized Usage code
