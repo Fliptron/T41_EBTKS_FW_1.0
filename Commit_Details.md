@@ -471,7 +471,13 @@ Changes:
 -   Disable (in prep for removal) writing of a default CONFIG.TXT
 -   More EMC support in CONFIG.TXT handling in EBTKS_SD.cpp
 
+## Commit \#106 02/26/2021
 
+Changes:
+-   Partial update of EMC code to new CONFIG.TXT parameters. Still all
+    commented out until all changes have been made. So mostly folding
+    in Russell's EMC update that predates the CONFIG.TXT changes
+   
 
 
 

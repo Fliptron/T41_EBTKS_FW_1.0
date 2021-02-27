@@ -42,6 +42,7 @@
 //    If it ever turns out this is too soon, we could add a 100 ns delat (thus mid Phi 1 pulse) which should fix things.
 //
 
+
 #include <Arduino.h>
 #include <setjmp.h>
 
@@ -60,7 +61,7 @@ ioWriteFuncPtr_t ioWriteFuncs[256];
 //
 //  Variables for the EMC (extended memory controller)
 //
-#define EXTRAM_SIZE 0x40000u    //256k to begin with
+#define EMC_RAM_SIZE 0x40000u    //256k to begin with
 
 volatile bool       ifetch , m_emc_mult;
 volatile uint8_t    m_emc_drp;
@@ -69,8 +70,10 @@ uint8_t             m_emc_mode;
 uint8_t             m_emc_state;
 volatile bool       m_emc_lmard;
 volatile uint32_t   cycleNdx;         //counts the byte index for multi-byte transfers
-DMAMEM uint8_t      extram[EXTRAM_SIZE];
+DMAMEM uint8_t      emcram[EMC_RAM_SIZE];
 volatile uint32_t   m_emc_read,m_emc_write;
+volatile uint32_t   m_emc_start_addr;
+volatile bool       m_emc_master;
 
 enum {
 		  EMC_IDLE,
@@ -81,7 +84,7 @@ enum {
 bool emc_r(void);
 void emc_w(uint8_t val);
 void lma_cycle(bool state);
-void emc_init(void);
+void emc_init(uint32_t start_bank, bool master);
 
 #endif
 
@@ -132,7 +135,9 @@ void initIOfuncTable(void)
   setIOWriteFunc(0, &onWriteGIE);                 //  Global interrupt enable
 
 #if ENABLE_EMS_MEMORY
-  emc_init();
+  emc_init(2,true);   //for HP85A only - we're the only emc controller      ########   PF/RB  move this to somewhere else, and call from JSON reader.
+  //emc_init(3,false);  //for HP85B and other systems with only 64k ram
+  //emc_init(3 or 5,false);  //for other systems with 128k ram
 #endif
 
 }
@@ -1168,8 +1173,29 @@ void mySystick_isr(void)
 //  extended memory code. It's here because it is tightly coupled with the bus cycles
 //  rather than just a simple peripheral
 //
-void emc_init(void)
+//  start_bank is the starting 32k page. Currently 
+//  we emulate a 256k block (8 pages) set by EMC_RAM_SIZE
+//
+//  master when true sets us to the master EMC in the system. Only for
+//  a modified HP85A as the others (85B/86/87) have their own EMC controller
+//
+//  the real HP hardware supposedly only supports up to 1M of EMC
+//  but the architecture supports up to 16M
+//  so the max page should be 31 (32 times 32k = 1M)
+//  the minimum start page should be 1 (page 0 is mapped as real memory in the real hardware)
+//  and should be greater than this on a HP85B or later as they have real EMC hardware we don't want
+//  to clash with
+//
+//  
+//
+//
+void emc_init(uint32_t start_bank, bool master)
 {
+
+  //convert page to an actual address
+  m_emc_start_addr = start_bank << 15;
+
+  m_emc_master = master;    //when true - we are the only or master EMC in the system
 
   setIOReadFunc( 0xc8 , &emc_r );
   setIOReadFunc( 0xc9 , &emc_r );
@@ -1249,16 +1275,19 @@ inline void lma_cycle(bool rd)
 bool emc_r(void)
 {
   readData = 0xff;
+  bool didRead = false;
   //m_emc_read++;
 
   if (m_emc_state == EMC_INDIRECT_1)
   {
     uint32_t &ptr = get_ptr();
-
-    if ((ptr >= 0x8000) && ((ptr - 0x8000u) < EXTRAM_SIZE))
+    //
+    //  decide if the address is in the range we should respond to
+    //
+    if ((ptr >= m_emc_start_addr) && ((ptr - m_emc_start_addr) < EMC_RAM_SIZE))
     {
-      readData = extram[ptr - 0x8000u];
-      //readData = ptr & 0xff; //diag
+      readData = emcram[ptr - m_emc_start_addr];
+      didRead = true;
     }
     ptr++;
   }
@@ -1269,6 +1298,7 @@ bool emc_r(void)
     if (cycleNdx == 0)
     {
       readData = 0xc8;
+      didRead = m_emc_master;   //only one EMC controller should respond
     }
     else if (cycleNdx == 1)
     {
@@ -1287,9 +1317,10 @@ bool emc_r(void)
     if (cycleNdx < 3)
     {
       readData = uint8_t(get_ptr() >> (8 * cycleNdx));
+      didRead = m_emc_master;     //only one EMC controller should respond
     }
   }
-  return true;
+  return didRead;
 }
 
 void emc_w(uint8_t val)
@@ -1299,9 +1330,9 @@ void emc_w(uint8_t val)
   {
     uint32_t &ptr = get_ptr();
 
-    if ((ptr >= 0x8000u) && ((ptr - 0x8000u) < EXTRAM_SIZE))
+    if ((ptr >= m_emc_start_addr) && ((ptr - m_emc_start_addr) < EMC_RAM_SIZE))
     {
-      extram[ptr - 0x8000u] = val;
+      emcram[ptr - m_emc_start_addr] = val;
     }
     ptr++;
   }

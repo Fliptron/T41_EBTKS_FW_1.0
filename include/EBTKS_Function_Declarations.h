@@ -81,7 +81,6 @@ void removeIOWriteFunc(uint8_t addr);
 //  SD Card support
 //
 bool loadRom(const char *fname, int slotNum, const char * description);
-void saveConfiguration(const char *filename);
 bool loadConfiguration(const char *filename);
 bool remount_drives(const char *filename);
 void printDirectory(File dir, int numTabs);

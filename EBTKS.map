@@ -1853,7 +1853,7 @@ Linker script and memory map
 LOAD c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/armv7e-m/fpu/fpv5-d16/crti.o
 LOAD c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/armv7e-m/fpu/fpv5-d16/crtbegin.o
 LOAD c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16/crt0.o
-                0x6039c0a8                __rtc_localtime = 0x6039c0a8
+                0x6039ccd1                __rtc_localtime = 0x6039ccd1
 LOAD .pio\build\teensy41\src\EBTKS.cpp.o
 LOAD .pio\build\teensy41\src\EBTKS_1MB5.cpp.o
 LOAD .pio\build\teensy41\src\EBTKS_AUXROM.cpp.o

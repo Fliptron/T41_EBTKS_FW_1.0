@@ -36,6 +36,7 @@
 //                        #define SDFAT_FILE_TYPE 3
 //                    to
 //                        #define SDFAT_FILE_TYPE 1     // PMF and RB was 3, but caused library problems like can't find isReadOnly()
+//
 
 /////////////////////On error message / error codes.  Go see email log for this text in context
 //
