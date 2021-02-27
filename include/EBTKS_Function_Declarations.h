@@ -197,7 +197,15 @@ int int_power(int base, int exp);
 //
 //  various configuration stuff
 //
-int getMachineNum(void);
+int  get_MachineNum(void);
+char * get_machineType(void);
+bool get_CRTVerbose(void);
+bool get_screenEmu(void);
+bool get_CRTRemote(void);
+bool get_AutoStartEn(void);
+bool get_EMC_Enable(void);
+int  get_EMC_NumBanks(void);
+int  get_EMC_StartBank(void);
 uint32_t getFlags(void);
 //
 //  Functions that Visual Studio Code can't find, but are in the Arduino library.

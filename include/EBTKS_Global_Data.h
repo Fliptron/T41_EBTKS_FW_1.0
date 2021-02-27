@@ -19,10 +19,6 @@
 #define PACKED __attribute__((__packed__))
 
 #define NUM_HPIB_DEVICES (31) //number of supported HPIB devices on an interface
-//
-//  machine type enumerations. the corresponding string table in EBTKS_SD.cpp needs to follow this
-//
-enum { MACH_HP85A = 0 , MACH_HP85B , MACH_HP86 , MACH_HP87 , MACH_NUM }; //always ensure MACH_NUM is the last enumeration
 
 ///////////////////////////////////////////////////  Uninitialized Globals. Actually initialized to 0x00000000  /////////////////////////////////////////
 
@@ -253,21 +249,6 @@ EXTERN char *     log_to_serial_ptr;                                            
                                                                                           //  has started.
 
 EXTERN  EXTMEM char dir_line[258];                                                        //  Leave room for a trailing 0x00 (that is not included in the passed max length of PS.get_line)
-
-//
-//  Parameters from the CONFIG.TXT file
-//
-
-EXTERN  int           machineNum;
-EXTERN  char          machineType[10];
-EXTERN  bool          requireserial;
-EXTERN  uint32_t      repeatserial;
-EXTERN  bool          CRTVerbose;
-EXTERN  bool          EMS_Support;
-EXTERN  int           EMSSize;
-EXTERN  int           EMSbase;
-EXTERN  bool          screenEmu;
-EXTERN  bool          CRTRemote;
 
 //
 //  Some counters that might be useful for something

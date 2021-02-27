@@ -146,6 +146,7 @@ void diag_dir_root(void);
 void list_mount(void);
 
 void show(void);
+void dump_keys(bool hp85kbd , bool octal);
 
 struct S_Command_Entry
 {
@@ -422,6 +423,29 @@ void show(void)
     return;
   }
 
+  if(strcasecmp(serial_string + 5, "key85_O") == 0)     //  Not strncasecmp() so nothing after key85_O
+  {
+    dump_keys(true, true);
+    return;
+  }
+
+  if(strcasecmp(serial_string + 5, "key85_D") == 0)     //  Not strncasecmp() so nothing after key85_D
+  {
+    dump_keys(true, false);
+    return;
+  }
+
+  if(strcasecmp(serial_string + 5, "key87_O") == 0)     //  Not strncasecmp() so nothing after key87_O
+  {
+    dump_keys(false, true);
+    return;
+  }
+
+  if(strcasecmp(serial_string + 5, "key87_D") == 0)     //  Not strncasecmp() so nothing after key87_D
+  {
+    dump_keys(false, false);
+    return;
+  }
   //
   //  If we get here, we didn't match any of the predefined specials (well, maybe config)
   //  so we will treat the parameter as a filename, including maybe path elements
@@ -585,6 +609,10 @@ void help_2(void)
   Serial.printf("     CRT      Show the messages sent to the CRT at startup\n");
   Serial.printf("     config   Show the CONFIG.TXT file\n");
   Serial.printf("     mb       Display current mailboxes and related data\n");
+  Serial.printf("     key85_O  Display HP85 Special Keys in Octal\n");
+  Serial.printf("     key85_D  Display HP85 Special Keys in Decimal\n");
+  Serial.printf("     key87_O  Display HP87 Special Keys in Octal\n");
+  Serial.printf("     key87_D  Display HP87 Special Keys in Decimal\n");
   Serial.printf("     other    Anything else is a file name path\n");
   Serial.printf("clean log     Clean the Logfile on the SD Card\n");
   Serial.printf("pwo           Pulse PWO, resetting HP85 and EBTKS\n");
@@ -814,29 +842,29 @@ void diag_sdread_1(void)
 
 }
 
+////
+////  Diagnostic to figure out why report_media() was crashing.  Don't know yet
+////
 //
-//  Diagnostic to figure out why report_media() was crashing.  Don't know yet
+//void dump_devices_array(void)
+//{
+//  int i,j,k;
+//  k=0;
 //
-
-void dump_devices_array(void)
-{
-  int i,j,k;
-  k=0;
-
-  Serial.printf("devices[32], pointers to HpibDevice classes\n");
-  for (i = 0 ; i < 4 ; i++)
-  {
-    for (j = 0 ; j < 8 ; j++)
-    {
-      Serial.printf("%08X  ", devices[k]); 
-      k++;
-    }
-    Serial.printf("\n");
-  }
-  Serial.printf("\n");
-  Serial.flush();
-  delay(1000);
-}
+//  Serial.printf("devices[32], pointers to HpibDevice classes\n");
+//  for (i = 0 ; i < 4 ; i++)
+//  {
+//    for (j = 0 ; j < 8 ; j++)
+//    {
+//      Serial.printf("%08X  ", devices[k]); 
+//      k++;
+//    }
+//    Serial.printf("\n");
+//  }
+//  Serial.printf("\n");
+//  Serial.flush();
+//  delay(1000);
+//}
 
 void report_media(void)
 {
@@ -2082,6 +2110,144 @@ bool MatchesPattern(char *pT, char *pP)
   return false;
 }
 
+//
+//  Print out Special Keys in decimal or octal, for HP85 and HP87. Data structure lifted from Everett's Emulator
+//
+
+typedef struct {
+	const char	*KeyName;
+	int	Code85, Code87;
+} KEYNAMCOD;
+
+/// NOTE: Any SHORTER names that identically match the beginning of a LONGER name
+/// *must* come AFTER the longer name, so that the longer name will be searched
+/// and found (if matches) BEFORE the shorter name is searched and found. The
+/// only current example of this is K1 and K10-K14.
+//
+//  List sorted in ascending HP85 order
+//
+
+KEYNAMCOD	Keys[]={
+	{"K1",            128,  128},
+	{"K2",            129,  129},
+	{"K3",            130,  130},
+	{"K4",            131,  131},
+	{"K5",            132,  161},
+	{"K6",            133,  162},
+	{"K7",            134,  156},
+	{"K8",            135,  204},
+	{"K9",             -1,  205},
+	{"K10",            -1,  206},
+	{"K11",            -1,  207},
+	{"K12",            -1,  165},
+	{"K13",            -1,  172},
+	{"K14",            -1,  147},
+	{"REW",           136,   -1},
+	{"COPY",          137,   -1},
+	{"PAPADV",        138,   -1},
+	{"RESET",         139,  139},
+	{"INIT",          140,  140},
+	{"RUN",           141,  141},
+	{"PAUSE",         142,  142},
+	{"CONT",          143,  143},
+	{"STEP",          144,  144},
+	{"TEST",          145,  146},
+	{"CLEAR",         146,  137},
+	{"GRAPH",         147,   -1},   //  error in Emulator script.c
+	{"LIST",          148,  148},
+	{"PLIST",         149,  149},
+	{"KEYLABEL",      150,  150},
+	{"-unused-",      151,  151},   // not sure for 87
+	{"-unused-",      152,  152},   // not sure for 87
+	{"BKSPACE",       153,  153},
+	{"ENDLINE",       154,  154},
+	{"FASTBKSPACE",   155,  155},
+	{"LFCURS",        156,  159},
+	{"RTCURS",        157,  170},
+	{"ROLLUP",        158,  145},
+	{"ROLLDN",        159,  169},
+	{"-LINE",         160,  157},
+	{"UPCURS",        161,  163},
+	{"DNCURS",        162,  164},
+	{"INSRT/REPL",    163,  158},
+	{"-CHR",          164,  136},
+	{"HOMECURS",      165,  163},
+	{"RESULT",        166,  166},
+	{"-unused-",      167,  167},   // not sure for 87
+	{"DELETE",        168,   -1},
+	{"STORE",         169,   -1},
+	{"LOAD",          170,   -1},
+	{"-unused-",      171,  171},   // not sure for 87
+	{"AUTO",          172,   -1},   //  error in Emulator script.c
+	{"SCRATCH",       173,   -1},   //  error in Emulator script.c
+	{"A/G",            -1,  168},
+	{"TR/NORM",        -1,  173},
+	{"NUME",           -1,  160}
+
+};
+int	KeysCnt=sizeof(Keys)/sizeof(Keys[0]);
+
+void dump_keys(bool hp85kbd , bool octal)
+{
+  int     i;
+
+  if (hp85kbd)
+  {
+    if (octal)
+    {
+      Serial.printf("List of HP85 Special Keys in Octal\n");
+      for (i = 0 ; i < KeysCnt ; i++)
+      {
+        if (Keys[i].Code85 < 0)
+        {
+          continue;
+        }
+        Serial.printf("%12.12s   %3o\n", Keys[i].KeyName , Keys[i].Code85);
+      }
+    }
+    else
+    {
+      Serial.printf("List of HP85 Special Keys in Decimal\n");
+      for (i = 0 ; i < KeysCnt ; i++)
+      {
+        if (Keys[i].Code85 < 0)
+        {
+          continue;
+        }
+        Serial.printf("%12.12s   %3d\n", Keys[i].KeyName , Keys[i].Code85);
+      }
+    }
+  }
+  else
+  {
+    if (octal)
+    {
+      Serial.printf("List of HP877 Special Keys in Octal\n");
+      for (i = 0 ; i < KeysCnt ; i++)
+      {
+        if (Keys[i].Code87 < 0)
+        {
+          continue;
+        }
+        Serial.printf("%12.12s   %3o\n", Keys[i].KeyName , Keys[i].Code87);
+      }
+    }
+    else
+    {
+      Serial.printf("List of HP87 Special Keys in Decimal\n");
+      for (i = 0 ; i < KeysCnt ; i++)
+      {
+        if (Keys[i].Code87 < 0)
+        {
+          continue;
+        }
+        Serial.printf("%12.12s   %3d\n", Keys[i].KeyName , Keys[i].Code87);
+      }
+    }
+  }
+
+  Serial.printf("\n\n");
+}
 
 
 

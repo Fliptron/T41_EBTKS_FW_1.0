@@ -42,7 +42,7 @@
 //        Error Message numbers, returned in Usage[0] (or which ever was used for the call)
 //
 //        0             No error
-//        1-99          mail??   amybe he means mailbox specific, or mail is mailbox, usage, len, and buffer
+//        1-99          mail??   maybe he means mailbox specific, or mail is mailbox, usage, len, and buffer
 //        100-199       subtract 100 and it is a system error message
 //
 //        200-299       subtract 200 and index the AUXROM error table. 8 is custom warning, 209 is custom error, 211..N are fixed messages

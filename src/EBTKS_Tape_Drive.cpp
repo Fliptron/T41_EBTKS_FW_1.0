@@ -43,6 +43,8 @@ static volatile uint32_t newBlockNum = 0;
 static uint32_t currBlockNum = 10000; //use illegal value to force load
 static volatile uint32_t tapeInCount = 2;     //  0, 1 fail (error 23) , 2 or 3 load and run Autost from Tape,
                                               //  4 and 5 fail (Autost does not run), and probably all larger numbers
+                                              //  In consultation with Everett, 2 is the right value to match the two
+                                              //  tests during system PWO self test
 static uint32_t tapeRequest = 0;
 static volatile uint32_t wState = 0;
 
@@ -93,6 +95,8 @@ enum
 //
 //  This routine needs to be timed during read and write operations
 //
+//  #### looks like it always returns "true" , so why is this a bool
+//
 
 FASTRUN bool readTapeStatus(void)
 {
@@ -113,18 +117,18 @@ FASTRUN bool readTapeStatus(void)
     {
       status |= STS_INSERTED;
     }
-  status |= STS_WRITE_EN; //tape always write enabled @todo - logic to enable/disable??
+  status |= STS_WRITE_EN;                                   //  Tape always write enabled ##### logic to enable/disable??
   }
 
   if (TAPPOS < 0)
   {
-    status |= STS_STALL; //something went wrong!
-    TAPPOS = 528 + 2048; //re-position the tape to the right of the first hole
+    status |= STS_STALL;                                    //  Something went wrong!
+    TAPPOS = 528 + 2048;                                    //  Re-position the tape to the right of the first hole
   }
 
-  int dir = (ioTapCtl & CTL_DIR_FWD) ? 1 : -1; // tape direction
+  int dir = (ioTapCtl & CTL_DIR_FWD) ? 1 : -1;              //  Tape direction
 
-  if ((ioTapCtl & 0x06) == 0x06)               //if enabled and motor is on
+  if ((ioTapCtl & 0x06) == 0x06)                            //  If enabled and motor is on
   {
     int32_t tapePosTrack = TAPPOS;
     if (ioTapCtl & CTL_TRACK)
@@ -441,7 +445,7 @@ void tape_handle_command_load(void)
   Serial.printf("\nOpening tape: %s\n", serial_string);
   tape.close();
   blockDirty = false;
-  tapeInCount = 1; //flag the tape removal to the HP85
+  tapeInCount = 1;                                              //  Flag the tape removal to the HP85
   tape.setFile(serial_string);
   serial_string_used();
 }
@@ -451,7 +455,7 @@ bool tape_handle_MOUNT(char *path)
   Serial.printf("\nOpening tape: %s\n", path);
   tape.close();
   blockDirty = false;
-  tapeInCount = 1;        //  flag the tape removal to the HP85
+  tapeInCount = 1;                                              //  Flag the tape removal to the HP85
   return tape.setFile(path);
 }
 
@@ -460,6 +464,6 @@ void tape_handle_UNMOUNT(void)
   Serial.printf("\nClosing tape\n");
   tape.close();
   blockDirty = false;
-  tapeInCount = 1;        //  flag the tape removal to the HP85
+  tapeInCount = 1;                                              //  Flag the tape removal to the HP85
   return;
 }

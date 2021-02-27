@@ -972,16 +972,16 @@ void setup()
   log_to_serial_ptr += sprintf(log_to_serial_ptr, "Config Success is %s\n"   , config_success  ? "true":"false");
 
   log_to_serial_ptr += sprintf(log_to_serial_ptr, "Parameters from the CONFIG.TXT (or defaults)\n");
-  log_to_serial_ptr += sprintf(log_to_serial_ptr, "Machine number   %d\n", machineNum);
-  log_to_serial_ptr += sprintf(log_to_serial_ptr, "Machine type     %s\n", machineType);
-  log_to_serial_ptr += sprintf(log_to_serial_ptr, "Require Serial   %s\n", requireserial ? "true":"false");
-  log_to_serial_ptr += sprintf(log_to_serial_ptr, "Repeat Serial    %d secs\n", (int)repeatserial);
-  log_to_serial_ptr += sprintf(log_to_serial_ptr, "CRT Verbose      %s\n", CRTVerbose ? "true":"false");
-  log_to_serial_ptr += sprintf(log_to_serial_ptr, "EMS Support      %s\n", EMS_Support ? "true":"false");
-  log_to_serial_ptr += sprintf(log_to_serial_ptr, "EMS Size         %d KB\n", EMSSize);
-  log_to_serial_ptr += sprintf(log_to_serial_ptr, "EMS Base         %d KB\n", EMSbase);
-  log_to_serial_ptr += sprintf(log_to_serial_ptr, "Screen Emul.     %s\n", screenEmu ? "true":"false");
-  log_to_serial_ptr += sprintf(log_to_serial_ptr, "Remote CRT       %s\n", CRTRemote ? "true":"false");
+  log_to_serial_ptr += sprintf(log_to_serial_ptr, "Machine number   %d\n", get_MachineNum());
+  log_to_serial_ptr += sprintf(log_to_serial_ptr, "Machine type     %s\n", get_machineType());
+  log_to_serial_ptr += sprintf(log_to_serial_ptr, "CRT Verbose      %s\n", get_CRTVerbose() ? "true":"false");
+
+  log_to_serial_ptr += sprintf(log_to_serial_ptr, "EMC Support      %s\n",    get_EMC_Enable() ? "true":"false");
+  log_to_serial_ptr += sprintf(log_to_serial_ptr, "EMC Num Banks    %d, 32 KB each\n", get_EMC_NumBanks());
+  log_to_serial_ptr += sprintf(log_to_serial_ptr, "EMC Start Bank   %d\n", get_EMC_StartBank());
+
+  log_to_serial_ptr += sprintf(log_to_serial_ptr, "Screen Emul.     %s\n", get_screenEmu() ? "true":"false");
+  log_to_serial_ptr += sprintf(log_to_serial_ptr, "Remote CRT       %s\n", get_CRTRemote() ? "true":"false");
   log_to_serial_ptr += sprintf(log_to_serial_ptr, "85A 16 KB RAM    %s\n", getHP85RamExp() ? "true":"false");
 
   //
@@ -1168,7 +1168,7 @@ void Boot_Messages_to_CRT(void)
   char segment[100];
 
   log_to_CRT_ptr    = &CRT_Log_Buffer[0];
-  if ((strlen(log_to_CRT_ptr) == 0) || (!CRTVerbose))
+  if ((strlen(log_to_CRT_ptr) == 0) || (!get_CRTVerbose()))
   {
     return;
   }

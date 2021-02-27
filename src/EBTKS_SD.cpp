@@ -12,9 +12,41 @@
 #include "HpibDisk.h"
 #include "HpibPrint.h"
 
-#include <strings.h>                //  needed for strcasecmp() prototype
+#include <strings.h>                                    //  Needed for strcasecmp() prototype
 
-#define JSON_DOC_SIZE   5000
+#define JSON_DOC_SIZE   5500
+
+//
+//  Parameters from the CONFIG.TXT file
+//
+
+int           machineNum;
+char          machineType[10];
+bool          CRTVerbose;
+bool          screenEmu;
+bool          CRTRemote;
+bool          AutoStartEn;
+bool          EMC_Enable;
+int           EMC_NumBanks;
+int           EMC_StartBank;
+//
+//  Read machineType string (must match enum machine_numbers {})
+//  Valid strings are:
+//
+const char *machineNames[] = {"HP85A", "HP85B", "HP86A", "HP86B", "HP87", "HP87XM"};
+
+//
+//  machine type enumerations. the corresponding string table in EBTKS_SD.cpp needs to follow this
+//
+enum machine_numbers{
+      MACH_HP85A = 0,
+      MACH_HP85B,
+      MACH_HP86A,
+      MACH_HP86B,
+      MACH_HP87,
+      MACH_HP87XM,
+      MACH_NUM }; //always ensure MACH_NUM is the last enumeration
+
 
 extern HpibDevice *devices[];
 
@@ -63,7 +95,7 @@ bool loadRom(const char *fname, int slotNum, const char *description)
   {
     LOGPRINTF("ROM failed to Open %s\n", fname);
     log_to_CRT_ptr += sprintf(log_to_CRT_ptr, "Can't Open ROM File\n");
-    rfile.close(); //  Is this right??? if it failed to open, and rfile is null (0) , the what would this statement do???
+    rfile.close();                                    //  Is this right??? If it failed to open, and rfile is null (0) , then what would this statement do???
     return false;
   }
   //
@@ -182,8 +214,8 @@ bool loadRom(const char *fname, int slotNum, const char *description)
       }
     }
     else if ((machineNum == 2) || (machineNum == 3))
-    {                                  //  CONFIG.TXT says we are loading ROMS for HP86 or HP87:  Two's complement for second byte of ROM
-      if (id != (uint8_t)(-header[1])) //  now test normal ROM ID's , including the AUXROM Primary.
+    {                                         //  CONFIG.TXT says we are loading ROMS for HP86 or HP87:  Two's complement for second byte of ROM
+      if (id != (uint8_t)(-header[1]))        //  Now test normal ROM ID's , including the AUXROM Primary.
       {
         LOGPRINTF("ROM file header error first two bytes %02X %02X   Expect Two's Complement\n", id, (uint8_t)header[1]);
         log_to_CRT_ptr += sprintf(log_to_CRT_ptr, "HeaderError\n");
@@ -260,8 +292,6 @@ void saveConfiguration(const char *filename)
 
   // Set the values in the document
   doc["machineName"]   = "HP85A";
-  doc["requireserial"] = false;
-  doc["repeatserial"]  = 0;
   doc["CRTVerbose"]    = true;
   doc["EMS"]           = false;       //  Implement EMS memory
   doc["EMSSize"]       = 256;         //  Size of implemented EMS memory in KB (1024)
@@ -401,13 +431,49 @@ void saveConfiguration(const char *filename)
   file.close();
 }
 
-//
-//  Returns the enumeration of the machine name selected in the config file
-//  ##############  this needs more work with the complete range of Series 80 computers
-//
-int getMachineNum(void)
+int get_MachineNum(void)
 {
   return machineNum;
+}
+
+char * get_machineType(void)
+{
+  return machineType;
+}
+
+bool get_CRTVerbose(void)
+{
+  return CRTVerbose;
+}
+
+bool get_screenEmu(void)
+{
+  return screenEmu;
+}
+
+bool get_CRTRemote(void)
+{
+  return CRTRemote;
+}
+
+bool get_AutoStartEn(void)
+{
+  return AutoStartEn;
+}
+
+bool get_EMC_Enable(void)
+{
+  return EMC_Enable;
+}
+
+int get_EMC_NumBanks(void)
+{
+  return EMC_NumBanks;
+}
+
+int get_EMC_StartBank(void)
+{
+  return EMC_StartBank;
 }
 
 //
@@ -423,19 +489,18 @@ bool loadConfiguration(const char *filename)
   SCOPE_1_Pulser(1);
   EBTKS_delay_ns(10000); //  10 us
 
-
-  machineNum = 0;
-
   LOGPRINTF("Opening Config File [%s]\n", filename);
 
   // Open file for reading
   File file = SD.open(filename);
+  machineNum = -1;                                                    //  In case we have an early exit, make sure this is an invalid value
 
   LOGPRINTF("Open was [%s]\n", file ? "Successful" : "Failed"); //  We need to probably push this to the screen if it fails
                                                                 //  Except this happens before the PWO is released
   if (!file)
   {
     log_to_CRT_ptr += sprintf(log_to_CRT_ptr, "Couldn't open %s\n", filename);
+    return false;
   }
 
   //
@@ -470,25 +535,15 @@ bool loadConfiguration(const char *filename)
     //  else fall into the normal config processing with the defaults we just created
   }
 
-  strlcpy (machineType, (doc["machineName"]   | "HP85A") , 10);
-  requireserial = doc["requireserial"] | false;
-  repeatserial  = doc["repeatserial"]  | 0;
-  CRTVerbose    = doc["CRTVerbose"]    | true;
-  EMS_Support   = doc["EMS"]           | false;
-  EMSSize       = doc["EMSSize"]       | 256;
-  EMSbase       = doc["EMSbase"]       | 32;
+  strlcpy (machineType, (doc["machineName"]   | "error") , 10);
   screenEmu     = doc["screenEmu"]     | false;
   CRTRemote     = doc["CRTRemote"]     | false;
-
-  //  Read machineType string
-  //  Valid strings are:
-  const char *machineNames[] = {"HP85A", "HP85B", "HP86", "HP87"};    //  ##### this needs to cover more models, 86A, 86B, 87XM
 
   //
   //  look through table to find a match to enumerate the machineType
   //
 
-  machineNum = 0;
+  machineNum = 0;     //  HP85A
   while (machineNum < MACH_NUM)
   {
     if (strcasecmp(machineNames[machineNum], machineType) == 0)
@@ -496,19 +551,32 @@ bool loadConfiguration(const char *filename)
       break; //found it!
     }
     machineNum++;
-  }                                             //  ################  need to report failure to find machine name
+  }
+  if (machineNum == MACH_NUM)
+  {
+    log_to_CRT_ptr += sprintf(log_to_CRT_ptr, "Invalid machineName in %s\n", filename);
+    LOGPRINTF("Invalid machineName in %s\n", filename);
+  }
+  else 
+  {
+    log_to_CRT_ptr += sprintf(log_to_CRT_ptr, "Series 80 Model: %s\n", machineNames[machineNum]);
+    LOGPRINTF("Series 80 Model: %s\n", machineNames[machineNum]);
+  }
 
-  log_to_CRT_ptr += sprintf(log_to_CRT_ptr, "Series 80 Model: %s\n", machineNames[machineNum]);
+  CRTVerbose    = doc["CRTVerbose"]    | true;
 
-  enHP85RamExp(doc["ram16k"] | false);
-  log_to_CRT_ptr += sprintf(log_to_CRT_ptr, "HP85A 16 KB RAM: %s\n", getHP85RamExp() ? "Enabled":"None");
+  if (machineNum == MACH_HP85A)
+  {                                                     //  Only check for the 16K RAM option if we have an HP85A
+    enHP85RamExp(doc["ram16k"] | false);
+    log_to_CRT_ptr += sprintf(log_to_CRT_ptr, "HP85A 16 KB RAM: %s\n", getHP85RamExp() ? "Enabled":"None");
+    LOGPRINTF("HP85A 16 KB RAM: %s\n", getHP85RamExp() ? "Enabled":"None");
+  }
+
   //bool enScreenEmu = doc["screenEmu"] | false;
   bool tapeEn = doc["tape"]["enable"] | false;
   log_to_CRT_ptr += sprintf(log_to_CRT_ptr, "HP85A/B Tape Emulation: %s\n", tapeEn ? "Yes":"No");
 
-  // Copy values from the JsonDocument to the Config
 
-  LOGPRINTF("16K RAM for 85A:      %s\n", (doc["ram16k"] | false) ? "Active" : "Inactive");
 
   LOGPRINTF("Screen Emulation:     %s\n", (doc["screenEmu"] | false) ? "Active" : "Inactive");
 
@@ -569,7 +637,7 @@ bool loadConfiguration(const char *filename)
   LOGPRINTF("\n");
   log_to_CRT_ptr += sprintf(log_to_CRT_ptr, "\n");
   //
-  // configure the disk drives. currently we only handle one hpib interface
+  //  Configure the disk drives. Currently we only handle one HPIB interface
   //
 
   //
@@ -590,8 +658,8 @@ bool loadConfiguration(const char *filename)
 
     if (hpibDevice["drives"]) //if the device is a disk drive
     {
-      const char *diskDir = hpibDevice["directory"] | "/disks/"; //disk image folder/directory
-      int type = hpibDevice["type"] | 0;                         //  disk drive type 0 = 5 1/4"
+      const char *diskDir = hpibDevice["directory"] | "/disks/";    //  Disk image folder/directory
+      int type = hpibDevice["type"] | 0;                            //  Disk drive type 0 = 5 1/4"
 
       char  type_text[10];
       switch(type)
@@ -609,7 +677,7 @@ bool loadConfiguration(const char *filename)
 
       if ((devices[device] == NULL) && (enable == true))
       {
-        devices[device] = new HpibDisk(device); //  create a new HPIB device (can contain up to 4 drives)
+        devices[device] = new HpibDisk(device);                     //  Create a new HPIB device (can contain up to 4 drives)
       }
 
       if (enable == true)
@@ -674,7 +742,7 @@ bool loadConfiguration(const char *filename)
 failed_to_read_flags:
     log_to_serial_ptr += sprintf(log_to_serial_ptr, "Creating /AUXROM_FLAGS.TXT with default contents of 00000000 because it does not exist\n");
     file = SD.open("/AUXROM_FLAGS.TXT", O_RDWR | O_TRUNC | O_CREAT);
-    file.write("00000000\r\n", 10);
+    file.write("00000000\n", 10);
     file.close();
     // AUXROM_RAM_Window.as_struct.AR_FLAGS[0] = 0;   //  load with default 0x      00
     // AUXROM_RAM_Window.as_struct.AR_FLAGS[1] = 0;   //  load with default 0x    00
@@ -711,6 +779,7 @@ failed_to_read_flags:
 //  It reads the specified file (typically config.sys) and only does the file system mounting tasks
 //
 
+//   ################   this needs to be a call to a single block of shared code   ################
 bool remount_drives(const char *filename)
 {
   char fname[258];
@@ -822,8 +891,8 @@ bool remount_drives(const char *filename)
           {
             devices[device]->addDisk((int)type);
             devices[device]->setFile(unitNum, fname, wprot);
-            LOGPRINTF(    "Add Drive %s to msus$ D:%d%d%d with image file: %s\r\n", type_text, select, device, unitNum, fname);
-            Serial.printf("Add Drive %s to msus$ D:%d%d%d with image file: %s\r\n", type_text, select, device, unitNum, fname);
+            LOGPRINTF(    "Add Drive %s to msus$ D:%d%d%d with image file: %s\n", type_text, select, device, unitNum, fname);
+            Serial.printf("Add Drive %s to msus$ D:%d%d%d with image file: %s\n", type_text, select, device, unitNum, fname);
           }
         }
       }
@@ -848,8 +917,8 @@ bool remount_drives(const char *filename)
       if ((devices[device] != NULL) && (enable == true))
       {
         devices[device]->setFile((char *)fname);
-        LOGPRINTF("Add Printer type: %d to Device %1d%2d with print file: %s\r\n", type, select, device, fname);
-        Serial.printf("Add Printer type: %d to Device %1d%2d with print file: %s\r\n", type, select, device, fname);
+        LOGPRINTF("Add Printer type: %d to Device %1d%2d with print file: %s\n", type, select, device, fname);
+        Serial.printf("Add Printer type: %d to Device %1d%2d with print file: %s\n", type, select, device, fname);
       }
     }
   }
@@ -863,7 +932,7 @@ bool remount_drives(const char *filename)
 failed_to_read_flags:
     Serial.printf("Creating /AUXROM_FLAGS.TXT with default contents of 00000000 because it does not exist\n");
     file = SD.open("/AUXROM_FLAGS.TXT", O_RDWR | O_TRUNC | O_CREAT);
-    file.write("00000000\r\n", 10);
+    file.write("00000000\n", 10);
     file.close();
     // AUXROM_RAM_Window.as_struct.AR_FLAGS[0] = 0;   //  load with default 0x      00
     // AUXROM_RAM_Window.as_struct.AR_FLAGS[1] = 0;   //  load with default 0x    00

@@ -453,6 +453,17 @@ Changes:
 -   Remove all references to FastLED library, which is buggy for the simple
     case of a single string of two WS2812B RGB LEDs.
 
+## Commit \#104 02/26/2021
+
+Changes:
+-   Finished removal of repeatserial and requireserial in the CONFIG.TXT handling
+-   Robustify processing of machineName from the CONFIG.TXT file
+-   Serial console commands to show octal and decimal key codes for special keys.
+-   Move Config parameters from global data to EBTKS_SD.cpp . Add supporting get_...()
+    functions to allow access.
+-   Start changing over EMC support by changing parameters from CONFIG.TXT
+
+
 
 
 
