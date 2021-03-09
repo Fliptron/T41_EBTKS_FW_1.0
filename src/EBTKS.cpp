@@ -8,6 +8,10 @@
 
 #include "Inc_Common_Headers.h"
 
+#include "EBTKS_ESP.h"
+
+ESPComms esp32;
+
 // #include "USBHost_t36.h"                 //  Commenting out saves about 9KB of ITCM for code and 700 bytes for data
 // USBHost myusb;                           //  while we are not using this yet.
 // USBHub hub1(myusb);
@@ -1070,6 +1074,9 @@ void loop()
   Logic_Analyzer_Poll();    //  54 ns when idle, but 780 ns ish if Phi 1 interrupt occurs while running
   loopTranslator();         //  1MB5 / HPIB / DISK poll
                             //  150 ns when idle, but 920 ns ish if Phi 1 interrupt occurs while running
+  SET_SCOPE_2;
+  esp32.poll();             //  access with "http://esp32_ebtks.local/"
+  CLEAR_SCOPE_2;
 
   if (CRT_Boot_Message_Pending)     //  8 ns test is false, but 800 ns ish if Phi 1 interrupt occurs while running
   {                                 //  which is quite rare because the window is so narrow

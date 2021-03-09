@@ -478,6 +478,36 @@ Changes:
     commented out until all changes have been made. So mostly folding
     in Russell's EMC update that predates the CONFIG.TXT changes
    
+## Commit \#107 03/09/2021
+
+Changes:
+-   Modified critical sections of the Serial driver (not part of this code base, but part of a library we depend on).
+    Here are the edit notes:
+>    Multiple changes to --- .platformio\packages\framework-arduinoteensy\cores\teensy4\HardwareSerial.cpp
+>    
+>    4 occurences	at line (approx)	404, 449, 488, 569 (after edits)
+>    Replace 	__disable_irq();
+>    with		NVIC_DISABLE_IRQ(hardware->irq);	
+>    
+>    6 occurrences	at line (approx)	413, 464, 468, 498, 503, 575 (after edits)
+>    Replace 	__enable_irq();
+>    with		NVIC_ENABLE_IRQ(hardware->irq);	
+>    
+
+-   Start integration of Russell's ESP32 support. CRT is sent to http://esp32_ebtks.local/
+-   Add EBTKS_ESP.h to the file set. Thanks RB.
+-   Implement SDBATCH, basically hook a file to the RMIDLE processing
+-   Add the Arduino Base 64 library to platformio.ini   agdl/Base64
+
+
+
+
+
+
+
+
+
+
 
 
 

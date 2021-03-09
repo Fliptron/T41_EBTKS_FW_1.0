@@ -142,6 +142,7 @@
 //        530..539      AUXROM_SDEOF
 //                                          530       SDEOF file isn't open
 //        540..549      AUXROM_SDEXISTS
+//        550..559      AUXROM_SDBATCH      550       Can't open Batch file
 //
 
 
@@ -3160,7 +3161,38 @@ RMIDLE_no_char:
 
 void AUXROM_SDBATCH(void)
 {
+  char        error_message[33];
+  int         error_number;
 
+//#if VERBOSE_KEYWORDS
+    Serial.printf("SDBATCH  [%s]\n", p_buffer);
+//#endif
+
+  if (!Resolve_Path(p_buffer))
+  {
+    strlcpy(error_message, "Can't resolve path", 32);
+    error_number = 330;
+    post_custom_error_message(error_message, error_number);
+    *p_mailbox = 0;      //  Indicate we are done
+    return;
+  }
+
+  if (!open_RMIDLE_file(p_buffer))
+  {
+    strlcpy(error_message, "Can't open Batch file", 32);
+    error_number = 550;
+    post_custom_error_message(error_message, error_number);
+    *p_mailbox = 0;      //  Indicate we are done
+    return;
+  }
+
+//#if VERBOSE_KEYWORDS
+    Serial.printf("SDBATCH  open OK\n");
+//#endif
+
+  *p_usage    = 0;                                                            //  SDEXISTS successful
+  *p_mailbox  = 0;                                                            //  Indicate we are done
+  return;
 }
 
 extern void pulse_PWO(void);        //  Declared and implemented in EBTKS_Utilities.cpp

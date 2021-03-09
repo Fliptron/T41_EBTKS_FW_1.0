@@ -133,9 +133,10 @@ void ioWriteCrtDat(uint8_t val)                             //  This function is
   writeCRTflag = true;                                      //  Flag Mirror_Video_RAM has changed
 }
 
-
 void initCrtEmu(void)
 {
+  Serial2.begin(115200);    //init the serial port to the ESP32
+
   setIOWriteFunc(4,&ioWriteCrtSad); // Address 0xFF04   CRT controller
   setIOWriteFunc(5,&ioWriteCrtBad);
   setIOWriteFunc(6,&ioWriteCrtCtrl);
@@ -645,14 +646,37 @@ int base64_encode(char *output, char *input, int inputLen)
   return encLen;
 }
 
-void dumpCrtAlphaAsJSON(void)
+// void dumpCrtAlphaAsJSON(void)
+// {
+//   char base64Buff[16384];
+
+//   base64_encode(base64Buff, (char *)current_screen.vram, 2048); //64x32 alpha only
+//   Serial.printf("\"crt\":{\"alpha\":\"%s\"}\r\n", base64Buff);
+// }
+
+void dumpCrtAlphaAsJSON(uint8_t *frameBuff)
 {
-  char base64Buff[16384];
+  //char base64Buff[16384];
 
-  base64_encode(base64Buff, (char *)current_screen.vram, 2048); //64x32 alpha only
-  Serial.printf("\"crt\":{\"alpha\":\"%s\"}\r\n", base64Buff);
+  //uint8_t vbuff[512];
+  //
+  //  copy with wrap around for the alpha buffer
+  //  the 'virtual' screen is 32 x 64 lines
+  //
+  int addr = current_screen.sadAddr / 2;
+
+  for (int a = 0; a < 512; a++)
+  {
+      //vbuff[a] = current_screen.vram[addr++];
+      frameBuff[a] = current_screen.vram[addr++];
+      if (addr > 2047)
+        {
+          addr = 0;
+        }
+  }
+  //base64_encode(base64Buff, (char *)vbuff, 512); //32x16 alpha only
+  //Serial2.printf("{\"type\":\"hp85text\",\"image\":\"%s\",\"sum\":%d}\n", base64Buff , crc16(base64Buff,strlen(base64Buff)));
 }
-
 
 //
 //  Copy the current video state into captured_screen

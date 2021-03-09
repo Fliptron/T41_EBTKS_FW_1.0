@@ -47,7 +47,7 @@ void dumpCrtAlpha(void);
 void Write_on_CRT_Alpha(uint16_t row, uint16_t column, const char *  text);
 void a3_to_a4(unsigned char *a4, unsigned char *a3);
 int  base64_encode(char *output, char *input, int inputLen);
-void dumpCrtAlphaAsJSON(void);
+void dumpCrtAlphaAsJSON(uint8_t *frameBuff);
 void writePixel(int x, int y, int color);
 void writeLine(int x0, int y0, int x1, int y1, int color);
 void CRT_capture_screen(void);
