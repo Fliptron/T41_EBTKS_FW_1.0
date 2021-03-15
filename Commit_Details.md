@@ -499,11 +499,15 @@ Changes:
 -   Implement SDBATCH, basically hook a file to the RMIDLE processing
 -   Add the Arduino Base 64 library to platformio.ini   agdl/Base64
 
+## Commit \#108 03/15/2021
 
-
-
-
-
+Changes:
+-   Moved the HPIB Select Code up one level in CONFIG.TXT and removed the duplicate
+    entries in each of the devices. Updated EBTKS_SD.cpp to match
+-   Added CONFIG.TXT to the root of the project, so that it will be copied to GitHub.
+    This means I need to remember to manually update it in this directory,
+    every time it is updated in its real location. Because Windows doesn't have functional links.
+-   Heading update for Logic Analyzer
 
 
 

@@ -257,7 +257,7 @@ ESPComms esp32;
 //      C3-1            B1X         On Extender board
 //      C3-0            B0X         On Extender board
 //
-//      C2-7            IF          On Extender board
+//      C2-7            IFETCH      On Extender board
 //      C2-6            LMA         On Extender board
 //      C2-5            RD          On Extender board
 //      C2-4            WR          On Extender board

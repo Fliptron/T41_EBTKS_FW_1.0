@@ -710,9 +710,11 @@ bool loadConfiguration(const char *filename)
   //    2) The "device" fields must be different, and should probably start at 0 and go no higher than 7
   //
 
-  for (JsonVariant hpibDevice : doc["hpib"].as<JsonArray>()) //iterate hpib devices on a bus
+  int  HPIB_Select = doc["hpib"]["select"] | 3;      //  1MB5 select code (3..10). 3 is the default
+
+  for (JsonVariant hpibDevice : doc["hpib"]["devices"].as<JsonArray>()) //iterate hpib devices on a bus
   {
-    int select = hpibDevice["select"] | 7;      //  1MB5 select code (3..10). 3 is the default
+    int select = HPIB_Select;
     int device = hpibDevice["device"] | 0;      //  HPIB device number 0..31 (can contain up to 4 drives)
     bool enable = hpibDevice["enable"] | false; //are we enabled?
 

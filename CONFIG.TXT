@@ -1,0 +1,180 @@
+{
+  "machineName": "HP85A",
+  "CRTVerbose": true,
+  "ram16k": true,
+  "screenEmu": false,
+  "CRTRemote": false,
+  "AutoStart": {
+    "enable": false,
+    "Note": "Max command is 256 characters",
+    "command": "\\237\\237LOAD \\042LEDTEST-1\\042\\232RUN\\232",
+    "batch": ""
+  },
+  "EMC": {
+    "enable": false,
+    "NumBanks": 8,
+    "StartBank": 3
+  },
+  "tape": {
+    "enable": true,
+    "directory": "/tapes/",
+    "filename": "tape1.tap"
+  },
+  "optionRoms": {
+    "directory": "/roms85/",
+    "roms": [
+      {
+        "description": "Service ROM 340 AUXROM Aware",
+        "filename": "rom340aux",
+        "enable": false
+      },
+      {
+        "description": "Assembler ROM",
+        "filename": "rom050",
+        "enable": false
+      },
+      {
+        "description": "I/O ROM",
+        "filename": "rom300B",
+        "enable": false
+      },
+      {
+        "Note": "For 85A floppys, disable rom317, rom320B, rom321B",
+        "description": "Mass Storage",
+        "filename": "rom320",
+        "enable": false
+      },
+      {
+        "Note": "For SS/80 disk, with real HPIB and real SS/80 disk. Use with rom320B, rom321B",
+        "description": "Extended Mass Storage",
+        "filename": "rom317",
+        "enable": false
+      },
+      {
+        "Note": "For 85B floppys and 5, 10 MB hard disk. Must also use rom321B, can be used on 85A",
+        "description": "85B Mass Storage",
+        "filename": "rom320B",
+        "enable": true
+      },
+      {
+        "description": "EDisk",
+        "filename": "rom321B",
+        "enable": true
+      },
+      {
+        "description": "Advanced Programming",
+        "filename": "rom350",
+        "enable": false
+      },
+      {
+        "description": "Printer/Plotter",
+        "filename": "rom360",
+        "enable": true
+      },
+      {
+        "description": "AUXROM Primary 2021_02_24",
+        "filename": "rom361",
+        "enable": true
+      },
+      {
+        "description": "AUXROM Secondary 1 2021_02_24",
+        "filename": "rom362",
+        "enable": true
+      },
+      {
+        "description": "AUXROM Secondary 2 2021_02_24",
+        "filename": "rom363",
+        "enable": true
+      },
+      {
+        "description": "AUXROM Secondary 3 2021_02_24",
+        "filename": "rom364",
+        "enable": true
+      }
+    ]
+  },
+  "hpib": {
+    "select": 3,
+    "devices": [
+      {
+        "Comment": "All blocks must have different device numbers",
+        "type": 0,
+        "device": 0,
+        "directory": "/disks/",
+        "enable": true,
+        "drives": [
+          {
+            "Comment": "msu 300",
+            "unit": 0,
+            "filename": "BETAUTIL.DSK",
+            "writeProtect": false,
+             "enable": true
+          },
+          {
+            "Comment": "msu 301",
+            "unit": 1,
+            "filename": "85Games1.dsk",
+            "writeProtect": false,
+            "enable": true
+          }
+        ]
+      },
+      {
+        "type": 0,
+        "device": 2,
+        "directory": "/disks/",
+        "enable": true,
+        "drives": [
+          {
+            "Comment": "msu 320",
+            "unit": 0,
+            "filename": "85Games2.dsk",
+            "writeProtect": false,
+            "enable": true
+          },
+          {
+            "Comment": "msu 321",
+            "unit": 1,
+            "filename": "85GamesMisc.dsk",
+            "writeProtect": false,
+            "enable": true
+          }
+        ]
+      },
+      {
+        "Comment": "All blocks must have the same select and different device",
+        "type": 4,
+        "device": 3,
+        "directory": "/disks/",
+        "enable": true,
+        "drives": [
+          {
+            "Comment": "msu 330",
+            "unit": 0,
+            "filename": "5MB_scr.dsk",
+            "writeProtect": false,
+            "enable": true
+          },
+          {
+            "Comment": "msu 331",
+            "unit": 1,
+            "filename": "",
+            "writeProtect": false,
+            "enable": false
+          }
+        ]
+      },
+      {
+        "Comment": "Device 10 on HPIB select code, i.e. 310",
+        "type": 0,
+        "device": 10,
+        "directory": "/printers/",
+        "enable": true,
+        "printer":
+          {
+            "filename": "printfile.txt"
+          }
+      }
+    ]
+  }
+}

@@ -1746,7 +1746,7 @@ la_display_results:
   // Serial.printf("PRIMASK Expect 1     = %08X\n", temp);           //  It will be a real surprise if this works. Expect LSB to be 1. Tested, It works and shows Global Interrupt enable
   Serial.printf("\n\n");
 
-  Serial.printf("    Time Sample   Address     Data   Cycle RSE DMA /IR /HAL\n");
+  Serial.printf("    Time Sample   Address     Data   Cycle RSE DMA /IR /HAL          LA Data 1\n");
   Serial.printf("     us                              WRLF  LEC      LX  TX\n");
   sample_number_relative_to_trigger = - Logic_Analyzer_Pre_Trigger_Samples;
 
