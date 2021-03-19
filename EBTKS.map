@@ -516,11 +516,6 @@ Discarded input sections
  .group         0x00000000        0x8 .pio\build\teensy41\src\EBTKS_SD.cpp.o
  .group         0x00000000        0x8 .pio\build\teensy41\src\EBTKS_SD.cpp.o
  .group         0x00000000        0x8 .pio\build\teensy41\src\EBTKS_SD.cpp.o
- .group         0x00000000        0x8 .pio\build\teensy41\src\EBTKS_SD.cpp.o
- .group         0x00000000        0x8 .pio\build\teensy41\src\EBTKS_SD.cpp.o
- .group         0x00000000        0x8 .pio\build\teensy41\src\EBTKS_SD.cpp.o
- .group         0x00000000        0x8 .pio\build\teensy41\src\EBTKS_SD.cpp.o
- .group         0x00000000        0x8 .pio\build\teensy41\src\EBTKS_SD.cpp.o
  .text          0x00000000        0x0 .pio\build\teensy41\src\EBTKS_SD.cpp.o
  .data          0x00000000        0x0 .pio\build\teensy41\src\EBTKS_SD.cpp.o
  .bss           0x00000000        0x0 .pio\build\teensy41\src\EBTKS_SD.cpp.o
@@ -550,8 +545,6 @@ Discarded input sections
                 0x00000000      0x10c .pio\build\teensy41\src\EBTKS_SD.cpp.o
  .text._ZNK18ArduinoJson6173_9111VariantData10asIntegralIiEET_v
                 0x00000000      0x2b8 .pio\build\teensy41\src\EBTKS_SD.cpp.o
- .text._ZN18ArduinoJson6173_91orIiEENS_9enable_ifIXntsrNS_9IsVariantIT_EE5valueENS_9VariantAsIS3_E4typeEE4typeERKNS_11MemberProxyINSA_IRNS_12JsonDocumentEPKcEESE_EES3_
-                0x00000000      0x3ac .pio\build\teensy41\src\EBTKS_SD.cpp.o
  .rodata._ZTV6File32
                 0x00000000       0x24 .pio\build\teensy41\src\EBTKS_SD.cpp.o
  .rodata._ZZN18ArduinoJson6173_9111FloatTraitsIfLj4EE24negativeBinaryPowerOfTenEiE7factors
@@ -1861,7 +1854,7 @@ Linker script and memory map
 LOAD c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/armv7e-m/fpu/fpv5-d16/crti.o
 LOAD c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/armv7e-m/fpu/fpv5-d16/crtbegin.o
 LOAD c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16/crt0.o
-                0x604f69df                __rtc_localtime = 0x604f69df
+                0x60548739                __rtc_localtime = 0x60548739
 LOAD .pio\build\teensy41\src\EBTKS.cpp.o
 LOAD .pio\build\teensy41\src\EBTKS_1MB5.cpp.o
 LOAD .pio\build\teensy41\src\EBTKS_AUXROM.cpp.o
@@ -1958,7 +1951,7 @@ LOAD c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/.
                 0x60001b70                . = ALIGN (0x10)
  *fill*         0x60001b6c        0x4 ff
 
-.text.itcm      0x00000000    0x1f4e0 load address 0x60001b70
+.text.itcm      0x00000000    0x1eb60 load address 0x60001b70
                 0x00000020                . = (. + 0x20)
  *fill*         0x00000000       0x20 
  *(.fastrun)
@@ -2470,1107 +2463,1098 @@ LOAD c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/.
  .text._Z17get_EMC_StartBankv
                 0x00009c08        0xc .pio\build\teensy41\src\EBTKS_SD.cpp.o
                 0x00009c08                get_EMC_StartBank()
- .text._ZN18ArduinoJson6173_91orIbEENS_9enable_ifIXntsrNS_9IsVariantIT_EE5valueENS_9VariantAsIS3_E4typeEE4typeERKNS_11MemberProxyIRNS_12JsonDocumentEPKcEES3_
-                0x00009c14       0xb0 .pio\build\teensy41\src\EBTKS_SD.cpp.o
-                0x00009c14                ArduinoJson6173_91::enable_if<!ArduinoJson6173_91::IsVariant<bool>::value, ArduinoJson6173_91::VariantAs<bool>::type>::type ArduinoJson6173_91::operator|<bool>(ArduinoJson6173_91::MemberProxy<ArduinoJson6173_91::JsonDocument&, char const*> const&, bool)
- .text._ZN18ArduinoJson6173_91orIbEENS_9enable_ifIXntsrNS_9IsVariantIT_EE5valueENS_9VariantAsIS3_E4typeEE4typeERKNS_11MemberProxyINSA_IRNS_12JsonDocumentEPKcEESE_EES3_
-                0x00009cc4      0x140 .pio\build\teensy41\src\EBTKS_SD.cpp.o
-                0x00009cc4                ArduinoJson6173_91::enable_if<!ArduinoJson6173_91::IsVariant<bool>::value, ArduinoJson6173_91::VariantAs<bool>::type>::type ArduinoJson6173_91::operator|<bool>(ArduinoJson6173_91::MemberProxy<ArduinoJson6173_91::MemberProxy<ArduinoJson6173_91::JsonDocument&, char const*>, char const*> const&, bool)
- .text._ZN18ArduinoJson6173_91orIPKcEENS_9enable_ifIXntsrNS_9IsVariantIT_EE5valueENS_9VariantAsIS5_E4typeEE4typeERKNS_11MemberProxyINS_10VariantRefES2_EES5_
-                0x00009e04       0x88 .pio\build\teensy41\src\EBTKS_SD.cpp.o
-                0x00009e04                ArduinoJson6173_91::enable_if<!ArduinoJson6173_91::IsVariant<char const*>::value, ArduinoJson6173_91::VariantAs<char const*>::type>::type ArduinoJson6173_91::operator|<char const*>(ArduinoJson6173_91::MemberProxy<ArduinoJson6173_91::VariantRef, char const*> const&, char const*)
- .text._ZN18ArduinoJson6173_9116JsonDeserializerINS_6ReaderI6File32vEENS_12StringCopierEE12parseVariantINS_14AllowAllFilterEEEbRNS_11VariantDataET_NS_12NestingLimitE
-                0x00009e8c     0x1138 .pio\build\teensy41\src\EBTKS_SD.cpp.o
-                0x00009e8c                bool ArduinoJson6173_91::JsonDeserializer<ArduinoJson6173_91::Reader<File32, void>, ArduinoJson6173_91::StringCopier>::parseVariant<ArduinoJson6173_91::AllowAllFilter>(ArduinoJson6173_91::VariantData&, ArduinoJson6173_91::AllowAllFilter, ArduinoJson6173_91::NestingLimit)
- .text._ZN18ArduinoJson6173_9111deserializeINS_16JsonDeserializerE6File32NS_14AllowAllFilterEEENS_20DeserializationErrorERNS_12JsonDocumentERT0_NS_12NestingLimitET1_.isra.66.constprop.68
-                0x0000afc4       0x74 .pio\build\teensy41\src\EBTKS_SD.cpp.o
  .text._ZNK18ArduinoJson6173_9111VariantData9getMemberINS_21ConstRamStringAdapterEEEPS0_T_
-                0x0000b038       0x40 .pio\build\teensy41\src\EBTKS_SD.cpp.o
-                0x0000b038                ArduinoJson6173_91::VariantData* ArduinoJson6173_91::VariantData::getMember<ArduinoJson6173_91::ConstRamStringAdapter>(ArduinoJson6173_91::ConstRamStringAdapter) const
- .text._Z14remount_drivesPKc
-                0x0000b078     0x1ce0 .pio\build\teensy41\src\EBTKS_SD.cpp.o
-                0x0000b078                remount_drives(char const*)
- .text._ZN18ArduinoJson6173_91orIiEENS_9enable_ifIXntsrNS_9IsVariantIT_EE5valueENS_9VariantAsIS3_E4typeEE4typeERKNS_11MemberProxyINS_10VariantRefEPKcEES3_
-                0x0000cd58      0x30c .pio\build\teensy41\src\EBTKS_SD.cpp.o
-                0x0000cd58                ArduinoJson6173_91::enable_if<!ArduinoJson6173_91::IsVariant<int>::value, ArduinoJson6173_91::VariantAs<int>::type>::type ArduinoJson6173_91::operator|<int>(ArduinoJson6173_91::MemberProxy<ArduinoJson6173_91::VariantRef, char const*> const&, int)
+                0x00009c14       0x40 .pio\build\teensy41\src\EBTKS_SD.cpp.o
+                0x00009c14                ArduinoJson6173_91::VariantData* ArduinoJson6173_91::VariantData::getMember<ArduinoJson6173_91::ConstRamStringAdapter>(ArduinoJson6173_91::ConstRamStringAdapter) const
+ .text._ZN18ArduinoJson6173_9116JsonDeserializerINS_6ReaderI6File32vEENS_12StringCopierEE12parseVariantINS_14AllowAllFilterEEEbRNS_11VariantDataET_NS_12NestingLimitE
+                0x00009c54     0x1138 .pio\build\teensy41\src\EBTKS_SD.cpp.o
+                0x00009c54                bool ArduinoJson6173_91::JsonDeserializer<ArduinoJson6173_91::Reader<File32, void>, ArduinoJson6173_91::StringCopier>::parseVariant<ArduinoJson6173_91::AllowAllFilter>(ArduinoJson6173_91::VariantData&, ArduinoJson6173_91::AllowAllFilter, ArduinoJson6173_91::NestingLimit)
+ .text._ZN18ArduinoJson6173_9111deserializeINS_16JsonDeserializerE6File32NS_14AllowAllFilterEEENS_20DeserializationErrorERNS_12JsonDocumentERT0_NS_12NestingLimitET1_.isra.67.constprop.68
+                0x0000ad8c       0x74 .pio\build\teensy41\src\EBTKS_SD.cpp.o
+ .text._Z26mount_drives_based_on_JSONRN18ArduinoJson6173_9112JsonDocumentE
+                0x0000ae00     0x1a30 .pio\build\teensy41\src\EBTKS_SD.cpp.o
+                0x0000ae00                mount_drives_based_on_JSON(ArduinoJson6173_91::JsonDocument&)
  .text._Z17loadConfigurationPKc
-                0x0000d064     0x1fe8 .pio\build\teensy41\src\EBTKS_SD.cpp.o
-                0x0000d064                loadConfiguration(char const*)
+                0x0000c830     0x1c10 .pio\build\teensy41\src\EBTKS_SD.cpp.o
+                0x0000c830                loadConfiguration(char const*)
+ .text._Z14remount_drivesPKc
+                0x0000e440      0x294 .pio\build\teensy41\src\EBTKS_SD.cpp.o
+                0x0000e440                remount_drives(char const*)
  .text._ZN4TapeC2Ev
-                0x0000f04c       0x40 .pio\build\teensy41\src\EBTKS_Tape_Drive.cpp.o
-                0x0000f04c                Tape::Tape()
-                0x0000f04c                Tape::Tape()
+                0x0000e6d4       0x40 .pio\build\teensy41\src\EBTKS_Tape_Drive.cpp.o
+                0x0000e6d4                Tape::Tape()
+                0x0000e6d4                Tape::Tape()
  .text._ZN4Tape7getFileEv
-                0x0000f08c        0x4 .pio\build\teensy41\src\EBTKS_Tape_Drive.cpp.o
-                0x0000f08c                Tape::getFile()
+                0x0000e714        0x4 .pio\build\teensy41\src\EBTKS_Tape_Drive.cpp.o
+                0x0000e714                Tape::getFile()
  .text._ZN4Tape9blockReadEm
-                0x0000f090       0x60 .pio\build\teensy41\src\EBTKS_Tape_Drive.cpp.o
-                0x0000f090                Tape::blockRead(unsigned long)
+                0x0000e718       0x60 .pio\build\teensy41\src\EBTKS_Tape_Drive.cpp.o
+                0x0000e718                Tape::blockRead(unsigned long)
  .text._ZN4Tape10blockWriteEi
-                0x0000f0f0       0x44 .pio\build\teensy41\src\EBTKS_Tape_Drive.cpp.o
-                0x0000f0f0                Tape::blockWrite(int)
+                0x0000e778       0x44 .pio\build\teensy41\src\EBTKS_Tape_Drive.cpp.o
+                0x0000e778                Tape::blockWrite(int)
  .text._ZN4Tape5flushEv
-                0x0000f134       0x2c .pio\build\teensy41\src\EBTKS_Tape_Drive.cpp.o
-                0x0000f134                Tape::flush()
+                0x0000e7bc       0x2c .pio\build\teensy41\src\EBTKS_Tape_Drive.cpp.o
+                0x0000e7bc                Tape::flush()
  .text._ZN4Tape5closeEv
-                0x0000f160       0x20 .pio\build\teensy41\src\EBTKS_Tape_Drive.cpp.o
-                0x0000f160                Tape::close()
+                0x0000e7e8       0x20 .pio\build\teensy41\src\EBTKS_Tape_Drive.cpp.o
+                0x0000e7e8                Tape::close()
  .text._ZN4Tape7setFileEPKc
-                0x0000f180       0xc8 .pio\build\teensy41\src\EBTKS_Tape_Drive.cpp.o
-                0x0000f180                Tape::setFile(char const*)
+                0x0000e808       0xc8 .pio\build\teensy41\src\EBTKS_Tape_Drive.cpp.o
+                0x0000e808                Tape::setFile(char const*)
  .text._ZN4Tape6enableEb
-                0x0000f248       0x48 .pio\build\teensy41\src\EBTKS_Tape_Drive.cpp.o
-                0x0000f248                Tape::enable(bool)
+                0x0000e8d0       0x48 .pio\build\teensy41\src\EBTKS_Tape_Drive.cpp.o
+                0x0000e8d0                Tape::enable(bool)
  .text._ZN4Tape4pollEv
-                0x0000f290       0x8c .pio\build\teensy41\src\EBTKS_Tape_Drive.cpp.o
-                0x0000f290                Tape::poll()
+                0x0000e918       0x8c .pio\build\teensy41\src\EBTKS_Tape_Drive.cpp.o
+                0x0000e918                Tape::poll()
  .text._Z24tape_handle_command_loadv
-                0x0000f31c       0x5c .pio\build\teensy41\src\EBTKS_Tape_Drive.cpp.o
-                0x0000f31c                tape_handle_command_load()
+                0x0000e9a4       0x5c .pio\build\teensy41\src\EBTKS_Tape_Drive.cpp.o
+                0x0000e9a4                tape_handle_command_load()
  .text._Z17tape_handle_MOUNTPc
-                0x0000f378       0x44 .pio\build\teensy41\src\EBTKS_Tape_Drive.cpp.o
-                0x0000f378                tape_handle_MOUNT(char*)
+                0x0000ea00       0x44 .pio\build\teensy41\src\EBTKS_Tape_Drive.cpp.o
+                0x0000ea00                tape_handle_MOUNT(char*)
  .text._Z19tape_handle_UNMOUNTv
-                0x0000f3bc       0x34 .pio\build\teensy41\src\EBTKS_Tape_Drive.cpp.o
-                0x0000f3bc                tape_handle_UNMOUNT()
+                0x0000ea44       0x34 .pio\build\teensy41\src\EBTKS_Tape_Drive.cpp.o
+                0x0000ea44                tape_handle_UNMOUNT()
  .text._Z11proc_auxintv
-                0x0000f3f0       0x28 .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
-                0x0000f3f0                proc_auxint()
+                0x0000ea78       0x28 .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
+                0x0000ea78                proc_auxint()
  .text._Z6help_0v
-                0x0000f418       0x6c .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
-                0x0000f418                help_0()
+                0x0000eaa0       0x6c .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
+                0x0000eaa0                help_0()
  .text._Z6help_1v
-                0x0000f484       0x48 .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
-                0x0000f484                help_1()
+                0x0000eb0c       0x48 .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
+                0x0000eb0c                help_1()
  .text._Z6help_2v
-                0x0000f4cc       0xf0 .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
-                0x0000f4cc                help_2()
+                0x0000eb54       0xf0 .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
+                0x0000eb54                help_2()
  .text._Z6help_3v
-                0x0000f5bc       0x54 .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
-                0x0000f5bc                help_3()
+                0x0000ec44       0x54 .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
+                0x0000ec44                help_3()
  .text._Z6help_4v
-                0x0000f610       0x24 .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
-                0x0000f610                help_4()
+                0x0000ec98       0x24 .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
+                0x0000ec98                help_4()
  .text._Z6help_5v
-                0x0000f634       0x54 .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
-                0x0000f634                help_5()
+                0x0000ecbc       0x54 .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
+                0x0000ecbc                help_5()
  .text._Z6help_6v
-                0x0000f688       0x3c .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
-                0x0000f688                help_6()
+                0x0000ed10       0x3c .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
+                0x0000ed10                help_6()
  .text._Z6help_7v
-                0x0000f6c4       0x24 .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
-                0x0000f6c4                help_7()
+                0x0000ed4c       0x24 .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
+                0x0000ed4c                help_7()
  .text._Z13diag_sdread_1v
-                0x0000f6e8      0x330 .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
-                0x0000f6e8                diag_sdread_1()
+                0x0000ed70      0x330 .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
+                0x0000ed70                diag_sdread_1()
  .text._Z9pulse_PWOv
-                0x0000fa18       0x2c .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
-                0x0000fa18                pulse_PWO()
+                0x0000f0a0       0x2c .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
+                0x0000f0a0                pulse_PWO()
  .text._Z15dump_ram_windowv
-                0x0000fa44       0xa8 .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
-                0x0000fa44                dump_ram_window()
+                0x0000f0cc       0xa8 .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
+                0x0000f0cc                dump_ram_window()
  .text._Z17Logic_analyzer_gov
-                0x0000faec       0xa8 .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
-                0x0000faec                Logic_analyzer_go()
+                0x0000f174       0xa8 .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
+                0x0000f174                Logic_analyzer_go()
  .text._Z9proc_addrv
-                0x0000fb94       0xac .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
-                0x0000fb94                proc_addr()
+                0x0000f21c       0xac .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
+                0x0000f21c                proc_addr()
  .text._Z20Simple_Graphics_Testv
-                0x0000fc40       0x58 .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
-                0x0000fc40                Simple_Graphics_Test()
+                0x0000f2c8       0x58 .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
+                0x0000f2c8                Simple_Graphics_Test()
  .text._Z14just_once_funcv
-                0x0000fc98       0x20 .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
-                0x0000fc98                just_once_func()
+                0x0000f320       0x20 .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
+                0x0000f320                just_once_func()
  .text._Z6jay_piv
-                0x0000fcb8       0xc4 .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
-                0x0000fcb8                jay_pi()
+                0x0000f340       0xc4 .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
+                0x0000f340                jay_pi()
  .text._Z12report_mediav
-                0x0000fd7c       0xd4 .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
-                0x0000fd7c                report_media()
+                0x0000f404       0xd4 .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
+                0x0000f404                report_media()
  .text._Z14SCOPE_1_Pulserh
-                0x0000fe50       0x48 .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
-                0x0000fe50                SCOPE_1_Pulser(unsigned char)
+                0x0000f4d8       0x48 .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
+                0x0000f4d8                SCOPE_1_Pulser(unsigned char)
  .text._Z14EBTKS_delay_nsl
-                0x0000fe98       0x38 .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
-                0x0000fe98                EBTKS_delay_ns(long)
+                0x0000f520       0x38 .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
+                0x0000f520                EBTKS_delay_ns(long)
  .text._Z22get_serial_string_pollv
-                0x0000fed0      0x10c .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
-                0x0000fed0                get_serial_string_poll()
+                0x0000f558      0x10c .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
+                0x0000f558                get_serial_string_poll()
  .text._Z22wait_for_serial_stringv
-                0x0000ffdc       0x28 .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
-                0x0000ffdc                wait_for_serial_string()
+                0x0000f664       0x28 .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
+                0x0000f664                wait_for_serial_string()
  .text._Z20Setup_Logic_Analyzerv
-                0x00010004      0xb30 .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
-                0x00010004                Setup_Logic_Analyzer()
+                0x0000f68c      0xb30 .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
+                0x0000f68c                Setup_Logic_Analyzer()
  .text._Z18serial_string_usedv
-                0x00010b34       0x1c .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
-                0x00010b34                serial_string_used()
+                0x000101bc       0x1c .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
+                0x000101bc                serial_string_used()
  .text._Z15HexDump_T41_memmmbb
-                0x00010b50       0x68 .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
-                0x00010b50                HexDump_T41_mem(unsigned long, unsigned long, bool, bool)
+                0x000101d8       0x68 .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
+                0x000101d8                HexDump_T41_mem(unsigned long, unsigned long, bool, bool)
  .text._Z13diag_dir_pathPKc
-                0x00010bb8       0x74 .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
-                0x00010bb8                diag_dir_path(char const*)
+                0x00010240       0x74 .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
+                0x00010240                diag_dir_path(char const*)
  .text._Z14diag_dir_tapesv
-                0x00010c2c        0xc .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
-                0x00010c2c                diag_dir_tapes()
+                0x000102b4        0xc .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
+                0x000102b4                diag_dir_tapes()
  .text._Z13diag_dir_rootv
-                0x00010c38        0xc .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
-                0x00010c38                diag_dir_root()
+                0x000102c0        0xc .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
+                0x000102c0                diag_dir_root()
  .text._Z14diag_dir_disksv
-                0x00010c44        0xc .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
-                0x00010c44                diag_dir_disks()
+                0x000102cc        0xc .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
+                0x000102cc                diag_dir_disks()
  .text._Z13diag_dir_romsv
-                0x00010c50        0xc .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
-                0x00010c50                diag_dir_roms()
+                0x000102d8        0xc .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
+                0x000102d8                diag_dir_roms()
  .text._Z18no_SD_card_messagev
-                0x00010c5c       0x88 .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
-                0x00010c5c                no_SD_card_message()
+                0x000102e4       0x88 .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
+                0x000102e4                no_SD_card_message()
  .text._Z11setLedColorhhhh
-                0x00010ce4       0x1c .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
-                0x00010ce4                setLedColor(unsigned char, unsigned char, unsigned char, unsigned char)
+                0x0001036c       0x1c .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
+                0x0001036c                setLedColor(unsigned char, unsigned char, unsigned char, unsigned char)
  .text._Z13WS2812_updatev
-                0x00010d00       0x84 .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
-                0x00010d00                WS2812_update()
+                0x00010388       0x84 .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
+                0x00010388                WS2812_update()
  .text._Z11str_tolowerPc
-                0x00010d84       0x1c .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
-                0x00010d84                str_tolower(char*)
+                0x0001040c       0x1c .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
+                0x0001040c                str_tolower(char*)
  .text._Z14MatchesPatternPcS_
-                0x00010da0       0x5c .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
-                0x00010da0                MatchesPattern(char*, char*)
+                0x00010428       0x5c .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
+                0x00010428                MatchesPattern(char*, char*)
  .text._Z9dump_keysbb
-                0x00010dfc      0x124 .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
-                0x00010dfc                dump_keys(bool, bool)
+                0x00010484      0x124 .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
+                0x00010484                dump_keys(bool, bool)
  .text._Z4showv
-                0x00010f20      0x2bc .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
-                0x00010f20                show()
+                0x000105a8      0x2bc .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
+                0x000105a8                show()
  .text._Z19Serial_Command_Pollv
-                0x000111dc       0xdc .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
-                0x000111dc                Serial_Command_Poll()
+                0x00010864       0xdc .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
+                0x00010864                Serial_Command_Poll()
  .text._Z19Logic_Analyzer_Pollv
-                0x000112b8      0x4c8 .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
-                0x000112b8                Logic_Analyzer_Poll()
+                0x00010940      0x4c8 .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
+                0x00010940                Logic_Analyzer_Poll()
  .text._ZN7FatFile8openRootEP9FatVolume.part.36
-                0x00011780       0x34 .pio\build\teensy41\libc5c\libSdFat.a(FatFile.cpp.o)
+                0x00010e08       0x34 .pio\build\teensy41\libc5c\libSdFat.a(FatFile.cpp.o)
  .text._ZN7FatFile10addClusterEv
-                0x000117b4       0x34 .pio\build\teensy41\libc5c\libSdFat.a(FatFile.cpp.o)
-                0x000117b4                FatFile::addCluster()
+                0x00010e3c       0x34 .pio\build\teensy41\libc5c\libSdFat.a(FatFile.cpp.o)
+                0x00010e3c                FatFile::addCluster()
  .text._ZN7FatFile13addDirClusterEv
-                0x000117e8       0x94 .pio\build\teensy41\libc5c\libSdFat.a(FatFile.cpp.o)
-                0x000117e8                FatFile::addDirCluster()
+                0x00010e70       0x94 .pio\build\teensy41\libc5c\libSdFat.a(FatFile.cpp.o)
+                0x00010e70                FatFile::addDirCluster()
  .text._ZN7FatFile13cacheDirEntryEh
-                0x0001187c       0x20 .pio\build\teensy41\libc5c\libSdFat.a(FatFile.cpp.o)
-                0x0001187c                FatFile::cacheDirEntry(unsigned char)
+                0x00010f04       0x20 .pio\build\teensy41\libc5c\libSdFat.a(FatFile.cpp.o)
+                0x00010f04                FatFile::cacheDirEntry(unsigned char)
  .text._ZN7FatFile4syncEv.part.40
-                0x0001189c       0x94 .pio\build\teensy41\libc5c\libSdFat.a(FatFile.cpp.o)
+                0x00010f24       0x94 .pio\build\teensy41\libc5c\libSdFat.a(FatFile.cpp.o)
  .text._ZN7FatFile5closeEv
-                0x00011930       0x20 .pio\build\teensy41\libc5c\libSdFat.a(FatFile.cpp.o)
-                0x00011930                FatFile::close()
+                0x00010fb8       0x20 .pio\build\teensy41\libc5c\libSdFat.a(FatFile.cpp.o)
+                0x00010fb8                FatFile::close()
  .text._ZN7FatFile8dirEntryEP8DirFat_t
-                0x00011950       0x48 .pio\build\teensy41\libc5c\libSdFat.a(FatFile.cpp.o)
-                0x00011950                FatFile::dirEntry(DirFat_t*)
+                0x00010fd8       0x48 .pio\build\teensy41\libc5c\libSdFat.a(FatFile.cpp.o)
+                0x00010fd8                FatFile::dirEntry(DirFat_t*)
  .text._ZN7FatFile17getModifyDateTimeEPtS0_
-                0x00011998       0x20 .pio\build\teensy41\libc5c\libSdFat.a(FatFile.cpp.o)
-                0x00011998                FatFile::getModifyDateTime(unsigned short*, unsigned short*)
+                0x00011020       0x20 .pio\build\teensy41\libc5c\libSdFat.a(FatFile.cpp.o)
+                0x00011020                FatFile::getModifyDateTime(unsigned short*, unsigned short*)
  .text._ZN7FatFile5mkdirEPS_P7fname_t
-                0x000119b8      0x15c .pio\build\teensy41\libc5c\libSdFat.a(FatFile.cpp.o)
-                0x000119b8                FatFile::mkdir(FatFile*, fname_t*)
+                0x00011040      0x15c .pio\build\teensy41\libc5c\libSdFat.a(FatFile.cpp.o)
+                0x00011040                FatFile::mkdir(FatFile*, fname_t*)
  .text._ZN7FatFile5mkdirEPS_PKcb
-                0x00011b14       0xc8 .pio\build\teensy41\libc5c\libSdFat.a(FatFile.cpp.o)
-                0x00011b14                FatFile::mkdir(FatFile*, char const*, bool)
+                0x0001119c       0xc8 .pio\build\teensy41\libc5c\libSdFat.a(FatFile.cpp.o)
+                0x0001119c                FatFile::mkdir(FatFile*, char const*, bool)
  .text._ZN7FatFile4openEPS_PKci
-                0x00011bdc       0xc8 .pio\build\teensy41\libc5c\libSdFat.a(FatFile.cpp.o)
-                0x00011bdc                FatFile::open(FatFile*, char const*, int)
+                0x00011264       0xc8 .pio\build\teensy41\libc5c\libSdFat.a(FatFile.cpp.o)
+                0x00011264                FatFile::open(FatFile*, char const*, int)
  .text._ZN7FatFile4openEP9FatVolumePKci
-                0x00011ca4       0x10 .pio\build\teensy41\libc5c\libSdFat.a(FatFile.cpp.o)
-                0x00011ca4                FatFile::open(FatVolume*, char const*, int)
+                0x0001132c       0x10 .pio\build\teensy41\libc5c\libSdFat.a(FatFile.cpp.o)
+                0x0001132c                FatFile::open(FatVolume*, char const*, int)
  .text._ZN7FatFile4openEPKci
-                0x00011cb4       0x24 .pio\build\teensy41\libc5c\libSdFat.a(FatFile.cpp.o)
-                0x00011cb4                FatFile::open(char const*, int)
+                0x0001133c       0x24 .pio\build\teensy41\libc5c\libSdFat.a(FatFile.cpp.o)
+                0x0001133c                FatFile::open(char const*, int)
  .text._ZN7FatFile8openRootEP9FatVolume
-                0x00011cd8        0xc .pio\build\teensy41\libc5c\libSdFat.a(FatFile.cpp.o)
-                0x00011cd8                FatFile::openRoot(FatVolume*)
+                0x00011360        0xc .pio\build\teensy41\libc5c\libSdFat.a(FatFile.cpp.o)
+                0x00011360                FatFile::openRoot(FatVolume*)
  .text._ZN7FatFile4readEPvj
-                0x00011ce4      0x194 .pio\build\teensy41\libc5c\libSdFat.a(FatFile.cpp.o)
-                0x00011ce4                FatFile::read(void*, unsigned int)
+                0x0001136c      0x194 .pio\build\teensy41\libc5c\libSdFat.a(FatFile.cpp.o)
+                0x0001136c                FatFile::read(void*, unsigned int)
  .text._ZN7FatFile4peekEv
-                0x00011e78       0x28 .pio\build\teensy41\libc5c\libSdFat.a(FatFile.cpp.o)
-                0x00011e78                FatFile::peek()
+                0x00011500       0x28 .pio\build\teensy41\libc5c\libSdFat.a(FatFile.cpp.o)
+                0x00011500                FatFile::peek()
  .text._ZN7FatFile12readDirCacheEb
-                0x00011ea0       0x44 .pio\build\teensy41\libc5c\libSdFat.a(FatFile.cpp.o)
-                0x00011ea0                FatFile::readDirCache(bool)
+                0x00011528       0x44 .pio\build\teensy41\libc5c\libSdFat.a(FatFile.cpp.o)
+                0x00011528                FatFile::readDirCache(bool)
  .text._ZN7FatFile6renameEPS_PKc
-                0x00011ee4      0x1e4 .pio\build\teensy41\libc5c\libSdFat.a(FatFile.cpp.o)
-                0x00011ee4                FatFile::rename(FatFile*, char const*)
+                0x0001156c      0x1e4 .pio\build\teensy41\libc5c\libSdFat.a(FatFile.cpp.o)
+                0x0001156c                FatFile::rename(FatFile*, char const*)
  .text._ZN7FatFile5rmdirEv
-                0x000120c8       0x5c .pio\build\teensy41\libc5c\libSdFat.a(FatFile.cpp.o)
-                0x000120c8                FatFile::rmdir()
+                0x00011750       0x5c .pio\build\teensy41\libc5c\libSdFat.a(FatFile.cpp.o)
+                0x00011750                FatFile::rmdir()
  .text._ZN7FatFile7seekSetEm
-                0x00012124       0xb0 .pio\build\teensy41\libc5c\libSdFat.a(FatFile.cpp.o)
-                0x00012124                FatFile::seekSet(unsigned long)
+                0x000117ac       0xb0 .pio\build\teensy41\libc5c\libSdFat.a(FatFile.cpp.o)
+                0x000117ac                FatFile::seekSet(unsigned long)
  .text._ZN7FatFile15openCachedEntryEPS_tih
-                0x000121d4       0xd4 .pio\build\teensy41\libc5c\libSdFat.a(FatFile.cpp.o)
-                0x000121d4                FatFile::openCachedEntry(FatFile*, unsigned short, int, unsigned char)
+                0x0001185c       0xd4 .pio\build\teensy41\libc5c\libSdFat.a(FatFile.cpp.o)
+                0x0001185c                FatFile::openCachedEntry(FatFile*, unsigned short, int, unsigned char)
  .text._ZN7FatFile8openNextEPS_i
-                0x000122a8       0x90 .pio\build\teensy41\libc5c\libSdFat.a(FatFile.cpp.o)
-                0x000122a8                FatFile::openNext(FatFile*, int)
+                0x00011930       0x90 .pio\build\teensy41\libc5c\libSdFat.a(FatFile.cpp.o)
+                0x00011930                FatFile::openNext(FatFile*, int)
  .text._ZN7FatFile4syncEv
-                0x00012338        0xc .pio\build\teensy41\libc5c\libSdFat.a(FatFile.cpp.o)
-                0x00012338                FatFile::sync()
+                0x000119c0        0xc .pio\build\teensy41\libc5c\libSdFat.a(FatFile.cpp.o)
+                0x000119c0                FatFile::sync()
  .text._ZN7FatFile5writeEPKvj
-                0x00012344      0x1e8 .pio\build\teensy41\libc5c\libSdFat.a(FatFile.cpp.o)
-                0x00012344                FatFile::write(void const*, unsigned int)
+                0x000119cc      0x1e8 .pio\build\teensy41\libc5c\libSdFat.a(FatFile.cpp.o)
+                0x000119cc                FatFile::write(void const*, unsigned int)
  .text._ZL10lfnGetCharP8DirLfn_th
-                0x0001252c       0x2c .pio\build\teensy41\libc5c\libSdFat.a(FatFileLFN.cpp.o)
+                0x00011bb4       0x2c .pio\build\teensy41\libc5c\libSdFat.a(FatFileLFN.cpp.o)
  .text._ZN7FatFile11lfnChecksumEPh
-                0x00012558       0x24 .pio\build\teensy41\libc5c\libSdFat.a(FatFileLFN.cpp.o)
-                0x00012558                FatFile::lfnChecksum(unsigned char*)
+                0x00011be0       0x24 .pio\build\teensy41\libc5c\libSdFat.a(FatFileLFN.cpp.o)
+                0x00011be0                FatFile::lfnChecksum(unsigned char*)
  .text._ZN7FatFile11openClusterEPS_
-                0x0001257c       0x30 .pio\build\teensy41\libc5c\libSdFat.a(FatFileLFN.cpp.o)
-                0x0001257c                FatFile::openCluster(FatFile*)
+                0x00011c04       0x30 .pio\build\teensy41\libc5c\libSdFat.a(FatFileLFN.cpp.o)
+                0x00011c04                FatFile::openCluster(FatFile*)
  .text._ZN7FatFile7getNameEPcj
-                0x000125ac      0x108 .pio\build\teensy41\libc5c\libSdFat.a(FatFileLFN.cpp.o)
-                0x000125ac                FatFile::getName(char*, unsigned int)
+                0x00011c34      0x108 .pio\build\teensy41\libc5c\libSdFat.a(FatFileLFN.cpp.o)
+                0x00011c34                FatFile::getName(char*, unsigned int)
  .text._ZN7FatFile13parsePathNameEPKcP7fname_tPS1_
-                0x000126b4      0x284 .pio\build\teensy41\libc5c\libSdFat.a(FatFileLFN.cpp.o)
-                0x000126b4                FatFile::parsePathName(char const*, fname_t*, char const**)
+                0x00011d3c      0x284 .pio\build\teensy41\libc5c\libSdFat.a(FatFileLFN.cpp.o)
+                0x00011d3c                FatFile::parsePathName(char const*, fname_t*, char const**)
  .text._ZN7FatFile9printNameEP5Print
-                0x00012938       0xbc .pio\build\teensy41\libc5c\libSdFat.a(FatFileLFN.cpp.o)
-                0x00012938                FatFile::printName(Print*)
+                0x00011fc0       0xbc .pio\build\teensy41\libc5c\libSdFat.a(FatFileLFN.cpp.o)
+                0x00011fc0                FatFile::printName(Print*)
  .text._ZN7FatFile6removeEv
-                0x000129f4      0x128 .pio\build\teensy41\libc5c\libSdFat.a(FatFileLFN.cpp.o)
-                0x000129f4                FatFile::remove()
+                0x0001207c      0x128 .pio\build\teensy41\libc5c\libSdFat.a(FatFileLFN.cpp.o)
+                0x0001207c                FatFile::remove()
  .text._ZN7FatFile12lfnUniqueSfnEP7fname_t
-                0x00012b1c       0xc0 .pio\build\teensy41\libc5c\libSdFat.a(FatFileLFN.cpp.o)
-                0x00012b1c                FatFile::lfnUniqueSfn(fname_t*)
+                0x000121a4       0xc0 .pio\build\teensy41\libc5c\libSdFat.a(FatFileLFN.cpp.o)
+                0x000121a4                FatFile::lfnUniqueSfn(fname_t*)
  .text._ZN7FatFile4openEPS_P7fname_ti
-                0x00012bdc      0x39c .pio\build\teensy41\libc5c\libSdFat.a(FatFileLFN.cpp.o)
-                0x00012bdc                FatFile::open(FatFile*, fname_t*, int)
+                0x00012264      0x39c .pio\build\teensy41\libc5c\libSdFat.a(FatFileLFN.cpp.o)
+                0x00012264                FatFile::open(FatFile*, fname_t*, int)
  .text._ZN7FatFile19printModifyDateTimeEP5Print
-                0x00012f78       0x24 .pio\build\teensy41\libc5c\libSdFat.a(FatFilePrint.cpp.o)
-                0x00012f78                FatFile::printModifyDateTime(Print*)
+                0x00012600       0x24 .pio\build\teensy41\libc5c\libSdFat.a(FatFilePrint.cpp.o)
+                0x00012600                FatFile::printModifyDateTime(Print*)
  .text._ZN7FatFile13printFileSizeEP5Print
-                0x00012f9c       0x3c .pio\build\teensy41\libc5c\libSdFat.a(FatFilePrint.cpp.o)
-                0x00012f9c                FatFile::printFileSize(Print*)
+                0x00012624       0x3c .pio\build\teensy41\libc5c\libSdFat.a(FatFilePrint.cpp.o)
+                0x00012624                FatFile::printFileSize(Print*)
  .text._ZN7FatFile2lsEP5Printhh
-                0x00012fd8      0x118 .pio\build\teensy41\libc5c\libSdFat.a(FatFilePrint.cpp.o)
-                0x00012fd8                FatFile::ls(Print*, unsigned char, unsigned char)
+                0x00012660      0x118 .pio\build\teensy41\libc5c\libSdFat.a(FatFilePrint.cpp.o)
+                0x00012660                FatFile::ls(Print*, unsigned char, unsigned char)
  .text._ZN7FatFile6getSFNEPc.part.2
-                0x000130f0       0x68 .pio\build\teensy41\libc5c\libSdFat.a(FatFileSFN.cpp.o)
+                0x00012778       0x68 .pio\build\teensy41\libc5c\libSdFat.a(FatFileSFN.cpp.o)
  .text._ZN7FatFile6getSFNEPc
-                0x00013158       0x20 .pio\build\teensy41\libc5c\libSdFat.a(FatFileSFN.cpp.o)
-                0x00013158                FatFile::getSFN(char*)
+                0x000127e0       0x20 .pio\build\teensy41\libc5c\libSdFat.a(FatFileSFN.cpp.o)
+                0x000127e0                FatFile::getSFN(char*)
  .text._ZN7FatFile8printSFNEP5Print
-                0x00013178       0x4c .pio\build\teensy41\libc5c\libSdFat.a(FatFileSFN.cpp.o)
-                0x00013178                FatFile::printSFN(Print*)
+                0x00012800       0x4c .pio\build\teensy41\libc5c\libSdFat.a(FatFileSFN.cpp.o)
+                0x00012800                FatFile::printSFN(Print*)
  .text._ZN8FatCache4syncEv.part.8
-                0x000131c4       0x4c .pio\build\teensy41\libc5c\libSdFat.a(FatPartition.cpp.o)
+                0x0001284c       0x4c .pio\build\teensy41\libc5c\libSdFat.a(FatPartition.cpp.o)
  .text._ZN8FatCache4readEmh
-                0x00013210       0x60 .pio\build\teensy41\libc5c\libSdFat.a(FatPartition.cpp.o)
-                0x00013210                FatCache::read(unsigned long, unsigned char)
+                0x00012898       0x60 .pio\build\teensy41\libc5c\libSdFat.a(FatPartition.cpp.o)
+                0x00012898                FatCache::read(unsigned long, unsigned char)
  .text._ZN8FatCache4syncEv
-                0x00013270       0x10 .pio\build\teensy41\libc5c\libSdFat.a(FatPartition.cpp.o)
-                0x00013270                FatCache::sync()
+                0x000128f8       0x10 .pio\build\teensy41\libc5c\libSdFat.a(FatPartition.cpp.o)
+                0x000128f8                FatCache::sync()
  .text._ZNK12FatPartition18clusterStartSectorEm
-                0x00013280        0xc .pio\build\teensy41\libc5c\libSdFat.a(FatPartition.cpp.o)
-                0x00013280                FatPartition::clusterStartSector(unsigned long) const
+                0x00012908        0xc .pio\build\teensy41\libc5c\libSdFat.a(FatPartition.cpp.o)
+                0x00012908                FatPartition::clusterStartSector(unsigned long) const
  .text._ZN12FatPartition6fatGetEmPm
-                0x0001328c       0x70 .pio\build\teensy41\libc5c\libSdFat.a(FatPartition.cpp.o)
-                0x0001328c                FatPartition::fatGet(unsigned long, unsigned long*)
+                0x00012914       0x70 .pio\build\teensy41\libc5c\libSdFat.a(FatPartition.cpp.o)
+                0x00012914                FatPartition::fatGet(unsigned long, unsigned long*)
  .text._ZN12FatPartition6fatPutEmm
-                0x000132fc       0x68 .pio\build\teensy41\libc5c\libSdFat.a(FatPartition.cpp.o)
-                0x000132fc                FatPartition::fatPut(unsigned long, unsigned long)
+                0x00012984       0x68 .pio\build\teensy41\libc5c\libSdFat.a(FatPartition.cpp.o)
+                0x00012984                FatPartition::fatPut(unsigned long, unsigned long)
  .text._ZN12FatPartition15allocateClusterEmPm
-                0x00013364       0x84 .pio\build\teensy41\libc5c\libSdFat.a(FatPartition.cpp.o)
-                0x00013364                FatPartition::allocateCluster(unsigned long, unsigned long*)
+                0x000129ec       0x84 .pio\build\teensy41\libc5c\libSdFat.a(FatPartition.cpp.o)
+                0x000129ec                FatPartition::allocateCluster(unsigned long, unsigned long*)
  .text._ZN12FatPartition9freeChainEm
-                0x000133e8       0x3c .pio\build\teensy41\libc5c\libSdFat.a(FatPartition.cpp.o)
-                0x000133e8                FatPartition::freeChain(unsigned long)
+                0x00012a70       0x3c .pio\build\teensy41\libc5c\libSdFat.a(FatPartition.cpp.o)
+                0x00012a70                FatPartition::freeChain(unsigned long)
  .text._ZN12FatPartition4initEP20BlockDeviceInterfaceh
-                0x00013424      0x120 .pio\build\teensy41\libc5c\libSdFat.a(FatPartition.cpp.o)
-                0x00013424                FatPartition::init(BlockDeviceInterface*, unsigned char)
+                0x00012aac      0x120 .pio\build\teensy41\libc5c\libSdFat.a(FatPartition.cpp.o)
+                0x00012aac                FatPartition::init(BlockDeviceInterface*, unsigned char)
  .text._ZN9FatVolume5chdirEPKc
-                0x00013544       0x4c .pio\build\teensy41\libc5c\libSdFat.a(FatVolume.cpp.o)
-                0x00013544                FatVolume::chdir(char const*)
+                0x00012bcc       0x4c .pio\build\teensy41\libc5c\libSdFat.a(FatVolume.cpp.o)
+                0x00012bcc                FatVolume::chdir(char const*)
  .text._ZNK9SdSpiCard9errorCodeEv
-                0x00013590        0x4 .pio\build\teensy41\libc5c\libSdFat.a(SdSpiCard.cpp.o)
-                0x00013590                SdSpiCard::errorCode() const
+                0x00012c18        0x4 .pio\build\teensy41\libc5c\libSdFat.a(SdSpiCard.cpp.o)
+                0x00012c18                SdSpiCard::errorCode() const
  .text._ZNK9SdSpiCard9errorDataEv
-                0x00013594        0x4 .pio\build\teensy41\libc5c\libSdFat.a(SdSpiCard.cpp.o)
-                0x00013594                SdSpiCard::errorData() const
+                0x00012c1c        0x4 .pio\build\teensy41\libc5c\libSdFat.a(SdSpiCard.cpp.o)
+                0x00012c1c                SdSpiCard::errorData() const
  .text._ZN9SdSpiCard10readSectorEmPh
-                0x00013598       0x10 .pio\build\teensy41\libc5c\libSdFat.a(SdSpiCard.cpp.o)
-                0x00013598                SdSpiCard::readSector(unsigned long, unsigned char*)
+                0x00012c20       0x10 .pio\build\teensy41\libc5c\libSdFat.a(SdSpiCard.cpp.o)
+                0x00012c20                SdSpiCard::readSector(unsigned long, unsigned char*)
  .text._ZNK9SdSpiCard4typeEv
-                0x000135a8        0x4 .pio\build\teensy41\libc5c\libSdFat.a(SdSpiCard.cpp.o)
-                0x000135a8                SdSpiCard::type() const
+                0x00012c30        0x4 .pio\build\teensy41\libc5c\libSdFat.a(SdSpiCard.cpp.o)
+                0x00012c30                SdSpiCard::type() const
  .text._ZN9SdSpiCard11writeSectorEmPKh
-                0x000135ac       0x10 .pio\build\teensy41\libc5c\libSdFat.a(SdSpiCard.cpp.o)
-                0x000135ac                SdSpiCard::writeSector(unsigned long, unsigned char const*)
+                0x00012c34       0x10 .pio\build\teensy41\libc5c\libSdFat.a(SdSpiCard.cpp.o)
+                0x00012c34                SdSpiCard::writeSector(unsigned long, unsigned char const*)
  .text._ZN9SdSpiCardD2Ev
-                0x000135bc        0x4 .pio\build\teensy41\libc5c\libSdFat.a(SdSpiCard.cpp.o)
-                0x000135bc                SdSpiCard::~SdSpiCard()
-                0x000135bc                SdSpiCard::~SdSpiCard()
+                0x00012c44        0x4 .pio\build\teensy41\libc5c\libSdFat.a(SdSpiCard.cpp.o)
+                0x00012c44                SdSpiCard::~SdSpiCard()
+                0x00012c44                SdSpiCard::~SdSpiCard()
  .text._ZN9SdSpiCardD0Ev
-                0x000135c0       0x10 .pio\build\teensy41\libc5c\libSdFat.a(SdSpiCard.cpp.o)
-                0x000135c0                SdSpiCard::~SdSpiCard()
+                0x00012c48       0x10 .pio\build\teensy41\libc5c\libSdFat.a(SdSpiCard.cpp.o)
+                0x00012c48                SdSpiCard::~SdSpiCard()
  .text._ZN9SdSpiCard12writeSectorsEmPKhj
-                0x000135d0       0x78 .pio\build\teensy41\libc5c\libSdFat.a(SdSpiCard.cpp.o)
-                0x000135d0                SdSpiCard::writeSectors(unsigned long, unsigned char const*, unsigned int)
+                0x00012c58       0x78 .pio\build\teensy41\libc5c\libSdFat.a(SdSpiCard.cpp.o)
+                0x00012c58                SdSpiCard::writeSectors(unsigned long, unsigned char const*, unsigned int)
  .text._ZN9SdSpiCard8spiStartEv.part.6.constprop.23
-                0x00013648       0x18 .pio\build\teensy41\libc5c\libSdFat.a(SdSpiCard.cpp.o)
+                0x00012cd0       0x18 .pio\build\teensy41\libc5c\libSdFat.a(SdSpiCard.cpp.o)
  .text._ZN9SdSpiCard7spiStopEv.part.7.constprop.26
-                0x00013660       0x24 .pio\build\teensy41\libc5c\libSdFat.a(SdSpiCard.cpp.o)
+                0x00012ce8       0x24 .pio\build\teensy41\libc5c\libSdFat.a(SdSpiCard.cpp.o)
  .text._ZN9SdSpiCard6isBusyEv
-                0x00013684       0x40 .pio\build\teensy41\libc5c\libSdFat.a(SdSpiCard.cpp.o)
-                0x00013684                SdSpiCard::isBusy()
+                0x00012d0c       0x40 .pio\build\teensy41\libc5c\libSdFat.a(SdSpiCard.cpp.o)
+                0x00012d0c                SdSpiCard::isBusy()
  .text._ZN9SdSpiCard8readDataEPhj
-                0x000136c4       0x74 .pio\build\teensy41\libc5c\libSdFat.a(SdSpiCard.cpp.o)
-                0x000136c4                SdSpiCard::readData(unsigned char*, unsigned int)
+                0x00012d4c       0x74 .pio\build\teensy41\libc5c\libSdFat.a(SdSpiCard.cpp.o)
+                0x00012d4c                SdSpiCard::readData(unsigned char*, unsigned int)
  .text._ZN9SdSpiCard11waitNotBusyEt
-                0x00013738       0x30 .pio\build\teensy41\libc5c\libSdFat.a(SdSpiCard.cpp.o)
-                0x00013738                SdSpiCard::waitNotBusy(unsigned short)
+                0x00012dc0       0x30 .pio\build\teensy41\libc5c\libSdFat.a(SdSpiCard.cpp.o)
+                0x00012dc0                SdSpiCard::waitNotBusy(unsigned short)
  .text._ZN9SdSpiCard11cardCommandEhm
-                0x00013768       0x80 .pio\build\teensy41\libc5c\libSdFat.a(SdSpiCard.cpp.o)
-                0x00013768                SdSpiCard::cardCommand(unsigned char, unsigned long)
+                0x00012df0       0x80 .pio\build\teensy41\libc5c\libSdFat.a(SdSpiCard.cpp.o)
+                0x00012df0                SdSpiCard::cardCommand(unsigned char, unsigned long)
  .text._ZN9SdSpiCard7readOCREPm
-                0x000137e8       0x54 .pio\build\teensy41\libc5c\libSdFat.a(SdSpiCard.cpp.o)
-                0x000137e8                SdSpiCard::readOCR(unsigned long*)
+                0x00012e70       0x54 .pio\build\teensy41\libc5c\libSdFat.a(SdSpiCard.cpp.o)
+                0x00012e70                SdSpiCard::readOCR(unsigned long*)
  .text._ZN9SdSpiCard12readRegisterEhPv
-                0x0001383c       0x4c .pio\build\teensy41\libc5c\libSdFat.a(SdSpiCard.cpp.o)
-                0x0001383c                SdSpiCard::readRegister(unsigned char, void*)
+                0x00012ec4       0x4c .pio\build\teensy41\libc5c\libSdFat.a(SdSpiCard.cpp.o)
+                0x00012ec4                SdSpiCard::readRegister(unsigned char, void*)
  .text._ZN9SdSpiCard7readCSDEP5csd_t
-                0x00013888        0x8 .pio\build\teensy41\libc5c\libSdFat.a(SdSpiCard.cpp.o)
-                0x00013888                SdSpiCard::readCSD(csd_t*)
+                0x00012f10        0x8 .pio\build\teensy41\libc5c\libSdFat.a(SdSpiCard.cpp.o)
+                0x00012f10                SdSpiCard::readCSD(csd_t*)
  .text._ZN9SdSpiCard7readCIDEP3CID
-                0x00013890        0x8 .pio\build\teensy41\libc5c\libSdFat.a(SdSpiCard.cpp.o)
-                0x00013890                SdSpiCard::readCID(CID*)
+                0x00012f18        0x8 .pio\build\teensy41\libc5c\libSdFat.a(SdSpiCard.cpp.o)
+                0x00012f18                SdSpiCard::readCID(CID*)
  .text._ZN9SdSpiCard11sectorCountEv
-                0x00013898       0x98 .pio\build\teensy41\libc5c\libSdFat.a(SdSpiCard.cpp.o)
-                0x00013898                SdSpiCard::sectorCount()
+                0x00012f20       0x98 .pio\build\teensy41\libc5c\libSdFat.a(SdSpiCard.cpp.o)
+                0x00012f20                SdSpiCard::sectorCount()
  .text._ZN9SdSpiCard9readStartEm
-                0x00013930       0x50 .pio\build\teensy41\libc5c\libSdFat.a(SdSpiCard.cpp.o)
-                0x00013930                SdSpiCard::readStart(unsigned long)
+                0x00012fb8       0x50 .pio\build\teensy41\libc5c\libSdFat.a(SdSpiCard.cpp.o)
+                0x00012fb8                SdSpiCard::readStart(unsigned long)
  .text._ZN9SdSpiCard11readSectorsEmPhj
-                0x00013980       0x74 .pio\build\teensy41\libc5c\libSdFat.a(SdSpiCard.cpp.o)
-                0x00013980                SdSpiCard::readSectors(unsigned long, unsigned char*, unsigned int)
+                0x00013008       0x74 .pio\build\teensy41\libc5c\libSdFat.a(SdSpiCard.cpp.o)
+                0x00013008                SdSpiCard::readSectors(unsigned long, unsigned char*, unsigned int)
  .text._ZN9SdSpiCard8readStopEv
-                0x000139f4       0x3c .pio\build\teensy41\libc5c\libSdFat.a(SdSpiCard.cpp.o)
-                0x000139f4                SdSpiCard::readStop()
+                0x0001307c       0x3c .pio\build\teensy41\libc5c\libSdFat.a(SdSpiCard.cpp.o)
+                0x0001307c                SdSpiCard::readStop()
  .text._ZN9SdSpiCard10writeStartEm
-                0x00013a30       0x50 .pio\build\teensy41\libc5c\libSdFat.a(SdSpiCard.cpp.o)
-                0x00013a30                SdSpiCard::writeStart(unsigned long)
+                0x000130b8       0x50 .pio\build\teensy41\libc5c\libSdFat.a(SdSpiCard.cpp.o)
+                0x000130b8                SdSpiCard::writeStart(unsigned long)
  .text._ZN9SdSpiCard5eraseEmm
-                0x00013a80       0xb4 .pio\build\teensy41\libc5c\libSdFat.a(SdSpiCard.cpp.o)
-                0x00013a80                SdSpiCard::erase(unsigned long, unsigned long)
+                0x00013108       0xb4 .pio\build\teensy41\libc5c\libSdFat.a(SdSpiCard.cpp.o)
+                0x00013108                SdSpiCard::erase(unsigned long, unsigned long)
  .text._ZN9SdSpiCard9writeStopEv
-                0x00013b34       0x44 .pio\build\teensy41\libc5c\libSdFat.a(SdSpiCard.cpp.o)
-                0x00013b34                SdSpiCard::writeStop()
+                0x000131bc       0x44 .pio\build\teensy41\libc5c\libSdFat.a(SdSpiCard.cpp.o)
+                0x000131bc                SdSpiCard::writeStop()
  .text._ZN9SdSpiCard10syncDeviceEv
-                0x00013b78       0x2c .pio\build\teensy41\libc5c\libSdFat.a(SdSpiCard.cpp.o)
-                0x00013b78                SdSpiCard::syncDevice()
+                0x00013200       0x2c .pio\build\teensy41\libc5c\libSdFat.a(SdSpiCard.cpp.o)
+                0x00013200                SdSpiCard::syncDevice()
  .text._ZN9SdSpiCard9writeDataEhPKh
-                0x00013ba4       0x54 .pio\build\teensy41\libc5c\libSdFat.a(SdSpiCard.cpp.o)
-                0x00013ba4                SdSpiCard::writeData(unsigned char, unsigned char const*)
+                0x0001322c       0x54 .pio\build\teensy41\libc5c\libSdFat.a(SdSpiCard.cpp.o)
+                0x0001322c                SdSpiCard::writeData(unsigned char, unsigned char const*)
  .text._ZN9SdSpiCard9writeDataEPKh
-                0x00013bf8       0x34 .pio\build\teensy41\libc5c\libSdFat.a(SdSpiCard.cpp.o)
-                0x00013bf8                SdSpiCard::writeData(unsigned char const*)
+                0x00013280       0x34 .pio\build\teensy41\libc5c\libSdFat.a(SdSpiCard.cpp.o)
+                0x00013280                SdSpiCard::writeData(unsigned char const*)
  .text._ZL5sdIrsv
-                0x00013c2c       0x30 .pio\build\teensy41\libc5c\libSdFat.a(SdioTeensy.cpp.o)
+                0x000132b4       0x30 .pio\build\teensy41\libc5c\libSdFat.a(SdioTeensy.cpp.o)
  .text._ZL21isBusyCommandCompletev
-                0x00013c5c       0x18 .pio\build\teensy41\libc5c\libSdFat.a(SdioTeensy.cpp.o)
+                0x000132e4       0x18 .pio\build\teensy41\libc5c\libSdFat.a(SdioTeensy.cpp.o)
  .text._ZL20isBusyCommandInhibitv
-                0x00013c74       0x10 .pio\build\teensy41\libc5c\libSdFat.a(SdioTeensy.cpp.o)
+                0x000132fc       0x10 .pio\build\teensy41\libc5c\libSdFat.a(SdioTeensy.cpp.o)
  .text._ZL9isBusyDMAv
-                0x00013c84        0xc .pio\build\teensy41\libc5c\libSdFat.a(SdioTeensy.cpp.o)
+                0x0001330c        0xc .pio\build\teensy41\libc5c\libSdFat.a(SdioTeensy.cpp.o)
  .text._ZL14isBusyFifoReadv
-                0x00013c90       0x14 .pio\build\teensy41\libc5c\libSdFat.a(SdioTeensy.cpp.o)
+                0x00013318       0x14 .pio\build\teensy41\libc5c\libSdFat.a(SdioTeensy.cpp.o)
  .text._ZL15isBusyFifoWritev
-                0x00013ca4       0x14 .pio\build\teensy41\libc5c\libSdFat.a(SdioTeensy.cpp.o)
+                0x0001332c       0x14 .pio\build\teensy41\libc5c\libSdFat.a(SdioTeensy.cpp.o)
  .text._ZL22isBusyTransferCompletev
-                0x00013cb8       0x18 .pio\build\teensy41\libc5c\libSdFat.a(SdioTeensy.cpp.o)
+                0x00013340       0x18 .pio\build\teensy41\libc5c\libSdFat.a(SdioTeensy.cpp.o)
  .text._ZL8setSdclkm
-                0x00013cd0       0xd0 .pio\build\teensy41\libc5c\libSdFat.a(SdioTeensy.cpp.o)
+                0x00013358       0xd0 .pio\build\teensy41\libc5c\libSdFat.a(SdioTeensy.cpp.o)
  .text._ZNK8SdioCard9errorCodeEv
-                0x00013da0        0xc .pio\build\teensy41\libc5c\libSdFat.a(SdioTeensy.cpp.o)
-                0x00013da0                SdioCard::errorCode() const
+                0x00013428        0xc .pio\build\teensy41\libc5c\libSdFat.a(SdioTeensy.cpp.o)
+                0x00013428                SdioCard::errorCode() const
  .text._ZNK8SdioCard9errorDataEv
-                0x00013dac        0xc .pio\build\teensy41\libc5c\libSdFat.a(SdioTeensy.cpp.o)
-                0x00013dac                SdioCard::errorData() const
+                0x00013434        0xc .pio\build\teensy41\libc5c\libSdFat.a(SdioTeensy.cpp.o)
+                0x00013434                SdioCard::errorData() const
  .text._ZN8SdioCard7readCIDEP3CID
-                0x00013db8       0x1c .pio\build\teensy41\libc5c\libSdFat.a(SdioTeensy.cpp.o)
-                0x00013db8                SdioCard::readCID(CID*)
+                0x00013440       0x1c .pio\build\teensy41\libc5c\libSdFat.a(SdioTeensy.cpp.o)
+                0x00013440                SdioCard::readCID(CID*)
  .text._ZN8SdioCard7readCSDEP5csd_t
-                0x00013dd4       0x1c .pio\build\teensy41\libc5c\libSdFat.a(SdioTeensy.cpp.o)
-                0x00013dd4                SdioCard::readCSD(csd_t*)
+                0x0001345c       0x1c .pio\build\teensy41\libc5c\libSdFat.a(SdioTeensy.cpp.o)
+                0x0001345c                SdioCard::readCSD(csd_t*)
  .text._ZN8SdioCard7readOCREPm
-                0x00013df0       0x10 .pio\build\teensy41\libc5c\libSdFat.a(SdioTeensy.cpp.o)
-                0x00013df0                SdioCard::readOCR(unsigned long*)
+                0x00013478       0x10 .pio\build\teensy41\libc5c\libSdFat.a(SdioTeensy.cpp.o)
+                0x00013478                SdioCard::readOCR(unsigned long*)
  .text._ZN8SdioCardD2Ev
-                0x00013e00        0x4 .pio\build\teensy41\libc5c\libSdFat.a(SdioTeensy.cpp.o)
-                0x00013e00                SdioCard::~SdioCard()
-                0x00013e00                SdioCard::~SdioCard()
+                0x00013488        0x4 .pio\build\teensy41\libc5c\libSdFat.a(SdioTeensy.cpp.o)
+                0x00013488                SdioCard::~SdioCard()
+                0x00013488                SdioCard::~SdioCard()
  .text._ZL11waitTimeoutPFbvE
-                0x00013e04       0x28 .pio\build\teensy41\libc5c\libSdFat.a(SdioTeensy.cpp.o)
+                0x0001348c       0x28 .pio\build\teensy41\libc5c\libSdFat.a(SdioTeensy.cpp.o)
  .text._ZL12yieldTimeoutPFbvE
-                0x00013e2c       0x4c .pio\build\teensy41\libc5c\libSdFat.a(SdioTeensy.cpp.o)
+                0x000134b4       0x4c .pio\build\teensy41\libc5c\libSdFat.a(SdioTeensy.cpp.o)
  .text._ZN8SdioCardD0Ev
-                0x00013e78       0x10 .pio\build\teensy41\libc5c\libSdFat.a(SdioTeensy.cpp.o)
-                0x00013e78                SdioCard::~SdioCard()
+                0x00013500       0x10 .pio\build\teensy41\libc5c\libSdFat.a(SdioTeensy.cpp.o)
+                0x00013500                SdioCard::~SdioCard()
  .text._ZL10enableGPIOb.part.0
-                0x00013e88       0x44 .pio\build\teensy41\libc5c\libSdFat.a(SdioTeensy.cpp.o)
+                0x00013510       0x44 .pio\build\teensy41\libc5c\libSdFat.a(SdioTeensy.cpp.o)
  .text._ZNK8SdioCard4typeEv
-                0x00013ecc       0x20 .pio\build\teensy41\libc5c\libSdFat.a(SdioTeensy.cpp.o)
-                0x00013ecc                SdioCard::type() const
+                0x00013554       0x20 .pio\build\teensy41\libc5c\libSdFat.a(SdioTeensy.cpp.o)
+                0x00013554                SdioCard::type() const
  .text._ZL11cardCommandmm
-                0x00013eec       0x68 .pio\build\teensy41\libc5c\libSdFat.a(SdioTeensy.cpp.o)
+                0x00013574       0x68 .pio\build\teensy41\libc5c\libSdFat.a(SdioTeensy.cpp.o)
  .text._ZN8SdioCard6statusEv
-                0x00013f54       0x20 .pio\build\teensy41\libc5c\libSdFat.a(SdioTeensy.cpp.o)
-                0x00013f54                SdioCard::status()
+                0x000135dc       0x20 .pio\build\teensy41\libc5c\libSdFat.a(SdioTeensy.cpp.o)
+                0x000135dc                SdioCard::status()
  .text._ZL9readReg16mPv
-                0x00013f74       0x5c .pio\build\teensy41\libc5c\libSdFat.a(SdioTeensy.cpp.o)
+                0x000135fc       0x5c .pio\build\teensy41\libc5c\libSdFat.a(SdioTeensy.cpp.o)
  .text._ZL11isBusyCMD13v
-                0x00013fd0       0x2c .pio\build\teensy41\libc5c\libSdFat.a(SdioTeensy.cpp.o)
+                0x00013658       0x2c .pio\build\teensy41\libc5c\libSdFat.a(SdioTeensy.cpp.o)
  .text._ZN8SdioCard6isBusyEv
-                0x00013ffc       0x1c .pio\build\teensy41\libc5c\libSdFat.a(SdioTeensy.cpp.o)
-                0x00013ffc                SdioCard::isBusy()
+                0x00013684       0x1c .pio\build\teensy41\libc5c\libSdFat.a(SdioTeensy.cpp.o)
+                0x00013684                SdioCard::isBusy()
  .text._ZL13waitDmaStatusv.part.7
-                0x00014018       0x20 .pio\build\teensy41\libc5c\libSdFat.a(SdioTeensy.cpp.o)
+                0x000136a0       0x20 .pio\build\teensy41\libc5c\libSdFat.a(SdioTeensy.cpp.o)
  .text._ZL11rdWrSectorsmmPhj
-                0x00014038       0xb8 .pio\build\teensy41\libc5c\libSdFat.a(SdioTeensy.cpp.o)
+                0x000136c0       0xb8 .pio\build\teensy41\libc5c\libSdFat.a(SdioTeensy.cpp.o)
  .text._ZN8SdioCard11sectorCountEv
-                0x000140f0       0x6c .pio\build\teensy41\libc5c\libSdFat.a(SdioTeensy.cpp.o)
-                0x000140f0                SdioCard::sectorCount()
+                0x00013778       0x6c .pio\build\teensy41\libc5c\libSdFat.a(SdioTeensy.cpp.o)
+                0x00013778                SdioCard::sectorCount()
  .text._ZN8SdioCard5eraseEmm
-                0x0001415c       0xd4 .pio\build\teensy41\libc5c\libSdFat.a(SdioTeensy.cpp.o)
-                0x0001415c                SdioCard::erase(unsigned long, unsigned long)
+                0x000137e4       0xd4 .pio\build\teensy41\libc5c\libSdFat.a(SdioTeensy.cpp.o)
+                0x000137e4                SdioCard::erase(unsigned long, unsigned long)
  .text._ZL12transferStopv
-                0x00014230       0x6c .pio\build\teensy41\libc5c\libSdFat.a(SdioTeensy.cpp.o)
+                0x000138b8       0x6c .pio\build\teensy41\libc5c\libSdFat.a(SdioTeensy.cpp.o)
  .text._ZN8SdioCard9writeStopEv
-                0x0001429c        0x4 .pio\build\teensy41\libc5c\libSdFat.a(SdioTeensy.cpp.o)
-                0x0001429c                SdioCard::writeStop()
-                0x0001429c                SdioCard::readStop()
+                0x00013924        0x4 .pio\build\teensy41\libc5c\libSdFat.a(SdioTeensy.cpp.o)
+                0x00013924                SdioCard::writeStop()
+                0x00013924                SdioCard::readStop()
  .text._ZN8SdioCard9writeDataEPKh
-                0x000142a0       0xbc .pio\build\teensy41\libc5c\libSdFat.a(SdioTeensy.cpp.o)
-                0x000142a0                SdioCard::writeData(unsigned char const*)
+                0x00013928       0xbc .pio\build\teensy41\libc5c\libSdFat.a(SdioTeensy.cpp.o)
+                0x00013928                SdioCard::writeData(unsigned char const*)
  .text._ZN8SdioCard10writeStartEm
-                0x0001435c       0x6c .pio\build\teensy41\libc5c\libSdFat.a(SdioTeensy.cpp.o)
-                0x0001435c                SdioCard::writeStart(unsigned long)
+                0x000139e4       0x6c .pio\build\teensy41\libc5c\libSdFat.a(SdioTeensy.cpp.o)
+                0x000139e4                SdioCard::writeStart(unsigned long)
  .text._ZN8SdioCard11readSectorsEmPhj
-                0x000143c8       0x88 .pio\build\teensy41\libc5c\libSdFat.a(SdioTeensy.cpp.o)
-                0x000143c8                SdioCard::readSectors(unsigned long, unsigned char*, unsigned int)
+                0x00013a50       0x88 .pio\build\teensy41\libc5c\libSdFat.a(SdioTeensy.cpp.o)
+                0x00013a50                SdioCard::readSectors(unsigned long, unsigned char*, unsigned int)
  .text._ZN8SdioCard12writeSectorsEmPKhj
-                0x00014450       0x88 .pio\build\teensy41\libc5c\libSdFat.a(SdioTeensy.cpp.o)
-                0x00014450                SdioCard::writeSectors(unsigned long, unsigned char const*, unsigned int)
+                0x00013ad8       0x88 .pio\build\teensy41\libc5c\libSdFat.a(SdioTeensy.cpp.o)
+                0x00013ad8                SdioCard::writeSectors(unsigned long, unsigned char const*, unsigned int)
  .text._ZN8SdioCard11writeSectorEmPKh
-                0x000144d8       0xa0 .pio\build\teensy41\libc5c\libSdFat.a(SdioTeensy.cpp.o)
-                0x000144d8                SdioCard::writeSector(unsigned long, unsigned char const*)
+                0x00013b60       0xa0 .pio\build\teensy41\libc5c\libSdFat.a(SdioTeensy.cpp.o)
+                0x00013b60                SdioCard::writeSector(unsigned long, unsigned char const*)
  .text._ZN8SdioCard10syncDeviceEv
-                0x00014578       0x38 .pio\build\teensy41\libc5c\libSdFat.a(SdioTeensy.cpp.o)
-                0x00014578                SdioCard::syncDevice()
+                0x00013c00       0x38 .pio\build\teensy41\libc5c\libSdFat.a(SdioTeensy.cpp.o)
+                0x00013c00                SdioCard::syncDevice()
  .text._ZL8cardCMD6mPh
-                0x000145b0       0x9c .pio\build\teensy41\libc5c\libSdFat.a(SdioTeensy.cpp.o)
+                0x00013c38       0x9c .pio\build\teensy41\libc5c\libSdFat.a(SdioTeensy.cpp.o)
  .text._ZN8SdioCard5beginE10SdioConfig
-                0x0001464c      0x364 .pio\build\teensy41\libc5c\libSdFat.a(SdioTeensy.cpp.o)
-                0x0001464c                SdioCard::begin(SdioConfig)
+                0x00013cd4      0x364 .pio\build\teensy41\libc5c\libSdFat.a(SdioTeensy.cpp.o)
+                0x00013cd4                SdioCard::begin(SdioConfig)
  .text._ZN8SdioCard8readDataEPh
-                0x000149b0       0xbc .pio\build\teensy41\libc5c\libSdFat.a(SdioTeensy.cpp.o)
-                0x000149b0                SdioCard::readData(unsigned char*)
+                0x00014038       0xbc .pio\build\teensy41\libc5c\libSdFat.a(SdioTeensy.cpp.o)
+                0x00014038                SdioCard::readData(unsigned char*)
  .text._ZN8SdioCard9readStartEm
-                0x00014a6c       0x6c .pio\build\teensy41\libc5c\libSdFat.a(SdioTeensy.cpp.o)
-                0x00014a6c                SdioCard::readStart(unsigned long)
+                0x000140f4       0x6c .pio\build\teensy41\libc5c\libSdFat.a(SdioTeensy.cpp.o)
+                0x000140f4                SdioCard::readStart(unsigned long)
  .text._ZN8SdioCard10readSectorEmPh
-                0x00014ad8       0xb0 .pio\build\teensy41\libc5c\libSdFat.a(SdioTeensy.cpp.o)
-                0x00014ad8                SdioCard::readSector(unsigned long, unsigned char*)
+                0x00014160       0xb0 .pio\build\teensy41\libc5c\libSdFat.a(SdioTeensy.cpp.o)
+                0x00014160                SdioCard::readSector(unsigned long, unsigned char*)
  .text._Z9sdCsWritehb
-                0x00014b88        0x4 .pio\build\teensy41\libc5c\libSdFat.a(SdSpiChipSelect.cpp.o)
-                0x00014b88                sdCsWrite(unsigned char, bool)
+                0x00014210        0x4 .pio\build\teensy41\libc5c\libSdFat.a(SdSpiChipSelect.cpp.o)
+                0x00014210                sdCsWrite(unsigned char, bool)
  .text._ZN18SdSpiArduinoDriver8activateEv
-                0x00014b8c      0x108 .pio\build\teensy41\libc5c\libSdFat.a(SdSpiTeensy3.cpp.o)
-                0x00014b8c                SdSpiArduinoDriver::activate()
+                0x00014214      0x108 .pio\build\teensy41\libc5c\libSdFat.a(SdSpiTeensy3.cpp.o)
+                0x00014214                SdSpiArduinoDriver::activate()
  .text._ZN18SdSpiArduinoDriver10deactivateEv
-                0x00014c94       0x58 .pio\build\teensy41\libc5c\libSdFat.a(SdSpiTeensy3.cpp.o)
-                0x00014c94                SdSpiArduinoDriver::deactivate()
+                0x0001431c       0x58 .pio\build\teensy41\libc5c\libSdFat.a(SdSpiTeensy3.cpp.o)
+                0x0001431c                SdSpiArduinoDriver::deactivate()
  .text._ZN18SdSpiArduinoDriver7receiveEv
-                0x00014cec       0x18 .pio\build\teensy41\libc5c\libSdFat.a(SdSpiTeensy3.cpp.o)
-                0x00014cec                SdSpiArduinoDriver::receive()
+                0x00014374       0x18 .pio\build\teensy41\libc5c\libSdFat.a(SdSpiTeensy3.cpp.o)
+                0x00014374                SdSpiArduinoDriver::receive()
  .text._ZN18SdSpiArduinoDriver7receiveEPhj
-                0x00014d04       0x20 .pio\build\teensy41\libc5c\libSdFat.a(SdSpiTeensy3.cpp.o)
-                0x00014d04                SdSpiArduinoDriver::receive(unsigned char*, unsigned int)
+                0x0001438c       0x20 .pio\build\teensy41\libc5c\libSdFat.a(SdSpiTeensy3.cpp.o)
+                0x0001438c                SdSpiArduinoDriver::receive(unsigned char*, unsigned int)
  .text._ZN18SdSpiArduinoDriver4sendEh
-                0x00014d24       0x14 .pio\build\teensy41\libc5c\libSdFat.a(SdSpiTeensy3.cpp.o)
-                0x00014d24                SdSpiArduinoDriver::send(unsigned char)
+                0x000143ac       0x14 .pio\build\teensy41\libc5c\libSdFat.a(SdSpiTeensy3.cpp.o)
+                0x000143ac                SdSpiArduinoDriver::send(unsigned char)
  .text._ZN18SdSpiArduinoDriver4sendEPKhj
-                0x00014d38       0x50 .pio\build\teensy41\libc5c\libSdFat.a(SdSpiTeensy3.cpp.o)
-                0x00014d38                SdSpiArduinoDriver::send(unsigned char const*, unsigned int)
+                0x000143c0       0x50 .pio\build\teensy41\libc5c\libSdFat.a(SdSpiTeensy3.cpp.o)
+                0x000143c0                SdSpiArduinoDriver::send(unsigned char const*, unsigned int)
  .text._Z9fmtBase10Pct
-                0x00014d88       0x58 .pio\build\teensy41\libc5c\libSdFat.a(FmtNumber.cpp.o)
-                0x00014d88                fmtBase10(char*, unsigned short)
+                0x00014410       0x58 .pio\build\teensy41\libc5c\libSdFat.a(FmtNumber.cpp.o)
+                0x00014410                fmtBase10(char*, unsigned short)
  .text._Z9fmtBase10Pcm
-                0x00014de0       0x54 .pio\build\teensy41\libc5c\libSdFat.a(FmtNumber.cpp.o)
-                0x00014de0                fmtBase10(char*, unsigned long)
+                0x00014468       0x54 .pio\build\teensy41\libc5c\libSdFat.a(FmtNumber.cpp.o)
+                0x00014468                fmtBase10(char*, unsigned long)
  .text._Z9fsFmtDatePct
-                0x00014e34       0x54 .pio\build\teensy41\libc5c\libSdFat.a(FsDateTime.cpp.o)
-                0x00014e34                fsFmtDate(char*, unsigned short)
+                0x000144bc       0x54 .pio\build\teensy41\libc5c\libSdFat.a(FsDateTime.cpp.o)
+                0x000144bc                fsFmtDate(char*, unsigned short)
  .text._Z9fsFmtTimePct
-                0x00014e88       0x38 .pio\build\teensy41\libc5c\libSdFat.a(FsDateTime.cpp.o)
-                0x00014e88                fsFmtTime(char*, unsigned short)
+                0x00014510       0x38 .pio\build\teensy41\libc5c\libSdFat.a(FsDateTime.cpp.o)
+                0x00014510                fsFmtTime(char*, unsigned short)
  .text._Z15fsPrintDateTimeP5Printtt
-                0x00014ec0       0x44 .pio\build\teensy41\libc5c\libSdFat.a(FsDateTime.cpp.o)
-                0x00014ec0                fsPrintDateTime(Print*, unsigned short, unsigned short)
+                0x00014548       0x44 .pio\build\teensy41\libc5c\libSdFat.a(FsDateTime.cpp.o)
+                0x00014548                fsPrintDateTime(Print*, unsigned short, unsigned short)
  .text._ZN11Base64Class6encodeEPcS0_i
-                0x00014f04      0x138 .pio\build\teensy41\libbeb\libBase64.a(Base64.cpp.o)
-                0x00014f04                Base64Class::encode(char*, char*, int)
+                0x0001458c      0x138 .pio\build\teensy41\libbeb\libBase64.a(Base64.cpp.o)
+                0x0001458c                Base64Class::encode(char*, char*, int)
  .text._ZN11Base64Class6decodeEPcS0_i
-                0x0001503c      0x1a8 .pio\build\teensy41\libbeb\libBase64.a(Base64.cpp.o)
-                0x0001503c                Base64Class::decode(char*, char*, int)
+                0x000146c4      0x1a8 .pio\build\teensy41\libbeb\libBase64.a(Base64.cpp.o)
+                0x000146c4                Base64Class::decode(char*, char*, int)
  .text._ZN14HardwareSerial17availableForWriteEv
-                0x000151e4       0x20 .pio\build\teensy41\libFrameworkArduino.a(HardwareSerial.cpp.o)
-                0x000151e4                HardwareSerial::availableForWrite()
+                0x0001486c       0x20 .pio\build\teensy41\libFrameworkArduino.a(HardwareSerial.cpp.o)
+                0x0001486c                HardwareSerial::availableForWrite()
  .text._ZN14HardwareSerial9availableEv
-                0x00015204       0x58 .pio\build\teensy41\libFrameworkArduino.a(HardwareSerial.cpp.o)
-                0x00015204                HardwareSerial::available()
+                0x0001488c       0x58 .pio\build\teensy41\libFrameworkArduino.a(HardwareSerial.cpp.o)
+                0x0001488c                HardwareSerial::available()
  .text._ZN14HardwareSerial4peekEv
-                0x0001525c       0xb4 .pio\build\teensy41\libFrameworkArduino.a(HardwareSerial.cpp.o)
-                0x0001525c                HardwareSerial::peek()
+                0x000148e4       0xb4 .pio\build\teensy41\libFrameworkArduino.a(HardwareSerial.cpp.o)
+                0x000148e4                HardwareSerial::peek()
  .text._ZN14HardwareSerial4readEv
-                0x00015310       0xd4 .pio\build\teensy41\libFrameworkArduino.a(HardwareSerial.cpp.o)
-                0x00015310                HardwareSerial::read()
+                0x00014998       0xd4 .pio\build\teensy41\libFrameworkArduino.a(HardwareSerial.cpp.o)
+                0x00014998                HardwareSerial::read()
  .text._ZN14HardwareSerial5flushEv
-                0x000153e4       0x1c .pio\build\teensy41\libFrameworkArduino.a(HardwareSerial.cpp.o)
-                0x000153e4                HardwareSerial::flush()
+                0x00014a6c       0x1c .pio\build\teensy41\libFrameworkArduino.a(HardwareSerial.cpp.o)
+                0x00014a6c                HardwareSerial::flush()
  .text._Z23nvic_execution_priorityv
-                0x00015400       0x40 .pio\build\teensy41\libFrameworkArduino.a(HardwareSerial.cpp.o)
-                0x00015400                nvic_execution_priority()
+                0x00014a88       0x40 .pio\build\teensy41\libFrameworkArduino.a(HardwareSerial.cpp.o)
+                0x00014a88                nvic_execution_priority()
  .text._ZN14HardwareSerial5beginEmt
-                0x00015440      0x274 .pio\build\teensy41\libFrameworkArduino.a(HardwareSerial.cpp.o)
-                0x00015440                HardwareSerial::begin(unsigned long, unsigned short)
+                0x00014ac8      0x274 .pio\build\teensy41\libFrameworkArduino.a(HardwareSerial.cpp.o)
+                0x00014ac8                HardwareSerial::begin(unsigned long, unsigned short)
  .text._ZN14HardwareSerial9write9bitEm
-                0x000156b4       0xec .pio\build\teensy41\libFrameworkArduino.a(HardwareSerial.cpp.o)
-                0x000156b4                HardwareSerial::write9bit(unsigned long)
+                0x00014d3c       0xec .pio\build\teensy41\libFrameworkArduino.a(HardwareSerial.cpp.o)
+                0x00014d3c                HardwareSerial::write9bit(unsigned long)
  .text._ZN14HardwareSerial5writeEh
-                0x000157a0        0x4 .pio\build\teensy41\libFrameworkArduino.a(HardwareSerial.cpp.o)
-                0x000157a0                HardwareSerial::write(unsigned char)
+                0x00014e28        0x4 .pio\build\teensy41\libFrameworkArduino.a(HardwareSerial.cpp.o)
+                0x00014e28                HardwareSerial::write(unsigned char)
  .text._ZN14HardwareSerial10IRQHandlerEv
-                0x000157a4      0x148 .pio\build\teensy41\libFrameworkArduino.a(HardwareSerial.cpp.o)
-                0x000157a4                HardwareSerial::IRQHandler()
+                0x00014e2c      0x148 .pio\build\teensy41\libFrameworkArduino.a(HardwareSerial.cpp.o)
+                0x00014e2c                HardwareSerial::IRQHandler()
  .text.IRQHandler_Serial2
-                0x000158ec        0xc .pio\build\teensy41\libFrameworkArduino.a(HardwareSerial2.cpp.o)
-                0x000158ec                IRQHandler_Serial2
+                0x00014f74        0xc .pio\build\teensy41\libFrameworkArduino.a(HardwareSerial2.cpp.o)
+                0x00014f74                IRQHandler_Serial2
  .text._ZN5Print5writeEPKhj
-                0x000158f8       0x2c .pio\build\teensy41\libFrameworkArduino.a(Print.cpp.o)
-                0x000158f8                Print::write(unsigned char const*, unsigned int)
- .text._write   0x00015924       0x10 .pio\build\teensy41\libFrameworkArduino.a(Print.cpp.o)
-                0x00015924                _write
+                0x00014f80       0x2c .pio\build\teensy41\libFrameworkArduino.a(Print.cpp.o)
+                0x00014f80                Print::write(unsigned char const*, unsigned int)
+ .text._write   0x00014fac       0x10 .pio\build\teensy41\libFrameworkArduino.a(Print.cpp.o)
+                0x00014fac                _write
  .text._ZN5Print6printfEPKcz
-                0x00015934       0x20 .pio\build\teensy41\libFrameworkArduino.a(Print.cpp.o)
-                0x00015934                Print::printf(char const*, ...)
+                0x00014fbc       0x20 .pio\build\teensy41\libFrameworkArduino.a(Print.cpp.o)
+                0x00014fbc                Print::printf(char const*, ...)
  .text._ZN6Stream9timedReadEv
-                0x00015954       0x30 .pio\build\teensy41\libFrameworkArduino.a(Stream.cpp.o)
-                0x00015954                Stream::timedRead()
+                0x00014fdc       0x30 .pio\build\teensy41\libFrameworkArduino.a(Stream.cpp.o)
+                0x00014fdc                Stream::timedRead()
  .text._ZN6Stream10setTimeoutEm
-                0x00015984        0x4 .pio\build\teensy41\libFrameworkArduino.a(Stream.cpp.o)
-                0x00015984                Stream::setTimeout(unsigned long)
+                0x0001500c        0x4 .pio\build\teensy41\libFrameworkArduino.a(Stream.cpp.o)
+                0x0001500c                Stream::setTimeout(unsigned long)
  .text._ZN6Stream9readBytesEPcj
-                0x00015988       0x34 .pio\build\teensy41\libFrameworkArduino.a(Stream.cpp.o)
-                0x00015988                Stream::readBytes(char*, unsigned int)
+                0x00015010       0x34 .pio\build\teensy41\libFrameworkArduino.a(Stream.cpp.o)
+                0x00015010                Stream::readBytes(char*, unsigned int)
  .text._ZN6StringD2Ev
-                0x000159bc       0x10 .pio\build\teensy41\libFrameworkArduino.a(WString.cpp.o)
-                0x000159bc                String::~String()
-                0x000159bc                String::~String()
+                0x00015044       0x10 .pio\build\teensy41\libFrameworkArduino.a(WString.cpp.o)
+                0x00015044                String::~String()
+                0x00015044                String::~String()
  .text._ZN6String7reserveEj
-                0x000159cc       0x2c .pio\build\teensy41\libFrameworkArduino.a(WString.cpp.o)
-                0x000159cc                String::reserve(unsigned int)
+                0x00015054       0x2c .pio\build\teensy41\libFrameworkArduino.a(WString.cpp.o)
+                0x00015054                String::reserve(unsigned int)
  .text._ZN6String4copyEPKcj
-                0x000159f8       0x44 .pio\build\teensy41\libFrameworkArduino.a(WString.cpp.o)
-                0x000159f8                String::copy(char const*, unsigned int)
+                0x00015080       0x44 .pio\build\teensy41\libFrameworkArduino.a(WString.cpp.o)
+                0x00015080                String::copy(char const*, unsigned int)
  .text._ZN6StringC2EPKc
-                0x00015a3c       0x28 .pio\build\teensy41\libFrameworkArduino.a(WString.cpp.o)
-                0x00015a3c                String::String(char const*)
-                0x00015a3c                String::String(char const*)
+                0x000150c4       0x28 .pio\build\teensy41\libFrameworkArduino.a(WString.cpp.o)
+                0x000150c4                String::String(char const*)
+                0x000150c4                String::String(char const*)
  .text.set_arm_clock
-                0x00015a64      0x2c4 .pio\build\teensy41\libFrameworkArduino.a(clockspeed.c.o)
-                0x00015a64                set_arm_clock
- .text.delay    0x00015d28       0xcc .pio\build\teensy41\libFrameworkArduino.a(delay.c.o)
-                0x00015d28                delay
- .text.micros   0x00015df4       0x64 .pio\build\teensy41\libFrameworkArduino.a(delay.c.o)
-                0x00015df4                micros
+                0x000150ec      0x2c4 .pio\build\teensy41\libFrameworkArduino.a(clockspeed.c.o)
+                0x000150ec                set_arm_clock
+ .text.delay    0x000153b0       0xcc .pio\build\teensy41\libFrameworkArduino.a(delay.c.o)
+                0x000153b0                delay
+ .text.micros   0x0001547c       0x64 .pio\build\teensy41\libFrameworkArduino.a(delay.c.o)
+                0x0001547c                micros
  .text.digitalWrite.part.0
-                0x00015e58       0x4c .pio\build\teensy41\libFrameworkArduino.a(digital.c.o)
+                0x000154e0       0x4c .pio\build\teensy41\libFrameworkArduino.a(digital.c.o)
  .text.digitalWrite
-                0x00015ea4        0xc .pio\build\teensy41\libFrameworkArduino.a(digital.c.o)
-                0x00015ea4                digitalWrite
- .text.pinMode  0x00015eb0       0x80 .pio\build\teensy41\libFrameworkArduino.a(digital.c.o)
-                0x00015eb0                pinMode
+                0x0001552c        0xc .pio\build\teensy41\libFrameworkArduino.a(digital.c.o)
+                0x0001552c                digitalWrite
+ .text.pinMode  0x00015538       0x80 .pio\build\teensy41\libFrameworkArduino.a(digital.c.o)
+                0x00015538                pinMode
  .text.dummy_isr
-                0x00015f30        0x4 .pio\build\teensy41\libFrameworkArduino.a(interrupt.c.o)
+                0x000155b8        0x4 .pio\build\teensy41\libFrameworkArduino.a(interrupt.c.o)
  .text.attachInterrupt
-                0x00015f34      0x164 .pio\build\teensy41\libFrameworkArduino.a(interrupt.c.o)
-                0x00015f34                attachInterrupt
+                0x000155bc      0x164 .pio\build\teensy41\libFrameworkArduino.a(interrupt.c.o)
+                0x000155bc                attachInterrupt
  .text.startup.main
-                0x00016098       0x10 .pio\build\teensy41\libFrameworkArduino.a(main.cpp.o)
-                0x00016098                main
- .text          0x000160a8      0x134 .pio\build\teensy41\libFrameworkArduino.a(memcpy-armv7m.S.o)
-                0x000160a8                memcpy
- .text._Znwj    0x000161dc        0x4 .pio\build\teensy41\libFrameworkArduino.a(new.cpp.o)
-                0x000161dc                operator new(unsigned int)
- .text._ZdlPvj  0x000161e0        0x4 .pio\build\teensy41\libFrameworkArduino.a(new.cpp.o)
-                0x000161e0                operator delete(void*, unsigned int)
- .text.ultoa    0x000161e4       0x50 .pio\build\teensy41\libFrameworkArduino.a(nonstd.c.o)
-                0x000161e4                ultoa
+                0x00015720       0x10 .pio\build\teensy41\libFrameworkArduino.a(main.cpp.o)
+                0x00015720                main
+ .text          0x00015730      0x134 .pio\build\teensy41\libFrameworkArduino.a(memcpy-armv7m.S.o)
+                0x00015730                memcpy
+ .text._Znwj    0x00015864        0x4 .pio\build\teensy41\libFrameworkArduino.a(new.cpp.o)
+                0x00015864                operator new(unsigned int)
+ .text._ZdlPvj  0x00015868        0x4 .pio\build\teensy41\libFrameworkArduino.a(new.cpp.o)
+                0x00015868                operator delete(void*, unsigned int)
+ .text.ultoa    0x0001586c       0x50 .pio\build\teensy41\libFrameworkArduino.a(nonstd.c.o)
+                0x0001586c                ultoa
  .text.pwm_init
-                0x00016234      0x2b8 .pio\build\teensy41\libFrameworkArduino.a(pwm.c.o)
-                0x00016234                pwm_init
+                0x000158bc      0x2b8 .pio\build\teensy41\libFrameworkArduino.a(pwm.c.o)
+                0x000158bc                pwm_init
  .text._Z12serialEvent2v
-                0x000164ec        0x4 .pio\build\teensy41\libFrameworkArduino.a(serialEvent2.cpp.o)
-                0x000164ec                serialEvent2()
+                0x00015b74        0x4 .pio\build\teensy41\libFrameworkArduino.a(serialEvent2.cpp.o)
+                0x00015b74                serialEvent2()
  .text.unused_interrupt_vector
-                0x000164f0       0x18 .pio\build\teensy41\libFrameworkArduino.a(startup.c.o)
-                0x000164f0                unused_interrupt_vector
+                0x00015b78       0x18 .pio\build\teensy41\libFrameworkArduino.a(startup.c.o)
+                0x00015b78                unused_interrupt_vector
  .text.startup_default_early_hook
-                0x00016508        0x4 .pio\build\teensy41\libFrameworkArduino.a(startup.c.o)
-                0x00016508                startup_early_hook
-                0x00016508                startup_default_early_hook
+                0x00015b90        0x4 .pio\build\teensy41\libFrameworkArduino.a(startup.c.o)
+                0x00015b90                startup_early_hook
+                0x00015b90                startup_default_early_hook
  .text.startup_default_late_hook
-                0x0001650c        0x4 .pio\build\teensy41\libFrameworkArduino.a(startup.c.o)
-                0x0001650c                startup_late_hook
-                0x0001650c                startup_default_late_hook
+                0x00015b94        0x4 .pio\build\teensy41\libFrameworkArduino.a(startup.c.o)
+                0x00015b94                startup_late_hook
+                0x00015b94                startup_default_late_hook
  .text.HardFault_HandlerC
-                0x00016510       0x8c .pio\build\teensy41\libFrameworkArduino.a(startup.c.o)
-                0x00016510                HardFault_HandlerC
- .text._sbrk    0x0001659c       0x30 .pio\build\teensy41\libFrameworkArduino.a(startup.c.o)
-                0x0001659c                _sbrk
+                0x00015b98       0x8c .pio\build\teensy41\libFrameworkArduino.a(startup.c.o)
+                0x00015b98                HardFault_HandlerC
+ .text._sbrk    0x00015c24       0x30 .pio\build\teensy41\libFrameworkArduino.a(startup.c.o)
+                0x00015c24                _sbrk
  .text.__cxa_guard_acquire
-                0x000165cc        0xc .pio\build\teensy41\libFrameworkArduino.a(startup.c.o)
-                0x000165cc                __cxa_guard_acquire
+                0x00015c54        0xc .pio\build\teensy41\libFrameworkArduino.a(startup.c.o)
+                0x00015c54                __cxa_guard_acquire
  .text.__cxa_guard_release
-                0x000165d8        0x8 .pio\build\teensy41\libFrameworkArduino.a(startup.c.o)
-                0x000165d8                __cxa_guard_release
+                0x00015c60        0x8 .pio\build\teensy41\libFrameworkArduino.a(startup.c.o)
+                0x00015c60                __cxa_guard_release
  .text.Panic_Temp_isr
-                0x000165e0       0x24 .pio\build\teensy41\libFrameworkArduino.a(tempmon.c.o)
-                0x000165e0                Panic_Temp_isr
+                0x00015c68       0x24 .pio\build\teensy41\libFrameworkArduino.a(tempmon.c.o)
+                0x00015c68                Panic_Temp_isr
  .text.schedule_transfer
-                0x00016604       0x84 .pio\build\teensy41\libFrameworkArduino.a(usb.c.o)
+                0x00015c8c       0x84 .pio\build\teensy41\libFrameworkArduino.a(usb.c.o)
  .text.run_callbacks
-                0x00016688       0x38 .pio\build\teensy41\libFrameworkArduino.a(usb.c.o)
+                0x00015d10       0x38 .pio\build\teensy41\libFrameworkArduino.a(usb.c.o)
  .text.endpoint0_transmit.constprop.1
-                0x000166c0       0xa0 .pio\build\teensy41\libFrameworkArduino.a(usb.c.o)
- .text.isr      0x00016760      0x680 .pio\build\teensy41\libFrameworkArduino.a(usb.c.o)
+                0x00015d48       0xa0 .pio\build\teensy41\libFrameworkArduino.a(usb.c.o)
+ .text.isr      0x00015de8      0x680 .pio\build\teensy41\libFrameworkArduino.a(usb.c.o)
  .text.usb_config_rx
-                0x00016de0       0x64 .pio\build\teensy41\libFrameworkArduino.a(usb.c.o)
-                0x00016de0                usb_config_rx
+                0x00016468       0x64 .pio\build\teensy41\libFrameworkArduino.a(usb.c.o)
+                0x00016468                usb_config_rx
  .text.usb_config_tx
-                0x00016e44       0x68 .pio\build\teensy41\libFrameworkArduino.a(usb.c.o)
-                0x00016e44                usb_config_tx
+                0x000164cc       0x68 .pio\build\teensy41\libFrameworkArduino.a(usb.c.o)
+                0x000164cc                usb_config_tx
  .text.usb_prepare_transfer
-                0x00016eac       0x30 .pio\build\teensy41\libFrameworkArduino.a(usb.c.o)
-                0x00016eac                usb_prepare_transfer
+                0x00016534       0x30 .pio\build\teensy41\libFrameworkArduino.a(usb.c.o)
+                0x00016534                usb_prepare_transfer
  .text.usb_transmit
-                0x00016edc       0x28 .pio\build\teensy41\libFrameworkArduino.a(usb.c.o)
-                0x00016edc                usb_transmit
+                0x00016564       0x28 .pio\build\teensy41\libFrameworkArduino.a(usb.c.o)
+                0x00016564                usb_transmit
  .text.usb_receive
-                0x00016f04       0x24 .pio\build\teensy41\libFrameworkArduino.a(usb.c.o)
-                0x00016f04                usb_receive
+                0x0001658c       0x24 .pio\build\teensy41\libFrameworkArduino.a(usb.c.o)
+                0x0001658c                usb_receive
  .text.usb_transfer_status
-                0x00016f28        0x4 .pio\build\teensy41\libFrameworkArduino.a(usb.c.o)
-                0x00016f28                usb_transfer_status
+                0x000165b0        0x4 .pio\build\teensy41\libFrameworkArduino.a(usb.c.o)
+                0x000165b0                usb_transfer_status
  .text.usb_init_serialnumber
-                0x00016f2c       0x58 .pio\build\teensy41\libFrameworkArduino.a(usb_desc.c.o)
-                0x00016f2c                usb_init_serialnumber
+                0x000165b4       0x58 .pio\build\teensy41\libFrameworkArduino.a(usb_desc.c.o)
+                0x000165b4                usb_init_serialnumber
  .text._ZN16usb_serial_class5clearEv
-                0x00016f84        0x4 .pio\build\teensy41\libFrameworkArduino.a(usb_inst.cpp.o)
-                0x00016f84                usb_serial_class::clear()
+                0x0001660c        0x4 .pio\build\teensy41\libFrameworkArduino.a(usb_inst.cpp.o)
+                0x0001660c                usb_serial_class::clear()
  .text._ZN16usb_serial_class4peekEv
-                0x00016f88        0x4 .pio\build\teensy41\libFrameworkArduino.a(usb_inst.cpp.o)
-                0x00016f88                usb_serial_class::peek()
+                0x00016610        0x4 .pio\build\teensy41\libFrameworkArduino.a(usb_inst.cpp.o)
+                0x00016610                usb_serial_class::peek()
  .text._ZN16usb_serial_class4readEv
-                0x00016f8c        0x4 .pio\build\teensy41\libFrameworkArduino.a(usb_inst.cpp.o)
-                0x00016f8c                usb_serial_class::read()
+                0x00016614        0x4 .pio\build\teensy41\libFrameworkArduino.a(usb_inst.cpp.o)
+                0x00016614                usb_serial_class::read()
  .text._ZN16usb_serial_class9availableEv
-                0x00016f90        0x4 .pio\build\teensy41\libFrameworkArduino.a(usb_inst.cpp.o)
-                0x00016f90                usb_serial_class::available()
+                0x00016618        0x4 .pio\build\teensy41\libFrameworkArduino.a(usb_inst.cpp.o)
+                0x00016618                usb_serial_class::available()
  .text._ZN16usb_serial_class5flushEv
-                0x00016f94        0x4 .pio\build\teensy41\libFrameworkArduino.a(usb_inst.cpp.o)
-                0x00016f94                usb_serial_class::flush()
+                0x0001661c        0x4 .pio\build\teensy41\libFrameworkArduino.a(usb_inst.cpp.o)
+                0x0001661c                usb_serial_class::flush()
  .text._ZN16usb_serial_class17availableForWriteEv
-                0x00016f98        0x4 .pio\build\teensy41\libFrameworkArduino.a(usb_inst.cpp.o)
-                0x00016f98                usb_serial_class::availableForWrite()
+                0x00016620        0x4 .pio\build\teensy41\libFrameworkArduino.a(usb_inst.cpp.o)
+                0x00016620                usb_serial_class::availableForWrite()
  .text._ZN16usb_serial_class5writeEPKhj
-                0x00016f9c        0x8 .pio\build\teensy41\libFrameworkArduino.a(usb_inst.cpp.o)
-                0x00016f9c                usb_serial_class::write(unsigned char const*, unsigned int)
+                0x00016624        0x8 .pio\build\teensy41\libFrameworkArduino.a(usb_inst.cpp.o)
+                0x00016624                usb_serial_class::write(unsigned char const*, unsigned int)
  .text._ZN16usb_serial_class5writeEh
-                0x00016fa4        0x8 .pio\build\teensy41\libFrameworkArduino.a(usb_inst.cpp.o)
-                0x00016fa4                usb_serial_class::write(unsigned char)
+                0x0001662c        0x8 .pio\build\teensy41\libFrameworkArduino.a(usb_inst.cpp.o)
+                0x0001662c                usb_serial_class::write(unsigned char)
  .text.rx_queue_transfer
-                0x00016fac       0x6c .pio\build\teensy41\libFrameworkArduino.a(usb_serial.c.o)
+                0x00016634       0x6c .pio\build\teensy41\libFrameworkArduino.a(usb_serial.c.o)
  .text.rx_event
-                0x00017018       0xb4 .pio\build\teensy41\libFrameworkArduino.a(usb_serial.c.o)
+                0x000166a0       0xb4 .pio\build\teensy41\libFrameworkArduino.a(usb_serial.c.o)
  .text.usb_serial_flush_callback
-                0x000170cc       0x98 .pio\build\teensy41\libFrameworkArduino.a(usb_serial.c.o)
+                0x00016754       0x98 .pio\build\teensy41\libFrameworkArduino.a(usb_serial.c.o)
  .text.usb_serial_write.part.1
-                0x00017164      0x17c .pio\build\teensy41\libFrameworkArduino.a(usb_serial.c.o)
+                0x000167ec      0x17c .pio\build\teensy41\libFrameworkArduino.a(usb_serial.c.o)
  .text.usb_serial_reset
-                0x000172e0        0x4 .pio\build\teensy41\libFrameworkArduino.a(usb_serial.c.o)
-                0x000172e0                usb_serial_reset
+                0x00016968        0x4 .pio\build\teensy41\libFrameworkArduino.a(usb_serial.c.o)
+                0x00016968                usb_serial_reset
  .text.usb_serial_configure
-                0x000172e4      0x108 .pio\build\teensy41\libFrameworkArduino.a(usb_serial.c.o)
-                0x000172e4                usb_serial_configure
+                0x0001696c      0x108 .pio\build\teensy41\libFrameworkArduino.a(usb_serial.c.o)
+                0x0001696c                usb_serial_configure
  .text.usb_serial_read
-                0x000173ec       0xec .pio\build\teensy41\libFrameworkArduino.a(usb_serial.c.o)
-                0x000173ec                usb_serial_read
+                0x00016a74       0xec .pio\build\teensy41\libFrameworkArduino.a(usb_serial.c.o)
+                0x00016a74                usb_serial_read
  .text.usb_serial_peekchar
-                0x000174d8       0x44 .pio\build\teensy41\libFrameworkArduino.a(usb_serial.c.o)
-                0x000174d8                usb_serial_peekchar
+                0x00016b60       0x44 .pio\build\teensy41\libFrameworkArduino.a(usb_serial.c.o)
+                0x00016b60                usb_serial_peekchar
  .text.usb_serial_available
-                0x0001751c        0xc .pio\build\teensy41\libFrameworkArduino.a(usb_serial.c.o)
-                0x0001751c                usb_serial_available
+                0x00016ba4        0xc .pio\build\teensy41\libFrameworkArduino.a(usb_serial.c.o)
+                0x00016ba4                usb_serial_available
  .text.usb_serial_flush_input
-                0x00017528       0x74 .pio\build\teensy41\libFrameworkArduino.a(usb_serial.c.o)
-                0x00017528                usb_serial_flush_input
+                0x00016bb0       0x74 .pio\build\teensy41\libFrameworkArduino.a(usb_serial.c.o)
+                0x00016bb0                usb_serial_flush_input
  .text.usb_serial_getchar
-                0x0001759c       0x20 .pio\build\teensy41\libFrameworkArduino.a(usb_serial.c.o)
-                0x0001759c                usb_serial_getchar
+                0x00016c24       0x20 .pio\build\teensy41\libFrameworkArduino.a(usb_serial.c.o)
+                0x00016c24                usb_serial_getchar
  .text.usb_serial_putchar
-                0x000175bc       0x2c .pio\build\teensy41\libFrameworkArduino.a(usb_serial.c.o)
-                0x000175bc                usb_serial_putchar
+                0x00016c44       0x2c .pio\build\teensy41\libFrameworkArduino.a(usb_serial.c.o)
+                0x00016c44                usb_serial_putchar
  .text.usb_serial_write
-                0x000175e8       0x18 .pio\build\teensy41\libFrameworkArduino.a(usb_serial.c.o)
-                0x000175e8                usb_serial_write
+                0x00016c70       0x18 .pio\build\teensy41\libFrameworkArduino.a(usb_serial.c.o)
+                0x00016c70                usb_serial_write
  .text.usb_serial_write_buffer_free
-                0x00017600       0x4c .pio\build\teensy41\libFrameworkArduino.a(usb_serial.c.o)
-                0x00017600                usb_serial_write_buffer_free
+                0x00016c88       0x4c .pio\build\teensy41\libFrameworkArduino.a(usb_serial.c.o)
+                0x00016c88                usb_serial_write_buffer_free
  .text.usb_serial_flush_output
-                0x0001764c       0xa0 .pio\build\teensy41\libFrameworkArduino.a(usb_serial.c.o)
-                0x0001764c                usb_serial_flush_output
- .text.yield    0x000176ec       0xf0 .pio\build\teensy41\libFrameworkArduino.a(yield.cpp.o)
-                0x000176ec                yield
+                0x00016cd4       0xa0 .pio\build\teensy41\libFrameworkArduino.a(usb_serial.c.o)
+                0x00016cd4                usb_serial_flush_output
+ .text.yield    0x00016d74       0xf0 .pio\build\teensy41\libFrameworkArduino.a(yield.cpp.o)
+                0x00016d74                yield
  .text._ZN14EventResponder16runFromInterruptEv
-                0x000177dc       0x44 .pio\build\teensy41\libFrameworkArduino.a(EventResponder.cpp.o)
-                0x000177dc                EventResponder::runFromInterrupt()
+                0x00016e64       0x44 .pio\build\teensy41\libFrameworkArduino.a(EventResponder.cpp.o)
+                0x00016e64                EventResponder::runFromInterrupt()
  .text.pendablesrvreq_isr
-                0x00017820        0x4 .pio\build\teensy41\libFrameworkArduino.a(EventResponder.cpp.o)
-                0x00017820                pendablesrvreq_isr
+                0x00016ea8        0x4 .pio\build\teensy41\libFrameworkArduino.a(EventResponder.cpp.o)
+                0x00016ea8                pendablesrvreq_isr
  .text.systick_isr
-                0x00017824       0x20 .pio\build\teensy41\libFrameworkArduino.a(EventResponder.cpp.o)
-                0x00017824                systick_isr
+                0x00016eac       0x20 .pio\build\teensy41\libFrameworkArduino.a(EventResponder.cpp.o)
+                0x00016eac                systick_isr
  .text._Z11serialEventv
-                0x00017844        0x4 .pio\build\teensy41\libFrameworkArduino.a(serialEvent.cpp.o)
-                0x00017844                serialEvent()
+                0x00016ecc        0x4 .pio\build\teensy41\libFrameworkArduino.a(serialEvent.cpp.o)
+                0x00016ecc                serialEvent()
  .text.__aeabi_atexit
-                0x00017848        0xc c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libstdc++.a(atexit_arm.o)
-                0x00017848                __aeabi_atexit
+                0x00016ed0        0xc c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libstdc++.a(atexit_arm.o)
+                0x00016ed0                __aeabi_atexit
  .text._ZN8SPIClass8transferEPKvPvj.part.11
-                0x00017854       0x5c .pio\build\teensy41\lib04e\libSPI.a(SPI.cpp.o)
+                0x00016edc       0x5c .pio\build\teensy41\lib04e\libSPI.a(SPI.cpp.o)
  .text._ZN8SPIClass8transferEPKvPvj
-                0x000178b0        0x8 .pio\build\teensy41\lib04e\libSPI.a(SPI.cpp.o)
-                0x000178b0                SPIClass::transfer(void const*, void*, unsigned int)
- .text.sqrt     0x000178b8       0xa8 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libm.a(lib_a-w_sqrt.o)
-                0x000178b8                sqrt
+                0x00016f38        0x8 .pio\build\teensy41\lib04e\libSPI.a(SPI.cpp.o)
+                0x00016f38                SPIClass::transfer(void const*, void*, unsigned int)
+ .text.sqrt     0x00016f40       0xa8 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libm.a(lib_a-w_sqrt.o)
+                0x00016f40                sqrt
  .text.__ieee754_sqrt
-                0x00017960      0x184 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libm.a(lib_a-e_sqrt.o)
-                0x00017960                __ieee754_sqrt
- .text.matherr  0x00017ae4        0x4 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libm.a(lib_a-s_matherr.o)
-                0x00017ae4                matherr
- .text.atoi     0x00017ae8        0x8 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-atoi.o)
-                0x00017ae8                atoi
+                0x00016fe8      0x184 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libm.a(lib_a-e_sqrt.o)
+                0x00016fe8                __ieee754_sqrt
+ .text.matherr  0x0001716c        0x4 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libm.a(lib_a-s_matherr.o)
+                0x0001716c                matherr
+ .text.atoi     0x00017170        0x8 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-atoi.o)
+                0x00017170                atoi
  .text.__cxa_atexit
-                0x00017af0        0xc c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-cxa_atexit.o)
-                0x00017af0                __cxa_atexit
- .text.__errno  0x00017afc        0xc c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-errno.o)
-                0x00017afc                __errno
+                0x00017178        0xc c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-cxa_atexit.o)
+                0x00017178                __cxa_atexit
+ .text.__errno  0x00017184        0xc c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-errno.o)
+                0x00017184                __errno
  .text.__libc_init_array
-                0x00017b08       0x50 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-init.o)
-                0x00017b08                __libc_init_array
+                0x00017190       0x50 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-init.o)
+                0x00017190                __libc_init_array
  .text.isxdigit
-                0x00017b58       0x14 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-isxdigit.o)
-                0x00017b58                isxdigit
+                0x000171e0       0x14 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-isxdigit.o)
+                0x000171e0                isxdigit
  .text.__get_current_locale
-                0x00017b6c       0x18 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-locale.o)
+                0x000171f4       0x18 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-locale.o)
  .text.__locale_mb_cur_max
-                0x00017b84       0x1c c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-locale.o)
-                0x00017b84                __locale_mb_cur_max
+                0x0001720c       0x1c c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-locale.o)
+                0x0001720c                __locale_mb_cur_max
  .text.__locale_ctype_ptr_l
-                0x00017ba0        0x8 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-locale.o)
-                0x00017ba0                __locale_ctype_ptr_l
+                0x00017228        0x8 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-locale.o)
+                0x00017228                __locale_ctype_ptr_l
  .text.__locale_ctype_ptr
-                0x00017ba8       0x14 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-locale.o)
-                0x00017ba8                __locale_ctype_ptr
- .text.malloc   0x00017bbc       0x10 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-malloc.o)
-                0x00017bbc                malloc
- .text.free     0x00017bcc       0x10 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-malloc.o)
-                0x00017bcc                free
+                0x00017230       0x14 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-locale.o)
+                0x00017230                __locale_ctype_ptr
+ .text.malloc   0x00017244       0x10 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-malloc.o)
+                0x00017244                malloc
+ .text.free     0x00017254       0x10 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-malloc.o)
+                0x00017254                free
  .text._malloc_r
-                0x00017bdc      0x570 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-mallocr.o)
-                0x00017bdc                _malloc_r
+                0x00017264      0x570 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-mallocr.o)
+                0x00017264                _malloc_r
  .text.__ascii_mbtowc
-                0x0001814c       0x2c c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-mbtowc_r.o)
-                0x0001814c                __ascii_mbtowc
- .text.memcmp   0x00018178       0x64 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-memcmp.o)
-                0x00018178                memcmp
- .text.memmove  0x000181dc       0xc8 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-memmove.o)
-                0x000181dc                memmove
- .text.memset   0x000182a4       0x9c c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-memset.o)
-                0x000182a4                memset
+                0x000177d4       0x2c c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-mbtowc_r.o)
+                0x000177d4                __ascii_mbtowc
+ .text.memcmp   0x00017800       0x64 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-memcmp.o)
+                0x00017800                memcmp
+ .text.memmove  0x00017864       0xc8 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-memmove.o)
+                0x00017864                memmove
+ .text.memset   0x0001792c       0x9c c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-memset.o)
+                0x0001792c                memset
  .text.__malloc_lock
-                0x00018340        0x4 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-mlock.o)
-                0x00018340                __malloc_lock
+                0x000179c8        0x4 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-mlock.o)
+                0x000179c8                __malloc_lock
  .text.__malloc_unlock
-                0x00018344        0x4 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-mlock.o)
-                0x00018344                __malloc_unlock
- .text.realloc  0x00018348       0x10 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-realloc.o)
-                0x00018348                realloc
+                0x000179cc        0x4 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-mlock.o)
+                0x000179cc                __malloc_unlock
+ .text.realloc  0x000179d0       0x10 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-realloc.o)
+                0x000179d0                realloc
  .text._realloc_r
-                0x00018358      0x3e0 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-reallocr.o)
-                0x00018358                _realloc_r
- .text._sbrk_r  0x00018738       0x24 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-sbrkr.o)
-                0x00018738                _sbrk_r
+                0x000179e0      0x3e0 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-reallocr.o)
+                0x000179e0                _realloc_r
+ .text._sbrk_r  0x00017dc0       0x24 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-sbrkr.o)
+                0x00017dc0                _sbrk_r
  .text.snprintf
-                0x0001875c       0x9c c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-snprintf.o)
-                0x0001875c                snprintf
- .text.sprintf  0x000187f8       0x4c c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-sprintf.o)
-                0x000187f8                sprintf
- .text.sscanf   0x00018844       0x58 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-sscanf.o)
-                0x00018844                sscanf
+                0x00017de4       0x9c c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-snprintf.o)
+                0x00017de4                snprintf
+ .text.sprintf  0x00017e80       0x4c c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-sprintf.o)
+                0x00017e80                sprintf
+ .text.sscanf   0x00017ecc       0x58 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-sscanf.o)
+                0x00017ecc                sscanf
  .text.__seofread
-                0x0001889c        0x4 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-stdio.o)
-                0x0001889c                __seofread
- .text.stpcpy   0x000188a0       0x4c c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-stpcpy.o)
-                0x000188a0                stpcpy
+                0x00017f24        0x4 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-stdio.o)
+                0x00017f24                __seofread
+ .text.stpcpy   0x00017f28       0x4c c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-stpcpy.o)
+                0x00017f28                stpcpy
  .text.strcasecmp
-                0x000188ec       0x48 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-strcasecmp.o)
-                0x000188ec                strcasecmp
- .text.strcat   0x00018934       0x40 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-strcat.o)
-                0x00018934                strcat
- .text.strchr   0x00018974       0xd0 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-strchr.o)
-                0x00018974                strchr
- *fill*         0x00018a44       0x1c 
- .text          0x00018a60      0x2dc c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-strcmp.o)
-                0x00018a68                strcmp
- .text.strcpy   0x00018d3c       0xbc c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-strcpy.o)
-                0x00018d3c                strcpy
- .text.strcspn  0x00018df8       0x34 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-strcspn.o)
-                0x00018df8                strcspn
- .text.strlcat  0x00018e2c       0x54 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-strlcat.o)
-                0x00018e2c                strlcat
- .text.strlcpy  0x00018e80       0x2c c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-strlcpy.o)
-                0x00018e80                strlcpy
- *fill*         0x00018eac       0x14 
- .text          0x00018ec0       0xdc c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-strlen.o)
-                0x00018ec0                strlen
+                0x00017f74       0x48 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-strcasecmp.o)
+                0x00017f74                strcasecmp
+ .text.strcat   0x00017fbc       0x40 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-strcat.o)
+                0x00017fbc                strcat
+ .text.strchr   0x00017ffc       0xd0 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-strchr.o)
+                0x00017ffc                strchr
+ *fill*         0x000180cc       0x14 
+ .text          0x000180e0      0x2dc c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-strcmp.o)
+                0x000180e8                strcmp
+ .text.strcpy   0x000183bc       0xbc c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-strcpy.o)
+                0x000183bc                strcpy
+ .text.strcspn  0x00018478       0x34 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-strcspn.o)
+                0x00018478                strcspn
+ .text.strlcat  0x000184ac       0x54 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-strlcat.o)
+                0x000184ac                strlcat
+ .text.strlcpy  0x00018500       0x2c c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-strlcpy.o)
+                0x00018500                strlcpy
+ *fill*         0x0001852c       0x14 
+ .text          0x00018540       0xdc c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-strlen.o)
+                0x00018540                strlen
  .text.strncasecmp
-                0x00018f9c       0x60 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-strncasecmp.o)
-                0x00018f9c                strncasecmp
- .text.strncmp  0x00018ffc       0xa0 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-strncmp.o)
-                0x00018ffc                strncmp
- .text.strncpy  0x0001909c       0x68 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-strncpy.o)
-                0x0001909c                strncpy
- .text.strrchr  0x00019104       0x24 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-strrchr.o)
-                0x00019104                strrchr
+                0x0001861c       0x60 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-strncasecmp.o)
+                0x0001861c                strncasecmp
+ .text.strncmp  0x0001867c       0xa0 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-strncmp.o)
+                0x0001867c                strncmp
+ .text.strncpy  0x0001871c       0x68 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-strncpy.o)
+                0x0001871c                strncpy
+ .text.strrchr  0x00018784       0x24 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-strrchr.o)
+                0x00018784                strrchr
  .text.unlikely.sulp
-                0x00019128       0x34 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-strtod.o)
- *fill*         0x0001915c        0x4 
+                0x000187a8       0x34 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-strtod.o)
+ *fill*         0x000187dc        0x4 
  .text._strtod_l
-                0x00019160      0xe70 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-strtod.o)
-                0x00019160                _strtod_l
+                0x000187e0      0xe70 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-strtod.o)
+                0x000187e0                _strtod_l
  .text._strtod_r
-                0x00019fd0       0x20 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-strtod.o)
-                0x00019fd0                _strtod_r
+                0x00019650       0x20 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-strtod.o)
+                0x00019650                _strtod_r
  .text._strtol_l.isra.0
-                0x00019ff0      0x138 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-strtol.o)
+                0x00019670      0x138 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-strtol.o)
  .text._strtol_r
-                0x0001a128       0x24 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-strtol.o)
-                0x0001a128                _strtol_r
- .text.strtol   0x0001a14c       0x2c c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-strtol.o)
-                0x0001a14c                strtol
+                0x000197a8       0x24 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-strtol.o)
+                0x000197a8                _strtol_r
+ .text.strtol   0x000197cc       0x2c c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-strtol.o)
+                0x000197cc                strtol
  .text._svfprintf_r
-                0x0001a178     0x1570 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-svfprintf.o)
-                0x0001a178                _svfprintf_r
+                0x000197f8     0x1570 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-svfprintf.o)
+                0x000197f8                _svfprintf_r
  .text.__ssvfscanf_r
-                0x0001b6e8      0xe7c c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-svfscanf.o)
-                0x0001b6e8                __ssvfscanf_r
+                0x0001ad68      0xe7c c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-svfscanf.o)
+                0x0001ad68                __ssvfscanf_r
  .text._vdprintf_r
-                0x0001c564       0x4c c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-vdprintf.o)
-                0x0001c564                _vdprintf_r
+                0x0001bbe4       0x4c c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-vdprintf.o)
+                0x0001bbe4                _vdprintf_r
  .text.vdprintf
-                0x0001c5b0       0x18 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-vdprintf.o)
-                0x0001c5b0                vdprintf
+                0x0001bc30       0x18 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-vdprintf.o)
+                0x0001bc30                vdprintf
  .text.__ascii_wctomb
-                0x0001c5c8       0x1c c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-wctomb_r.o)
-                0x0001c5c8                __ascii_wctomb
+                0x0001bc48       0x1c c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-wctomb_r.o)
+                0x0001bc48                __ascii_wctomb
  .text._write_r
-                0x0001c5e4       0x2c c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-writer.o)
-                0x0001c5e4                _write_r
+                0x0001bc64       0x2c c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-writer.o)
+                0x0001bc64                _write_r
  .text.__register_exitproc
-                0x0001c610       0xa4 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-__atexit.o)
-                0x0001c610                __register_exitproc
- .text.quorem   0x0001c6b4      0x128 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-dtoa.o)
- *fill*         0x0001c7dc        0x4 
- .text._dtoa_r  0x0001c7e0      0xc84 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-dtoa.o)
-                0x0001c7e0                _dtoa_r
+                0x0001bc90       0xa4 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-__atexit.o)
+                0x0001bc90                __register_exitproc
+ .text.quorem   0x0001bd34      0x128 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-dtoa.o)
+ *fill*         0x0001be5c        0x4 
+ .text._dtoa_r  0x0001be60      0xc84 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-dtoa.o)
+                0x0001be60                _dtoa_r
  .text._malloc_trim_r
-                0x0001d464       0x9c c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-freer.o)
-                0x0001d464                _malloc_trim_r
- .text._free_r  0x0001d500      0x1d0 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-freer.o)
-                0x0001d500                _free_r
- .text.rshift   0x0001d6d0       0xa8 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-gdtoa-gethex.o)
+                0x0001cae4       0x9c c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-freer.o)
+                0x0001cae4                _malloc_trim_r
+ .text._free_r  0x0001cb80      0x1d0 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-freer.o)
+                0x0001cb80                _free_r
+ .text.rshift   0x0001cd50       0xa8 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-gdtoa-gethex.o)
  .text.__gethex
-                0x0001d778      0x510 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-gdtoa-gethex.o)
-                0x0001d778                __gethex
- .text.__match  0x0001dc88       0x30 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-gdtoa-hexnan.o)
-                0x0001dc88                __match
+                0x0001cdf8      0x510 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-gdtoa-gethex.o)
+                0x0001cdf8                __gethex
+ .text.__match  0x0001d308       0x30 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-gdtoa-hexnan.o)
+                0x0001d308                __match
  .text.__hexnan
-                0x0001dcb8      0x180 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-gdtoa-hexnan.o)
-                0x0001dcb8                __hexnan
+                0x0001d338      0x180 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-gdtoa-hexnan.o)
+                0x0001d338                __hexnan
  .text.iswspace
-                0x0001de38       0x1c c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-iswspace.o)
-                0x0001de38                iswspace
+                0x0001d4b8       0x1c c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-iswspace.o)
+                0x0001d4b8                iswspace
  .text.__localeconv_l
-                0x0001de54        0x4 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-localeconv.o)
-                0x0001de54                __localeconv_l
+                0x0001d4d4        0x4 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-localeconv.o)
+                0x0001d4d4                __localeconv_l
  .text._localeconv_r
-                0x0001de58       0x1c c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-localeconv.o)
-                0x0001de58                _localeconv_r
+                0x0001d4d8       0x1c c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-localeconv.o)
+                0x0001d4d8                _localeconv_r
  .text._mbrtowc_r
-                0x0001de74       0x5c c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-mbrtowc.o)
-                0x0001de74                _mbrtowc_r
- .text          0x0001ded0       0xa0 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-memchr.o)
-                0x0001ded0                memchr
- .text._Balloc  0x0001df70       0x4c c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-mprec.o)
-                0x0001df70                _Balloc
- .text._Bfree   0x0001dfbc       0x14 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-mprec.o)
-                0x0001dfbc                _Bfree
+                0x0001d4f4       0x5c c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-mbrtowc.o)
+                0x0001d4f4                _mbrtowc_r
+ .text          0x0001d550       0xa0 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-memchr.o)
+                0x0001d550                memchr
+ .text._Balloc  0x0001d5f0       0x4c c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-mprec.o)
+                0x0001d5f0                _Balloc
+ .text._Bfree   0x0001d63c       0x14 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-mprec.o)
+                0x0001d63c                _Bfree
  .text.__multadd
-                0x0001dfd0       0x80 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-mprec.o)
-                0x0001dfd0                __multadd
- .text.__s2b    0x0001e050       0x98 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-mprec.o)
-                0x0001e050                __s2b
+                0x0001d650       0x80 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-mprec.o)
+                0x0001d650                __multadd
+ .text.__s2b    0x0001d6d0       0x98 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-mprec.o)
+                0x0001d6d0                __s2b
  .text.__hi0bits
-                0x0001e0e8       0x40 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-mprec.o)
-                0x0001e0e8                __hi0bits
+                0x0001d768       0x40 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-mprec.o)
+                0x0001d768                __hi0bits
  .text.__lo0bits
-                0x0001e128       0x5c c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-mprec.o)
-                0x0001e128                __lo0bits
- .text.__i2b    0x0001e184       0x14 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-mprec.o)
-                0x0001e184                __i2b
+                0x0001d7a8       0x5c c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-mprec.o)
+                0x0001d7a8                __lo0bits
+ .text.__i2b    0x0001d804       0x14 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-mprec.o)
+                0x0001d804                __i2b
  .text.__multiply
-                0x0001e198      0x130 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-mprec.o)
-                0x0001e198                __multiply
+                0x0001d818      0x130 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-mprec.o)
+                0x0001d818                __multiply
  .text.__pow5mult
-                0x0001e2c8       0xa0 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-mprec.o)
-                0x0001e2c8                __pow5mult
+                0x0001d948       0xa0 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-mprec.o)
+                0x0001d948                __pow5mult
  .text.__lshift
-                0x0001e368       0xb0 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-mprec.o)
-                0x0001e368                __lshift
- .text.__mcmp   0x0001e418       0x44 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-mprec.o)
-                0x0001e418                __mcmp
- .text.__mdiff  0x0001e45c      0x114 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-mprec.o)
-                0x0001e45c                __mdiff
- .text.__ulp    0x0001e570       0x54 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-mprec.o)
-                0x0001e570                __ulp
- .text.__b2d    0x0001e5c4       0xd0 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-mprec.o)
-                0x0001e5c4                __b2d
- .text.__d2b    0x0001e694       0xbc c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-mprec.o)
-                0x0001e694                __d2b
- .text.__ratio  0x0001e750       0x5c c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-mprec.o)
-                0x0001e750                __ratio
+                0x0001d9e8       0xb0 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-mprec.o)
+                0x0001d9e8                __lshift
+ .text.__mcmp   0x0001da98       0x44 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-mprec.o)
+                0x0001da98                __mcmp
+ .text.__mdiff  0x0001dadc      0x114 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-mprec.o)
+                0x0001dadc                __mdiff
+ .text.__ulp    0x0001dbf0       0x54 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-mprec.o)
+                0x0001dbf0                __ulp
+ .text.__b2d    0x0001dc44       0xd0 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-mprec.o)
+                0x0001dc44                __b2d
+ .text.__d2b    0x0001dd14       0xbc c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-mprec.o)
+                0x0001dd14                __d2b
+ .text.__ratio  0x0001ddd0       0x5c c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-mprec.o)
+                0x0001ddd0                __ratio
  .text.__copybits
-                0x0001e7ac       0x48 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-mprec.o)
-                0x0001e7ac                __copybits
+                0x0001de2c       0x48 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-mprec.o)
+                0x0001de2c                __copybits
  .text.__any_on
-                0x0001e7f4       0x60 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-mprec.o)
-                0x0001e7f4                __any_on
- .text.__sccl   0x0001e854       0x74 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-sccl.o)
-                0x0001e854                __sccl
- .text.nanf     0x0001e8c8        0xc c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-sf_nan.o)
-                0x0001e8c8                nanf
+                0x0001de74       0x60 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-mprec.o)
+                0x0001de74                __any_on
+ .text.__sccl   0x0001ded4       0x74 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-sccl.o)
+                0x0001ded4                __sccl
+ .text.nanf     0x0001df48        0xc c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-sf_nan.o)
+                0x0001df48                nanf
  .text._strtoll_l.isra.0
-                0x0001e8d4      0x1ac c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-strtoll.o)
+                0x0001df54      0x1ac c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-strtoll.o)
  .text._strtoll_r
-                0x0001ea80       0x24 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-strtoll.o)
-                0x0001ea80                _strtoll_r
+                0x0001e100       0x24 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-strtoll.o)
+                0x0001e100                _strtoll_r
  .text._strtoul_l.isra.0
-                0x0001eaa4      0x168 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-strtoul.o)
+                0x0001e124      0x168 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-strtoul.o)
  .text._strtoul_r
-                0x0001ec0c       0x24 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-strtoul.o)
-                0x0001ec0c                _strtoul_r
+                0x0001e28c       0x24 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-strtoul.o)
+                0x0001e28c                _strtoul_r
  .text._strtoull_l.isra.0
-                0x0001ec30      0x1ec c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-strtoull.o)
+                0x0001e2b0      0x1ec c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-strtoull.o)
  .text._strtoull_r
-                0x0001ee1c       0x24 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-strtoull.o)
-                0x0001ee1c                _strtoull_r
+                0x0001e49c       0x24 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-strtoull.o)
+                0x0001e49c                _strtoull_r
  .text.__ssprint_r
-                0x0001ee40      0x100 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-svfiprintf.o)
-                0x0001ee40                __ssprint_r
+                0x0001e4c0      0x100 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-svfiprintf.o)
+                0x0001e4c0                __ssprint_r
  .text._sungetc_r
-                0x0001ef40       0x84 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-svfiscanf.o)
-                0x0001ef40                _sungetc_r
+                0x0001e5c0       0x84 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-svfiscanf.o)
+                0x0001e5c0                _sungetc_r
  .text.__ssrefill_r
-                0x0001efc4       0x3c c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-svfiscanf.o)
-                0x0001efc4                __ssrefill_r
+                0x0001e644       0x3c c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-svfiscanf.o)
+                0x0001e644                __ssrefill_r
  .text._sfread_r
-                0x0001f000       0x84 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-svfiscanf.o)
-                0x0001f000                _sfread_r
+                0x0001e680       0x84 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-svfiscanf.o)
+                0x0001e680                _sfread_r
  .text.__submore
-                0x0001f084       0x78 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-ungetc.o)
-                0x0001f084                __submore
+                0x0001e704       0x78 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-ungetc.o)
+                0x0001e704                __submore
  .text._vasnprintf_r
-                0x0001f0fc       0x60 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-vasnprintf.o)
-                0x0001f0fc                _vasnprintf_r
+                0x0001e77c       0x60 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-vasnprintf.o)
+                0x0001e77c                _vasnprintf_r
  .text._calloc_r
-                0x0001f15c       0x60 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-callocr.o)
-                0x0001f15c                _calloc_r
- .text          0x0001f1bc       0x30 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/armv7e-m/fpu/fpv5-d16\libgcc.a(_aeabi_uldivmod.o)
-                0x0001f1bc                __aeabi_uldivmod
- .text          0x0001f1ec      0x2e4 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/armv7e-m/fpu/fpv5-d16\libgcc.a(_udivmoddi4.o)
-                0x0001f1ec                __udivmoddi4
- .text          0x0001f4d0        0x4 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/armv7e-m/fpu/fpv5-d16\libgcc.a(_dvmd_tls.o)
-                0x0001f4d0                __aeabi_idiv0
-                0x0001f4d0                __aeabi_ldiv0
- *fill*         0x0001f4d4        0x4 
- .text.__stub   0x0001f4d8        0x8 linker stubs
-                0x0001f4e0                . = ALIGN (0x10)
- *fill*         0x0001f4e0        0x0 
+                0x0001e7dc       0x60 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-callocr.o)
+                0x0001e7dc                _calloc_r
+ .text          0x0001e83c       0x30 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/armv7e-m/fpu/fpv5-d16\libgcc.a(_aeabi_uldivmod.o)
+                0x0001e83c                __aeabi_uldivmod
+ .text          0x0001e86c      0x2e4 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/armv7e-m/fpu/fpv5-d16\libgcc.a(_udivmoddi4.o)
+                0x0001e86c                __udivmoddi4
+ .text          0x0001eb50        0x4 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/armv7e-m/fpu/fpv5-d16\libgcc.a(_dvmd_tls.o)
+                0x0001eb50                __aeabi_idiv0
+                0x0001eb50                __aeabi_ldiv0
+ *fill*         0x0001eb54        0x4 
+ .text.__stub   0x0001eb58        0x8 linker stubs
+                0x0001eb60                . = ALIGN (0x10)
+ *fill*         0x0001eb60        0x0 
 
-.glue_7         0x0001f4e0        0x0 load address 0x60021050
- .glue_7        0x0001f4e0        0x0 linker stubs
+.glue_7         0x0001eb60        0x0 load address 0x600206d0
+ .glue_7        0x0001eb60        0x0 linker stubs
 
-.glue_7t        0x0001f4e0        0x0 load address 0x60021050
- .glue_7t       0x0001f4e0        0x0 linker stubs
+.glue_7t        0x0001eb60        0x0 load address 0x600206d0
+ .glue_7t       0x0001eb60        0x0 linker stubs
 
-.vfp11_veneer   0x0001f4e0        0x0 load address 0x60021050
- .vfp11_veneer  0x0001f4e0        0x0 linker stubs
+.vfp11_veneer   0x0001eb60        0x0 load address 0x600206d0
+ .vfp11_veneer  0x0001eb60        0x0 linker stubs
 
-.v4_bx          0x0001f4e0        0x0 load address 0x60021050
- .v4_bx         0x0001f4e0        0x0 linker stubs
+.v4_bx          0x0001eb60        0x0 load address 0x600206d0
+ .v4_bx         0x0001eb60        0x0 linker stubs
 
-.fini           0x0001f4e0        0x4 load address 0x60021050
- .fini          0x0001f4e0        0x4 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/armv7e-m/fpu/fpv5-d16/crti.o
-                0x0001f4e0                _fini
+.fini           0x0001eb60        0x4 load address 0x600206d0
+ .fini          0x0001eb60        0x4 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/armv7e-m/fpu/fpv5-d16/crti.o
+                0x0001eb60                _fini
 
-.iplt           0x0001f4e4        0x0 load address 0x60021054
- .iplt          0x0001f4e4        0x0 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/armv7e-m/fpu/fpv5-d16/crtbegin.o
+.iplt           0x0001eb64        0x0 load address 0x600206d4
+ .iplt          0x0001eb64        0x0 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/armv7e-m/fpu/fpv5-d16/crtbegin.o
 
-.eh_frame       0x0001f4e4        0x0 load address 0x60021054
- .eh_frame      0x0001f4e4        0x0 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/armv7e-m/fpu/fpv5-d16/crtbegin.o
+.eh_frame       0x0001eb64        0x0 load address 0x600206d4
+ .eh_frame      0x0001eb64        0x0 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/armv7e-m/fpu/fpv5-d16/crtbegin.o
 
-.ARM.exidx      0x0001f4e4        0x8 load address 0x60021054
-                0x0001f4e4                __exidx_start = .
+.ARM.exidx      0x0001eb64        0x8 load address 0x600206d4
+                0x0001eb64                __exidx_start = .
  *(.ARM.exidx* .gnu.linkonce.armexidx.*)
  .ARM.exidx.text.__aeabi_atexit
-                0x0001f4e4        0x8 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libstdc++.a(atexit_arm.o)
- .ARM.exidx     0x0001f4ec        0x0 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/armv7e-m/fpu/fpv5-d16\libgcc.a(_udivmoddi4.o)
+                0x0001eb64        0x8 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libstdc++.a(atexit_arm.o)
+ .ARM.exidx     0x0001eb6c        0x0 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/armv7e-m/fpu/fpv5-d16\libgcc.a(_udivmoddi4.o)
                                   0x8 (size before relaxing)
-                0x0001f4ec                __exidx_end = .
+                0x0001eb6c                __exidx_end = .
 
-.rel.dyn        0x0001f4ec        0x0 load address 0x6002105c
- .rel.iplt      0x0001f4ec        0x0 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/armv7e-m/fpu/fpv5-d16/crtbegin.o
+.rel.dyn        0x0001eb6c        0x0 load address 0x600206dc
+ .rel.iplt      0x0001eb6c        0x0 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/armv7e-m/fpu/fpv5-d16/crtbegin.o
 
 .text.itcm.padding
-                0x0001f4ec      0xb14 load address 0x6002105c
+                0x0001eb6c     0x1494 load address 0x600206dc
                 0x00020000                . = ALIGN (0x8000)
- *fill*         0x0001f4ec      0xb14 
+ *fill*         0x0001eb6c     0x1494 
 
-.data           0x20000000     0x5b70 load address 0x6002105c
+.data           0x20000000     0x5b70 load address 0x600206dc
  *(.rodata*)
  .rodata._ZTV6File32
                 0x20000000       0x24 .pio\build\teensy41\src\EBTKS.cpp.o
@@ -3615,184 +3599,186 @@ LOAD c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/.
                 0x20001aec       0x38 .pio\build\teensy41\src\EBTKS_SD.cpp.o
                 0x20001aec                vtable for HpibPrint
  .rodata.str1.4
-                0x20001b24      0x76f .pio\build\teensy41\src\EBTKS_SD.cpp.o
-                                0x7b7 (size before relaxing)
- *fill*         0x20002293        0x1 
+                0x20001b24      0x763 .pio\build\teensy41\src\EBTKS_SD.cpp.o
+                                0x7ab (size before relaxing)
+ *fill*         0x20002287        0x1 
  .rodata.str1.4
-                0x20002294       0xe7 .pio\build\teensy41\src\EBTKS_Tape_Drive.cpp.o
- *fill*         0x2000237b        0x1 
+                0x20002288       0xe7 .pio\build\teensy41\src\EBTKS_Tape_Drive.cpp.o
+ *fill*         0x2000236f        0x1 
  .rodata.str1.4
-                0x2000237c     0x1b91 .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
+                0x20002370     0x1b91 .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
                                0x1c0d (size before relaxing)
- *fill*         0x20003f0d        0x3 
+ *fill*         0x20003f01        0x3 
  .rodata._ZTV9SdSpiCard
-                0x20003f10       0x58 .pio\build\teensy41\libc5c\libSdFat.a(SdSpiCard.cpp.o)
-                0x20003f10                vtable for SdSpiCard
+                0x20003f04       0x58 .pio\build\teensy41\libc5c\libSdFat.a(SdSpiCard.cpp.o)
+                0x20003f04                vtable for SdSpiCard
  .rodata._ZTV8SdioCard
-                0x20003f68       0x58 .pio\build\teensy41\libc5c\libSdFat.a(SdioTeensy.cpp.o)
-                0x20003f68                vtable for SdioCard
+                0x20003f5c       0x58 .pio\build\teensy41\libc5c\libSdFat.a(SdioTeensy.cpp.o)
+                0x20003f5c                vtable for SdioCard
  .rodata._ZZN8SPIClass16beginTransactionE11SPISettingsE7clk_sel
-                0x20003fc0       0x10 .pio\build\teensy41\libc5c\libSdFat.a(SdSpiTeensy3.cpp.o)
-                0x20003fc0                SPIClass::beginTransaction(SPISettings)::clk_sel
+                0x20003fb4       0x10 .pio\build\teensy41\libc5c\libSdFat.a(SdSpiTeensy3.cpp.o)
+                0x20003fb4                SPIClass::beginTransaction(SPISettings)::clk_sel
  .rodata._ZTV14HardwareSerial
-                0x20003fd0       0x24 .pio\build\teensy41\libFrameworkArduino.a(HardwareSerial.cpp.o)
-                0x20003fd0                vtable for HardwareSerial
+                0x20003fc4       0x24 .pio\build\teensy41\libFrameworkArduino.a(HardwareSerial.cpp.o)
+                0x20003fc4                vtable for HardwareSerial
  .rodata.digital_pin_to_info_PGM
-                0x20003ff4      0x370 .pio\build\teensy41\libFrameworkArduino.a(digital.c.o)
-                0x20003ff4                digital_pin_to_info_PGM
+                0x20003fe8      0x370 .pio\build\teensy41\libFrameworkArduino.a(digital.c.o)
+                0x20003fe8                digital_pin_to_info_PGM
  .rodata.usb_descriptor_list
-                0x20004364       0x6c .pio\build\teensy41\libFrameworkArduino.a(usb_desc.c.o)
-                0x20004364                usb_descriptor_list
+                0x20004358       0x6c .pio\build\teensy41\libFrameworkArduino.a(usb_desc.c.o)
+                0x20004358                usb_descriptor_list
  .rodata._ZTV16usb_serial_class
-                0x200043d0       0x28 .pio\build\teensy41\libFrameworkArduino.a(usb_inst.cpp.o)
-                0x200043d0                vtable for usb_serial_class
+                0x200043c4       0x28 .pio\build\teensy41\libFrameworkArduino.a(usb_inst.cpp.o)
+                0x200043c4                vtable for usb_serial_class
  .rodata.str1.4
-                0x200043f8        0x5 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libm.a(lib_a-w_sqrt.o)
- *fill*         0x200043fd        0x3 
+                0x200043ec        0x5 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libm.a(lib_a-w_sqrt.o)
+ *fill*         0x200043f1        0x3 
  .rodata._global_impure_ptr
-                0x20004400        0x4 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-impure.o)
-                0x20004400                _global_impure_ptr
+                0x200043f4        0x4 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-impure.o)
+                0x200043f4                _global_impure_ptr
  .rodata.str1.4
-                0x20004404        0xa c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-locale.o)
+                0x200043f8        0xa c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-locale.o)
                                  0x12 (size before relaxing)
- *fill*         0x2000440e        0x2 
+ *fill*         0x20004402        0x2 
  .rodata.fpi.6173
-                0x20004410       0x14 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-strtod.o)
+                0x20004404       0x14 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-strtod.o)
  .rodata.str1.4
-                0x20004424        0xf c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-strtod.o)
- *fill*         0x20004433        0x1 
+                0x20004418        0xf c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-strtod.o)
+ *fill*         0x20004427        0x1 
  .rodata.fpinan.6209
-                0x20004434       0x14 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-strtod.o)
+                0x20004428       0x14 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-strtod.o)
+ *fill*         0x2000443c        0x4 
  .rodata.tinytens
-                0x20004448       0x28 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-strtod.o)
+                0x20004440       0x28 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-strtod.o)
  .rodata.zeroes.7258
-                0x20004470       0x10 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-svfprintf.o)
+                0x20004468       0x10 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-svfprintf.o)
  .rodata.str1.4
-                0x20004480       0x42 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-svfprintf.o)
- *fill*         0x200044c2        0x2 
+                0x20004478       0x42 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-svfprintf.o)
+ *fill*         0x200044ba        0x2 
  .rodata.blanks.7257
-                0x200044c4       0x10 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-svfprintf.o)
+                0x200044bc       0x10 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-svfprintf.o)
  .rodata.basefix.7328
-                0x200044d4       0x22 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-svfscanf.o)
- *fill*         0x200044f6        0x2 
+                0x200044cc       0x22 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-svfscanf.o)
+ *fill*         0x200044ee        0x2 
  .rodata.str1.4
-                0x200044f8        0x5 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-svfscanf.o)
- *fill*         0x200044fd        0x3 
+                0x200044f0        0x5 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-svfscanf.o)
+ *fill*         0x200044f5        0x3 
  .rodata._ctype_
-                0x20004500      0x101 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-ctype_.o)
-                0x20004500                _ctype_
- *fill*         0x20004601        0x3 
+                0x200044f8      0x101 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-ctype_.o)
+                0x200044f8                _ctype_
+ *fill*         0x200045f9        0x3 
  .rodata.str1.4
-                0x20004604       0x10 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-dtoa.o)
+                0x200045fc       0x10 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-dtoa.o)
                                  0x12 (size before relaxing)
  .rodata.__hexdig
-                0x20004614      0x100 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-gdtoa-gethex.o)
-                0x20004614                __hexdig
+                0x2000460c      0x100 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-gdtoa-gethex.o)
+                0x2000460c                __hexdig
  .rodata.str1.4
-                0x20004714        0x1 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-mbrtowc.o)
- *fill*         0x20004714        0x4 
+                0x2000470c        0x1 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-mbrtowc.o)
+ *fill*         0x2000470c        0x4 
  .rodata.__mprec_tens
-                0x20004718       0xc8 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-mprec.o)
-                0x20004718                __mprec_tens
+                0x20004710       0xc8 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-mprec.o)
+                0x20004710                __mprec_tens
  .rodata.__mprec_bigtens
-                0x200047e0       0x28 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-mprec.o)
-                0x200047e0                __mprec_bigtens
+                0x200047d8       0x28 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-mprec.o)
+                0x200047d8                __mprec_bigtens
  .rodata.p05.6087
-                0x20004808        0xc c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-mprec.o)
+                0x20004800        0xc c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-mprec.o)
  *(.data*)
- .data          0x20004814        0x4 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/armv7e-m/fpu/fpv5-d16/crtbegin.o
-                0x20004814                __dso_handle
+ .data          0x2000480c        0x4 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/armv7e-m/fpu/fpv5-d16/crtbegin.o
+                0x2000480c                __dso_handle
  .data.Config_filename
-                0x20004818        0x4 .pio\build\teensy41\src\EBTKS.cpp.o
-                0x20004818                Config_filename
+                0x20004810        0x4 .pio\build\teensy41\src\EBTKS.cpp.o
+                0x20004810                Config_filename
  .data._ZL12test_message
-                0x2000481c       0x5b .pio\build\teensy41\src\EBTKS_CRT.cpp.o
- *fill*         0x20004877        0x1 
+                0x20004814       0x5b .pio\build\teensy41\src\EBTKS_CRT.cpp.o
+ *fill*         0x2000486f        0x1 
  .data.machineNames
-                0x20004878       0x18 .pio\build\teensy41\src\EBTKS_SD.cpp.o
-                0x20004878                machineNames
+                0x20004870       0x18 .pio\build\teensy41\src\EBTKS_SD.cpp.o
+                0x20004870                machineNames
  .data._ZL11tapeInCount
-                0x20004890        0x4 .pio\build\teensy41\src\EBTKS_Tape_Drive.cpp.o
+                0x20004888        0x4 .pio\build\teensy41\src\EBTKS_Tape_Drive.cpp.o
  .data._ZL12currBlockNum
-                0x20004894        0x4 .pio\build\teensy41\src\EBTKS_Tape_Drive.cpp.o
+                0x2000488c        0x4 .pio\build\teensy41\src\EBTKS_Tape_Drive.cpp.o
  .data._ZZ14readTapeStatusvE9stickyGap
-                0x20004898        0x1 .pio\build\teensy41\src\EBTKS_Tape_Drive.cpp.o
- *fill*         0x20004899        0x3 
- .data.Keys     0x2000489c      0x294 .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
-                0x2000489c                Keys
+                0x20004890        0x1 .pio\build\teensy41\src\EBTKS_Tape_Drive.cpp.o
+ *fill*         0x20004891        0x3 
+ .data.Keys     0x20004894      0x294 .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
+                0x20004894                Keys
  .data.Command_Table
-                0x20004b30      0x380 .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
-                0x20004b30                Command_Table
- .data.KeysCnt  0x20004eb0        0x4 .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
-                0x20004eb0                KeysCnt
+                0x20004b28      0x380 .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
+                0x20004b28                Command_Table
+ .data.KeysCnt  0x20004ea8        0x4 .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
+                0x20004ea8                KeysCnt
  .data._ZL11m_errorCode
-                0x20004eb4        0x1 .pio\build\teensy41\libc5c\libSdFat.a(SdioTeensy.cpp.o)
- *fill*         0x20004eb5        0x3 
+                0x20004eac        0x1 .pio\build\teensy41\libc5c\libSdFat.a(SdioTeensy.cpp.o)
+ *fill*         0x20004ead        0x3 
  .data._ZL14UART4_Hardware
-                0x20004eb8       0x64 .pio\build\teensy41\libFrameworkArduino.a(HardwareSerial2.cpp.o)
- .data.Serial2  0x20004f1c       0x60 .pio\build\teensy41\libFrameworkArduino.a(HardwareSerial2.cpp.o)
-                0x20004f1c                Serial2
+                0x20004eb0       0x64 .pio\build\teensy41\libFrameworkArduino.a(HardwareSerial2.cpp.o)
+ .data.Serial2  0x20004f14       0x60 .pio\build\teensy41\libFrameworkArduino.a(HardwareSerial2.cpp.o)
+                0x20004f14                Serial2
  .data.F_BUS_ACTUAL
-                0x20004f7c        0x4 .pio\build\teensy41\libFrameworkArduino.a(clockspeed.c.o)
-                0x20004f7c                F_BUS_ACTUAL
+                0x20004f74        0x4 .pio\build\teensy41\libFrameworkArduino.a(clockspeed.c.o)
+                0x20004f74                F_BUS_ACTUAL
  .data.F_CPU_ACTUAL
-                0x20004f80        0x4 .pio\build\teensy41\libFrameworkArduino.a(clockspeed.c.o)
-                0x20004f80                F_CPU_ACTUAL
+                0x20004f78        0x4 .pio\build\teensy41\libFrameworkArduino.a(clockspeed.c.o)
+                0x20004f78                F_CPU_ACTUAL
  .data.isr_table_gpio1
-                0x20004f84       0x80 .pio\build\teensy41\libFrameworkArduino.a(interrupt.c.o)
-                0x20004f84                isr_table_gpio1
+                0x20004f7c       0x80 .pio\build\teensy41\libFrameworkArduino.a(interrupt.c.o)
+                0x20004f7c                isr_table_gpio1
  .data.isr_table_gpio2
-                0x20005004       0x80 .pio\build\teensy41\libFrameworkArduino.a(interrupt.c.o)
-                0x20005004                isr_table_gpio2
+                0x20004ffc       0x80 .pio\build\teensy41\libFrameworkArduino.a(interrupt.c.o)
+                0x20004ffc                isr_table_gpio2
  .data.isr_table_gpio3
-                0x20005084       0x80 .pio\build\teensy41\libFrameworkArduino.a(interrupt.c.o)
-                0x20005084                isr_table_gpio3
+                0x2000507c       0x80 .pio\build\teensy41\libFrameworkArduino.a(interrupt.c.o)
+                0x2000507c                isr_table_gpio3
  .data.isr_table_gpio4
-                0x20005104       0x80 .pio\build\teensy41\libFrameworkArduino.a(interrupt.c.o)
-                0x20005104                isr_table_gpio4
+                0x200050fc       0x80 .pio\build\teensy41\libFrameworkArduino.a(interrupt.c.o)
+                0x200050fc                isr_table_gpio4
  .data.__brkval
-                0x20005184        0x4 .pio\build\teensy41\libFrameworkArduino.a(startup.c.o)
-                0x20005184                __brkval
+                0x2000517c        0x4 .pio\build\teensy41\libFrameworkArduino.a(startup.c.o)
+                0x2000517c                __brkval
  .data.device_descriptor
-                0x20005188       0x12 .pio\build\teensy41\libFrameworkArduino.a(usb_desc.c.o)
- *fill*         0x2000519a        0x2 
+                0x20005180       0x12 .pio\build\teensy41\libFrameworkArduino.a(usb_desc.c.o)
+ *fill*         0x20005192        0x2 
  .data.usb_string_serial_number_default
-                0x2000519c       0x16 .pio\build\teensy41\libFrameworkArduino.a(usb_desc.c.o)
-                0x2000519c                usb_string_serial_number
-                0x2000519c                usb_string_serial_number_default
- *fill*         0x200051b2        0x2 
- .data.Serial   0x200051b4       0x10 .pio\build\teensy41\libFrameworkArduino.a(usb_inst.cpp.o)
-                0x200051b4                Serial
+                0x20005194       0x16 .pio\build\teensy41\libFrameworkArduino.a(usb_desc.c.o)
+                0x20005194                usb_string_serial_number
+                0x20005194                usb_string_serial_number_default
+ *fill*         0x200051aa        0x2 
+ .data.Serial   0x200051ac       0x10 .pio\build\teensy41\libFrameworkArduino.a(usb_inst.cpp.o)
+                0x200051ac                Serial
  .data.yield_active_check_flags
-                0x200051c4        0x1 .pio\build\teensy41\libFrameworkArduino.a(yield.cpp.o)
-                0x200051c4                yield_active_check_flags
+                0x200051bc        0x1 .pio\build\teensy41\libFrameworkArduino.a(yield.cpp.o)
+                0x200051bc                yield_active_check_flags
  .data.__fdlib_version
-                0x200051c5        0x1 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libm.a(lib_a-s_lib_ver.o)
-                0x200051c5                __fdlib_version
- *fill*         0x200051c6        0x2 
+                0x200051bd        0x1 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libm.a(lib_a-s_lib_ver.o)
+                0x200051bd                __fdlib_version
+ *fill*         0x200051be        0x2 
  .data.impure_data
-                0x200051c8      0x428 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-impure.o)
+                0x200051c0      0x428 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-impure.o)
  .data._impure_ptr
-                0x200055f0        0x4 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-impure.o)
-                0x200055f0                _impure_ptr
+                0x200055e8        0x4 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-impure.o)
+                0x200055e8                _impure_ptr
  .data.__global_locale
-                0x200055f4      0x16c c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-locale.o)
-                0x200055f4                __global_locale
+                0x200055ec      0x16c c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-locale.o)
+                0x200055ec                __global_locale
  .data.__malloc_av_
-                0x20005760      0x408 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-mallocr.o)
-                0x20005760                __malloc_av_
+                0x20005758      0x408 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-mallocr.o)
+                0x20005758                __malloc_av_
  .data.__malloc_trim_threshold
-                0x20005b68        0x4 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-mallocr.o)
-                0x20005b68                __malloc_trim_threshold
+                0x20005b60        0x4 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-mallocr.o)
+                0x20005b60                __malloc_trim_threshold
  .data.__malloc_sbrk_base
-                0x20005b6c        0x4 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-mallocr.o)
-                0x20005b6c                __malloc_sbrk_base
+                0x20005b64        0x4 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/fpv5-d16\libc.a(lib_a-mallocr.o)
+                0x20005b64                __malloc_sbrk_base
                 0x20005b70                . = ALIGN (0x10)
+ *fill*         0x20005b68        0x8 
 
-.jcr            0x20005b70        0x0 load address 0x60026bcc
+.jcr            0x20005b70        0x0 load address 0x6002624c
  .jcr           0x20005b70        0x0 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/armv7e-m/fpu/fpv5-d16/crtbegin.o
 
-.igot.plt       0x20005b70        0x0 load address 0x60026bcc
+.igot.plt       0x20005b70        0x0 load address 0x6002624c
  .igot.plt      0x20005b70        0x0 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/../lib/gcc/arm-none-eabi/5.4.1/armv7e-m/fpu/fpv5-d16/crtbegin.o
 
 .bss            0x20005b70    0x12750
@@ -4488,11 +4474,11 @@ LOAD c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/.
  .externalram   0x70020d04     0x1232 .pio\build\teensy41\src\EBTKS_AUXROM_SD_Services.cpp.o
                 0x70021420                HP85_file_name
                 0x00000000                _stext = ADDR (.text.itcm)
-                0x0001f4e8                _etext = ((ADDR (.text.itcm) + SIZEOF (.text.itcm)) + SIZEOF (.ARM.exidx))
+                0x0001eb68                _etext = ((ADDR (.text.itcm) + SIZEOF (.text.itcm)) + SIZEOF (.ARM.exidx))
                 0x60001b70                _stextload = LOADADDR (.text.itcm)
                 0x20000000                _sdata = ADDR (.data)
                 0x20005b70                _edata = (ADDR (.data) + SIZEOF (.data))
-                0x6002105c                _sdataload = LOADADDR (.data)
+                0x600206dc                _sdataload = LOADADDR (.data)
                 0x20005b70                _sbss = ADDR (.bss)
                 0x200182c0                _ebss = (ADDR (.bss) + SIZEOF (.bss))
                 0x2022bae0                _heap_start = (ADDR (.bss.dma) + SIZEOF (.bss.dma))
@@ -4500,7 +4486,7 @@ LOAD c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi/bin/.
                 0x00000004                _itcm_block_count = (((SIZEOF (.text.itcm) + SIZEOF (.ARM.exidx)) + 0x7fff) >> 0xf)
                 0xaaaaaaff                _flexram_bank_config = (0xaaaaaaaa | ((0x1 << (_itcm_block_count * 0x2)) - 0x1))
                 0x20060000                _estack = (ORIGIN (DTCM) + ((0x10 - _itcm_block_count) << 0xf))
-                0x00026bc8                _flashimagelen = (((SIZEOF (.text.progmem) + SIZEOF (.text.itcm)) + SIZEOF (.ARM.exidx)) + SIZEOF (.data))
+                0x00026248                _flashimagelen = (((SIZEOF (.text.progmem) + SIZEOF (.text.itcm)) + SIZEOF (.ARM.exidx)) + SIZEOF (.data))
                 0x00000025                _teensy_model_identifier = 0x25
 
 .debug_info

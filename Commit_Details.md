@@ -509,6 +509,13 @@ Changes:
     every time it is updated in its real location. Because Windows doesn't have functional links.
 -   Heading update for Logic Analyzer
 
+## Commit \#109 03/19/2021
+
+Changes:
+-   Refactor EBTKS_SD.cpp to remove major code duplication that supported MOUNT for the SD Card
+-   Remove type field for printer in CONFIG.TXT
+
+
 
 
 

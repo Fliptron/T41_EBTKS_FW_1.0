@@ -481,6 +481,137 @@ int get_EMC_StartBank(void)
 }
 
 //
+//  This part of the CONFIG.TXT JSON processing is a separate function because we need to do this processing
+//  both at system boot time, and if we MOUNT the SD Card
+//
+//  This covers the disk drives, the printer
+//
+
+void mount_drives_based_on_JSON(JsonDocument& doc)
+{
+  char fname[258];
+
+  bool tapeEn = doc["tape"]["enable"] | false;
+  log_to_CRT_ptr += sprintf(log_to_CRT_ptr, "HP85A/B Tape Emulation: %s\n", tapeEn ? "Yes":"No");
+
+  //LOGPRINTF("Tape Drive Emulation: %s\n", tapeEn ? "Active" : "Inactive");
+
+  const char *tapeFname = doc["tape"]["filename"] | "tape1.tap";
+  const char *path = doc["tape"]["directory"] | "/tapes/";
+
+  if (tapeEn) //only set the path/filename if the tape subsystem is enabled
+  {
+    tape.enable(tapeEn);
+    strcpy(fname, path);
+    strlcat(fname, tapeFname, sizeof(fname));
+    tape.setFile(fname);
+  }
+  LOGPRINTF("Tape file: %s%s enabled is: %s\n", path, tapeFname, tapeEn ? "Active" : "Inactive");
+
+  if (tapeEn)
+  {
+    log_to_CRT_ptr += sprintf(log_to_CRT_ptr, ":T  %s\n", tape.getFile());
+  }
+
+  //
+  //  Configure the disk drives. Currently we only handle one HPIB interface
+  //
+
+  //
+  //  Although we don't check it and report an error if necessary, the following things      ####  should we add checks ? ####
+  //  MUST be true of the HPIB device configuration comming from the CONFIG.TXT file
+  //
+  //    1) The "select" fields must all have the same value 3..10 as we can only emulate 1 HPIB interface
+  //    2) The "device" fields must be different, and should probably start at 0 and go no higher than 7
+  //
+
+  int  HPIB_Select = doc["hpib"]["select"] | 3;                             //  1MB5 select code (3..10). 3 is the default
+
+  for (JsonVariant hpibDevice : doc["hpib"]["devices"].as<JsonArray>())     //  Iterate HPIB devices on a bus
+  {
+    int select = HPIB_Select;
+    int device = hpibDevice["device"] | 0;                                  //  HPIB device number 0..31 (can contain up to 4 drives)
+    bool enable = hpibDevice["enable"] | false;                             //  are we enabled?
+
+    //  log_to_CRT_ptr += sprintf(log_to_CRT_ptr, "HPIB Sel %d Dev %d En %d\n", select, device, enable);
+
+    if (hpibDevice["drives"])                                               //  If the device has a drives section, then it must be a disk drive box
+    {
+      const char *diskDir = hpibDevice["directory"] | "/disks/";            //  Disk image folder/directory
+      int type = hpibDevice["type"] | 0;                                    //  Disk drive type 0 = 5 1/4"
+
+      char  type_text[10];
+      switch(type)
+      {
+        case 0:
+          strcpy(type_text, "Floppy");
+          break;
+        case 4:
+          strcpy(type_text, "5 MB  ");
+          break;
+        default:
+          strcpy(type_text, "Unknown");
+          break;
+      }
+
+      if ((devices[device] == NULL) && (enable == true))
+      {
+        devices[device] = new HpibDisk(device);                             //  Create a new HPIB device (can contain up to 4 drives)
+      }
+
+      if (enable == true)
+      {
+        initTranslator(select);
+                                                                            //  Iterate disk drives - we can have up to 4 drive units per device
+        for (JsonVariant unit : hpibDevice["drives"].as<JsonArray>())
+        {
+          int unitNum = unit["unit"] | 0;                                   //  Drive number 0..7
+          const char *filename = unit["filename"];                          //  Disk image filename
+          bool wprot = unit["writeProtect"] | false;
+          bool en = unit["enable"] | false;
+          strcpy(fname, diskDir);                                           //  Form full path/filename. First get path
+          strlcat(fname, filename, sizeof(fname));                          //  Then append the filename
+          if ((devices[device] != NULL) && (en == true) && devices[device]->isType(HPDEV_DISK))
+          {
+            devices[device]->addDisk((int)type);
+            devices[device]->setFile(unitNum, fname, wprot);
+            LOGPRINTF(                                      "Add Drive %s to msus$ D:%d%d%d with image file: %s\n", type_text, select, device, unitNum, fname);
+            log_to_serial_ptr += sprintf(log_to_serial_ptr, "Add Drive %s to msus$ D:%d%d%d with image file: %s\n", type_text, select, device, unitNum, fname);
+            log_to_CRT_ptr += sprintf(log_to_CRT_ptr, "%d%d%d %s\n", select, device, unitNum, fname);
+          }
+        }
+      }
+    }
+
+    if (hpibDevice["printer"])                                              //  If the device has a printer section, then it must be a printer (or a disk drive that can print)
+    {
+      //  int type = hpibDevice["type"] | 0;                                //  Not currently used
+      const char *printDir = hpibDevice["directory"] | "/printers/";        //  Printer folder/directory
+
+      if ((devices[device] == NULL) && (enable == true))                    //  If we haven't already created a printer object, do it now. Although really, doesn't
+                                                                            //  this only happen once, during boot. (well ok, also with MOUNT "SDCard")
+      {
+        devices[device] = new HpibPrint(device, HPDEV_PRT);                 //  Create a new HPIB printer device
+      }
+      JsonObject printer = hpibDevice["printer"];
+      const char *filename = printer["filename"];                           //  Printer filename
+
+      strcpy(fname, printDir);                                              //  Form full path/filename. Get path
+      strlcat(fname, filename, sizeof(fname));                              //  and append the filename
+      if ((devices[device] != NULL) && (enable == true))                    //  
+      {
+        devices[device]->setFile((char *)fname);
+        LOGPRINTF("Add Printer: Device %1d%2d with print file: %s\n", select, device, fname);
+        log_to_serial_ptr += sprintf(log_to_serial_ptr, "Add Printer: Device %1d%2d with print file: %s\n", select, device, fname);
+        log_to_CRT_ptr    += sprintf(log_to_CRT_ptr, "Printer %1d%2d %s\n", select, device, fname);
+      }
+    }
+  }
+
+}
+
+
+//
 //  Loads the configuration from a file, return true if successful
 //
 
@@ -637,26 +768,7 @@ bool loadConfiguration(const char *filename)
   //  slot EBTKS is in). Could EBTKS participate in the EMC autoconfig dance?
   //
 
-  bool tapeEn = doc["tape"]["enable"] | false;
-  log_to_CRT_ptr += sprintf(log_to_CRT_ptr, "HP85A/B Tape Emulation: %s\n", tapeEn ? "Yes":"No");
-
-
-
-  //LOGPRINTF("Tape Drive Emulation: %s\n", tapeEn ? "Active" : "Inactive");
-
-  const char *tapeFname = doc["tape"]["filename"] | "tape1.tap";
-  const char *path = doc["tape"]["directory"] | "/tapes/";
-
-  if (tapeEn) //only set the path/filename if the tape subsystem is enabled
-  {
-    tape.enable(tapeEn);
-    strcpy(fname, path);
-    strlcat(fname, tapeFname, sizeof(fname));
-    tape.setFile(fname);
-  }
-  LOGPRINTF("Tape file: %s%s enabled is: %s\n", path, tapeFname, tapeEn ? "Active" : "Inactive");
-
-  SCOPE_1_Pulser(1);         //  From beginning of function to here is 15 ms , measured 2/7/2021
+  SCOPE_1_Pulser(1);         //  From beginning of function to here is 15 ms , measured 2/7/2021  ---  code has changed, need to retime ######
   EBTKS_delay_ns(10000); //  10 us
   SCOPE_1_Pulser(1);
   EBTKS_delay_ns(10000); //  10 us
@@ -698,107 +810,8 @@ bool loadConfiguration(const char *filename)
   }
   LOGPRINTF("\n");
   log_to_CRT_ptr += sprintf(log_to_CRT_ptr, "\n");
-  //
-  //  Configure the disk drives. Currently we only handle one HPIB interface
-  //
 
-  //
-  //  Although we don't check it and report an error if necessary, the following things      ####  should we add checks ? ####
-  //  MUST be true of the HPIB device configuration comming from the CONFIG.TXT file
-  //
-  //    1) The "select" fields must all have the same value 3..10 as we can only emulate 1 HPIB interface
-  //    2) The "device" fields must be different, and should probably start at 0 and go no higher than 7
-  //
-
-  int  HPIB_Select = doc["hpib"]["select"] | 3;      //  1MB5 select code (3..10). 3 is the default
-
-  for (JsonVariant hpibDevice : doc["hpib"]["devices"].as<JsonArray>()) //iterate hpib devices on a bus
-  {
-    int select = HPIB_Select;
-    int device = hpibDevice["device"] | 0;      //  HPIB device number 0..31 (can contain up to 4 drives)
-    bool enable = hpibDevice["enable"] | false; //are we enabled?
-
-    //  log_to_CRT_ptr += sprintf(log_to_CRT_ptr, "HPIB Sel %d Dev %d En %d\n", select, device, enable);
-
-    if (hpibDevice["drives"]) //if the device is a disk drive
-    {
-      const char *diskDir = hpibDevice["directory"] | "/disks/";    //  Disk image folder/directory
-      int type = hpibDevice["type"] | 0;                            //  Disk drive type 0 = 5 1/4"
-
-      char  type_text[10];
-      switch(type)
-      {
-        case 0:
-          strcpy(type_text, "Floppy");
-          break;
-        case 4:
-          strcpy(type_text, "5 MB  ");
-          break;
-        default:
-          strcpy(type_text, "Unknown");
-          break;
-      }
-
-      if ((devices[device] == NULL) && (enable == true))
-      {
-        devices[device] = new HpibDisk(device);                     //  Create a new HPIB device (can contain up to 4 drives)
-      }
-
-      if (enable == true)
-      {
-        initTranslator(select);
-        //  Iterate disk drives - we can have up to 4 drive units per device
-        for (JsonVariant unit : hpibDevice["drives"].as<JsonArray>())
-        {
-          int unitNum = unit["unit"] | 0;             //  Drive number 0..3
-          const char *filename = unit["filename"];    //  Disk image filename
-          bool wprot = unit["writeProtect"] | false;
-          bool en = unit["enable"] | false;
-
-          //form full path/filename
-          strcpy(fname, diskDir);                  //get path
-          strlcat(fname, filename, sizeof(fname)); //append the filename
-          if ((devices[device] != NULL) && (en == true) && devices[device]->isType(HPDEV_DISK))
-          {
-            devices[device]->addDisk((int)type);
-            devices[device]->setFile(unitNum, fname, wprot);
-            LOGPRINTF(                                      "Add Drive %s to msus$ D:%d%d%d with image file: %s\n", type_text, select, device, unitNum, fname);
-            log_to_serial_ptr += sprintf(log_to_serial_ptr, "Add Drive %s to msus$ D:%d%d%d with image file: %s\n", type_text, select, device, unitNum, fname);
-            log_to_CRT_ptr += sprintf(log_to_CRT_ptr, "%d%d%d %s\n", select, device, unitNum, fname);
-          }
-        }
-      }
-    }
-
-    if (hpibDevice["printer"]) //if the device is a printer
-    {
-      int type = hpibDevice["type"] | 0;
-      const char *printDir = hpibDevice["directory"] | "/printers/"; //printer folder/directory
-
-      if ((devices[device] == NULL) && (enable == true))
-      {
-        devices[device] = new HpibPrint(device,HPDEV_PRT); //  create a new HPIB printer device 
-      }
-      JsonObject printer = hpibDevice["printer"];
-      const char *filename = printer["filename"]; //printer filename
-
-      //form full path/filename
-      strcpy(fname, printDir);                  //get path
-      strlcat(fname, filename, sizeof(fname)); //append the filename
-      if ((devices[device] != NULL) && (enable == true))
-      {
-        devices[device]->setFile((char *)fname);
-        LOGPRINTF("Add Printer type: %d to Device %1d%2d with print file: %s\n", type, select, device, fname);
-        log_to_serial_ptr += sprintf(log_to_serial_ptr, "Add Printer type: %d to Device %1d%2d with print file: %s\n", type, select, device, fname);
-        log_to_CRT_ptr    += sprintf(log_to_CRT_ptr, "Printer %1d%2d %s\n", select, device, fname);
-      }
-    }
-  }
-
-  if (tapeEn)
-  {
-    log_to_CRT_ptr += sprintf(log_to_CRT_ptr, ":T  %s\n", tape.getFile());
-  }
+  mount_drives_based_on_JSON(doc);
 
   // Close the file (Curiously, File's destructor doesn't close the file)
   file.close();
@@ -841,20 +854,18 @@ failed_to_read_flags:
 }
 
 //
-//  This is a stripped down version of loadConfiguration()  (the function above)
+//  This function is similar to the boot time processing of CONFIG.TXT, except it only processes
+//  the mounting of Disks, Tape, and Printer. It uses the same block of code, the function mount_drives_based_on_JSON()
+//
 //  It is called by the user with
 //    MOUNT "SDCARD", "anything"
 //  when the SD card has been plugged into a running system.
-//  The SD.beging must have already occured
-//  It reads the specified file (typically config.sys) and only does the file system mounting tasks
+//  The SD.begin must have already occured
+//  It reads the specified file (typically CONFIG.TXT) and only does the file system mounting tasks
 //
-
-//   ################   this needs to be a call to a single block of shared code   ################
 
 bool remount_drives(const char *filename)
 {
-  char fname[258];
-
   LOGPRINTF("Opening Config File [%s]\n", filename);
   Serial.printf("Opening Config File [%s]\n", filename);
 
@@ -884,115 +895,7 @@ bool remount_drives(const char *filename)
     return false;
   }
 
-  bool tapeEn = doc["tape"]["enable"] | false;
-  
-  const char *tapeFname = doc["tape"]["filename"] | "tape1.tap";
-  const char *path = doc["tape"]["directory"] | "/tapes/";
-
-  if (tapeEn)               //  Only set the path/filename if the tape subsystem is enabled
-  {
-    tape.enable(tapeEn);
-    strcpy(fname, path);
-    strlcat(fname, tapeFname, sizeof(fname));
-    tape.setFile(fname);
-  }
-  LOGPRINTF("Tape file: %s%s enabled is: %s\n", path, tapeFname, tapeEn ? "Active" : "Inactive");
-  Serial.printf("Tape file: %s%s enabled is: %s\n", path, tapeFname, tapeEn ? "Active" : "Inactive");
-
-  //
-  //  Configure the disk drives. Currently we only handle one HPIB interface
-  //
-
-  //
-  //  Although we don't check it and report an error if necessary, the following things      ####  should we add checks ? ####
-  //  MUST be true of the HPIB device configuration comming from the CONFIG.TXT file
-  //
-  //    1) The "select" fields must all have the same value 3..10 as we can only emulate 1 HPIB interface
-  //    2) The "device" fields must be different, and should probably start at 0 and go no higher than 7
-  //
-
-  for (JsonVariant hpibDevice : doc["hpib"].as<JsonArray>())    //  Iterate hpib devices on a bus
-  {
-    int select = hpibDevice["select"] | 7;                      //  1MB5 select code (3..10). 3 is the default
-    int device = hpibDevice["device"] | 0;                      //  HPIB device number 0..31 (can contain up to 4 drives)
-    bool enable = hpibDevice["enable"] | false;                 //  Are we enabled?
-
-    if (hpibDevice["drives"])                                   //  If the device is a disk drive
-    {
-      const char *diskDir = hpibDevice["directory"] | "/disks/"; //disk image folder/directory
-      int type = hpibDevice["type"] | 0;                         //  disk drive type 0 = 5 1/4"
-
-      char  type_text[10];
-      switch(type)
-      {
-        case 0:
-          strcpy(type_text, "Floppy");
-          break;
-        case 4:
-          strcpy(type_text, "5 MB  ");
-          break;
-        default:
-          strcpy(type_text, "Unknown");
-          break;
-      }
-
-      if ((devices[device] == NULL) && (enable == true))
-      {
-        devices[device] = new HpibDisk(device);                 //  create a new HPIB device (can contain up to 4 drives)
-      }
-
-      if (enable == true)
-      {
-        initTranslator(select);
-        //
-        //  Iterate disk drives - we can have up to 4 drive units per device
-        //
-        for (JsonVariant unit : hpibDevice["drives"].as<JsonArray>())
-        {
-          int unitNum = unit["unit"] | 0;                       //  Drive number 0..3
-          const char *filename = unit["filename"];              //  Disk image filename
-          bool wprot = unit["writeProtect"] | false;
-          bool en = unit["enable"] | false;
-          //
-          //  Form full path/filename
-          //
-          strcpy(fname, diskDir);                               //  Get path
-          strlcat(fname, filename, sizeof(fname));              //  Append the filename
-          if ((devices[device] != NULL) && (en == true))
-          {
-            devices[device]->addDisk((int)type);
-            devices[device]->setFile(unitNum, fname, wprot);
-            LOGPRINTF(    "Add Drive %s to msus$ D:%d%d%d with image file: %s\n", type_text, select, device, unitNum, fname);
-            Serial.printf("Add Drive %s to msus$ D:%d%d%d with image file: %s\n", type_text, select, device, unitNum, fname);
-          }
-        }
-      }
-    }
-
-    if (hpibDevice["printer"])                                  //  If the device is a printer
-    {
-      int type = hpibDevice["type"] | 0;
-      const char *printDir = hpibDevice["directory"] | "/printers/";  //  Printer folder/directory
-
-      if ((devices[device] == NULL) && (enable == true))
-      {
-        devices[device] = new HpibPrint(device, HPDEV_PRT);                //  Create a new HPIB printer device
-      }
-      JsonObject printer = hpibDevice["printer"];
-      const char *filename = printer["filename"];               //  Printer filename
-      //
-      //  Form full path/filename
-      //
-      strcpy(fname, printDir);                                  //  Get path
-      strlcat(fname, filename, sizeof(fname));                  //  Append the filename
-      if ((devices[device] != NULL) && (enable == true))
-      {
-        devices[device]->setFile((char *)fname);
-        LOGPRINTF("Add Printer type: %d to Device %1d%2d with print file: %s\n", type, select, device, fname);
-        Serial.printf("Add Printer type: %d to Device %1d%2d with print file: %s\n", type, select, device, fname);
-      }
-    }
-  }
+  mount_drives_based_on_JSON(doc);
 
   //
   //  Restore the 4 flag bytes

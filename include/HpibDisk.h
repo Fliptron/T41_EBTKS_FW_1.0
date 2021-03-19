@@ -17,7 +17,7 @@ enum {
     AMIGO_FORMAT = 0x18
     };
 
-#define MAX_DISKS 4    //only allow a maximum of 4 disk drives (units)
+#define MAX_DISKS 4                                       //  Only allow a maximum of 4 disk drives (units)
 extern uint8_t readBuff[];
 extern uint8_t diskBuff[];
 extern void loadReadBuff(int count, bool pack);
@@ -29,7 +29,7 @@ extern bool isReadBuffMT();
 class HpibDisk : public HpibDevice
     {
     public:
-        HpibDisk(int tla) : HpibDevice{tla, HPDEV_DISK}  //  Talker/Listener Address
+        HpibDisk(int tla) : HpibDevice{tla, HPDEV_DISK}   //  Talker/Listener Address
             {
             _numDisks = 0;
             _readLen = 0;

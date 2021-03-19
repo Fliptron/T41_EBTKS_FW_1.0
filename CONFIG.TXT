@@ -39,7 +39,7 @@
         "enable": false
       },
       {
-        "Note": "For 85A floppys, disable rom317, rom320B, rom321B",
+        "Note": "For 85A floppies, disable rom317, rom320B, rom321B",
         "description": "Mass Storage",
         "filename": "rom320",
         "enable": false
@@ -51,7 +51,7 @@
         "enable": false
       },
       {
-        "Note": "For 85B floppys and 5, 10 MB hard disk. Must also use rom321B, can be used on 85A",
+        "Note": "For 85B floppies and 5, 10 MB hard disk. Must also use rom321B, can be used on 85A",
         "description": "85B Mass Storage",
         "filename": "rom320B",
         "enable": true
@@ -104,14 +104,14 @@
         "enable": true,
         "drives": [
           {
-            "Comment": "msu 300",
+            "Comment": "msus$ 300",
             "unit": 0,
             "filename": "BETAUTIL.DSK",
             "writeProtect": false,
              "enable": true
           },
           {
-            "Comment": "msu 301",
+            "Comment": "msus$ 301",
             "unit": 1,
             "filename": "85Games1.dsk",
             "writeProtect": false,
@@ -126,14 +126,14 @@
         "enable": true,
         "drives": [
           {
-            "Comment": "msu 320",
+            "Comment": "msus$ 320",
             "unit": 0,
             "filename": "85Games2.dsk",
             "writeProtect": false,
             "enable": true
           },
           {
-            "Comment": "msu 321",
+            "Comment": "msus$ 321",
             "unit": 1,
             "filename": "85GamesMisc.dsk",
             "writeProtect": false,
@@ -149,14 +149,14 @@
         "enable": true,
         "drives": [
           {
-            "Comment": "msu 330",
+            "Comment": "msus$ 330",
             "unit": 0,
             "filename": "5MB_scr.dsk",
             "writeProtect": false,
             "enable": true
           },
           {
-            "Comment": "msu 331",
+            "Comment": "msus$ 331",
             "unit": 1,
             "filename": "",
             "writeProtect": false,
@@ -166,7 +166,6 @@
       },
       {
         "Comment": "Device 10 on HPIB select code, i.e. 310",
-        "type": 0,
         "device": 10,
         "directory": "/printers/",
         "enable": true,
