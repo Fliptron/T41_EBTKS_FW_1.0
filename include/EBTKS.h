@@ -26,7 +26,29 @@
 
 #define EBTKS_COMPILE_TIME        __DATE__ " @ " __TIME__
 
-#define EBTKS_COMPILE_TIME_CONDENSED      date_time,&(date_time[4]),&(date_time[9]),&(date_time[14])
+#define YEAR  ( (__DATE__[7]  - '0') * 1000 + \
+                (__DATE__[8]  - '0') * 100  + \
+                (__DATE__[9]  - '0') * 10   + \
+                (__DATE__[10] - '0') * 1       )
+
+#define MONTH (     __DATE__ [2] == 'n' ? (__DATE__ [1] == 'a' ? 1 : 6) \
+                  : __DATE__ [2] == 'b' ? 2 \
+                  : __DATE__ [2] == 'r' ? (__DATE__ [0] == 'M' ? 3 : 4) \
+                  : __DATE__ [2] == 'y' ? 5 \
+                  : __DATE__ [2] == 'l' ? 7 \
+                  : __DATE__ [2] == 'g' ? 8 \
+                  : __DATE__ [2] == 'p' ? 9 \
+                  : __DATE__ [2] == 't' ? 10 \
+                  : __DATE__ [2] == 'v' ? 11 \
+                  : 12)
+
+#define DAY  ( ((__DATE__[4] - '0') * 10) + (__DATE__[5] - '0') )
+
+#define HOURS    ( (__TIME__[0]  - '0') * 10 + (__TIME__[1] - '0') * 1)
+#define MINUTES  ( (__TIME__[3]  - '0') * 10 + (__TIME__[4] - '0') * 1)
+#define SECONDS  ( (__TIME__[6]  - '0') * 10 + (__TIME__[7] - '0') * 1)
+
+//#define EBTKS_COMPILE_TIME_CONDENSED      date_time,&(date_time[4]),&(date_time[9]),&(date_time[14])    //  What is this for? not used anywhere
 
 #define CORE_PIN_BUFEN            ( 0)
 #define CORE_PIN_CTRL_DIR         ( 1)

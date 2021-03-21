@@ -509,7 +509,7 @@ Changes:
     every time it is updated in its real location. Because Windows doesn't have functional links.
 -   Heading update for Logic Analyzer
 
-##Commit \#109 03/19/2021
+## Commit \#109 03/19/2021
 
 Changes:
 -   Remove code duplication for mounting LIF files that occured with MOUNT "SDCard". About 100 lines of code.
@@ -527,6 +527,12 @@ Changes:
 -   Remove passing around Master status for EMC code. Now a compile time selection. Except for modified HP85A computers, EBTKS is never the Master.
 -   Fix some spellink misstakes
 -   Re-indented EBTKS_ESP.h
+
+## Commit \#111 03/21/2021
+
+Changes:
+-   First cut at SD Card dates. Use the compile time of the Firmware
+-   Some interesting macros for time and date in EBTKS.h
 
 
 

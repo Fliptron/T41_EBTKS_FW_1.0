@@ -562,6 +562,36 @@ static uint32_t   last_pin_isr_count;                         //  These are used
 static uint32_t   count_of_pin_isr_count_not_changing;        //  or if we arent in loop(), we should stall boot.
 static bool       HP85_has_been_off;
 
+
+//
+//  Temporary dateTime callback function
+//
+//  Use compile time for now:  #define EBTKS_COMPILE_TIME_CONDENSED      date_time,&(date_time[4]),&(date_time[9]),&(date_time[14])
+//
+void dateTime(uint16_t *date, uint16_t *time, uint8_t* ms10)
+{
+  uint16_t    Year , Month , Day;
+  uint16_t    Hour,  Minute, Second;
+
+  Year    = YEAR;
+  Month   = MONTH;
+  Day     = DAY;
+  Hour    = HOURS;
+  Minute  = MINUTES;
+  Second  = SECONDS;
+
+//  *date = FS_DATE(2021,3,8);        //  Year , Month , Day
+//  *time = FS_TIME(19,39,0);         //  hour, minute, second
+
+  *date = FS_DATE(Year , Month , Day);
+  *time = FS_TIME(Hour,  Minute, Second);
+
+  *ms10 = 0;
+
+  Serial.printf("dateTime callback occured. %02d/%02d/%04d  %02d:%02d:%02d\n", Month , Day, Year, Hour,  Minute, Second);
+
+}
+
 void setup()
 {
 
@@ -1028,6 +1058,11 @@ void setup()
   setLedColor(0, 10,  0,  0);
   setLedColor(1,  0, 10,  0);
   WS2812_update();
+
+//
+//  hook in time/date to the filesystem
+//
+  FsDateTime::setCallback(dateTime);
 
   //  Fall into loop()
   loop_count = 0;

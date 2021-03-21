@@ -1261,7 +1261,11 @@ bool copy_sd_file(const char * Source_Path, const char * Destination_Path)
     }
     else
     {
-      Serial.printf("Read ref-file, rqst %d, got %d\n", COPY_BUFFER_SIZE, chars_read);
+      //Serial.printf("Read ref-file, rqst %d, got %d\n", COPY_BUFFER_SIZE, chars_read);
+      if (chars_read > 0)
+      {
+      Serial.printf("-\n");
+      }
     }
 
     if(chars_read > 0)      //  make sure we don't try using the -1 we get on error
@@ -1279,7 +1283,7 @@ bool copy_sd_file(const char * Source_Path, const char * Destination_Path)
     }
     else if (chars_read == 0)
     {
-      Serial.printf("Got 0 characters, so copy finished\n");
+      //Serial.printf("Got 0 characters, so copy finished\n");
       Source.close();
       Destination.close();
       break;  //  Out of while(1) loop
