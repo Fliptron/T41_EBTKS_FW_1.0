@@ -9,22 +9,19 @@
 //
 //
 //      Enable if we are maintaining a copy of write to the CRT Character memory
-#define ENABLE_CRT_CHAR_COPY      (0)
+#define ENABLE_CRT_CHAR_COPY                  (0)
 //
 //      Enable if we are maintaining a copy of write to the CRT Graphics memory
-#define ENABLE_CRT_GRAPH_COPY     (0)
-//
-//      Enable if we are providing EMS memory
-#define ENABLE_EMS_MEMORY         (0)
+#define ENABLE_CRT_GRAPH_COPY                 (0)
 //
 //      Enable if we are providing Solid State Tape Drive (SSTD) replacement
-#define ENABLE_SSTD               (0)
+#define ENABLE_SSTD                           (0)
 //
 //      Enable if we are providing at least 1 bank switched ROM
-#define ENABLE_PROVIDE_BANK_SWITCHED_ROMS   (1)
+#define ENABLE_PROVIDE_BANK_SWITCHED_ROMS     (1)
 //
 //      Enable if we are providing the startup configuration menu
-#define ENABLE_STARTUP_CONFIG_MENU  (0)
+#define ENABLE_STARTUP_CONFIG_MENU            (0)
 //
 //      Not yet supported. Changes many things, including:
 //          Max width of addresses (pervasive changes required)
@@ -96,6 +93,13 @@
 #define IO_ADDR                           (0177400)       //  Top 256 bytes of the address space
 #define EXP_RAM_SIZE                      (16384 - 256)   //  16128 bytes of RAM
 
+//
+//    Extended Memory Controller
+//
+#define EMC_MASTER                        (true)          //  Only true if HP85A and IF modification done
+#define ENABLE_EMC_SUPPORT                (1)
+#define EMC_MAX_BANKS                     (8)             //  Pre allocate 256kB for EMC Memory
+#define EMC_RAM_SIZE                      (EMC_MAX_BANKS * 32768)
 //
 //    Tracking the CRT activity. Can be used to dump to a remote file or printer, and
 //    also needed if we want to scribble on the screen

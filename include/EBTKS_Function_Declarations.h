@@ -208,9 +208,16 @@ bool get_CRTVerbose(void);
 bool get_screenEmu(void);
 bool get_CRTRemote(void);
 bool get_AutoStartEn(void);
+
+#if ENABLE_EMC_SUPPORT
+void emc_init(void);
 bool get_EMC_Enable(void);
 int  get_EMC_NumBanks(void);
 int  get_EMC_StartBank(void);
+int  get_EMC_StartAddress(void);
+int  get_EMC_EndAddress(void);
+#endif
+
 uint32_t getFlags(void);
 //
 //  Functions that Visual Studio Code can't find, but are in the Arduino library.

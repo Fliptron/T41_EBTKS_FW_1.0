@@ -160,7 +160,7 @@ Changes:
 -   Extensive changes to EBTKS_Bus_Interface_ISR.cpp
 >       Significant new documentation, detailed timing analysis will be in next commit
 >       In mid_cycle_processing() move some code that recognizes DMA and Interrupt acknowledgment
->       Merge various ENABLE_EMS_MEMORY code sequences  (was EMC_SUPPORT)
+>       Merge various ENABLE_EMC_SUPPORT code sequences  (was EMC_SUPPORT)
 
 -   Delete some of Philip's code that has been commented out for months
 -   Mark places in the code that we need to return to with #### tags
@@ -509,11 +509,26 @@ Changes:
     every time it is updated in its real location. Because Windows doesn't have functional links.
 -   Heading update for Logic Analyzer
 
-## Commit \#109 03/19/2021
+##Commit \#109 03/19/2021
 
 Changes:
--   Refactor EBTKS_SD.cpp to remove major code duplication that supported MOUNT for the SD Card
--   Remove type field for printer in CONFIG.TXT
+-   Remove code duplication for mounting LIF files that occured with MOUNT "SDCard". About 100 lines of code.
+-   Remove "type" field from printer specification in CONFIG.txt
+
+## Commit \#110 03/21/2021
+
+Changes:
+-   Move initialization of startup logging pointers in prep for earlier boot process info
+-   Delay EMC initialization until after the CONFIG.TXT has been processed
+-   Move EMC limits calculation to only-once code in during boot
+-   Removed redundant message calculations for LOGPRINTF() in the CONFIG.TXT processing
+-   Correct all references to EMS memory to EMC memory
+-   Bracket all EMC code with conditional compilation controlled by ENABLE_EMC_SUPPORT
+-   Remove passing around Master status for EMC code. Now a compile time selection. Except for modified HP85A computers, EBTKS is never the Master.
+-   Fix some spellink misstakes
+-   Re-indented EBTKS_ESP.h
+
+
 
 
 

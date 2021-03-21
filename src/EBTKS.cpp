@@ -739,7 +739,27 @@ void setup()
     }
   }
 
-  // setup io function calls
+  //
+  //  Initially, we can't write to the CRT because PWO is still asserted, and the HP85 bus
+  //  is not yet active.
+  //
+  //  CRT_Log_Buffer    is CRT_LOG_BUFFER_SIZE    long (1 kB when this comment written)
+  //  Serial_Log_Buffer is SERIAL_LOG_BUFFER_SIZE long (2 kB when this comment written)
+  //
+  //  At this point we haven't yet read the CONFIG.TXT file, so we don't yet know if we
+  //  should pause booting up until the serial port is active.
+  //
+  
+  log_to_CRT_ptr    = &CRT_Log_Buffer[0];
+  log_to_serial_ptr = &Serial_Log_Buffer[0];
+
+  *log_to_CRT_ptr    = 0;
+  *log_to_serial_ptr = 0;
+
+  //
+  //  Setup io function calls
+  //
+
   initIOfuncTable();
   initRoms();
   initCrtEmu();
@@ -757,19 +777,6 @@ void setup()
   //myusb.begin();
 	//keyboard1.attachPress(OnPress);
 	//keyboard2.attachPress(OnPress);
-
-  //
-  //  Initially, we can't write to the CRT because PWO is still asserted, and the HP85 bus
-  //  is not yet active. So collect CRT messages in the first half of the SDDEL buffer.
-  //  At this point we haven't yet read the CONFIG.TXT file, so we don't yet know if we
-  //  should pause bootin up until the serial port is active. Until then, collect messages
-  //  in the second half of the SDDEL buffer
-  //
-  log_to_CRT_ptr    = &CRT_Log_Buffer[0];
-  log_to_serial_ptr = &Serial_Log_Buffer[0];
-
-  *log_to_CRT_ptr    = 0;
-  *log_to_serial_ptr = 0;
 
   initialize_RMIDLE_processing();             //  This must be done before we get to CONFIG.TXT processing
 
@@ -882,6 +889,13 @@ void setup()
     config_success = false;
   }
 
+#if ENABLE_EMC_SUPPORT
+  if (config_success)
+  {
+    emc_init();
+  }
+#endif
+
 //  //
 //  //  For some diagnostic scenarios, it would be nice to delay startup until the serial terminal is connected.
 //  //  This is controlled by a parameter in CONFIG.TXT  .  But there is also the scenario where that parameter
@@ -983,9 +997,13 @@ void setup()
   log_to_serial_ptr += sprintf(log_to_serial_ptr, "Machine type     %s\n", get_machineType());
   log_to_serial_ptr += sprintf(log_to_serial_ptr, "CRT Verbose      %s\n", get_CRTVerbose() ? "true":"false");
 
+#if ENABLE_EMC_SUPPORT
   log_to_serial_ptr += sprintf(log_to_serial_ptr, "EMC Support      %s\n",    get_EMC_Enable() ? "true":"false");
   log_to_serial_ptr += sprintf(log_to_serial_ptr, "EMC Num Banks    %d, 32 KB each\n", get_EMC_NumBanks());
   log_to_serial_ptr += sprintf(log_to_serial_ptr, "EMC Start Bank   %d\n", get_EMC_StartBank());
+  log_to_serial_ptr += sprintf(log_to_serial_ptr, "EMC Start Addr   %08o Octal\n", get_EMC_StartAddress());
+  log_to_serial_ptr += sprintf(log_to_serial_ptr, "EMC End Addr     %08o Octal\n", get_EMC_EndAddress());
+#endif
 
   log_to_serial_ptr += sprintf(log_to_serial_ptr, "Screen Emul.     %s\n", get_screenEmu() ? "true":"false");
   log_to_serial_ptr += sprintf(log_to_serial_ptr, "Remote CRT       %s\n", get_CRTRemote() ? "true":"false");

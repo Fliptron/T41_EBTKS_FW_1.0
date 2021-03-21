@@ -26,9 +26,15 @@ bool          CRTVerbose;
 bool          screenEmu;
 bool          CRTRemote;
 bool          AutoStartEn;
+
+#if ENABLE_EMC_SUPPORT
 bool          EMC_Enable;
-int           EMC_NumBanks;
-int           EMC_StartBank;
+int           EMC_NumBanks = 4;         //  Correct value is 8. If we see only 4 being supported, it either got it from CONFIG.TXT, or initialization failed
+int           EMC_StartBank = 5;        //  Correct for systems with pre-installed 128 kB
+int           EMC_StartAddress;
+int           EMC_EndAddress;
+#endif
+
 
 //
 //  Read machineType string (must match enum machine_numbers {})
@@ -465,6 +471,7 @@ bool get_AutoStartEn(void)
   return AutoStartEn;
 }
 
+#if ENABLE_EMC_SUPPORT
 bool get_EMC_Enable(void)
 {
   return EMC_Enable;
@@ -480,6 +487,17 @@ int get_EMC_StartBank(void)
   return EMC_StartBank;
 }
 
+int  get_EMC_StartAddress(void)
+{
+   return EMC_StartAddress;
+}
+
+int  get_EMC_EndAddress(void)
+{
+  return EMC_EndAddress;
+}
+#endif
+
 //
 //  This part of the CONFIG.TXT JSON processing is a separate function because we need to do this processing
 //  both at system boot time, and if we MOUNT the SD Card
@@ -490,11 +508,9 @@ int get_EMC_StartBank(void)
 void mount_drives_based_on_JSON(JsonDocument& doc)
 {
   char fname[258];
+  char * temp_char_ptr;
 
   bool tapeEn = doc["tape"]["enable"] | false;
-  log_to_CRT_ptr += sprintf(log_to_CRT_ptr, "HP85A/B Tape Emulation: %s\n", tapeEn ? "Yes":"No");
-
-  //LOGPRINTF("Tape Drive Emulation: %s\n", tapeEn ? "Active" : "Inactive");
 
   const char *tapeFname = doc["tape"]["filename"] | "tape1.tap";
   const char *path = doc["tape"]["directory"] | "/tapes/";
@@ -575,8 +591,11 @@ void mount_drives_based_on_JSON(JsonDocument& doc)
           {
             devices[device]->addDisk((int)type);
             devices[device]->setFile(unitNum, fname, wprot);
-            LOGPRINTF(                                      "Add Drive %s to msus$ D:%d%d%d with image file: %s\n", type_text, select, device, unitNum, fname);
+
+            temp_char_ptr = log_to_serial_ptr;
             log_to_serial_ptr += sprintf(log_to_serial_ptr, "Add Drive %s to msus$ D:%d%d%d with image file: %s\n", type_text, select, device, unitNum, fname);
+            LOGPRINTF("%s", temp_char_ptr);
+
             log_to_CRT_ptr += sprintf(log_to_CRT_ptr, "%d%d%d %s\n", select, device, unitNum, fname);
           }
         }
@@ -601,8 +620,9 @@ void mount_drives_based_on_JSON(JsonDocument& doc)
       if ((devices[device] != NULL) && (enable == true))                    //  
       {
         devices[device]->setFile((char *)fname);
-        LOGPRINTF("Add Printer: Device %1d%2d with print file: %s\n", select, device, fname);
+        temp_char_ptr = log_to_serial_ptr;
         log_to_serial_ptr += sprintf(log_to_serial_ptr, "Add Printer: Device %1d%2d with print file: %s\n", select, device, fname);
+        LOGPRINTF("%s", temp_char_ptr);
         log_to_CRT_ptr    += sprintf(log_to_CRT_ptr, "Printer %1d%2d %s\n", select, device, fname);
       }
     }
@@ -618,6 +638,8 @@ void mount_drives_based_on_JSON(JsonDocument& doc)
 bool loadConfiguration(const char *filename)
 {
   char fname[258];
+  char * temp_char_ptr;
+  
 
   SCOPE_1_Pulser(1);
   EBTKS_delay_ns(10000); //  10 us
@@ -684,13 +706,15 @@ bool loadConfiguration(const char *filename)
   }
   if (machineNum == MACH_NUM)
   {
+    temp_char_ptr = log_to_CRT_ptr;
     log_to_CRT_ptr += sprintf(log_to_CRT_ptr, "Invalid machineName in %s\n", filename);
-    LOGPRINTF("Invalid machineName in %s\n", filename);
+    LOGPRINTF("%s", temp_char_ptr);
   }
   else 
   {
+    temp_char_ptr = log_to_CRT_ptr;
     log_to_CRT_ptr += sprintf(log_to_CRT_ptr, "Series 80 Model: %s\n", machineNames[machineNum]);
-    LOGPRINTF("Series 80 Model: %s\n", machineNames[machineNum]);
+    LOGPRINTF("%s", temp_char_ptr);
   }
 
   CRTVerbose    = doc["CRTVerbose"]    | true;
@@ -698,9 +722,15 @@ bool loadConfiguration(const char *filename)
   if (machineNum == MACH_HP85A)
   {                                                     //  Only check for the 16K RAM option if we have an HP85A
     enHP85RamExp(doc["ram16k"] | false);
+    temp_char_ptr = log_to_CRT_ptr;
     log_to_CRT_ptr += sprintf(log_to_CRT_ptr, "HP85A 16 KB RAM: %s\n", getHP85RamExp() ? "Enabled":"None");
-    LOGPRINTF("HP85A 16 KB RAM: %s\n", getHP85RamExp() ? "Enabled":"None");
+    LOGPRINTF("%s", temp_char_ptr);
   }
+
+  bool tapeEn = doc["tape"]["enable"] | false;                                                        //  This access is only for the following sprintf().
+  temp_char_ptr = log_to_CRT_ptr;
+  log_to_CRT_ptr += sprintf(log_to_CRT_ptr, "HP85A/B Tape Emulation: %s\n", tapeEn ? "Yes":"No");     //  It is repeated in mount_drives_based_on_JSON()
+  LOGPRINTF("%s", temp_char_ptr);
 
   screenEmu     = doc["screenEmu"]     | false;
   LOGPRINTF("Screen Emulation:     %s\n", get_screenEmu() ? "Active" : "Inactive");
@@ -713,8 +743,9 @@ bool loadConfiguration(const char *filename)
   {
     if ((strlen(doc["AutoStart"]["command"] | "") != 0) && (strlen(doc["AutoStart"]["batch"] | "") != 0))
     {
+      temp_char_ptr = log_to_CRT_ptr;
       log_to_CRT_ptr += sprintf(log_to_CRT_ptr, "Error AutoStart Command & Batch\n");
-      LOGPRINTF("Error AutoStart Command & Batch\n");
+      LOGPRINTF("%s", temp_char_ptr);
       //
       //  Can't have both, so ignore
       //
@@ -722,35 +753,40 @@ bool loadConfiguration(const char *filename)
     else if (strlen(doc["AutoStart"]["command"] | "") != 0)
     {
       load_text_for_RMIDLE(doc["AutoStart"]["command"]);
+      temp_char_ptr = log_to_CRT_ptr;
       log_to_CRT_ptr += sprintf(log_to_CRT_ptr, "AutoStart with Command\n");
-      LOGPRINTF("AutoStart with Command\n");
+      LOGPRINTF("%s", temp_char_ptr);
     }
     else if (strlen(doc["AutoStart"]["batch"] | "") != 0)
     {
       if (open_RMIDLE_file(doc["AutoStart"]["batch"]))
       {
+        temp_char_ptr = log_to_CRT_ptr;
         log_to_CRT_ptr += sprintf(log_to_CRT_ptr, "AutoStart with Batch file\n");
-        LOGPRINTF("AutoStart with Batch file\n");
+        LOGPRINTF("%s", temp_char_ptr);
       }
       else
       {
+        temp_char_ptr = log_to_CRT_ptr;
         log_to_CRT_ptr += sprintf(log_to_CRT_ptr, "AutoStart with Batch Failed\n");
-        LOGPRINTF("AutoStart with Batch Failed\n");        
+        LOGPRINTF("%s", temp_char_ptr);        
       }
     }
     else
     {
       //  Sigh, enabled, but both command and batch are empty
+      temp_char_ptr = log_to_CRT_ptr;
       log_to_CRT_ptr += sprintf(log_to_CRT_ptr, "AutoStart: No Command or Batch\n");
-      LOGPRINTF("AutoStart: No Command or Batch\n");
+      LOGPRINTF("%s", temp_char_ptr);
     }
   }
 
+#if ENABLE_EMC_SUPPORT
   //
   //  EMC Support                         From HP 1983 and 1984 Catalog, page 592
   //
   //  Model       Built in EMC memory     Notes
-  //  HP85A       0 * 32 K banks          Only works with IF mod to HP85A I/O bus backplane, and then only provides EDisk (with appropriate ROMS)
+  //  HP85A       0 * 32 K banks          Only works with IF modification to HP85A I/O bus backplane, and then only provides EDisk (with appropriate ROMS)
   //  HP85B       1 * 32 K banks          Makes minimal sense, and then only provides EDisk (with appropriate ROMS). Why would you want it, given performance of SD Card file system
   //  HP86A       1 * 32 K banks   \                 (need some text here so line does not end in a backslash)
   //  HP86B       3 * 32 K banks    \     EMC memory can be used for EDisk or as program/data memory
@@ -761,12 +797,39 @@ bool loadConfiguration(const char *filename)
   EMC_Enable    = doc["EMC"]["enable"] | false;
   EMC_NumBanks  = doc["EMC"]["NumBanks"] | 0;
   EMC_StartBank = doc["EMC"]["StartBank"] | 5;      //  This would be right for a system with 128K DRAM pre-installed
+
+  if (EMC_NumBanks > EMC_MAX_BANKS)
+  {   //  Greedy user wants more EMC memory than we can provide. Clip it to EMC_MAX_BANKS
+    temp_char_ptr = log_to_CRT_ptr;
+    log_to_CRT_ptr += sprintf(log_to_CRT_ptr, "Request for more that %d EMC Banks. Setting EMC Banks to %d\n", EMC_MAX_BANKS, EMC_MAX_BANKS);
+    LOGPRINTF("%s", temp_char_ptr);
+    EMC_NumBanks = EMC_MAX_BANKS;
+  }
+
+  if (EMC_Enable)
+  {
+    log_to_CRT_ptr += sprintf(log_to_CRT_ptr, "EMC On. Banks %d to %d = %d kB\n", EMC_StartBank, EMC_StartBank + EMC_NumBanks - 1, EMC_NumBanks * 32);
+  }
+  else
+  {
+    log_to_CRT_ptr += sprintf(log_to_CRT_ptr, "EMC disabled\n");
+  }
+
+
+  EMC_StartAddress = EMC_StartBank << 15;
+  EMC_EndAddress   = EMC_StartAddress + (EMC_NumBanks << 15) - 1;
+
+  temp_char_ptr = log_to_serial_ptr;
+  log_to_serial_ptr += sprintf(log_to_serial_ptr, "EMC enabled. Start at %8o Octal, %d kB\n", EMC_StartAddress, (EMC_NumBanks * 32768)/1024);
+  LOGPRINTF("%s", temp_char_ptr);
+
   //
   //  EMC configuration checking should be (somehow) by the EMC init code, maybe probing memory to see what is there
   //  and make sure the config is valid. Although if this could be done, then autoconfig should also be possible.
   //  I wonder if we could monitor the interrupt priority chain after first /LMA (tricky, because it depend on what
   //  slot EBTKS is in). Could EBTKS participate in the EMC autoconfig dance?
   //
+#endif
 
   SCOPE_1_Pulser(1);         //  From beginning of function to here is 15 ms , measured 2/7/2021  ---  code has changed, need to retime ######
   EBTKS_delay_ns(10000); //  10 us

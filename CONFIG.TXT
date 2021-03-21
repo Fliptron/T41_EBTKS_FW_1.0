@@ -11,9 +11,9 @@
     "batch": ""
   },
   "EMC": {
-    "enable": false,
+    "enable": true,
     "NumBanks": 8,
-    "StartBank": 3
+    "StartBank": 2
   },
   "tape": {
     "enable": true,

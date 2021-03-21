@@ -57,41 +57,35 @@ inline void onPhi_1_Fall(void);
 ioReadFuncPtr_t ioReadFuncs[256];      //ensure the setup() code initialises this!
 ioWriteFuncPtr_t ioWriteFuncs[256];
 
-#if ENABLE_EMS_MEMORY
 //
-//  Variables for the EMC (extended memory controller)
+//  Variables for the EMC (Extended Memory Controller)
 //
-#define EMC_RAM_SIZE 0x40000u    //256k to begin with
 
+#if ENABLE_EMC_SUPPORT
+DMAMEM uint8_t      emcram[EMC_RAM_SIZE];
 volatile bool       ifetch , m_emc_mult;
 volatile uint8_t    m_emc_drp;
-uint32_t            m_emc_ptr1 , m_emc_ptr2;   //EMC pointers
+uint32_t            m_emc_ptr1 , m_emc_ptr2;        //  EMC pointers
 uint8_t             m_emc_mode;
 uint8_t             m_emc_state;
 volatile bool       m_emc_lmard;
-volatile uint32_t   cycleNdx;         //counts the byte index for multi-byte transfers
-DMAMEM uint8_t      emcram[EMC_RAM_SIZE];
+volatile uint32_t   cycleNdx;                       //  Counts the byte index for multi-byte transfers
 volatile uint32_t   m_emc_read,m_emc_write;
 volatile uint32_t   m_emc_start_addr;
+volatile uint32_t   m_emc_end_addr;
 volatile bool       m_emc_master;
-
 enum {
 		  EMC_IDLE,
 		  EMC_INDIRECT_1,
 		  EMC_INDIRECT_2
 	};
-
 bool emc_r(void);
 void emc_w(uint8_t val);
 void lma_cycle(bool state);
-void emc_init(uint32_t start_bank, bool master);
-
 #endif
 
 volatile bool intEn_1MB5 = false;
 int intrState = 0;
-
-
 
 bool ioReadNullFunc(void) //  This function is running within an ISR, keep it short and fast.
 {
@@ -133,13 +127,6 @@ void initIOfuncTable(void)
   }
   setIOWriteFunc(0x40, &onWriteInterrupt);        //  177500 1MB5 INTEN
   setIOWriteFunc(0, &onWriteGIE);                 //  Global interrupt enable
-
-#if ENABLE_EMS_MEMORY
-  emc_init(2,true);   //for HP85A only - we're the only emc controller      ########   PF/RB  move this to somewhere else, and call from JSON reader.
-  //emc_init(3,false);  //for HP85B and other systems with only 64k ram
-  //emc_init(3 or 5,false);  //for other systems with 128k ram
-#endif
-
 }
 
 void removeIOReadFunc(uint8_t addr)
@@ -390,7 +377,7 @@ bool getHP85RamExp(void)      //  Report true if HP85A RAM expansion is enabled
 //    Start onPhi_1_Fall() processing
 //      Get data from the bus (again, same data being read into a local variable)
 //      If the HP85 was reading data from EBTKS, end the read, and de-assert /RC
-//      If we are supporting EMS
+//      If we are supporting EMC
 //        Update cycle count
 //        test for IFETCH, and handle it
 //      Handle Address Register Loading or incrementing
@@ -402,7 +389,7 @@ bool getHP85RamExp(void)      //  Report true if HP85A RAM expansion is enabled
 //      Get bus control signals /LMA, /RD, /WR and figure out what is hapening
 //      Identify Reads and Writes
 //      Identify DMA and Interrupt Acknowledge
-//      If EMS is supported, get IFETCH state
+//      If EMC is supported, get IFETCH state
 //      Schedule Address Increment and Load
 //      If Read Cycle, see if it is an EBTKS Resource
 //        Is it a bank switched ROM address
@@ -665,7 +652,7 @@ inline void onPhi_1_Fall(void)
   }
   //CLEAR_SCOPE_2;      //  Time point BC
 
-#if ENABLE_EMS_MEMORY
+#if ENABLE_EMC_SUPPORT
   //SET_SCOPE_2;      //  Time point BC
   if (schedule_read || schedule_write)
   {
@@ -762,7 +749,7 @@ inline void mid_cycle_processing(void)                             //  This func
   Interrupt_Acknowledge = wr && rd && lma;                    //  Decode interrupt acknowlege state
   //CLEAR_SCOPE_2;      //  Time point CB
 
-#if ENABLE_EMS_MEMORY
+#if ENABLE_EMC_SUPPORT
   //SET_SCOPE_2;        //  Time point CB
   ifetch = !(GPIO_PAD_STATUS_REG_IFETCH & BIT_MASK_IFETCH);   //  Grab the instruction fetch bit. Only exists on HP85B, 86 and 87
                                                               //  Used for tracking instructions for the extended memory controller
@@ -1167,35 +1154,26 @@ void mySystick_isr(void)
                           //  i.e. It is running as soon as the Teensy boot processor passes control to startup.c
 }
 
-#if ENABLE_EMS_MEMORY
+#if ENABLE_EMC_SUPPORT
 
 //
-//  extended memory code. It's here because it is tightly coupled with the bus cycles
-//  rather than just a simple peripheral
+//  Extended Memory code. It's here because it is tightly coupled with the bus cycles rather than just a simple peripheral
 //
-//  start_bank is the starting 32k page. Currently 
-//  we emulate a 256k block (8 pages) set by EMC_RAM_SIZE
+//  Start_bank is the starting 32k page. Currently we emulate up to 256kB (8 pages) set by get_EMC_NumBanks() from the CONFIG.TXT file
 //
-//  master when true sets us to the master EMC in the system. Only for
-//  a modified HP85A as the others (85B/86/87) have their own EMC controller
+//  Master when true sets us to the master EMC in the system. Only for a modified HP85A as the others (85B/86/87) have their own EMC Master controller
 //
-//  the real HP hardware supposedly only supports up to 1M of EMC
-//  but the architecture supports up to 16M
-//  so the max page should be 31 (32 times 32k = 1M)
-//  the minimum start page should be 1 (page 0 is mapped as real memory in the real hardware)
-//  and should be greater than this on a HP85B or later as they have real EMC hardware we don't want
-//  to clash with
+//  The real HP hardware supposedly only supports up to 1M of EMC but the architecture supports up to 16M
+//  so the max page should be 31 (32 times 32k = 1M). The minimum start page should be 2 (page 1 is mapped as real memory in the real hardware, page 0 is the ROM space)
+//  and should be greater than this on a HP85B or later as they have real EMC hardware we don't want to clash with
 //
 //  
 //
 //
-void emc_init(uint32_t start_bank, bool master)
+void emc_init(void)
 {
-
-  //convert page to an actual address
-  m_emc_start_addr = start_bank << 15;
-
-  m_emc_master = master;    //when true - we are the only or master EMC in the system
+  m_emc_start_addr = get_EMC_StartAddress();
+  m_emc_master = EMC_MASTER;                          //  When true - we are the only or master EMC in the system. Only on HP85A with IF modification
 
   setIOReadFunc( 0xc8 , &emc_r );
   setIOReadFunc( 0xc9 , &emc_r );
@@ -1215,9 +1193,11 @@ void emc_init(uint32_t start_bank, bool master)
   setIOWriteFunc( 0xce , &emc_w );
   setIOWriteFunc( 0xcf , &emc_w );
 }
+
 //
 //  note ! uses C++ 'reference'
 //
+
 inline uint32_t &get_ptr()
 {
   if (m_emc_mode & 0x04u) //ptr1 or ptr2?
