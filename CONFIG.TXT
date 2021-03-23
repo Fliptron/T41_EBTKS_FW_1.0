@@ -15,11 +15,6 @@
     "NumBanks": 8,
     "StartBank": 2
   },
-  "tape": {
-    "enable": true,
-    "directory": "/tapes/",
-    "filename": "tape1.tap"
-  },
   "optionRoms": {
     "directory": "/roms85/",
     "roms": [
@@ -93,6 +88,10 @@
       }
     ]
   },
+  "tape": {
+    "enable": true,
+    "filepath": "/tapes/tape1.tap"
+  },
   "hpib": {
     "select": 3,
     "devices": [
@@ -100,20 +99,19 @@
         "Comment": "All blocks must have different device numbers",
         "type": 0,
         "device": 0,
-        "directory": "/disks/",
         "enable": true,
         "drives": [
           {
             "Comment": "msus$ 300",
             "unit": 0,
-            "filename": "BETAUTIL.DSK",
+            "filepath": "/disks/BETAUTIL.DSK",
             "writeProtect": false,
              "enable": true
           },
           {
             "Comment": "msus$ 301",
             "unit": 1,
-            "filename": "85Games1.dsk",
+            "filepath": "/disks/85Games1.dsk",
             "writeProtect": false,
             "enable": true
           }
@@ -122,20 +120,19 @@
       {
         "type": 0,
         "device": 2,
-        "directory": "/disks/",
         "enable": true,
         "drives": [
           {
             "Comment": "msus$ 320",
             "unit": 0,
-            "filename": "85Games2.dsk",
+            "filepath": "/disks/85Games2.dsk",
             "writeProtect": false,
             "enable": true
           },
           {
             "Comment": "msus$ 321",
             "unit": 1,
-            "filename": "85GamesMisc.dsk",
+            "filepath": "/disks/85GamesMisc.dsk",
             "writeProtect": false,
             "enable": true
           }
@@ -145,20 +142,19 @@
         "Comment": "All blocks must have the same select and different device",
         "type": 4,
         "device": 3,
-        "directory": "/disks/",
         "enable": true,
         "drives": [
           {
             "Comment": "msus$ 330",
             "unit": 0,
-            "filename": "5MB_scr.dsk",
+            "filepath": "/disks/5MB_scr.dsk",
             "writeProtect": false,
             "enable": true
           },
           {
             "Comment": "msus$ 331",
             "unit": 1,
-            "filename": "",
+            "filepath": "",
             "writeProtect": false,
             "enable": false
           }
@@ -167,11 +163,10 @@
       {
         "Comment": "Device 10 on HPIB select code, i.e. 310",
         "device": 10,
-        "directory": "/printers/",
         "enable": true,
         "printer":
           {
-            "filename": "printfile.txt"
+            "filepath": "/printers/printfile.txt"
           }
       }
     ]

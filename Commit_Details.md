@@ -534,6 +534,12 @@ Changes:
 -   First cut at SD Card dates. Use the compile time of the Firmware
 -   Some interesting macros for time and date in EBTKS.h
 
+## Commit \#112 03/22/2021
+
+Changes:
+-   Deleted commented out deprecated code in EBTKS_SD.cpp
+-   Simplified filepath for tape, disk, and printer emulation in the CONFIG.TXT file and the code that processes it.
+-   Fixed un-detected bug in remount_drives() of file being opened but not closed
 
 
 

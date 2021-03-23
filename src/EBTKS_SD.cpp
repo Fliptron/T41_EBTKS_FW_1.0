@@ -265,179 +265,6 @@ bool loadRom(const char *fname, int slotNum, const char *description)
   return true;
 }
 
-// //
-// //  Saves the configuration to a file
-// //
-
-// void saveConfiguration(const char *filename)
-// {
-//   // Delete existing file, otherwise the configuration is appended to the file
-//   SD.remove(filename);
-
-//   // Open file for writing
-//   File file = SD.open(filename, FILE_WRITE);
-//   if (!file)
-//   {
-//     LOGPRINTF("Failed to create file\n"); //  This is probably pointless, since if we can't create a CONFIG.TXT file
-//                                           //  what is the probability that Log File stuff is working?
-//     return;
-//   }
-
-//   //
-//   //  Allocate a temporary JsonDocument
-//   //  Don't forget to change the capacity to match your requirements.
-//   //  Use arduinojson.org/assistant to compute the capacity.
-//   //
-//   //  On 10/01/2020, report is 1720
-//   //  On 01/26/2021, report is 3947
-//   //  On 01/30/2021, report is 4005
-//   //
-
-//   StaticJsonDocument<JSON_DOC_SIZE> doc;
-
-//   log_to_serial_ptr += sprintf(log_to_serial_ptr, "\n\nError reading CONFIG.TXT   Recreating default Configuration\n\n");
-
-//   // Set the values in the document
-//   doc["machineName"]   = "HP85A";
-//   doc["CRTVerbose"]    = true;
-//   doc["EMS"]           = false;       //  Implement EMS memory
-//   doc["EMSSize"]       = 256;         //  Size of implemented EMS memory in KB (1024)
-//   doc["EMSbase"]       = 32;          //  Address of the start of EMS memory, depends on what is already implemented on motherboard, in KB (85AIF:0 , 85B:32 , 86:? , 87:? , 87XM:?)
-//   doc["screenEmu"]     = false;       //  Track all CRT operations
-//   doc["CRTRemote"]     = false;       //  Transmit screen via WiFi to browser
-//   doc["ram16k"]        = true;        //  For safety, since we don't know what machine we are plugged into
-
-//   // tape drive
-
-//   JsonObject tape = doc.createNestedObject("tape");
-//   tape["enable"] = false;             //  For safety, since we don't know what machine we are plugged into
-//   tape["directory"] = "/tapes/";
-//   tape["filename"] = "tape1.tap";
-
-//   //  Option ROMs
-
-//   JsonObject optRoms = doc.createNestedObject("optionRoms");
-//   optRoms["directory"] = "/roms/";
-//   JsonArray romx = optRoms.createNestedArray("roms");
-
-//   //  Add ROMs
-
-//   JsonObject rom0 = romx.createNestedObject();
-//   rom0["description"] = "Service ROM 340 AUXROM Aware";
-//   rom0["filename"] = "rom340aux";
-//   rom0["enable"] = false;
-
-//   JsonObject rom1 = romx.createNestedObject();
-//   rom1["description"] = "Assembler ROM";
-//   rom1["filename"] = "rom050";
-//   rom1["enable"] = false;
-  
-//   JsonObject rom2 = romx.createNestedObject();
-//   rom2["description"] = "I/O ROM";
-//   rom2["filename"] = "rom300B";
-//   rom2["enable"] = false;
-  
-//   JsonObject rom3 = romx.createNestedObject();
-//   rom3["Note"] = "For 85A floppys, disable rom317, rom320B, rom321B";
-//   rom3["description"] = "Mass Storage";
-//   rom3["filename"] = "rom320";
-//   rom3["enable"] = false;
-  
-//   JsonObject rom4 = romx.createNestedObject();
-//   rom4["Note"] = "For SS/80 disk, with real HPIB and real SS/80 disk. Use with rom320B, rom321B";
-//   rom4["description"] = "Extended Mass Storage";
-//   rom4["filename"] = "rom317";
-//   rom4["enable"] = false;
-  
-//   JsonObject rom5 = romx.createNestedObject();
-//   rom5["Note"] = "For 85B floppys and 5, 10 MB hard disk. Use with rom321B, can be used on 85A";
-//   rom5["description"] = "85B Mass Storage";
-//   rom5["filename"] = "rom320B";
-//   rom5["enable"] = true;
-  
-//   JsonObject rom6 = romx.createNestedObject();
-//   rom6["description"] = "EDisk";
-//   rom6["filename"] = "rom321B";
-//   rom6["enable"] = true;
-  
-//   JsonObject rom7 = romx.createNestedObject();
-//   rom7["description"] = "Advanced Programming";
-//   rom7["filename"] = "rom350";
-//   rom7["enable"] = false;
-  
-//   JsonObject rom8 = romx.createNestedObject();
-//   rom8["description"] = "Printer/Plotter";
-//   rom8["filename"] = "rom360";
-//   rom8["enable"] = false;
-  
-//   JsonObject rom9 = romx.createNestedObject();
-//   rom9["description"] = "AUXROM Primary 2020_11_28";
-//   rom9["filename"] = "rom361";
-//   rom9["enable"] = true;
-  
-//   JsonObject rom10 = romx.createNestedObject();
-//   rom10["description"] = "AUXROM Secondary 1 2020_11_28";
-//   rom10["filename"] = "rom362";
-//   rom10["enable"] = true;
-  
-//   JsonObject rom11 = romx.createNestedObject();
-//   rom11["description"] = "AUXROM Secondary 2 2020_11_28";
-//   rom11["filename"] = "rom363";
-//   rom11["enable"] = true;
-  
-//   JsonObject rom12 = romx.createNestedObject();
-//   rom12["description"] = "AUXROM Secondary 3 2020_11_28";
-//   rom12["filename"] = "rom364";
-//   rom12["enable"] = true;
-
-//   // hpib devices
-
-//   JsonArray hpib = doc.createNestedArray("hpib");
-//   JsonObject device = hpib.createNestedObject();
-//   device["select"] = 3;                           //  HPIB Select code
-//   device["type"] = 0;                             //  Disk type - currently an enumeration
-//   device["device"] = 0;                           //  First device 0..31
-//   device["directory"] = "/disks/";
-//   device["enable"] = true;
-
-//   JsonArray drives = device.createNestedArray("drives");
-
-//   JsonObject drive0 = drives.createNestedObject();
-//   drive0["unit"] = 0;
-//   drive0["filename"] = "85Games1.dsk";
-//   drive0["writeProtect"] = false;
-//   drive0["enable"] = true;
-
-//   JsonObject drive1 = drives.createNestedObject();
-//   drive1["unit"] = 1;
-//   drive1["filename"] = "85Games2.dsk";
-//   drive1["writeProtect"] = false;
-//   drive1["enable"] = true;
-
-//   JsonObject printer = hpib.createNestedObject();
-//   device["select"] = 3;                           //  HPIB Select code
-//   device["type"] = 0;                             //  printer type - currently an enumeration
-//   device["device"] = 10;                          // device 0..31
-//   device["directory"] = "/printers/";
-//   device["enable"] = true;
-//   JsonObject printer0 = printer.createNestedObject("printer");
-//   printer0["filename"] = "printerFile.txt";
-
-//   serializeJsonPretty(doc, Serial);
-
-//   //
-//   // Serialize JSON to file
-//   //
-//   if (serializeJsonPretty(doc, file) == 0)
-//   {
-//     LOGPRINTF("Failed to write to file\n");     //  This is probably pointless, since if we can't write to CONFIG.TXT file
-//                                                 //  what is the probability that Log File stuff is working?
-//   }
-//   //  Close the file
-//   log_to_serial_ptr += sprintf(log_to_serial_ptr, "\n\n");
-//   file.close();
-// }
-
 //
 //  Returns the enumeration of the machine name selected in the config file
 //
@@ -502,27 +329,24 @@ int  get_EMC_EndAddress(void)
 //  This part of the CONFIG.TXT JSON processing is a separate function because we need to do this processing
 //  both at system boot time, and if we MOUNT the SD Card
 //
-//  This covers the disk drives, the printer
+//  This covers the disk drives, the printer, and the tape drive
 //
 
 void mount_drives_based_on_JSON(JsonDocument& doc)
 {
-  char fname[258];
+  //char fname[258];
   char * temp_char_ptr;
 
   bool tapeEn = doc["tape"]["enable"] | false;
 
-  const char *tapeFname = doc["tape"]["filename"] | "tape1.tap";
-  const char *path = doc["tape"]["directory"] | "/tapes/";
+  const char *tapeFname = doc["tape"]["filepath"] | "/tapes/tape1.tap";
 
-  if (tapeEn) //only set the path/filename if the tape subsystem is enabled
+  if (tapeEn) //only set the filepath if the tape subsystem is enabled
   {
     tape.enable(tapeEn);
-    strcpy(fname, path);
-    strlcat(fname, tapeFname, sizeof(fname));
-    tape.setFile(fname);
+    tape.setFile(tapeFname);
   }
-  LOGPRINTF("Tape file: %s%s enabled is: %s\n", path, tapeFname, tapeEn ? "Active" : "Inactive");
+  LOGPRINTF("Tape file: %s is: %s\n", tapeFname, tapeEn ? "Enabled" : "Disabled");
 
   if (tapeEn)
   {
@@ -553,9 +377,7 @@ void mount_drives_based_on_JSON(JsonDocument& doc)
 
     if (hpibDevice["drives"])                                               //  If the device has a drives section, then it must be a disk drive box
     {
-      const char *diskDir = hpibDevice["directory"] | "/disks/";            //  Disk image folder/directory
       int type = hpibDevice["type"] | 0;                                    //  Disk drive type 0 = 5 1/4"
-
       char  type_text[10];
       switch(type)
       {
@@ -582,21 +404,19 @@ void mount_drives_based_on_JSON(JsonDocument& doc)
         for (JsonVariant unit : hpibDevice["drives"].as<JsonArray>())
         {
           int unitNum = unit["unit"] | 0;                                   //  Drive number 0..7
-          const char *filename = unit["filename"];                          //  Disk image filename
+          const char *diskFname = unit["filepath"] | "";                    //  Disk image filepath
           bool wprot = unit["writeProtect"] | false;
           bool en = unit["enable"] | false;
-          strcpy(fname, diskDir);                                           //  Form full path/filename. First get path
-          strlcat(fname, filename, sizeof(fname));                          //  Then append the filename
           if ((devices[device] != NULL) && (en == true) && devices[device]->isType(HPDEV_DISK))
           {
             devices[device]->addDisk((int)type);
-            devices[device]->setFile(unitNum, fname, wprot);
+            devices[device]->setFile(unitNum, diskFname, wprot);
 
             temp_char_ptr = log_to_serial_ptr;
-            log_to_serial_ptr += sprintf(log_to_serial_ptr, "Add Drive %s to msus$ D:%d%d%d with image file: %s\n", type_text, select, device, unitNum, fname);
+            log_to_serial_ptr += sprintf(log_to_serial_ptr, "Add Drive %s to msus$ D:%d%d%d with image file: %s\n", type_text, select, device, unitNum, diskFname);
             LOGPRINTF("%s", temp_char_ptr);
 
-            log_to_CRT_ptr += sprintf(log_to_CRT_ptr, "%d%d%d %s\n", select, device, unitNum, fname);
+            log_to_CRT_ptr += sprintf(log_to_CRT_ptr, "%d%d%d %s\n", select, device, unitNum, diskFname);
           }
         }
       }
@@ -605,29 +425,23 @@ void mount_drives_based_on_JSON(JsonDocument& doc)
     if (hpibDevice["printer"])                                              //  If the device has a printer section, then it must be a printer (or a disk drive that can print)
     {
       //  int type = hpibDevice["type"] | 0;                                //  Not currently used
-      const char *printDir = hpibDevice["directory"] | "/printers/";        //  Printer folder/directory
-
       if ((devices[device] == NULL) && (enable == true))                    //  If we haven't already created a printer object, do it now. Although really, doesn't
                                                                             //  this only happen once, during boot. (well ok, also with MOUNT "SDCard")
       {
         devices[device] = new HpibPrint(device, HPDEV_PRT);                 //  Create a new HPIB printer device
       }
       JsonObject printer = hpibDevice["printer"];
-      const char *filename = printer["filename"];                           //  Printer filename
-
-      strcpy(fname, printDir);                                              //  Form full path/filename. Get path
-      strlcat(fname, filename, sizeof(fname));                              //  and append the filename
+      const char *printerFname = printer["filepath"];                       //  Printer printerFname
       if ((devices[device] != NULL) && (enable == true))                    //  
       {
-        devices[device]->setFile((char *)fname);
+        devices[device]->setFile((char *)printerFname);
         temp_char_ptr = log_to_serial_ptr;
-        log_to_serial_ptr += sprintf(log_to_serial_ptr, "Add Printer: Device %1d%2d with print file: %s\n", select, device, fname);
+        log_to_serial_ptr += sprintf(log_to_serial_ptr, "Add Printer: Device %1d%2d with print file: %s\n", select, device, printerFname);
         LOGPRINTF("%s", temp_char_ptr);
-        log_to_CRT_ptr    += sprintf(log_to_CRT_ptr, "Printer %1d%2d %s\n", select, device, fname);
+        log_to_CRT_ptr    += sprintf(log_to_CRT_ptr, "Printer %1d%2d %s\n", select, device, printerFname);
       }
     }
   }
-
 }
 
 
@@ -672,23 +486,17 @@ bool loadConfiguration(const char *filename)
   //
 
   DeserializationError error = deserializeJson(doc, file);
+  file.close();
   if (error)
   {
-    file.close();
     log_to_CRT_ptr += sprintf(log_to_CRT_ptr, "Config Error: %s\n", filename);
     LOGPRINTF("Failed to read configuration file %s\n", filename);
-    // //
-    // //  Try number 2:  Read the file we hopefully just wrote
-    // //
-    // file = SD.open(filename);
-    // DeserializationError error = deserializeJson(doc, file);
-    // if (error)
-    // { //  Failed a second time, give up
-    //   log_to_CRT_ptr += sprintf(log_to_CRT_ptr, "deserializeJson failed twice\n");
-    //   LOGPRINTF("Failed to read (or write) the default configuration. Giving up\n");
-      return false;
-    // }
-    //  else fall into the normal config processing with the defaults we just created
+    return false;
+  }
+  else
+  {
+    log_to_CRT_ptr += sprintf(log_to_CRT_ptr, "%s format OK\n", filename);
+    LOGPRINTF("%s format OK\n", filename);
   }
 
   strlcpy (machineType, (doc["machineName"]   | "error") , 10);
@@ -876,9 +684,6 @@ bool loadConfiguration(const char *filename)
 
   mount_drives_based_on_JSON(doc);
 
-  // Close the file (Curiously, File's destructor doesn't close the file)
-  file.close();
-
   //
   //  Restore the 4 flag bytes
   //
@@ -947,15 +752,18 @@ bool remount_drives(const char *filename)
   // Use arduinojson.org/v6/assistant to compute the capacity.
   StaticJsonDocument<JSON_DOC_SIZE> doc;
 
-  // Deserialize the JSON document
   DeserializationError error = deserializeJson(doc, file);
-  Serial.printf("deserializeJson error [%s]\n", error ? "True" : "False");
+  file.close();
   if (error)
   {
-    file.close();
-    LOGPRINTF("Failed to read file file %s\n", filename);
-    Serial.printf("Failed to read file file %s\n", filename);
+    log_to_CRT_ptr += sprintf(log_to_CRT_ptr, "Config Error: %s\n", filename);
+    LOGPRINTF("Failed to read configuration file %s\n", filename);
     return false;
+  }
+  else
+  {
+    log_to_CRT_ptr += sprintf(log_to_CRT_ptr, "%s format OK\n", filename);
+    LOGPRINTF("%s format OK\n", filename);
   }
 
   mount_drives_based_on_JSON(doc);
