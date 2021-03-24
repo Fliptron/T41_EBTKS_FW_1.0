@@ -541,6 +541,14 @@ Changes:
 -   Simplified filepath for tape, disk, and printer emulation in the CONFIG.TXT file and the code that processes it.
 -   Fixed un-detected bug in remount_drives() of file being opened but not closed
 
+## Commit \#113 03/24/2021
+
+Changes:
+-   Simplify printer section of CONFIG.TXT and adjust code in EBTKS_SD.cpp to match
+-   Only enable EMC if more than zero banks
+-   Minor formatting change to Log File
+
+
 
 
 

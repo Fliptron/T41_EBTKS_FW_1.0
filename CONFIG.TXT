@@ -162,12 +162,10 @@
       },
       {
         "Comment": "Device 10 on HPIB select code, i.e. 310",
+        "printer": "",
         "device": 10,
         "enable": true,
-        "printer":
-          {
-            "filepath": "/printers/printfile.txt"
-          }
+        "filepath": "/printers/printfile.txt"
       }
     ]
   }

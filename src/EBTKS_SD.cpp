@@ -430,8 +430,7 @@ void mount_drives_based_on_JSON(JsonDocument& doc)
       {
         devices[device] = new HpibPrint(device, HPDEV_PRT);                 //  Create a new HPIB printer device
       }
-      JsonObject printer = hpibDevice["printer"];
-      const char *printerFname = printer["filepath"];                       //  Printer printerFname
+      const char *printerFname = hpibDevice["filepath"];                    //  Printer printerFname
       if ((devices[device] != NULL) && (enable == true))                    //  
       {
         devices[device]->setFile((char *)printerFname);
@@ -614,7 +613,7 @@ bool loadConfiguration(const char *filename)
     EMC_NumBanks = EMC_MAX_BANKS;
   }
 
-  if (EMC_Enable)
+  if (EMC_Enable && (EMC_NumBanks > 0) )
   {
     log_to_CRT_ptr += sprintf(log_to_CRT_ptr, "EMC On. Banks %d to %d = %d kB\n", EMC_StartBank, EMC_StartBank + EMC_NumBanks - 1, EMC_NumBanks * 32);
   }
@@ -650,7 +649,7 @@ bool loadConfiguration(const char *filename)
   int romIndex = 0;
 
   LOGPRINTF("\nLoading ROMs from directory %s\n", optionRoms_directory);
-  LOGPRINTF("Name         ID: Oct Dec Hex  Compl  Sum  Description\n");
+  LOGPRINTF("Name        ID:  Oct Dec  Hex  Compl Sum  Description\n");
   log_to_CRT_ptr += sprintf(log_to_CRT_ptr, "ROM Dir %s\n", optionRoms_directory);
 
   for (JsonVariant theRom : doc["optionRoms"]["roms"].as<JsonArray>())
@@ -665,7 +664,7 @@ bool loadConfiguration(const char *filename)
 
     if (enable == true)
     {
-      LOGPRINTF(" %-16s ", filename);
+      LOGPRINTF("%-16s ", filename);
       if (loadRom(fname, romIndex, description) == true)
       {
         romIndex++;
