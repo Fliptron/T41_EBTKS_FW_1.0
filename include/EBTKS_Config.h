@@ -72,7 +72,12 @@
 
 #define ROM_PAGE                          (0x6000)
 #define ROM_PAGE_SIZE                     (0x2000)      //  ROM Page size in bytes
-#define MAX_ROMS                          (20)
+#define MAX_ROMS                          (18)          //  The 86/87 have a max of 15 option ROMs, EBTKS AUXROM takes 1
+                                                        //  (the other 3 are phantom and don't use up entries in the
+                                                        //  system tables), but still need to have space allocated in the
+                                                        //  ROM storage area. It is a max of 14 for HP85A/B, so this will
+                                                        //  be sufficient.
+                                                        //  So 4 ROM slots for AUXROMs, leaving 14 for user selected ROMs
 #define MAX_ROM_NAME_LENGTH               (32)
 
 //

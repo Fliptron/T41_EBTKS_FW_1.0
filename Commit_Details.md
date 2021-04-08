@@ -548,11 +548,22 @@ Changes:
 -   Only enable EMC if more than zero banks
 -   Minor formatting change to Log File
 
+## Commit \#114 04/08/2021
 
-
-
-
-
+Changes:
+-   Drop Max ROMS from 20 down to 18, since other constraints make 20 more than can be used
+-   EMC enabled now conditional on both successful read of config file, and that it is requested
+-   Explicitly enumerated the machine_numbers enum. To do: propagate these enums into various
+    conditionals, and remove magic numbers.
+-   Fixed handling of ROM IDs for HP86 and HP87 when loading the selected ROMs per entries in CONFIG.TXT
+-   Inhibit test for ram16k option if machineNum isn't MACH_HP85A
+-   Inhibit test for tape drive emulation option if machineNum isn't MACH_HP85A or MACH_HP85B
+-   Inhibit checking EMC banks if EMC is not enabled, add some related diagnostic messages
+-   New CONFIG.TXT parameter: enableTapeAutostart .  To do: parse it during startup and use
+    it to inhibit testing the tape drive at boot time
+-   Initial support for RTC with battery backup, using Teensy 4.1 built-in RTC (~ 30uA power consumption)
+-   Synchronize the RTC with the Secure RTC (SRTC)
+-   Some test routines to test RTC
 
 
 

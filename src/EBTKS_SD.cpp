@@ -46,12 +46,12 @@ const char *machineNames[] = {"HP85A", "HP85B", "HP86A", "HP86B", "HP87", "HP87X
 //  machine type enumerations. the corresponding string table in EBTKS_SD.cpp needs to follow this
 //
 enum machine_numbers{
-      MACH_HP85A = 0,
-      MACH_HP85B,
-      MACH_HP86A,
-      MACH_HP86B,
-      MACH_HP87,
-      MACH_HP87XM,
+      MACH_HP85A    = 0,
+      MACH_HP85B    = 1,
+      MACH_HP86A    = 2,
+      MACH_HP86B    = 3,
+      MACH_HP87     = 4,
+      MACH_HP87XM   = 5,
       MACH_NUM }; //always ensure MACH_NUM is the last enumeration
 
 
@@ -62,7 +62,7 @@ extern HpibDevice *devices[];
 bool loadRom(const char *fname, int slotNum, const char *description)
 {
   uint8_t       header[3];
-  uint8_t       id;
+  uint8_t       id, id_comp;
 
   //  log_to_CRT_ptr should already be setup, but just in case it isn't we set it up here, so that we don't have writes going somewhere dangerous
   if (log_to_CRT_ptr == NULL)
@@ -85,12 +85,21 @@ bool loadRom(const char *fname, int slotNum, const char *description)
   // Serial.printf("!Check address of Slot 0  %08X\n", (unsigned int)roms_diag);             // diag for when first ROM got lost
 
   //
+  //  Only enable the  Serial.printf() in this function if the processing of the CONFIG.TXT is after the Serial device is connected (wait code in EBTKS.cpp)
+  //
+  // Serial.printf("In loadrom()  name is %s   slot is %d   description is %s\n", fname, slotNum, description);
+  // Serial.flush();
+
+  //
   //  Attempts to read a HP80 ROM file from the SD Card using the given filename
   //  read the file and check the ROM header to verify it is a ROM file and extract
   //  the ID, then insert it into the ROM emulation system
   //
   if (slotNum > MAX_ROMS)
   {
+    // Serial.printf("ROM slot number too large %d\n", slotNum);
+    // Serial.flush();
+
     LOGPRINTF("ROM slot number too large %d\n", slotNum);
     log_to_CRT_ptr += sprintf(log_to_CRT_ptr, "Slot error\n");
     return false;
@@ -100,6 +109,9 @@ bool loadRom(const char *fname, int slotNum, const char *description)
 
   if (!rfile)
   {
+    // Serial.printf("ROM failed to Open %s\n", fname);
+    // Serial.flush();
+
     LOGPRINTF("ROM failed to Open %s\n", fname);
     log_to_CRT_ptr += sprintf(log_to_CRT_ptr, "Can't Open ROM File\n");
     rfile.close();                                    //  Is this right??? If it failed to open, and rfile is null (0) , then what would this statement do???
@@ -112,6 +124,9 @@ bool loadRom(const char *fname, int slotNum, const char *description)
   //
   if (rfile.read(header, 3) != 3)
   {
+    // Serial.printf("ROM file read error %s\n", fname);
+    // Serial.flush();
+
     LOGPRINTF("ROM file read error %s\n", fname);
     log_to_CRT_ptr += sprintf(log_to_CRT_ptr, "Can't read ROM header %s\n", fname);
     rfile.close();
@@ -122,10 +137,12 @@ bool loadRom(const char *fname, int slotNum, const char *description)
   //  Nothing special for normal HP-85 ROMs, first byte at 060000 is the ROM ID, next byte is the one's complement.
   //    For HP-85A and HP-85B the sum is always 0377  (0xFF)
   //    For HP-86 and 87 it is the twos complement, and the sum is always 0.
+  //
   //    For AUXROMs, there is a Primary AUXROM, with normal two byte header of
   //      85A/B:  0361 0016  (0xF1  and 0x0E)
   //      86/87:  0361 0017  (0xF1  and 0x0F)
-  //    For Secondary AUXROMs, the first byte is 0362 to 0375. The second byte is complemented normally (85: 1's or 86/87: 2's) then ORed with 0360.
+  //    For Secondary AUXROMs, the first byte is 0377, second byte 0362 to 0375. The third byte is complemented normally (85: 1's or 86/87: 2's) then ORed with 0360.
+  //                               AUXROMS move the ID and Complement to their correct position during initialization. See Everett's note below for an explanation
   //               85 86/87
   //          361 016  017
   //          362 375  376
@@ -145,23 +162,11 @@ bool loadRom(const char *fname, int slotNum, const char *description)
   //  Standard ROMS in an HP87 (at least Philip's one) are
   //  Decimal
   //  001   HP87 Graphics
-  //  208   Mass Storage
+  //  320   Mass Storage (octal)
   //
 
-  id = header[0];
-  LOGPRINTF("%03o %3d  %02X   %02X    %02X   ", id, id, id, header[1], (uint8_t)(id + header[1]));
-  if(id < 0362)
-  {
-    log_to_CRT_ptr += sprintf(log_to_CRT_ptr, " ID: %03o ", id);            //  Primary AUXROM and normal ROMs have ID in first byte
-  }
-  else
-  {
-    log_to_CRT_ptr += sprintf(log_to_CRT_ptr, " ID: %03o ", header[1]);     //  Secondary AUXROMs have ID in second byte
-  }
-  
   //
   //  No special ROM loading for Primary AUXROM at 0361.  This code handles the Secondaries from 0362 to 0375
-  //
   //
   //  Non-primary AUXROMs now have 377 as first byte, ROM# as second byte, aux_complement as third byte
   //  so that the 87 doesn't see them as "non-87 ROMs" and issue a warning.
@@ -180,28 +185,43 @@ bool loadRom(const char *fname, int slotNum, const char *description)
   //    2, 3, 4, etc. This way, those who look at 60000 to see which ROM is
   //    currently loaded will continue to work fine.
   //
-  if (id==0377)
+  id      = header[0];
+  id_comp = header[1];
+  if (id == 0377)               //  If id is 377, then assume it is an AUXROM, but not the first one at 0361
   {
-    id = header[0] = header[1];
-    header[1] = header[2];
-    //  log_to_serial_ptr += sprintf(log_to_serial_ptr, "AUX HEADER ROM# %03o\n", id);
+    id      = header[1];
+    id_comp = header[2];
   }
-  if ((id >= AUXROM_SECONDARY_ID_START) && (id <= AUXROM_SECONDARY_ID_END))         //  Note, not testing Primary AUXROM at ID = 361
+
+  // Serial.printf("%03o %3d  %02X   %02X    %02X   ", id, id, id, id_comp, (uint8_t)(id + id_comp));
+  // Serial.flush();
+
+  LOGPRINTF("%03o %3d  %02X   %02X    %02X   ", id, id, id, id_comp, (uint8_t)(id + id_comp));
+  log_to_CRT_ptr += sprintf(log_to_CRT_ptr, " ID: %03o ", id);
+
+  //
+  //  Check that the id and id_comp are correct. 
+  //
+
+  if ((id >= AUXROM_SECONDARY_ID_START) && (id <= AUXROM_SECONDARY_ID_END))         //  Testing AUXROM 362..N  Not AUXROM 361
   {
     //
     //  Special check for the the non-primary AUXROMs.  Note that these are not recognized by the HP-85 at boot time scan (by design)
     //
     //  HP85A/B      use 1's complement for the ID check byte in header[1]
     //  HP86 or HP87 use 2's complement for the ID check byte in header[1]
-    //  Use machineNum 2 or 3 (HP86 or HP87) to choose between 1's complement in the following test.
+    //  Use machineNum 2 through 5 (HP86A/B,  HP87A/XM) to choose between 1's complement in the following test.
     //  Note: For Secondary AUXROMs (which is what we are testing here), the upper nibble is always 0xF0
     //
-    //  If HP86/87 (machineNum 2 or 3) adding 1 turns a 1's complement into a 2's complement
+    //  If HP86/87 (machineNum 2 through 5) adding 1 turns a 1's complement into a 2's complement
     //
-    uint8_t comp = ((uint8_t)(~id)) + ((machineNum==2 || machineNum==3) ? 1 : 0);
+    uint8_t comp = ((uint8_t)(~id)) + ((machineNum >= 2) && (machineNum <= 5) ? 1 : 0);
 
-    if (header[1] != (comp | (uint8_t)0360))                                      //  Check the ID check byte
+    if (id_comp != (comp | (uint8_t)0360))                                      //  Check the ID check byte
     {
+      // Serial.printf("Secondary AUXROM file header error %02X %02X\n", id, (uint8_t)header[1]);
+      // Serial.flush();
+
       LOGPRINTF("Secondary AUXROM file header error %02X %02X\n", id, (uint8_t)header[1]);
       log_to_CRT_ptr += sprintf(log_to_CRT_ptr, "HeaderError\n");
       rfile.close();
@@ -211,19 +231,25 @@ bool loadRom(const char *fname, int slotNum, const char *description)
   else
   { //  Check for machine type.   This is going to break for HP83 (so CONFIG.TXT should say 85A) and 99151/B (also 85A ?)
     if ((machineNum == 0) || (machineNum == 1))
-    {                                  //  CONFIG.TXT says we are loading ROMS for HP85A or HP85B:  One's complement for second byte of ROM
-      if (id != (uint8_t)(~header[1])) //  now test normal ROM ID's , including the AUXROM Primary.
+    {                                   //  CONFIG.TXT says we are loading ROMS for HP85A or HP85B:  One's complement for second byte of ROM
+      if (id != (uint8_t)(~id_comp))    //  now test normal ROM ID's , including the AUXROM Primary 361.
       {
-        LOGPRINTF("ROM file header error first two bytes %02X %02X   Expect One's Complement\n", id, (uint8_t)header[1]);
+        // Serial.printf("ROM file header error first two bytes %02X %02X   Expect One's Complement\n", id, (uint8_t)id_comp);
+        // Serial.flush();
+
+        LOGPRINTF("ROM file header error first two bytes %02X %02X   Expect One's Complement\n", id, (uint8_t)id_comp);
         log_to_CRT_ptr += sprintf(log_to_CRT_ptr, "HeaderError\n");
         rfile.close();
         return false;
       }
     }
-    else if ((machineNum == 2) || (machineNum == 3))
+    else if ((machineNum >= 2) && (machineNum <= 5))
     {                                         //  CONFIG.TXT says we are loading ROMS for HP86 or HP87:  Two's complement for second byte of ROM
-      if (id != (uint8_t)(-header[1]))        //  Now test normal ROM ID's , including the AUXROM Primary.
+      if (id != (uint8_t)(-id_comp))          //  Now test normal ROM ID's , including the AUXROM Primary.
       {
+        // Serial.printf("ROM file header error first two bytes %02X %02X   Expect Two's Complement\n", id, (uint8_t)header[1]);
+        // Serial.flush();
+
         LOGPRINTF("ROM file header error first two bytes %02X %02X   Expect Two's Complement\n", id, (uint8_t)header[1]);
         log_to_CRT_ptr += sprintf(log_to_CRT_ptr, "HeaderError\n");
         rfile.close();
@@ -526,18 +552,27 @@ bool loadConfiguration(const char *filename)
 
   CRTVerbose    = doc["CRTVerbose"]    | true;
 
+  //
+  //  Only check for the 16K RAM option if we have an HP85A
+  //
   if (machineNum == MACH_HP85A)
-  {                                                     //  Only check for the 16K RAM option if we have an HP85A
+  {
     enHP85RamExp(doc["ram16k"] | false);
     temp_char_ptr = log_to_CRT_ptr;
     log_to_CRT_ptr += sprintf(log_to_CRT_ptr, "HP85A 16 KB RAM: %s\n", getHP85RamExp() ? "Enabled":"None");
     LOGPRINTF("%s", temp_char_ptr);
   }
 
-  bool tapeEn = doc["tape"]["enable"] | false;                                                        //  This access is only for the following sprintf().
-  temp_char_ptr = log_to_CRT_ptr;
-  log_to_CRT_ptr += sprintf(log_to_CRT_ptr, "HP85A/B Tape Emulation: %s\n", tapeEn ? "Yes":"No");     //  It is repeated in mount_drives_based_on_JSON()
-  LOGPRINTF("%s", temp_char_ptr);
+  //
+  //  Only check for the the tape drive if we have an HP85A or HP85B
+  //
+  if ((machineNum == MACH_HP85A) || (machineNum == MACH_HP85B))
+  {
+    bool tapeEn = doc["tape"]["enable"] | false;                                                        //  This access is only for the following sprintf().
+    temp_char_ptr = log_to_CRT_ptr;
+    log_to_CRT_ptr += sprintf(log_to_CRT_ptr, "HP85A/B Tape Emulation: %s\n", tapeEn ? "Yes":"No");     //  It is repeated in mount_drives_based_on_JSON()
+    LOGPRINTF("%s", temp_char_ptr);
+  }
 
   screenEmu     = doc["screenEmu"]     | false;
   LOGPRINTF("Screen Emulation:     %s\n", get_screenEmu() ? "Active" : "Inactive");
@@ -605,30 +640,37 @@ bool loadConfiguration(const char *filename)
   EMC_NumBanks  = doc["EMC"]["NumBanks"] | 0;
   EMC_StartBank = doc["EMC"]["StartBank"] | 5;      //  This would be right for a system with 128K DRAM pre-installed
 
-  if (EMC_NumBanks > EMC_MAX_BANKS)
-  {   //  Greedy user wants more EMC memory than we can provide. Clip it to EMC_MAX_BANKS
-    temp_char_ptr = log_to_CRT_ptr;
-    log_to_CRT_ptr += sprintf(log_to_CRT_ptr, "Request for more that %d EMC Banks. Setting EMC Banks to %d\n", EMC_MAX_BANKS, EMC_MAX_BANKS);
-    LOGPRINTF("%s", temp_char_ptr);
-    EMC_NumBanks = EMC_MAX_BANKS;
-  }
-
-  if (EMC_Enable && (EMC_NumBanks > 0) )
+  if (EMC_Enable)
   {
-    log_to_CRT_ptr += sprintf(log_to_CRT_ptr, "EMC On. Banks %d to %d = %d kB\n", EMC_StartBank, EMC_StartBank + EMC_NumBanks - 1, EMC_NumBanks * 32);
+    if (EMC_NumBanks > EMC_MAX_BANKS)
+    {   //  Greedy user wants more EMC memory than we can provide. Clip it to EMC_MAX_BANKS
+      temp_char_ptr = log_to_CRT_ptr;
+      log_to_CRT_ptr += sprintf(log_to_CRT_ptr, "Request for more that %d EMC Banks. Setting EMC Banks to %d\n", EMC_MAX_BANKS, EMC_MAX_BANKS);
+      LOGPRINTF("%s", temp_char_ptr);
+      EMC_NumBanks = EMC_MAX_BANKS;
+    }
+
+    if (EMC_NumBanks == 0)
+    {
+      temp_char_ptr = log_to_CRT_ptr;
+      log_to_CRT_ptr += sprintf(log_to_CRT_ptr, "EMC enabled, but Banks set to 0, so disabling EBTKS EMC\n");
+      LOGPRINTF("%s", temp_char_ptr);
+      EMC_Enable = false;
+    }
+    else
+    {
+      temp_char_ptr = log_to_CRT_ptr;
+      log_to_CRT_ptr += sprintf(log_to_CRT_ptr, "EMC On. Banks %d to %d = %d kB\n", EMC_StartBank, EMC_StartBank + EMC_NumBanks - 1, EMC_NumBanks * 32);
+      LOGPRINTF("%s", temp_char_ptr);
+
+      EMC_StartAddress = EMC_StartBank << 15;
+      EMC_EndAddress   = EMC_StartAddress + (EMC_NumBanks << 15) - 1;
+
+      temp_char_ptr = log_to_serial_ptr;
+      log_to_serial_ptr += sprintf(log_to_serial_ptr, "EMC enabled. Start at %8o Octal, %d kB\n", EMC_StartAddress, (EMC_NumBanks * 32768)/1024);
+      LOGPRINTF("%s", temp_char_ptr);
+    }
   }
-  else
-  {
-    log_to_CRT_ptr += sprintf(log_to_CRT_ptr, "EMC disabled\n");
-  }
-
-
-  EMC_StartAddress = EMC_StartBank << 15;
-  EMC_EndAddress   = EMC_StartAddress + (EMC_NumBanks << 15) - 1;
-
-  temp_char_ptr = log_to_serial_ptr;
-  log_to_serial_ptr += sprintf(log_to_serial_ptr, "EMC enabled. Start at %8o Octal, %d kB\n", EMC_StartAddress, (EMC_NumBanks * 32768)/1024);
-  LOGPRINTF("%s", temp_char_ptr);
 
   //
   //  EMC configuration checking should be (somehow) by the EMC init code, maybe probing memory to see what is there
@@ -665,7 +707,7 @@ bool loadConfiguration(const char *filename)
     if (enable == true)
     {
       LOGPRINTF("%-16s ", filename);
-      if (loadRom(fname, romIndex, description) == true)
+      if (loadRom(fname, romIndex, description) )
       {
         romIndex++;
       }

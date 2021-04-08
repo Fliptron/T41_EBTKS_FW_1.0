@@ -17,6 +17,10 @@
 #include "HpibDisk.h"
 #include <strings.h>                //  needed for strcasecmp() and strncasecmp() prototype
 
+#include <TimeLib.h>
+
+void show_RTC(void);
+
 extern HpibDevice *devices[];
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////  Diagnostic Pulse Generation
@@ -652,6 +656,7 @@ void help_3(void)
 //Serial.printf("screen        #Screen emulation\n");        //  Not yet Implemented
 //Serial.printf("keyboard      #Keyboard emulation\n");      //  Not yet Implemented
   Serial.printf("\n");
+  show_RTC();
 }
 
 void help_4(void)
@@ -2069,6 +2074,50 @@ void Simple_Graphics_Test(void)
   }
 
 }
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////  Time and Date functions
+//
+//  Based on this thread:  https://forum.pjrc.com/threads/60317-How-to-access-the-internal-RTC-in-a-Teensy-4-0
+//
+//  Synopsis: There are two RTCs (SRTC and RTC). I think SRTC is set when the firmware is downloaded with the current time, and is the battery backed RTC
+//            On startup, in startup.c at line 118 the SRTC is copied to the RTC
+//
+//  Per https://forum.pjrc.com/threads/62357-TimLib-h-vs-Time-h   it seems there is some library weirdness.
+//      the "solution" is to rename 
+//            C:\Users\Philip Freidin\.platformio\packages\framework-arduinoteensy\libraries\Time\Time.h
+//          to
+//            C:\Users\Philip Freidin\.platformio\packages\framework-arduinoteensy\libraries\Time\Time.h___DISABLED_by_PMF
+//
+time_t getTeensy3Time(void)
+{
+  return Teensy3Clock.get();
+}
+
+void printDigits(int digits){
+  // utility function for digital clock display: prints preceding colon and leading 0
+  Serial.print(":");
+  if(digits < 10)
+    Serial.print('0');
+  Serial.print(digits);
+}
+
+void show_RTC(void)
+{
+  // digital clock display of the time
+  Serial.print(hour());
+  printDigits(minute());
+  printDigits(second());
+  Serial.print(" ");
+  Serial.print(day());
+  Serial.print(" ");
+  Serial.print(month());
+  Serial.print(" ");
+  Serial.print(year()); 
+  Serial.println(); 
+}
+
+
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////  Helper functions
 
 void str_tolower(char *p)

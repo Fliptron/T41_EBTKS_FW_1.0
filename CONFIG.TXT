@@ -4,16 +4,9 @@
   "ram16k": true,
   "screenEmu": false,
   "CRTRemote": false,
-  "AutoStart": {
-    "enable": false,
-    "Note": "Max command is 256 characters",
-    "command": "\\237\\237LOAD \\042LEDTEST-1\\042\\232RUN\\232",
-    "batch": ""
-  },
-  "EMC": {
+  "tape": {
     "enable": true,
-    "NumBanks": 8,
-    "StartBank": 2
+    "filepath": "/tapes/tape1.tap"
   },
   "optionRoms": {
     "directory": "/roms85/",
@@ -87,10 +80,6 @@
         "enable": true
       }
     ]
-  },
-  "tape": {
-    "enable": true,
-    "filepath": "/tapes/tape1.tap"
   },
   "hpib": {
     "select": 3,
@@ -168,5 +157,17 @@
         "filepath": "/printers/printfile.txt"
       }
     ]
+  },
+  "AutoStart": {
+    "enable": false,
+    "enableTapeAutostart": false,
+    "Note": "Max command is 256 characters",
+    "command": "\\237\\237LOAD \\042LEDTEST-1\\042\\232RUN\\232",
+    "batch": ""
+  },
+  "EMC": {
+    "enable": true,
+    "NumBanks": 8,
+    "StartBank": 2
   }
 }

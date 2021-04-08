@@ -7,8 +7,8 @@
 #define ALLOCATE  1
 
 #include "Inc_Common_Headers.h"
-
 #include "EBTKS_ESP.h"
+#include <TimeLib.h>
 
 ESPComms esp32;
 
@@ -475,7 +475,7 @@ GPIO9   33         7           CORE_PIN33_PORTREG
 //
 //    256 KB      EXTMEM for the HP85B, HP86/87             EXTRAM_SIZE         EBTKS_Bus_Interface_ISR.cpp
 //    
-//    160 KB      roms[][]                                  MAX_ROMS            EBTKS_Config.h
+//    144 KB      roms[][]                                  MAX_ROMS            EBTKS_Config.h (assumes MAX_ROMS is 18)
 //                                                          ROM_PAGE_SIZE       EBTKS_Config.h
 //      0.5 KB    Copy Buffer for MOUNT/copy_sd_file()      COPY_BUFFER_SIZE    EBTKS_AUXROM_SD_Services.cpp
 //      1 KB      sprintf_result                            SCRATCHLENGTH       EBTKS_AUXROM_SD_Services.cpp
@@ -483,6 +483,7 @@ GPIO9   33         7           CORE_PIN33_PORTREG
 //      0.1 KB    format_segment                                                EBTKS_AUXROM_SD_Services.cpp
 //
 //    436,324 B   Total.  Actual total from linker on 12/15/2020 is 473,312
+//    412,160 B   Total.  Actual total from linker on  3/28/2021 is 424,672
 //
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -556,7 +557,6 @@ static uint32_t   last_pin_isr_count;                         //  These are used
 static uint32_t   count_of_pin_isr_count_not_changing;        //  or if we arent in loop(), we should stall boot.
 static bool       HP85_has_been_off;
 
-
 //
 //  Temporary dateTime callback function
 //
@@ -582,7 +582,9 @@ void dateTime(uint16_t *date, uint16_t *time, uint8_t* ms10)
 
   *ms10 = 0;
 
-  Serial.printf("dateTime callback occured. %02d/%02d/%04d  %02d:%02d:%02d\n", Month , Day, Year, Hour,  Minute, Second);
+  Serial.printf("\ndateTime callback occured. %02d/%02d/%04d  %02d:%02d:%02d\n", Month , Day, Year, Hour,  Minute, Second);
+  Serial.printf("__DATE__[%s] __TIME__[%s] RTC says the time is %12d\n",__DATE__ , __TIME__ ,  getTeensy3Time());
+  Serial.printf("__DATE__[4][%c] __DATE__[5][%c] \n",__DATE__[4], __DATE__[5]);
 
 }
 
@@ -796,6 +798,19 @@ void setup()
   SCOPE_1_Pulser(4);                          //  2/7/2021 This occurs about 285 us after the previous call to Pulser(5) (inc 10 us delay)
   EBTKS_delay_ns(10000); //  10 us
 
+  //
+  //  Only enable the following wait for serial if we are also activating Serial.printf() diagnostics while debugging something that the normal logging can't handle (like system crash during boot)
+  //
+  //  while (!Serial)
+  //  {
+  //    //  Wait for serial terminal before we proceed
+  //  }
+
+  //
+  //    Copy the Time and Date from the Secure RTC to the general RTC
+  //
+  setSyncProvider(getTeensy3Time);
+
   //extern void OnPress(int key);
   //
   //myusb.begin();
@@ -914,7 +929,7 @@ void setup()
   }
 
 #if ENABLE_EMC_SUPPORT
-  if (config_success)
+  if (config_success && get_EMC_Enable())
   {
     emc_init();
   }
