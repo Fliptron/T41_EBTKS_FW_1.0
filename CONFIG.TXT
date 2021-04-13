@@ -166,7 +166,7 @@
     "batch": ""
   },
   "EMC": {
-    "enable": true,
+    "enable": false,
     "NumBanks": 8,
     "StartBank": 2
   }

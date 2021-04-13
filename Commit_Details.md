@@ -565,6 +565,13 @@ Changes:
 -   Synchronize the RTC with the Secure RTC (SRTC)
 -   Some test routines to test RTC
 
+## Commit \#115 04/12/2021
+
+Changes:
+-   Add support for Real Time Clock (RTC) with battery backup
+
+
+
 
 
 

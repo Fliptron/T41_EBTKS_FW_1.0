@@ -107,7 +107,7 @@ void EBTKS_delay_for_LMA_start(void)
 void assert_DMA_Request(void)
 {
   EBTKS_delay_ns(1950);     //  This function assumes that EBTKS interrupts are disabled, but when this function
-                            //  is called, that will should not be true. So the value is tweaked to allow for that.
+                            //  is called, that will/should not be true. So the value is tweaked to allow for that.
                             //  i.e. when interrupts are enabled, and pin change interrupts are being serviced while
                             //  we are waiting, this delay routine will also be interrupted, thus running slower.
   DMA_Request = true;       //  This specific statement (or equivalent) must only occur in one place in all of this firmware: Here

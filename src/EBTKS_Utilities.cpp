@@ -19,6 +19,51 @@
 
 #include <TimeLib.h>
 
+//
+//  The following tables of months and days is lifted from C:\Users\-UserName-\.platformio\packages\framework-arduinoteensy\libraries\Time\DateStrings.cpp
+//  with appropriate edits for this project
+//
+
+const char monthStr0[]  = "";
+const char monthStr1[]  = "January";
+const char monthStr2[]  = "February";
+const char monthStr3[]  = "March";
+const char monthStr4[]  = "April";
+const char monthStr5[]  = "May";
+const char monthStr6[]  = "June";
+const char monthStr7[]  = "July";
+const char monthStr8[]  = "August";
+const char monthStr9[]  = "September";
+const char monthStr10[] = "October";
+const char monthStr11[] = "November";
+const char monthStr12[] = "December";
+
+const char * const monthNames_P[] =
+{
+    monthStr0,monthStr1,monthStr2,monthStr3,monthStr4,monthStr5,monthStr6,
+    monthStr7,monthStr8,monthStr9,monthStr10,monthStr11,monthStr12
+};
+
+//  const char monthShortNames_P[] = "ErrJanFebMarAprMayJunJulAugSepOctNovDec";   //  not currently used
+
+const char dayStr0[] = "Err";
+const char dayStr1[] = "Sunday";
+const char dayStr2[] = "Monday";
+const char dayStr3[] = "Tuesday";
+const char dayStr4[] = "Wednesday";
+const char dayStr5[] = "Thursday";
+const char dayStr6[] = "Friday";
+const char dayStr7[] = "Saturday";
+
+const char * const dayNames_P[] =
+{
+   dayStr0,dayStr1,dayStr2,dayStr3,dayStr4,dayStr5,dayStr6,dayStr7
+};
+
+const char daySuffix[] = "xxstndrdthththththththththththththththththstndrdthththththththst";
+
+bool time_adjust_is_minutes;
+
 void show_RTC(void);
 
 extern HpibDevice *devices[];
@@ -148,6 +193,12 @@ void diag_dir_disks(void);
 void diag_dir_roms(void);
 void diag_dir_root(void);
 void list_mount(void);
+void set_date(void);
+void set_time(void);
+void time_adjust_minutes(void);
+void time_adjust_hours(void);
+void time_up_by_increment(void);
+void time_down_by_decrement(void);
 
 void show(void);
 void dump_keys(bool hp85kbd , bool octal);
@@ -191,6 +242,13 @@ struct S_Command_Entry Command_Table[] =
   {"la go",            Logic_analyzer_go},
   {"addr",             proc_addr},
   {"clean log",        clean_logfile},
+  {"Date",             show_RTC},
+  {"SetDate",          set_date},
+  {"SetTime",          set_time},
+  {"adj min",          time_adjust_minutes},
+  {"adj hour",         time_adjust_hours},
+  {"U",                time_up_by_increment},
+  {"D",                time_down_by_decrement},
   {"pwo",              pulse_PWO},
   {"reset",            pulse_PWO},
   {"dump ram window",  dump_ram_window},                  //  Currently broken
@@ -320,6 +378,26 @@ void Serial_Command_Poll(void)
   if(strncasecmp(serial_string , "show ", 5) == 0)
   {
     show();
+    serial_string_used();
+    return;
+  }
+
+  //
+  //  Special version (undocumented for end users) of setdate
+  //
+  if( (strncasecmp(serial_string , "setdate ", 8) == 0) && (strlen(serial_string) == 18) )
+  {
+    set_date();
+    serial_string_used();
+    return;
+  }
+
+  //
+  //  Special version (undocumented for end users) of settime
+  //
+  if( (strncasecmp(serial_string , "settime ", 8) == 0) && (strlen(serial_string) == 13) )
+  {
+    set_time();
     serial_string_used();
     return;
   }
@@ -488,7 +566,7 @@ void HexDump_T41_mem(uint32_t start_address, uint32_t count, bool show_addr, boo
 {
   if (show_addr)
   {
-    Serial.printf("%08X: ", start_address);  
+    Serial.printf("%08X: ", start_address);
   }
   while(count--)
   {
@@ -509,7 +587,7 @@ void HexDump_HP85_mem(uint32_t start_address, uint32_t count, bool show_addr, bo
   uint8_t       temp;
   if (show_addr)
   {
-    Serial.printf("%08X: ", start_address);  
+    Serial.printf("%08X: ", start_address);
   }
   while(count--)
   {
@@ -577,12 +655,14 @@ void help_0(void)
   Serial.printf("\nEBTKS Control commands - not case-sensitive\n\n");
   Serial.printf("0     Help for the help levels\n");
   Serial.printf("1     Help for Tape/Disk commands\n");
-  Serial.printf("2     Help for Assorted Utility commands\n");
-  Serial.printf("3     Help for Directory Commands\n");
+  Serial.printf("2     Help for Diagnostic commands\n");
+  Serial.printf("3     Help for Directory and Time/Date Commands\n");
 //  Serial.printf("4     Help for Auxiliary programs\n");
   Serial.printf("5     Help for Developers\n");
   Serial.printf("6     Help for Demo\n");
 //  Serial.printf("7     Help for Transient commands\n");
+  Serial.printf("\n");
+  show_RTC();
   Serial.printf("\n");
 }
 
@@ -621,7 +701,7 @@ void help_2(void)
   Serial.printf("     other    Anything else is a file name path\n");
   Serial.printf("clean log     Clean the Logfile on the SD Card\n");
   Serial.printf("pwo           Pulse PWO, resetting HP85 and EBTKS\n");
-  
+
 //Serial.printf("dump ram window Start(8) Len(8)   Dump RAM in ROM window\n");                          //  Currently broken because of parsing
 //Serial.printf("reset #Reset HP85 and EBTKS\n");
   Serial.printf("\n");
@@ -647,16 +727,22 @@ void help_2(void)
 
 void help_3(void)
 {
-  Serial.printf("Directory Commands\n");
+  Serial.printf("Directory and Date/Time Commands\n");
 //Serial.printf("cfgrom        #Select active roms\n");      //  Not yet Implemented
   Serial.printf("dir tapes     Directory of available tapes\n");
   Serial.printf("dir disks     Directory of available disks\n");
   Serial.printf("dir roms      Directory of available ROMs\n");
   Serial.printf("dir root      Directory of available ROMs\n");
+  Serial.printf("Date          Show current Date and Time\n");
+  Serial.printf("SetDate       Set the Date in MM/DD/YYYY format\n");
+  Serial.printf("SetTime       Set the Time in HH:MM 24 hour format\n");
+  Serial.printf("adj min       The U and D command will adjust minutes\n");
+  Serial.printf("adj hour      The U and D command will adjust hourss\n");
+  Serial.printf("U             Increment the time by 1 minute or hour\n");
+  Serial.printf("D             Decrement the time by 1 minute or hour\n");
 //Serial.printf("screen        #Screen emulation\n");        //  Not yet Implemented
 //Serial.printf("keyboard      #Keyboard emulation\n");      //  Not yet Implemented
   Serial.printf("\n");
-  show_RTC();
 }
 
 void help_4(void)
@@ -718,7 +804,7 @@ void diag_dir_path(const char * path)
     temp_uint = atoi(file_size);
     Serial.printf("%-20s   %10d   %s\n", &dir_line[28], temp_uint, date);                      //  filename,  size,  date & time
   }
-  
+
 }
 
 void diag_dir_tapes(void)
@@ -862,7 +948,7 @@ void diag_sdread_1(void)
 //  {
 //    for (j = 0 ; j < 8 ; j++)
 //    {
-//      Serial.printf("%08X  ", devices[k]); 
+//      Serial.printf("%08X  ", devices[k]);
 //      k++;
 //    }
 //    Serial.printf("\n");
@@ -910,9 +996,9 @@ void report_media(void)
 void proc_addr(void)
 {
 //  int i = 16;
-//  
+//
 //  Serial.printf("Random sampling, sequential in time but not necessarily adjacent cycles\n");
-//  
+//
 //  while(i--)
 //  {
 //    Serial.printf("ROM: %03o(8) ADDR: %04X/%06o\n", rselec, addReg, addReg);
@@ -1060,7 +1146,7 @@ void Setup_Boot_Time_Logic_Analyzer(void)
   Logic_Analyzer_Triggered              = false;
 
   Logic_Analyzer_Samples_Till_Done      = Logic_Analyzer_Current_Buffer_Length - Logic_Analyzer_Pre_Trigger_Samples;
-  
+
 }
 
 
@@ -1081,7 +1167,7 @@ void just_once_func(void)
 
 //
 //  Do the just once stuff here.
-//  
+//
 //  Serial.printf("var name here  %08X  ", just_once );   //  insert correct variable names when adding a temp diagnostic
 //  Serial.printf("var name here  %08X  ", just_once );
 //  Serial.printf("var name here  %08X  ", just_once );
@@ -1115,7 +1201,7 @@ void just_once_func(void)
 //    Serial.printf("%c", character);
 //  }
 //  file.close();
-// 
+//
 //  serial_string_used();
 //}
 
@@ -1179,7 +1265,7 @@ void no_SD_card_message(void)
   Write_on_CRT_Alpha(10,0, "with the standard EBTKS file set");
   Serial.printf("\nMessage sent to CRT advising that there is no SD card\n");
 }
-    
+
 void ulisp(void)
 {
 #if ENABLE_LISP
@@ -1238,7 +1324,7 @@ void Setup_Logic_Analyzer(void)
     Logic_Analyzer_Event_Count_Init       = 1;
     Logic_Analyzer_Current_Buffer_Length  = LOGIC_ANALYZER_BUFFER_SIZE;
     Logic_Analyzer_Current_Index_Mask     = LOGIC_ANALYZER_INDEX_MASK;
-    Logic_Analyzer_Pre_Trigger_Samples    = Logic_Analyzer_Current_Buffer_Length - 24;   //  Must be less than LOGIC_ANALYZER_BUFFER_SIZE 
+    Logic_Analyzer_Pre_Trigger_Samples    = Logic_Analyzer_Current_Buffer_Length - 24;   //  Must be less than LOGIC_ANALYZER_BUFFER_SIZE
   }
 
   //
@@ -1262,7 +1348,7 @@ void Setup_Logic_Analyzer(void)
   Serial.printf("Order is control signals (3), Address (16), data (8) ROM Select (octal)\n");
 
 redo_bus_control:
-  
+
   Serial.printf("Bus Cycle /WR /RD /LMA pattern as 0/1, 3 bits (0 is asserted)[%c%c%c]:",
                     (Logic_Analyzer_Trigger_Value_1 & BIT_MASK_WR)  ? '1' : '0',
                     (Logic_Analyzer_Trigger_Value_1 & BIT_MASK_RD)  ? '1' : '0',
@@ -1435,7 +1521,7 @@ redo_state_pattern:
 //////  Serial.printf("Bus Cycle State DMA  IF  /IRLX  /HALTX pattern as 0/1, 4 bits (1, 1, 0, 0, is asserted for each)[%c%c%c%c]:",
 //////                    (Logic_Analyzer_Trigger_Value_1 & 0x80000000)  ? '1' : '0',
 //////                    (Logic_Analyzer_Trigger_Value_1 & 0x40000000)  ? '1' : '0',
-//////                    (Logic_Analyzer_Trigger_Value_1 & 0x20000000)  ? '1' : '0', 
+//////                    (Logic_Analyzer_Trigger_Value_1 & 0x20000000)  ? '1' : '0',
 //////                    (Logic_Analyzer_Trigger_Value_1 & 0x10000000)  ? '1' : '0' );
 //////  if (!wait_for_serial_string())
 //////  {
@@ -1687,14 +1773,14 @@ void Logic_Analyzer_Poll(void)
       Serial.printf("Displaying %5d samples, starting from buffer position %5d\n\n", Samples_to_display, Display_starting_index);
 
       Logic_Analyzer_State = ANALYZER_ACQUISITION_DONE;                                   //  Force termination, stops acquisition
-      
+
       goto la_display_results;
     }
     Logic_Analyzer_Valid_Samples_1_second_ago = Logic_Analyzer_Valid_Samples;
     LA_Heartbeat_Timer = systick_millis_count + 1000;
   }
 //  if (Ctrl_C_seen)                           //  Need to do better clean up of this I think. Really need to re-do all serial I/O
-//  {                                         //  Type any character to abort    
+//  {                                         //  Type any character to abort
 //    Logic_Analyzer_State = ANALYZER_IDLE;
 //    Serial.printf("LA Abort\n");
 //    return;
@@ -1707,7 +1793,7 @@ void Logic_Analyzer_Poll(void)
   //  Logic analyzer has completed acquisition
   //
 
-  Samples_to_display = Logic_Analyzer_Current_Buffer_Length;  
+  Samples_to_display = Logic_Analyzer_Current_Buffer_Length;
   Display_starting_index = Logic_Analyzer_Index_of_Trigger - Logic_Analyzer_Pre_Trigger_Samples;          //  This is where the next sample would have been written,
                                                                                                           //  except we finished acquisition. This value needs to be masked
 
@@ -1916,13 +2002,13 @@ void WS2812_update(void)
 
 //    Memory usage analysis of FASTLED library (that needs inverted data, and has LSB of all data stuck high)
 //    versus the above purpose built code for EBTKS
-//    
+//
 //    TLDR: FASTLED library is 7 KB and doesn't work
 //          This code is 320 bytes and works great.
 //
 //    ------------------
 //    FASTLED Library memory usage
-//    
+//
 //    section                size         addr
 //    .text.progmem          6960   1610612736
 //    .text.itcm           125088            0
@@ -1937,11 +2023,11 @@ void WS2812_update(void)
 //    .ARM.attributes          46            0
 //    .comment                110            0
 //    Total                553886
-//    
+//
 //    ------------------
-//    
+//
 //    Adding a simple #define to EBTKS_Config.h
-//    
+//
 //    section                size         addr
 //    .text.progmem          6960   1610612736
 //    .text.itcm           125088            0
@@ -1956,11 +2042,11 @@ void WS2812_update(void)
 //    .ARM.attributes          46            0
 //    .comment                110            0
 //    Total                553886               same
-//    
+//
 //    ------------------
-//    
+//
 //    Disable FASTLED code (including the small amount of code that references it)
-//    
+//
 //    section                size         addr
 //    .text.progmem          6960   1610612736
 //    .text.itcm           117984            0  -7104
@@ -1975,13 +2061,13 @@ void WS2812_update(void)
 //    .ARM.attributes          46            0
 //    .comment                110            0
 //    Total                553886
-//    
+//
 //    so FASTLED library is approximately 7 KB
-//    
+//
 //    ------------------
-//    
+//
 //    Disabled FASTLED code, installed PMF replacement
-//    
+//
 //    section                size         addr
 //    .text.progmem          6960   1610612736
 //    .text.itcm           118304            0  +320
@@ -2032,7 +2118,7 @@ void jay_pi(void)
         sliceAreaSum = 0.0000;
 
         y0 = sqrt(radiusSquared - pow(index/slices, 2.0));
-        
+
         while(index++ < slices)
         {
           y1 = sqrt(radiusSquared - pow(index/slices, 2.0));
@@ -2083,7 +2169,7 @@ void Simple_Graphics_Test(void)
 //            On startup, in startup.c at line 118 the SRTC is copied to the RTC
 //
 //  Per https://forum.pjrc.com/threads/62357-TimLib-h-vs-Time-h   it seems there is some library weirdness.
-//      the "solution" is to rename 
+//      the "solution" is to rename
 //            C:\Users\Philip Freidin\.platformio\packages\framework-arduinoteensy\libraries\Time\Time.h
 //          to
 //            C:\Users\Philip Freidin\.platformio\packages\framework-arduinoteensy\libraries\Time\Time.h___DISABLED_by_PMF
@@ -2093,30 +2179,326 @@ time_t getTeensy3Time(void)
   return Teensy3Clock.get();
 }
 
-void printDigits(int digits){
-  // utility function for digital clock display: prints preceding colon and leading 0
-  Serial.print(":");
-  if(digits < 10)
-    Serial.print('0');
-  Serial.print(digits);
-}
+//
+//  Look here for docs on Time functions:  https://github.com/PaulStoffregen/Time
+//
 
 void show_RTC(void)
 {
   // digital clock display of the time
-  Serial.print(hour());
-  printDigits(minute());
-  printDigits(second());
-  Serial.print(" ");
-  Serial.print(day());
-  Serial.print(" ");
-  Serial.print(month());
-  Serial.print(" ");
-  Serial.print(year()); 
-  Serial.println(); 
+  Serial.printf("The time is %2d", hour());
+  Serial.printf(":%02d", minute());
+  Serial.printf(":%02d", second());
+  Serial.printf(" on %s the %d%.2s", dayNames_P[weekday()], day(), &daySuffix[day()*2]);
+  Serial.printf(" of %s", monthNames_P[month()] );
+  Serial.printf(" %4d\n",year());
+
+  //
+  //  Debug Check Suffix stuff works
+  //
+  // Serial.printf("\nCheck suffixes\n");
+  // for(int i = 0 ; i <= 31 ; i++)
+  // {
+  //   Serial.printf("%d  %.2s\n", i, &daySuffix[i*2]);
+  // }
+
+  //
+  //  Debugging the clock not retaining the time of day/date across power fail
+  //
+  //  Serial.printf("_VectorsRam[15] = %08x\n", _VectorsRam[15]);
+  //  Serial.printf("now()           = %08x\n", now());
+  //  Serial.printf("SNVS_HPCR       = %08x  LSB is RTC_EN , Bit 16 is sync bit, but apparently always reads 0\n", SNVS_HPCR);
 }
 
+//
+//  Apparently, while there are no touches of the interrupt logic anywhere in the call chain of
+//      Teensy3Clock.set(now());
+//  it never the less, affects the latency of interrupts, and of course, EBTKS has no tollerance
+//  for that, as the pinChange_isr() expects/depends on sub 100 ns latency.
+//  Teensy3Clock.set(now()) actually locks out (or delays response) of interrupts for 960 uS,
+//  which means all HP85 bus cycles that EBTKS must either service (RAM and ROM for example) will
+//  fail, as well as EBTKS not seeing I/O register updates, etc..
+//  My current guess is that the registers in the RTC are in a different clock domain (and maybe quite slow)
+//  and a register reference into this domain locks up everything until completed.
+//  We have seen this before, see Teensy_4.0_Notes.txt in the "SdFat           Examples and notes" section
+//  The solution is to stop the HP85 from doing any bus transfers while the RTC is being set,
+//  which we do by initiating the DMA state, and end DMA when we are done.
+//
+//  Look here for docs on Time functions:  https://github.com/PaulStoffregen/Time
+//
 
+void protected_rtc_set(void)
+{
+  assert_DMA_Request();
+  while(!DMA_Active){};     // Wait for acknowledgment, and Bus ownership. Also locks out interrupts on EBTKS, so can't do USB serial or SD card stuff
+
+  Teensy3Clock.set(now());  //  This take 960 uS
+
+  release_DMA_request();
+  while(DMA_Active){};      // Wait for release
+}
+
+//
+//  Get new date in MM/DD/YYYY format
+//
+//  Look here for docs on Time functions:  https://github.com/PaulStoffregen/Time
+//
+
+void set_date(void)
+{
+  int set_day     = day();  
+  int set_month   = month();
+  int set_year    = year(); 
+
+  if(strlen(serial_string) == 18)                     //  Handle undocumented "setdate MM/DD/YYYY"
+  {
+    memmove(serial_string, &serial_string[8], 11);    // 1 extra to get the trailing 0x00
+    goto date_on_commandline;
+  }
+  serial_string_used();
+
+  Serial.printf("\nThe current date setting is ");
+  Serial.printf("%.2d/%.2d/%4d in MM/DD/YYYY format\n", set_month, set_day, set_year);
+  Serial.printf("Enter a new date, or just type return to leave it unchanged\n");
+
+set_date_try_again:
+  Serial.printf("\nDate> ");
+  if (!wait_for_serial_string())
+  {
+    Ctrl_C_seen = false;
+    return;                                     //  Got a Ctrl-C , so abort command
+  }
+
+  if (strlen(serial_string) == 0)
+  {
+    Serial.printf("No date change\n");
+    serial_string_used();
+    return;
+  }                                             //  Keep existing Date
+
+date_on_commandline:
+  if ((strlen(serial_string) != 10) || (serial_string[2] != '/') || (serial_string[5] != '/') )
+  {
+    Serial.printf("Please enter the date in MM/DD/YYYY format, including the slash characters\n");
+    serial_string_used();
+    goto set_date_try_again;
+  }
+
+  //
+  //  depend on atoi() stopping conversion when it gets to a / or end of string
+  //
+  set_month = atoi(serial_string);
+  set_day   = atoi(&serial_string[3]);
+  set_year  = atoi(&serial_string[6]);
+  serial_string_used();
+
+  //
+  //  Validate the date.
+  //
+  //  We are using UNIX/POSIX time, with an epoch of 1/1/1970 . The time data is a signed 32 bit integer.
+  //  The minimum representable date is Friday 1901-12-13, and the maximum representable date is Tuesday 2038-01-19.
+  //  One second after 03:14:07 UTC 2038-01-19 this representation will overflow
+  //
+  //  The warantee for all EBTKS expires on 1/19/2038 at 03:14:06 UTC . Don't say you wern't warned
+  //
+  if ((set_year > 2038) || (set_year < 1902))
+  {
+    Serial.printf("Specified Year is outside the range 1902 to 2038\n");
+    goto set_date_try_again;
+  }
+  
+  if ((set_month > 12) || (set_month < 1))
+  {
+    Serial.printf("Specified Month is outside the range 1 to 12\n");
+    goto set_date_try_again;
+  }
+
+  //
+  //  Deal with February
+  //
+  if (set_month == 2)
+  {
+    if (((set_year % 4 == 0) && (set_year % 100 != 0)) || (set_year % 400 == 0))    //  This may be correct for the range 1902 to 2038
+    {   //  We have a Leap Year, and the month is February
+      if ((set_day > 29) || (set_day < 1))
+      {
+        Serial.printf("Specified Day in February in a leap year is outside the range 1 to 29\n");
+        goto set_date_try_again;
+      }
+    }
+    else
+    {   //  Not a leap year
+      if ((set_day > 28) || (set_day < 1))
+      {
+        Serial.printf("Specified Day in February in a non-leap year is outside the range 1 to 28\n");
+        goto set_date_try_again;
+      }
+    }
+  }
+
+  //
+  //  Now deal with months with 30 or 31 days, 30 day months first
+  //
+
+  if ((set_month == 4) || (set_month == 6) || (set_month == 9) || (set_month == 11))
+  {
+    if ((set_day > 30) || (set_day < 1))
+      {
+        Serial.printf("Specified Day for %s is outside the range 1 to 30\n", monthNames_P[set_month]);
+        goto set_date_try_again;
+      }
+  }
+  else
+  {
+    if ((set_day > 31) || (set_day < 1))
+      {
+        Serial.printf("Specified Day for %s is outside the range 1 to 31\n", monthNames_P[set_month]);
+        goto set_date_try_again;
+      }
+  }
+
+  //
+  //  If we get here, we apparently have a valid Day, Month, Year
+  //
+
+  setTime(hour(), minute(), second(), set_day, set_month, set_year);
+
+  protected_rtc_set();
+
+  Serial.printf("Date set to\n");
+  show_RTC();
+  Serial.printf("\n");
+}
+
+//
+//  Look here for docs on Time functions:  https://github.com/PaulStoffregen/Time
+//
+
+void set_time(void)
+{
+  int set_hour    = hour();  
+  int set_minute  = minute();
+
+  if(strlen(serial_string) == 13)                     //  Handle undocumented "settime hh:mm"
+  {
+    memmove(serial_string, &serial_string[8], 6);     // 1 extra to get the trailing 0x00
+    goto time_on_commandline;
+  }
+  serial_string_used();
+
+  Serial.printf("\nThe current time setting is ");
+  Serial.printf("%.2d:%.2d in HH:MM 24 hour format\n", set_hour, set_minute);
+  Serial.printf("Enter a new time, or just type return to leave it unchanged\n");
+
+set_time_try_again:
+  Serial.printf("\nTime> ");
+  if (!wait_for_serial_string())
+  {
+    Ctrl_C_seen = false;
+    return;                                     //  Got a Ctrl-C , so abort command
+  }
+
+  if (strlen(serial_string) == 0)
+  {
+    Serial.printf("No time change\n");
+    serial_string_used();
+    return;
+  }                                             //  Keep existing Time
+
+time_on_commandline:
+  if ((strlen(serial_string) != 5) || (serial_string[2] != ':') )
+  {
+    Serial.printf("Please enter the time in HH:MM 24 hour format, including the : character\n");
+    serial_string_used();
+    goto set_time_try_again;
+  }
+
+  //
+  //  depend on atoi() stopping conversion when it gets to a : or end of string
+  //
+  set_hour    = atoi(serial_string);
+  set_minute  = atoi(&serial_string[3]);
+  serial_string_used();
+
+  //
+  //  Validate the time.
+  //
+
+  if ((set_hour > 24) || (set_hour < 1))
+  {
+    Serial.printf("Specified Hour is outside the range 1 to 24\n");
+    goto set_time_try_again;
+  }
+  
+  if ((set_minute > 59) || (set_minute < 0))
+  {
+    Serial.printf("Specified Minutes is outside the range 0 to 59\n");
+    goto set_time_try_again;
+  }
+
+  //
+  //  If we get here, we apparently have a valid hours and minutes
+  //
+
+  setTime(set_hour, set_minute, 0, day(), month(), year());
+
+  protected_rtc_set();
+
+  Serial.printf("Time set to\n");
+  show_RTC();
+  Serial.printf("\n");
+
+}
+
+void time_adjust_minutes(void)
+{
+  time_adjust_is_minutes = true;
+  Serial.printf("Up/Down adjust (U/D) is now minutes\n");
+}
+
+void time_adjust_hours(void)
+{
+  time_adjust_is_minutes = false;
+  Serial.printf("Up/Down adjust (U/D) is now hours\n");
+}
+
+//
+//  Look here for docs on Time functions:  https://github.com/PaulStoffregen/Time
+//
+
+void time_up_by_increment(void)
+{
+  time_t t = now();                   // store the current time in time variable t
+  if (time_adjust_is_minutes)
+  {
+    t += 60;
+  }
+  else
+  {
+    t += 3600;
+  }
+  setTime(t);
+  protected_rtc_set();
+
+  Serial.printf("Now %2d:%02d\n", hour(),minute());
+}
+
+void time_down_by_decrement(void)
+{
+  time_t t = now();                   // store the current time in time variable t
+  if (time_adjust_is_minutes)
+  {
+    t -= 60;
+  }
+  else
+  {
+    t -= 3600;
+  }
+  setTime(t);
+  protected_rtc_set();
+
+  Serial.printf("Now %2d:%02d\n", hour(),minute());
+}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////  Helper functions
 

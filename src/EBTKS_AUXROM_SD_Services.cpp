@@ -82,6 +82,7 @@
 //        380..389      AUXROM_SDFLUSH
 //        390..399      AUXROM_SDFLUSH
 //        400..409      AUXROM_SDMKDIR
+//                                          400       SDMKDIR Dir already exists          actually, could be some other error
 //                                          409       MOUNT File already exists
 //        410..419      AUXROM_MOUNT
 //                                                    Shares use of 330
@@ -182,7 +183,7 @@ bool parse_MSU(char *msu);
 
 static File Auxrom_Files[MAX_AUXROM_SDFILES+1];                       //  These are the file handles used by the following functions: SDOPEN, SDCLOSE, SDREAD, SDWRITE, SDFLUSH, SDSEEK
                                                                       //                                      and probably these too: SDEOL,  SDEOL$
-                                                                      //  The plus 1 is so we can work with the BASIC univers that numbers file 1..N, and the reserved file number 11 that
+                                                                      //  The plus 1 is so we can work with the BASIC universe that numbers file 1..N, and the reserved file number 11 that
                                                                       //  is used by some AUXROM internal commands like SDSAVE, SDGET, SDEXPORT(EXPORTLIF?), SDIMPORT (IMPORTLIF ?)
 
 //
@@ -1041,7 +1042,7 @@ void AUXROM_SDMKDIR(void)
   }
   else
   {
-    *p_usage =  213;          //  Indicate Failure
+    post_custom_error_message("SDMKDIR Dir already exists", 400);     //  Actually, could be some other error
   }
   *p_mailbox = 0;            //  Must always be the last thing we do
   return;

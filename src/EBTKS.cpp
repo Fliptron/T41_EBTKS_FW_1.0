@@ -557,35 +557,53 @@ static uint32_t   last_pin_isr_count;                         //  These are used
 static uint32_t   count_of_pin_isr_count_not_changing;        //  or if we arent in loop(), we should stall boot.
 static bool       HP85_has_been_off;
 
+////
+////  Temporary dateTime callback function
+////
+////  Use compile time for now:  #define EBTKS_COMPILE_TIME_CONDENSED      date_time,&(date_time[4]),&(date_time[9]),&(date_time[14])
+////
+//void dateTime(uint16_t *date, uint16_t *time, uint8_t* ms10)
+//{
+//  uint16_t    Year , Month , Day;
+//  uint16_t    Hour,  Minute, Second;
 //
-//  Temporary dateTime callback function
+//  Year    = YEAR;
+//  Month   = MONTH;
+//  Day     = DAY;
+//  Hour    = HOURS;
+//  Minute  = MINUTES;
+//  Second  = SECONDS;
 //
-//  Use compile time for now:  #define EBTKS_COMPILE_TIME_CONDENSED      date_time,&(date_time[4]),&(date_time[9]),&(date_time[14])
+////  *date = FS_DATE(2021,3,8);        //  Year , Month , Day
+////  *time = FS_TIME(19,39,0);         //  hour, minute, second
 //
-void dateTime(uint16_t *date, uint16_t *time, uint8_t* ms10)
-{
-  uint16_t    Year , Month , Day;
-  uint16_t    Hour,  Minute, Second;
+//  *date = FS_DATE(Year , Month , Day);
+//  *time = FS_TIME(Hour,  Minute, Second);
+//
+//  *ms10 = 0;
+//
+//  Serial.printf("\ndateTime callback occured. %02d/%02d/%04d  %02d:%02d:%02d\n", Month , Day, Year, Hour,  Minute, Second);
+//  Serial.printf("__DATE__[%s] __TIME__[%s] RTC says the time is %12d\n",__DATE__ , __TIME__ ,  getTeensy3Time());
+//  Serial.printf("__DATE__[4][%c] __DATE__[5][%c] \n",__DATE__[4], __DATE__[5]);
+//
+//}
 
-  Year    = YEAR;
-  Month   = MONTH;
-  Day     = DAY;
-  Hour    = HOURS;
-  Minute  = MINUTES;
-  Second  = SECONDS;
+//
+//  Date and time callback routine for the SDFat File system
+//  Lifted from ...  .pio\libdeps\teensy41\SdFat\examples\TeensyRtcTimestamp\TeensyRtcTimestamp.ino
+//
+//  Call back for file timestamps.  Only called for file create and sync().
 
-//  *date = FS_DATE(2021,3,8);        //  Year , Month , Day
-//  *time = FS_TIME(19,39,0);         //  hour, minute, second
+void dateTime(uint16_t* date, uint16_t* time, uint8_t* ms10) {
+  
+  // Return date using FS_DATE macro to format fields.
+  *date = FS_DATE(year(), month(), day());
 
-  *date = FS_DATE(Year , Month , Day);
-  *time = FS_TIME(Hour,  Minute, Second);
-
-  *ms10 = 0;
-
-  Serial.printf("\ndateTime callback occured. %02d/%02d/%04d  %02d:%02d:%02d\n", Month , Day, Year, Hour,  Minute, Second);
-  Serial.printf("__DATE__[%s] __TIME__[%s] RTC says the time is %12d\n",__DATE__ , __TIME__ ,  getTeensy3Time());
-  Serial.printf("__DATE__[4][%c] __DATE__[5][%c] \n",__DATE__[4], __DATE__[5]);
-
+  // Return time using FS_TIME macro to format fields.
+  *time = FS_TIME(hour(), minute(), second());
+  
+  // Return low time bits in units of 10 ms.
+  *ms10 = second() & 1 ? 100 : 0;
 }
 
 void setup()
@@ -1136,9 +1154,9 @@ void loop()
   Logic_Analyzer_Poll();    //  54 ns when idle, but 780 ns ish if Phi 1 interrupt occurs while running
   loopTranslator();         //  1MB5 / HPIB / DISK poll
                             //  150 ns when idle, but 920 ns ish if Phi 1 interrupt occurs while running
-  SET_SCOPE_2;
-  esp32.poll();             //  access with "http://esp32_ebtks.local/"
-  CLEAR_SCOPE_2;
+  // SET_SCOPE_2;
+  // esp32.poll();             //  access with "http://esp32_ebtks.local/"
+  // CLEAR_SCOPE_2;
 
   if (CRT_Boot_Message_Pending)     //  8 ns test is false, but 800 ns ish if Phi 1 interrupt occurs while running
   {                                 //  which is quite rare because the window is so narrow
