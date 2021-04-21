@@ -101,7 +101,6 @@
 //
 //    Extended Memory Controller
 //
-#define EMC_MASTER                        (true)          //  Only true if HP85A and IF modification done
 #define ENABLE_EMC_SUPPORT                (1)
 #define EMC_MAX_BANKS                     (8)             //  Pre allocate 256kB for EMC Memory
 #define EMC_RAM_SIZE                      (EMC_MAX_BANKS * 32768)

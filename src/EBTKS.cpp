@@ -946,6 +946,9 @@ void setup()
     config_success = false;
   }
 
+//
+//  EMC initialization must occur after CONFIG.TXT processing, as it depends on parameters from that process.
+//
 #if ENABLE_EMC_SUPPORT
   if (config_success && get_EMC_Enable())
   {
@@ -1056,10 +1059,13 @@ void setup()
 
 #if ENABLE_EMC_SUPPORT
   log_to_serial_ptr += sprintf(log_to_serial_ptr, "EMC Support      %s\n",    get_EMC_Enable() ? "true":"false");
-  log_to_serial_ptr += sprintf(log_to_serial_ptr, "EMC Num Banks    %d, 32 KB each\n", get_EMC_NumBanks());
-  log_to_serial_ptr += sprintf(log_to_serial_ptr, "EMC Start Bank   %d\n", get_EMC_StartBank());
-  log_to_serial_ptr += sprintf(log_to_serial_ptr, "EMC Start Addr   %08o Octal\n", get_EMC_StartAddress());
-  log_to_serial_ptr += sprintf(log_to_serial_ptr, "EMC End Addr     %08o Octal\n", get_EMC_EndAddress());
+  if (get_EMC_Enable())
+  {
+    log_to_serial_ptr += sprintf(log_to_serial_ptr, "EMC Num Banks    %d, 32 KB each\n", get_EMC_NumBanks());
+    log_to_serial_ptr += sprintf(log_to_serial_ptr, "EMC Start Bank   %d\n", get_EMC_StartBank());
+    log_to_serial_ptr += sprintf(log_to_serial_ptr, "EMC Start Addr   %08o Octal\n", get_EMC_StartAddress());
+    log_to_serial_ptr += sprintf(log_to_serial_ptr, "EMC End Addr     %08o Octal\n", get_EMC_EndAddress());
+  }
 #endif
 
   log_to_serial_ptr += sprintf(log_to_serial_ptr, "Screen Emul.     %s\n", get_screenEmu() ? "true":"false");
@@ -1154,9 +1160,9 @@ void loop()
   Logic_Analyzer_Poll();    //  54 ns when idle, but 780 ns ish if Phi 1 interrupt occurs while running
   loopTranslator();         //  1MB5 / HPIB / DISK poll
                             //  150 ns when idle, but 920 ns ish if Phi 1 interrupt occurs while running
-  // SET_SCOPE_2;
-  // esp32.poll();             //  access with "http://esp32_ebtks.local/"
-  // CLEAR_SCOPE_2;
+   SET_SCOPE_2;
+   esp32.poll();             //  access with "http://esp32_ebtks.local/"
+   CLEAR_SCOPE_2;
 
   if (CRT_Boot_Message_Pending)     //  8 ns test is false, but 800 ns ish if Phi 1 interrupt occurs while running
   {                                 //  which is quite rare because the window is so narrow

@@ -220,6 +220,7 @@ int  get_EMC_NumBanks(void);
 int  get_EMC_StartBank(void);
 int  get_EMC_StartAddress(void);
 int  get_EMC_EndAddress(void);
+bool get_EMC_master(void);
 #endif
 
 uint32_t getFlags(void);

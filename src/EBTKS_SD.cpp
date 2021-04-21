@@ -21,7 +21,7 @@
 //
 
 int           machineNum;
-char          machineType[10];
+char          machineType[10];          //  Must be long enough to hold the longest string in machineNames[], including trailing 0x00
 bool          CRTVerbose;
 bool          screenEmu;
 bool          CRTRemote;
@@ -33,6 +33,7 @@ int           EMC_NumBanks = 4;         //  Correct value is 8. If we see only 4
 int           EMC_StartBank = 5;        //  Correct for systems with pre-installed 128 kB
 int           EMC_StartAddress;
 int           EMC_EndAddress;
+bool          EMC_Master = false;
 #endif
 
 
@@ -40,10 +41,12 @@ int           EMC_EndAddress;
 //  Read machineType string (must match enum machine_numbers {})
 //  Valid strings are:
 //
-const char *machineNames[] = {"HP85A", "HP85B", "HP86A", "HP86B", "HP87", "HP87XM"};
+const char *machineNames[] = {"HP85A", "HP85B", "HP86A", "HP86B", "HP87", "HP87XM", "HP85AEMC"};
 
 //
-//  machine type enumerations. the corresponding string table in EBTKS_SD.cpp needs to follow this
+//  Machine type enumerations. MACH_HP85A must be first, and == 0. The corresponding string
+//  table above needs to follow this sequence. The EMC code assumes that any value higher
+//  than MACH_HP85A is EMC capable.
 //
 enum machine_numbers{
       MACH_HP85A    = 0,
@@ -52,7 +55,13 @@ enum machine_numbers{
       MACH_HP86B    = 3,
       MACH_HP87     = 4,
       MACH_HP87XM   = 5,
-      MACH_NUM }; //always ensure MACH_NUM is the last enumeration
+      MACH_HP85AEMC = 6,        //  This is for a modified HP85A that has the IF signal wired to the I/O bus
+                                //  Since the memory controller for the HP85A is not EMC capable, if EBTKS
+                                //  provides EMC memory for an Electronic Disk, then it must emulate the
+                                //  EMC controller 1MC4 in master mode. For all other machine types, our
+                                //  emulation of the 1MC4 must be in non-master mode.
+                                //  (I don't think we can call it slave mode anymore)
+      MACH_NUM      = 7  };     //  Always ensure MACH_NUM is the last enumeration
 
 
 extern HpibDevice *devices[];
@@ -230,7 +239,7 @@ bool loadRom(const char *fname, int slotNum, const char *description)
   }
   else
   { //  Check for machine type.   This is going to break for HP83 (so CONFIG.TXT should say 85A) and 99151/B (also 85A ?)
-    if ((machineNum == 0) || (machineNum == 1))
+    if ((machineNum == MACH_HP85A) || (machineNum == MACH_HP85B) || (machineNum == MACH_HP85AEMC))
     {                                   //  CONFIG.TXT says we are loading ROMS for HP85A or HP85B:  One's complement for second byte of ROM
       if (id != (uint8_t)(~id_comp))    //  now test normal ROM ID's , including the AUXROM Primary 361.
       {
@@ -243,7 +252,7 @@ bool loadRom(const char *fname, int slotNum, const char *description)
         return false;
       }
     }
-    else if ((machineNum >= 2) && (machineNum <= 5))
+    else if ((machineNum >= MACH_HP86A) && (machineNum <= MACH_HP87XM))
     {                                         //  CONFIG.TXT says we are loading ROMS for HP86 or HP87:  Two's complement for second byte of ROM
       if (id != (uint8_t)(-id_comp))          //  Now test normal ROM ID's , including the AUXROM Primary.
       {
@@ -349,6 +358,12 @@ int  get_EMC_EndAddress(void)
 {
   return EMC_EndAddress;
 }
+
+bool get_EMC_master(void)
+{
+  return EMC_Master;
+}
+
 #endif
 
 //
@@ -489,7 +504,8 @@ bool loadConfiguration(const char *filename)
 
   // Open file for reading
   File file = SD.open(filename);
-  machineNum = -1;                                                    //  In case we have an early exit, make sure this is an invalid value
+  machineNum = -1;                                                    //  In case we have an early exit, make sure this is an invalid
+                                                                      //  value. See enum machine_numbers{} at top of file for valid values.
 
   LOGPRINTF("Open was [%s]\n", file ? "Successful" : "Failed");       //  We need to probably push this to the screen if it fails
                                                                       //  Except this happens before the PWO is released
@@ -524,30 +540,26 @@ bool loadConfiguration(const char *filename)
     LOGPRINTF("%s format OK\n", filename);
   }
 
-  strlcpy (machineType, (doc["machineName"]   | "error") , 10);
+  strlcpy (machineType, (doc["machineName"]   | "error") , sizeof(machineType));
   //
   //  look through table to find a match to enumerate the machineType
   //
-  machineNum = 0;     //  HP85A
-  while (machineNum < MACH_NUM)
+  for (machineNum = MACH_HP85A ; machineNum < MACH_NUM ; machineNum++)
   {
     if (strcasecmp(machineNames[machineNum], machineType) == 0)
     {
+      temp_char_ptr = log_to_CRT_ptr;
+      log_to_CRT_ptr += sprintf(log_to_CRT_ptr, "Series 80 Model: %s\n", machineNames[machineNum]);
+      LOGPRINTF("%s", temp_char_ptr);
       break; //found it!
     }
-    machineNum++;
   }
   if (machineNum == MACH_NUM)
   {
     temp_char_ptr = log_to_CRT_ptr;
     log_to_CRT_ptr += sprintf(log_to_CRT_ptr, "Invalid machineName in %s\n", filename);
     LOGPRINTF("%s", temp_char_ptr);
-  }
-  else 
-  {
-    temp_char_ptr = log_to_CRT_ptr;
-    log_to_CRT_ptr += sprintf(log_to_CRT_ptr, "Series 80 Model: %s\n", machineNames[machineNum]);
-    LOGPRINTF("%s", temp_char_ptr);
+    machineNum = -1;                          //  Set it to the invalid state.
   }
 
   CRTVerbose    = doc["CRTVerbose"]    | true;
@@ -555,7 +567,7 @@ bool loadConfiguration(const char *filename)
   //
   //  Only check for the 16K RAM option if we have an HP85A
   //
-  if (machineNum == MACH_HP85A)
+  if ((machineNum == MACH_HP85A) || (machineNum == MACH_HP85AEMC))
   {
     enHP85RamExp(doc["ram16k"] | false);
     temp_char_ptr = log_to_CRT_ptr;
@@ -566,7 +578,7 @@ bool loadConfiguration(const char *filename)
   //
   //  Only check for the the tape drive if we have an HP85A or HP85B
   //
-  if ((machineNum == MACH_HP85A) || (machineNum == MACH_HP85B))
+  if ((machineNum == MACH_HP85A) || (machineNum == MACH_HP85AEMC) || (machineNum == MACH_HP85B))
   {
     bool tapeEn = doc["tape"]["enable"] | false;                                                        //  This access is only for the following sprintf().
     temp_char_ptr = log_to_CRT_ptr;
@@ -625,55 +637,109 @@ bool loadConfiguration(const char *filename)
 
 #if ENABLE_EMC_SUPPORT
   //
-  //  EMC Support                         From HP 1983 and 1984 Catalog, page 592
+  //  EMC Support                         From HP 1983 page PDF 593 and 1984 Catalog, page 592 (PDF 595)
   //
   //  Model       Built in EMC memory     Notes
+  //              (beyond the 32KB in the
+  //               lower 64K address space)
   //  HP85A       0 * 32 K banks          Only works with IF modification to HP85A I/O bus backplane, and then only provides EDisk (with appropriate ROMS)
-  //  HP85B       1 * 32 K banks          Makes minimal sense, and then only provides EDisk (with appropriate ROMS). Why would you want it, given performance of SD Card file system
-  //  HP86A       1 * 32 K banks   \                 (need some text here so line does not end in a backslash)
-  //  HP86B       3 * 32 K banks    \     EMC memory can be used for EDisk or as program/data memory
-  //  HP87        3 * 32 K banks    /
-  //  HP87XM      3 * 32 K banks   /
+  //  HP85B       1 * 32 K banks          Makes limited sense, and then only provides EDisk (with appropriate ROMS).
+  //                                      HP-catalog-1984 PDF 595 says 32K standard, and 32K for EDisk, 544K max, so matches my reality
+  //  HP86A       1 * 32 K banks          HP-catalog-1983 PDF 593 says 86  comes with 64KB expandable to 576KB
+  //                                      HP-catalog-1984 PDF 595 says 86A comes with 64KB expandable to 576KB, max as Edisk is 416KB
+  //                                      So this seems correct: 32KB lower RAM, and 1 32KB of EMC memory
+  //  HP86B       3 * 32 K banks          EMC memory can be used for EDisk or as program/data memory
+  //                                      HP-catalog-1983 PDF 593 says 86B comes with 128KB expandable to 640KB
+  //                                      HP-catalog-1984 PDF 595 says 86B comes with 128KB expandable to 640KB, max as Edisk is 608KB
+  //  HP87        0 * 32 K banks          My HP87 only has 32KB RAM (in lower 64K address space)
+  //                                      HP-catalog-1983 PDF 594 says 87  comes with 128KB expandable to 640KB
+  //                                      which does not match my reality
+  //                                      (I think the context is 87XM, and there is no catalog info for the HP87)
+  //  HP87XM      3 * 32 K banks          HP-catalog-1984 PDF 596 says 87XM comes with 128KB expandable to 640KB
+  //
+  //  With no memory modules plugged in, here are tested EBTKS EMC configs that have worked
+  //  machineName   Total             Banks   Start      EBTKSEMC         DISKFREE A,B
+  //                installed                 Bank    Start     End         A       B
+  //                memory                            Address   Address
+  //  ---------------------------------------------------------------------------------
+  //  HP85AEMC      16K+16K(EBTKS)    8       2       00200000  01177777   1006    1006       (Philip's 85A #1)
+  //  HP85AEMC      16K+16K(EBTKS)    8       2       00200000  01177777   1006    1006       (Philip's 85A #2, no 'IF' mod. See below)
+  //  HP85B         64KB              0       3       00000000  00000000    124     124       No EBTKS EMC, just built in 32KB EMC RAM. ( 4 blocks for directory)
+  //  HP85B         64KB              8       3       00300000  01277777   1132    1132       32KB+256KB->288KB->1152*256B (so 20 blocks for directory)
+  //
+
+  //
+  //  Interesting observation with Philip's HP85A #2 which does not have the 'IF' modification
+  //  With CONFIG.TXT containing the following (excerpts)
+  //
+  // "machineName": "HP85AEMC",
+  // "ram16k": true,
+  // "EMC": {
+  //   "enable": true,
+  //   "NumBanks": 8,
+  //   "StartBank": 2
+  //   }
+  //
+  //  The CAT and DISC FREE commands work, and I wrote a program to ED, and LOADed it back and it worked.
+  //  I'm guessing that while IF is needed for program execution out of EMC memory, it is not needed for
+  //  simple read and writes that are used by the Electronic Disk software in ROM 321 (octal)
+  //  No extensive testing performed, so this might just be luck. Probably should not advertise this
+  //  interesting result.  I don't know if this would work with an EMC memory module, since the HP85A
+  //  does not have the logic for the root of the automatic configuration logic. See discussion in 
+  //  EBTKS_Bus_Interface_ISR.cpp just prior to the start of emc_init()
   //
 
   EMC_Enable    = doc["EMC"]["enable"] | false;
   EMC_NumBanks  = doc["EMC"]["NumBanks"] | 0;
-  EMC_StartBank = doc["EMC"]["StartBank"] | 5;      //  This would be right for a system with 128K DRAM pre-installed
+  EMC_StartBank = doc["EMC"]["StartBank"] | 4;      //  This would be right for a system with 128K DRAM pre-installed  #### need to check
 
   if (EMC_Enable)
   {
-    if (EMC_NumBanks > EMC_MAX_BANKS)
-    {   //  Greedy user wants more EMC memory than we can provide. Clip it to EMC_MAX_BANKS
-      temp_char_ptr = log_to_CRT_ptr;
-      log_to_CRT_ptr += sprintf(log_to_CRT_ptr, "Request for more that %d EMC Banks. Setting EMC Banks to %d\n", EMC_MAX_BANKS, EMC_MAX_BANKS);
-      LOGPRINTF("%s", temp_char_ptr);
-      EMC_NumBanks = EMC_MAX_BANKS;
-    }
-
-    if (EMC_NumBanks == 0)
+    if (machineNum > MACH_HP85A)
     {
-      temp_char_ptr = log_to_CRT_ptr;
-      log_to_CRT_ptr += sprintf(log_to_CRT_ptr, "EMC enabled, but Banks set to 0, so disabling EBTKS EMC\n");
-      LOGPRINTF("%s", temp_char_ptr);
-      EMC_Enable = false;
-    }
+      if (EMC_NumBanks > EMC_MAX_BANKS)
+      {   //  Greedy user wants more EMC memory than we can provide. Clip it to EMC_MAX_BANKS
+        temp_char_ptr = log_to_CRT_ptr;
+        log_to_CRT_ptr += sprintf(log_to_CRT_ptr, "Request for more that %d EMC Banks. Setting EMC Banks to %d\n", EMC_MAX_BANKS, EMC_MAX_BANKS);
+        LOGPRINTF("%s", temp_char_ptr);
+        EMC_NumBanks = EMC_MAX_BANKS;
+      }
+
+      if (EMC_NumBanks == 0)
+      {
+        temp_char_ptr = log_to_CRT_ptr;
+        log_to_CRT_ptr += sprintf(log_to_CRT_ptr, "EMC enabled, but Banks set to 0, so disabling EBTKS EMC\n");
+        LOGPRINTF("%s", temp_char_ptr);
+        EMC_Enable = false;
+      }
+      else
+      {
+        temp_char_ptr = log_to_CRT_ptr;
+        log_to_CRT_ptr += sprintf(log_to_CRT_ptr, "EMC On. Banks %d to %d = %d kB\n", EMC_StartBank, EMC_StartBank + EMC_NumBanks - 1, EMC_NumBanks * 32);
+        LOGPRINTF("%s", temp_char_ptr);
+
+        EMC_StartAddress = EMC_StartBank << 15;
+        EMC_EndAddress   = EMC_StartAddress + (EMC_NumBanks << 15) - 1;
+
+        temp_char_ptr = log_to_serial_ptr;
+        log_to_serial_ptr += sprintf(log_to_serial_ptr, "EMC enabled. Start at %8o Octal, %d kB\n", EMC_StartAddress, (EMC_NumBanks * 32768)/1024);
+        LOGPRINTF("%s", temp_char_ptr);
+      }
+ 
+      EMC_Master = (machineNum == MACH_HP85AEMC);       //  The only time our EMC functionality is the EMC master is on a modified HP85A
+ 
+     }
     else
     {
       temp_char_ptr = log_to_CRT_ptr;
-      log_to_CRT_ptr += sprintf(log_to_CRT_ptr, "EMC On. Banks %d to %d = %d kB\n", EMC_StartBank, EMC_StartBank + EMC_NumBanks - 1, EMC_NumBanks * 32);
+      log_to_CRT_ptr += sprintf(log_to_CRT_ptr, "EMC enabled in CONFIG.TXT, but\ncomputer is a HP85A which does\nnot support EMC, so disabled\n");
       LOGPRINTF("%s", temp_char_ptr);
-
-      EMC_StartAddress = EMC_StartBank << 15;
-      EMC_EndAddress   = EMC_StartAddress + (EMC_NumBanks << 15) - 1;
-
-      temp_char_ptr = log_to_serial_ptr;
-      log_to_serial_ptr += sprintf(log_to_serial_ptr, "EMC enabled. Start at %8o Octal, %d kB\n", EMC_StartAddress, (EMC_NumBanks * 32768)/1024);
-      LOGPRINTF("%s", temp_char_ptr);
+      EMC_Enable = false;
     }
   }
 
   //
-  //  EMC configuration checking should be (somehow) by the EMC init code, maybe probing memory to see what is there
+  //  EMC configuration checking should be (somehow) checked by the EMC init code, maybe probing memory to see what is there
   //  and make sure the config is valid. Although if this could be done, then autoconfig should also be possible.
   //  I wonder if we could monitor the interrupt priority chain after first /LMA (tricky, because it depend on what
   //  slot EBTKS is in). Could EBTKS participate in the EMC autoconfig dance?

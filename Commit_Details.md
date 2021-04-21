@@ -130,7 +130,7 @@ Changes:
 ## Commit \#84 12/03/2020
 
 Changes:
--   Integrate the first pass at EMS support, by RB, into EBTKS_Bus_Interface_ISR.cpp
+-   Integrate the first pass at EMC support, by RB, into EBTKS_Bus_Interface_ISR.cpp
     also cleaned up some formatting
 -   change onReadData() to just use the global addReg rather than passing it as a parameter
     since it is only called from one place, and addReg was the only value that is ever passed to it
@@ -330,7 +330,7 @@ Changes:
     startup code to creating a persistent copy if this parameter,
     rather than using a copy of the ephemeral pointer that would become
     undefined once the loadConfiguration() function finishes.
--   Disabled EMS support as it causes problems with HP85B. Almost certainly
+-   Disabled EMC support as it causes problems with HP85B. Almost certainly
     because of address clashes. this will also affect HP86 and 87. Added
     some new parameters to CONFIG.TXT in preparation for some future code
     that will allow peaceful co-existence. Currently disabled with a
@@ -570,6 +570,21 @@ Changes:
 Changes:
 -   Add support for Real Time Clock (RTC) with battery backup
 
+## Commit \#116 04/21/2021
+
+Changes:
+-   Correct all references to EMS memory to EMC memory (including this file)
+-   EMC Master functionality is only enabled if machine type is HP85AEMC, which is
+    for HP85A computers that have the backplane modified for the IF signal, and
+    the IF signal is routed from the CPU to the backplane (which can be done over
+    the flatflex, with quite difficult rework on both the mainboard and backplane
+    board because sinal traces need to be cut, and access requires desoldering
+    the 17 pin flatflex connectors at each end)
+-   Significant improvement to documentation in the sources about EMC operation
+-   Better usage of machineNum matching enums, rather than in-line constants.
+-   Apparently EMC for EDisk works on an HP85AEMC even without the IF signal
+    modification. Still requires CONFIG.TXT to have "machineName": "HP85AEMC"
+    since it enables the EMC setup code. Don't know if master mode is a requirement
 
 
 

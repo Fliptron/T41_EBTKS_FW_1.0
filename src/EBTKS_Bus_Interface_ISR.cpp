@@ -74,6 +74,7 @@ volatile uint32_t   m_emc_read,m_emc_write;
 volatile uint32_t   m_emc_start_addr;
 volatile uint32_t   m_emc_end_addr;
 volatile bool       m_emc_master;
+
 enum {
 		  EMC_IDLE,
 		  EMC_INDIRECT_1,
@@ -1157,23 +1158,50 @@ void mySystick_isr(void)
 #if ENABLE_EMC_SUPPORT
 
 //
-//  Extended Memory code. It's here because it is tightly coupled with the bus cycles rather than just a simple peripheral
+//  Extended Memory code. It's here because it is tightly coupled with the bus cycles rather than just a
+//  simple peripheral
 //
-//  Start_bank is the starting 32k page. Currently we emulate up to 256kB (8 pages) set by get_EMC_NumBanks() from the CONFIG.TXT file
+//  Start_bank is the starting 32k bank of EMC memory provided by EBTKS. Currently we emulate up to 256kB
+//  (8 banks) set by get_EMC_NumBanks() from the CONFIG.TXT file
 //
-//  Master when true sets us to the master EMC in the system. Only for a modified HP85A as the others (85B/86/87) have their own EMC Master controller
+//  Systems can only have one EMC Master that responds to reading of control/status registers. Non master
+//  EMC chips should have identical control/status content but dont respond. All Series 80 computers after
+//  the original HP85A have an EMC controller (1MC4) on the main board, and the 64K and 128K memory modules
+//  also have 1MC4 controllers, but they are never a master. For diagnostic and development purposes, a
+//  HP85A can be modified to support EMC memory supplied by EBTKS, including EBTKS acting as an EMC Master.
+//  To designate such a modified HP85A, we referto it in the CONFIG.TXT file as MACH_HP85AEMC. This is
+//  not a configuration that should ever be of interest to an end user. It is just for Russell and Philip
 //
-//  The real HP hardware supposedly only supports up to 1M of EMC but the architecture supports up to 16M
-//  so the max page should be 31 (32 times 32k = 1M). The minimum start page should be 2 (page 1 is mapped as real memory in the real hardware, page 0 is the ROM space)
-//  and should be greater than this on a HP85B or later as they have real EMC hardware we don't want to clash with
+//  The real HP hardware supposedly only supports up to 1M of EMC but the architecture supports up to 16M.
+//  For 1 MB there would be a total of 32 banks of 32 KB each numbered 0..31 .The minimum start bank should
+//  be 2 (bank 1 is mapped as real memory in the real hardware, bank 0 is the ROM space).
 //
-//  
+//  The handling of one or more memory modules with EMC controllers (64KB and 128KB) automatically figure
+//  out their respective start bank during a little dance that involves the interupt priority diasy chain
+//  that occurs almost immediately after the release of PWO, and well before and EMC memory references can
+//  take place. EBTKS does not have the required hardware to participate in this process, and so requires
+//  the user to manually setup the start bank in the CONFIG.TXT file base on what will be appropriate for
+//  the specific system. EBTKS provided EMC memory start bank should be set to the bank number AFTER the
+//  last provided bank of the main system plus any plugged in memory modules. A table of tested values
+//  can be found in EBTKS_SD where the CONFIG.TXT is processed.
 //
+////////////////////////////
+//  Little warning, not sure if this is a bug:
+//  on an HP85A (that does not have EMC), but with the following ROMs enabled
+//      rom320B          320 208  D0   2F    FF   85B Mass Storage
+//      rom321B          321 209  D1   2E    FF   EDisk
 //
+//  the command CAT ":D000"  gives an error message of "Error 126 : MSUS"
+//  but the command CAT ".ED" gives the error message of "Error 131 : TIME-OUT"
+//    and then both the HP85A and EBTKS hang and even grounding PWO does not recover.
+//    Need to cycle power (or press the reset button on Teensy)
+////////////////////////////
+//
+
 void emc_init(void)
 {
   m_emc_start_addr = get_EMC_StartAddress();
-  m_emc_master = EMC_MASTER;                          //  When true - we are the only or master EMC in the system. Only on HP85A with IF modification
+  m_emc_master     = get_EMC_master();           //  When true - we are the only or master EMC in the system. Only on HP85AEMC with IF modification
 
   setIOReadFunc( 0xc8 , &emc_r );
   setIOReadFunc( 0xc9 , &emc_r );
