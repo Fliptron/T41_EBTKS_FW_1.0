@@ -1160,9 +1160,14 @@ void loop()
   Logic_Analyzer_Poll();    //  54 ns when idle, but 780 ns ish if Phi 1 interrupt occurs while running
   loopTranslator();         //  1MB5 / HPIB / DISK poll
                             //  150 ns when idle, but 920 ns ish if Phi 1 interrupt occurs while running
-   SET_SCOPE_2;
-   esp32.poll();             //  access with "http://esp32_ebtks.local/"
-   CLEAR_SCOPE_2;
+  if (get_CRTRemote())
+  {
+    if ((systick_millis_count % 10) == 0)     //  Only do this every 10 ms, although it may occur multiple times during that 1 ms
+    {                                         //  Note: if it turns out that we get buffer overflow between the Teensy and the ESP32
+                                              //  we will have to call this more often
+      esp32.poll();                           //  Access with "http://esp32_ebtks.local/"
+    }
+  }
 
   if (CRT_Boot_Message_Pending)     //  8 ns test is false, but 800 ns ish if Phi 1 interrupt occurs while running
   {                                 //  which is quite rare because the window is so narrow

@@ -592,20 +592,26 @@ Changes:
 Changes:
 -   Add tester for PSRAM, including avoiding allocated PSRAM memory, which requires
     an additional line to be added to
-    -  "C:\Users\me\.platformio\packages\framework-arduinoteensy\cores\teensy4\imxrt1062_t41.ld"
--   which is not tracked by Git. The change is to add the following line at line 89
+    -  C:\Users\me\.platformio\packages\framework-arduinoteensy\cores\teensy4\imxrt1062_t41.ld
+-   which is not tracked by Git. The change is to add the following at line 89
     -  _extram_alloc = SIZEOF(.bss.extram) + 0x70000000;
 
 ## Commit \#118 05/05/2021
 
 Changes:
--   Finally add support for "screenEmu" in CONFIG.TXT
+-   Add support for "screenEmu" in CONFIG.TXT
     -   screenEmu is needed for the help system, for CRTRemote, and terminal emulation
     -   it is not currently supported for HP86 and HP87
     -   even if screenEmu is false, we still track CRTBAD and CRTSAD, but don't
         maintain an image of the CRT, and don't allow writes to the actual CRT
         memory. This can change once the HP86/87 video system is emulated
 
+## Commit \#119 05/05/2021
+
+Changes:
+-   Add support for "CRTRemote" in CONFIG.TXT
+-   Throttle how much time it can take in main loop(), because it interfered with
+    the logic analyzer
 
 
 
