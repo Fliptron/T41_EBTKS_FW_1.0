@@ -4,6 +4,9 @@
 //  07/17/2020  Re-write some functions, and start adding support
 //              for safely writing text to the CRT for status messages
 //              and menu support
+//  05/05/2021  Use get_screenEmu() to disable writes to CRT memory. Use this
+//              parameter on HP86/87 CONFIG.TXT files to avoid writing to the
+//              HP86/87 CRT memory, which we don't yet support
 
 #include <Arduino.h>
 
@@ -41,7 +44,6 @@ video_capt_t captured_screen;         // the current screen is copied into here 
 
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////     CRT Mirror Support
-
 //
 //  Write only 0xFF04/0177404. CRT Start Address . Tells the CRT controller where to start
 //  fetching characters to put on the screen. Supports fast vertical scrolling
@@ -110,14 +112,20 @@ void ioWriteCrtDat(uint8_t val)                             //  This function is
   {                                                         //  00085-90444 85 Assembler ROM, page 7-110 says top nibble goes to lower nibble address
                                                             //  So if the address is even, we are pointing at the high nibble, and if the address is
                                                             //  odd, we are pointing to the low nibble
-    current_screen.vram[badAddr >> 1] &= 0xF0U;             //  Code by RB. Reviewed by PMF 7/17/2020
-    current_screen.vram[badAddr >> 1] |= (val >> 4);
-    current_screen.vram[(badAddr >> 1) + 1] &= 0x0FU;
-    current_screen.vram[(badAddr >> 1) + 1] |= (val << 4);
+    if (get_screenEmu())
+    {
+      current_screen.vram[badAddr >> 1] &= 0xF0U;             //  Code by RB. Reviewed by PMF 7/17/2020
+      current_screen.vram[badAddr >> 1] |= (val >> 4);
+      current_screen.vram[(badAddr >> 1) + 1] &= 0x0FU;
+      current_screen.vram[(badAddr >> 1) + 1] |= (val << 4);
+    }
   }
   else                                                      //  Else Even address is just a byte write
   {
-    current_screen.vram[badAddr >> 1] = val;
+    if (get_screenEmu())
+    {
+      current_screen.vram[badAddr >> 1] = val;
+    }
   }
 
   badAddr += 2;
@@ -135,9 +143,12 @@ void ioWriteCrtDat(uint8_t val)                             //  This function is
 
 void initCrtEmu(void)
 {
-  Serial2.begin(115200);    //init the serial port to the ESP32
+  if (get_screenEmu() && get_CRTRemote())
+  {
+    Serial2.begin(115200);                                  //  Init the serial port to the ESP32
+  }
 
-  setIOWriteFunc(4,&ioWriteCrtSad); // Address 0xFF04   CRT controller
+  setIOWriteFunc(4,&ioWriteCrtSad);                         //  Address 0xFF04   CRT controller
   setIOWriteFunc(5,&ioWriteCrtBad);
   setIOWriteFunc(6,&ioWriteCrtCtrl);
   setIOWriteFunc(7,&ioWriteCrtDat);
@@ -157,55 +168,58 @@ void Write_on_CRT_Alpha(uint16_t row, uint16_t column, const char *  text)
   uint16_t        badAddr_restore;
   uint16_t        local_badAddr;
 
-  if (crtControl & 0x80)
-  {
-    return;                     //  CRT is in Graphics mode, so just ignore for now. Maybe later we will allow writing text to the Graphics screen (Implies a Character ROM)
-  }
-
-  badAddr_restore = badAddr;
-  //Serial.printf("WoCA: R=%2d  C=%2d  badAddr = %04x  timeout %6d\n", row, column, badAddr, timeout);
-
-  //
-  //  Calculate the byte address for the first character of our string, base on the
-  //  current screen start address, and the supplied row and column. For example,
-  //  if we wanted to display text on the bottom line of the screen, starting at
-  //  the 3rd character position, row would be 15, and column would be 2
-  //
-
-  local_badAddr = (sadAddr + (column & 0x1F) * 2 + (row & 0x3F) * 64 ) & 0x0FFF;
-  //  Serial.printf("\nWoCA: local_badAddr %04X   ", local_badAddr);
-  while (DMA_Peek8(CRTSTS) & 0x80) {};          //  Wait until video controller is ready
-  DMA_Poke16(CRTBAD, local_badAddr);
-
-  assert_DMA_Request();
-  while(!DMA_Active){}     // Wait for acknowledgment, and Bus ownership
-
-  while(*text)
-  {
-    while(1)
+  if (get_screenEmu())          //  Only support direct writing to the CRT if screenEmu is true. Use this to block
+  {                             //  accidentally trying to write to the HP86/87 screen which we don't yet support
+    if (crtControl & 0x80)
     {
-      uint8_t data;
-      DMA_Read_Block(CRTSTS , &data , 1);
-      if ((data & 0x80) == 0)
+      return;                   //  CRT is in Graphics mode, so just ignore for now.
+                                //  Maybe later we will allow writing text to the
+                                //  Graphics screen (Implies a Character ROM)
+    } 
+
+    badAddr_restore = badAddr;
+    //Serial.printf("WoCA: R=%2d  C=%2d  badAddr = %04x  timeout %6d\n", row, column, badAddr, timeout);
+
+    //
+    //  Calculate the byte address for the first character of our string, base on the
+    //  current screen start address, and the supplied row and column. For example,
+    //  if we wanted to display text on the bottom line of the screen, starting at
+    //  the 3rd character position, row would be 15, and column would be 2
+    //
+
+    local_badAddr = (sadAddr + (column & 0x1F) * 2 + (row & 0x3F) * 64 ) & 0x0FFF;
+    //  Serial.printf("\nWoCA: local_badAddr %04X   ", local_badAddr);
+    while (DMA_Peek8(CRTSTS) & 0x80) {};          //  Wait until video controller is ready
+    DMA_Poke16(CRTBAD, local_badAddr);
+
+    assert_DMA_Request();
+    while(!DMA_Active){}     // Wait for acknowledgment, and Bus ownership
+
+    while(*text)
+    {
+      while(1)
       {
-        break;
+        uint8_t data;
+        DMA_Read_Block(CRTSTS , &data , 1);
+        if ((data & 0x80) == 0)
+        {
+          break;
+        }
       }
+      //  Busy de-asserted
+      //SET_SCOPE_2;
+      DMA_Write_Block(CRTDAT , (uint8_t *)text , 1);
+      current_screen.vram[local_badAddr>>1] = *text;
+      local_badAddr += 2;
+      text++;
+      //CLEAR_SCOPE_2;
     }
-    //  Busy de-asserted
-    //SET_SCOPE_2;
-    DMA_Write_Block(CRTDAT , (uint8_t *)text , 1);
-    current_screen.vram[local_badAddr>>1] = *text;
-    local_badAddr += 2;
-    text++;
-    //CLEAR_SCOPE_2;
+    DMA_Write_Block(CRTBAD , (uint8_t *)&badAddr_restore , 2);
+    release_DMA_request();
+    while(DMA_Active){}       // Wait for release
+    //  End of alternate code
   }
-  DMA_Write_Block(CRTBAD , (uint8_t *)&badAddr_restore , 2);
-  release_DMA_request();
-  while(DMA_Active){}       // Wait for release
-  //  End of alternate code
-
 }
-
 
 //
 //  The purpose of this test is to reverse engineer the timing of the busy flag in the CRT controller
@@ -460,106 +474,108 @@ void CRT_Timing_Test_4(void)
 }
 
 
-
-
 void writePixel(int x, int y, int color)
 {
-  if (x >= 256)
-    x = 0;
-  if (y >= 192)
-    y = 0;
+  if (get_screenEmu())          //  Only support direct writing to the CRT if screenEmu is true. Use this to block
+  {                               //  accidentally trying to write to the HP86/87 screen which we don't yet support
+    if (x >= 256)
+      x = 0;
+    if (y >= 192)
+      y = 0;
 
-  // calculate write address
-  int offs = (x >> 3) + (y * 32);
+    // calculate write address
+    int offs = (x >> 3) + (y * 32);
 
-  while (DMA_Peek8(CRTSTS) & 0x80) {}; //wait until video controller is ready
-  DMA_Poke16(CRTBAD, 0x1000U + (offs * 2));
+    while (DMA_Peek8(CRTSTS) & 0x80) {}; //wait until video controller is ready
+    DMA_Poke16(CRTBAD, 0x1000U + (offs * 2));
 
-  uint8_t val = vram[offs];
+    uint8_t val = vram[offs];
 
 
-  if (color)
-  {
-    val |= (1 << ((x ^ 7) & 7));
+    if (color)
+    {
+      val |= (1 << ((x ^ 7) & 7));
+    }
+    else
+    {
+      val &= ~(1 << ((x ^ 7) & 7));
+    }
+
+    vram[offs] = val;
+    while (DMA_Peek8(CRTSTS) & 0x80)
+    {
+    }; //wait until video controller is ready
+    DMA_Poke8(CRTDAT, val);
   }
-  else
-  {
-    val &= ~(1 << ((x ^ 7) & 7));
-  }
-
-  vram[offs] = val;
-  while (DMA_Peek8(CRTSTS) & 0x80)
-  {
-  }; //wait until video controller is ready
-  DMA_Poke8(CRTDAT, val);
 }
 
 void writeLine(int x0, int y0, int x1, int y1, int color)
 {
   int tmp;
   int16_t steep = abs(y1 - y0) > abs(x1 - x0);
-  if (steep)
-  {
-    //swap_int16_t(x0, y0);
-    tmp = x0;
-    x0 = y0;
-    y0 = tmp;
-
-    // _swap_int16_t(x1, y1);
-    tmp = x1;
-    x1 = y1;
-    y1 = tmp;
-  }
-
-  if (x0 > x1)
-  {
-    //_swap_int16_t(x0, x1);
-    tmp = x0;
-    x0 = x1;
-    x1 = tmp;
-
-    //_swap_int16_t(y0, y1);
-    tmp = y0;
-    y0 = y1;
-    y1 = tmp;
-  }
-
-  int16_t dx, dy;
-  dx = x1 - x0;
-  dy = abs(y1 - y0);
-
-  int err = dx / 2;
-  int ystep;
-
-  if (y0 < y1)
-  {
-    ystep = 1;
-  }
-  else
-  {
-    ystep = -1;
-  }
-
-  for (; x0 <= x1; x0++)
-  {
+  if (get_screenEmu())          //  Only support direct writing to the CRT if screenEmu is true. Use this to block
+  {                             //  accidentally trying to write to the HP86/87 screen which we don't yet support
     if (steep)
     {
-      writePixel(y0, x0, color);
+      //swap_int16_t(x0, y0);
+      tmp = x0;
+      x0 = y0;
+      y0 = tmp;
+
+      // _swap_int16_t(x1, y1);
+      tmp = x1;
+      x1 = y1;
+      y1 = tmp;
+    }
+
+    if (x0 > x1)
+    {
+      //_swap_int16_t(x0, x1);
+      tmp = x0;
+      x0 = x1;
+      x1 = tmp;
+
+      //_swap_int16_t(y0, y1);
+      tmp = y0;
+      y0 = y1;
+      y1 = tmp;
+    }
+
+    int16_t dx, dy;
+    dx = x1 - x0;
+    dy = abs(y1 - y0);
+
+    int err = dx / 2;
+    int ystep;
+
+    if (y0 < y1)
+    {
+      ystep = 1;
     }
     else
     {
-      writePixel(x0, y0, color);
+      ystep = -1;
     }
-    err -= dy;
-    if (err < 0)
+
+    for (; x0 <= x1; x0++)
     {
-      y0 += ystep;
-      err += dx;
+      if (steep)
+      {
+        writePixel(y0, x0, color);
+      }
+      else
+      {
+        writePixel(x0, y0, color);
+      }
+      err -= dy;
+      if (err < 0)
+      {
+        y0 += ystep;
+        err += dx;
+      }
     }
   }
 }
-
-
 
 //
 //  @todo Add ANSI cursor addressing so we get a static output on the terminal screen
@@ -696,56 +712,59 @@ void CRT_capture_screen(void)
 
 void CRT_restore_screen(void)
 {
-  //copy 2k of alpha data back to the HP85 video controller
-  while (DMA_Peek8(CRTSTS) & 0x80) {};              //  Wait until video controller is ready
-  DMA_Poke16(CRTBAD, 0);
-  while (DMA_Peek8(CRTSTS) & 0x80) {};              //  Wait until video controller is ready
-  DMA_Poke16(CRTSAD, 0);
+  if (get_screenEmu())                                //  Only support direct writing to the CRT if screenEmu is true. Use this to block
+  {                                                   //  accidentally trying to write to the HP86/87 screen which we don't yet support
+                                                      //  Copy 2k of alpha data back to the HP85 video controller
+    while (DMA_Peek8(CRTSTS) & 0x80) {};              //  Wait until video controller is ready
+    DMA_Poke16(CRTBAD, 0);
+    while (DMA_Peek8(CRTSTS) & 0x80) {};              //  Wait until video controller is ready
+    DMA_Poke16(CRTSAD, 0);
 
-  // Serial.printf("CRTBAD and CRTBAD set to 0\n");
-  // delay(1000);
-  // Serial.printf("Start block DMA\n");         //  no reporting until DMA end, as interrupts are off
+    // Serial.printf("CRTBAD and CRTBAD set to 0\n");
+    // delay(1000);
+    // Serial.printf("Start block DMA\n");         //  no reporting until DMA end, as interrupts are off
 
-  //  Start DMA mode
-  assert_DMA_Request();
-  while (!DMA_Active)
-  {
-  } // Wait for acknowledgment, and Bus ownership
-
-  //  Bus is now ours, All interrupts are disabled on Teensy
-
-  for (int ch = 0; ch < 2048; ch++)
+    //  Start DMA mode
+    assert_DMA_Request();
+    while (!DMA_Active)
     {
-    uint8_t data = 0x80;
-    while (data & 0x80)
+    } // Wait for acknowledgment, and Bus ownership
+
+    //  Bus is now ours, All interrupts are disabled on Teensy
+
+    for (int ch = 0; ch < 2048; ch++)
+      {
+      uint8_t data = 0x80;
+      while (data & 0x80)
+      {
+        DMA_Read_Block(CRTSTS,&data, 1);
+      }  // Wait until video controller is ready
+
+      DMA_Write_Block(CRTDAT, &captured_screen.vram[ch], 1);
+      }
+
+    release_DMA_request();
+
+    while (DMA_Active)
     {
-      DMA_Read_Block(CRTSTS,&data, 1);
-    }  // Wait until video controller is ready
+    } //  Wait for release
+      //  DMA mode is ended
 
-    DMA_Write_Block(CRTDAT, &captured_screen.vram[ch], 1);
-    }
+    // Serial.printf("Block DMA has ended\n");         //  no reporting until DMA end, as interrupts are off
+    // delay(1000);
+    // Serial.printf("Restoring CRTBAD, CRTSAD, and CRTSTS\n");         //  no reporting until DMA end, as interrupts are off
 
-  release_DMA_request();
-
-  while (DMA_Active)
-  {
-  } //  Wait for release
-    //  DMA mode is ended
-
-  // Serial.printf("Block DMA has ended\n");         //  no reporting until DMA end, as interrupts are off
-  // delay(1000);
-  // Serial.printf("Restoring CRTBAD, CRTSAD, and CRTSTS\n");         //  no reporting until DMA end, as interrupts are off
-
-  while (DMA_Peek8(CRTSTS) & 0x80) {};              //  Wait until video controller is ready
-  DMA_Poke16(CRTBAD, captured_screen.badAddr);
-  while (DMA_Peek8(CRTSTS) & 0x80) {};              //  Wait until video controller is ready
-  DMA_Poke16(CRTSAD, captured_screen.sadAddr);
-  DMA_Poke8(CRTSTS,captured_screen.ctrl);
-  //
-  //  Update what BASIC thinks these variables are
-  //
-  // DMA_Poke16(CRTBYT, captured_screen.badAddr);
-  // DMA_Poke16(CRTRAM, captured_screen.sadAddr);
-  // DMA_Poke8(CRTWRS,captured_screen.ctrl);
+    while (DMA_Peek8(CRTSTS) & 0x80) {};              //  Wait until video controller is ready
+    DMA_Poke16(CRTBAD, captured_screen.badAddr);
+    while (DMA_Peek8(CRTSTS) & 0x80) {};              //  Wait until video controller is ready
+    DMA_Poke16(CRTSAD, captured_screen.sadAddr);
+    DMA_Poke8(CRTSTS,captured_screen.ctrl);
+    //
+    //  Update what BASIC thinks these variables are
+    //
+    // DMA_Poke16(CRTBYT, captured_screen.badAddr);
+    // DMA_Poke16(CRTRAM, captured_screen.sadAddr);
+    // DMA_Poke8(CRTWRS,captured_screen.ctrl);
+  }
 }
 
