@@ -586,6 +586,16 @@ Changes:
     modification. Still requires CONFIG.TXT to have "machineName": "HP85AEMC"
     since it enables the EMC setup code. Don't know if master mode is a requirement
 
+## Commit \#117 05/05/2021
+
+Changes:
+-   Add tester for PSRAM, including avoiding allocated PSRAM memory, which requires
+    an additional line to be added to "C:\Users\me\.platformio\packages\framework-arduinoteensy\cores\teensy4\imxrt1062_t41.ld"
+    which is not tracked by Git. The change is to add the following line at line 89
+    -  _extram_alloc = SIZEOF(.bss.extram) + 0x70000000;
+
+
+
 
 
 

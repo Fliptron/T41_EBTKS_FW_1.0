@@ -153,7 +153,7 @@ void AUXROM_SDSEEK(void);
 void AUXROM_SDWRITE(void);
 void AUXROM_UNMOUNT(void);
 void AUXROM_WROM(void);
-          void AUXROM_MEMCPY(void);
+          void AUXROM_MEMCPY(void);     //  #### Not yet implemented, is it needed? Does anything use it?
 void AUXROM_SETLED(void);
 void AUXROM_SDCOPY(void);
 void AUXROM_SDEOF(void);

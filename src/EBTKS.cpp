@@ -473,7 +473,7 @@ GPIO9   33         7           CORE_PIN33_PORTREG
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //                                Main Uses of DMAMEM
 //
-//    256 KB      EXTMEM for the HP85B, HP86/87             EXTRAM_SIZE         EBTKS_Bus_Interface_ISR.cpp
+//    256 KB      EMC for the HP85B, HP86/87                EMC_MAX_BANKS * 32kB EBTKS_Bus_Interface_ISR.cpp
 //    
 //    144 KB      roms[][]                                  MAX_ROMS            EBTKS_Config.h (assumes MAX_ROMS is 18)
 //                                                          ROM_PAGE_SIZE       EBTKS_Config.h

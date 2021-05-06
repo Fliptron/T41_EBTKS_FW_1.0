@@ -111,6 +111,7 @@ void assert_DMA_Request(void)
                             //  i.e. when interrupts are enabled, and pin change interrupts are being serviced while
                             //  we are waiting, this delay routine will also be interrupted, thus running slower.
   DMA_Request = true;       //  This specific statement (or equivalent) must only occur in one place in all of this firmware: Here
+                            //  This is just setting a flag, and so does not need to be synchronized to the HP85 clock
 }
 
 //
