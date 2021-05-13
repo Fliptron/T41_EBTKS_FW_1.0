@@ -53,18 +53,18 @@
 //  the messages to the serial port both during initial startup and again (maybe) later.
 //
 
-#define LOG_NONE                  (0)
-#define LOG_SERIAL                (1)
-#define LOG_FILE                  (2)
+#define LOG_NONE                          (0)
+#define LOG_SERIAL                        (1)
+#define LOG_FILE                          (2)
 
-#define LOGLEVEL_GEN              LOG_FILE        //  For General Logging
-#define LOGLEVEL_AUX              LOG_NONE        //  For AUXROM Logging
-#define LOGLEVEL_1MB5             LOG_NONE        //  For 1MB5 activity
-#define LOGLEVEL_TAPE             LOG_NONE        //  For 1MB5 activity
+#define LOGLEVEL_GEN                      LOG_FILE        //  For General Logging
+#define LOGLEVEL_AUX                      LOG_NONE        //  For AUXROM Logging
+#define LOGLEVEL_1MB5                     LOG_NONE        //  For 1MB5 activity
+#define LOGLEVEL_TAPE                     LOG_NONE        //  For 1MB5 activity
 
 //
 //      Enable if we decide to use LISP as a scripting language
-#define ENABLE_LISP               (0)
+#define ENABLE_LISP                       (0)
 
 //
 //    HP85 banked switched ROM emulation
@@ -104,6 +104,24 @@
 #define ENABLE_EMC_SUPPORT                (1)
 #define EMC_MAX_BANKS                     (8)             //  Pre allocate 256kB for EMC Memory
 #define EMC_RAM_SIZE                      (EMC_MAX_BANKS * 32768)
+
+#define ENABLE_TRACE_EMC                  (0)
+#if ENABLE_TRACE_EMC
+#define EMC_DIAG_BUF_SIZE                 (2048)
+#endif
+
+//      This is mutually exclusive with ENABLE_TRACE_EMC
+#define ENABLE_TRACE_PTR2                 (0)
+
+#if ENABLE_TRACE_PTR2
+#if ENABLE_TRACE_EMC
+#error "ENABLE_TRACE_EMC and ENABLE_TRACE_PTR2 can not both be enabled"
+#endif
+#define EMC_PTR2_BUF_SIZE                 (512)
+#define EMC_PTR2_TRACE_WINDOW_LOW         (47800)
+#define EMC_PTR2_TRACE_WINDOW_HIGH        (48200)
+#endif
+
 //
 //    Tracking the CRT activity. Can be used to dump to a remote file or printer, and
 //    also needed if we want to scribble on the screen

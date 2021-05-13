@@ -186,6 +186,8 @@ void show_mailboxes_and_usage(void);
 time_t getTeensy3Time(void);
 void show_RTC(void);
 
+void ESP_Programmer_Setup(void);
+
 //void show_file(void);
 
 void Setup_Logic_Analyzer(void);

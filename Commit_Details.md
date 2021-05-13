@@ -592,7 +592,7 @@ Changes:
 Changes:
 -   Add tester for PSRAM, including avoiding allocated PSRAM memory, which requires
     an additional line to be added to
-    -  C:\Users\me\.platformio\packages\framework-arduinoteensy\cores\teensy4\imxrt1062_t41.ld
+    -  C:\Users\me\\.platformio\packages\framework-arduinoteensy\cores\teensy4\imxrt1062_t41.ld
 -   which is not tracked by Git. The change is to add the following at line 89
     -  _extram_alloc = SIZEOF(.bss.extram) + 0x70000000;
 
@@ -612,6 +612,47 @@ Changes:
 -   Add support for "CRTRemote" in CONFIG.TXT
 -   Throttle how much time it can take in main loop(), because it interfered with
     the logic analyzer
+
+
+## Commit \#120 05/13/2021
+
+Changes:
+
+-   Add diagnostics to help with debugging EMC support. There are two
+    separate, and mutually exclusive diagnostic routines. At most 1
+    can be enabled at compile time by setting ENABLE_TRACE_EMC or
+    ENABLE_TRACE_PTR2 to 1. The trace buffer for both of these fill up
+    until full, then stop. The contents is dumped with the diagnostic
+    command EMC. When the dump is finished, the trace buffer is reset.
+    The tracing for the second function is conditioned on the value of
+    Ptr2 being within a range specified at compile time with
+    EMC_PTR2_TRACE_WINDOW_LOW and EMC_PTR2_TRACE_WINDOW_HIGH. It is
+    expected that this trace function will be used together with the
+    BASIC testprogram that exercises the Ptr2 register. Currently the
+    program is named PFTEST2, and the companion binary program is
+    named pfemc.bin and must be imported as pfemcbin
+-   Added a diagnostic backdoor path for pfemcbin to access the EBTKS
+    version of Ptr2, even though EBTKS is not the Master EMC. The I/O
+    location assigned is 177760
+-   Eventually tracked the EMC functionality bug to an incorrect
+    polarity test of the IFETCH signal
+-   Pre-calculated EMC start and end addresses so that they are not
+    being calculated during the time critical indirect load and stores
+    through the pointer registers. Changed the end address to be
+    controlled by information from CONFIG.TXT rather than just the
+    maximum size.
+-   Add ESP32 serial pass-through function for programming the ESP32
+    using the Serial-Over-USB link to Teensy.
+-   Add linkage to the ESP32 serial pass-through to the diagnostics menu
+-   Re-assign Teensy pins T09 and T10 to ESP_EN and ESP_BOOT respectively,
+    to support programming of ESP32
+-   Add tracking of the 1MB1 Processor (Capricorn) DRP register to the
+    Logic Analyzer. Do not expect this to be correct on HP85A, but
+    should be correct on all other Series80 computers that we support,
+    including HP85AEMC
+
+
+
 
 
 

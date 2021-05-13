@@ -65,12 +65,13 @@ ioWriteFuncPtr_t ioWriteFuncs[256];
 DMAMEM uint8_t      emcram[EMC_RAM_SIZE];
 volatile bool       ifetch , m_emc_mult;
 volatile uint8_t    m_emc_drp;
+volatile uint8_t    disp;
 uint32_t            m_emc_ptr1 , m_emc_ptr2;        //  EMC pointers
 uint8_t             m_emc_mode;
 uint8_t             m_emc_state;
 volatile bool       m_emc_lmard;
 volatile uint32_t   cycleNdx;                       //  Counts the byte index for multi-byte transfers
-volatile uint32_t   m_emc_read,m_emc_write;
+volatile uint32_t   m_emc_read, m_emc_write;
 volatile uint32_t   m_emc_start_addr;
 volatile uint32_t   m_emc_end_addr;
 volatile bool       m_emc_master;
@@ -83,6 +84,37 @@ enum {
 bool emc_r(void);
 void emc_w(uint8_t val);
 void lma_cycle(bool state);
+
+bool on_Diag_Read_PTR2(void);
+
+#if ENABLE_TRACE_EMC
+struct EMC_Trace_1_Struct {
+          uint32_t  ptr_1_contents;
+          uint32_t  ptr_2_contents;
+          uint32_t  Trace_mask;
+          uint32_t  Cycle_count;
+          uint8_t   Trace_val;
+          uint8_t   Trace_cycleNdx;
+} EMC_Trace_1[EMC_DIAG_BUF_SIZE];
+uint32_t  Trace_index = 0;
+#endif
+
+#if ENABLE_TRACE_PTR2
+struct EMC_Trace_2_struct {
+          uint32_t  ptr_2_contents_pre;
+          uint32_t  ptr_2_contents_post;
+          uint32_t  Cycle_count;
+          uint8_t   Trace_cycleNdx;
+          uint8_t   Trace_op;
+          uint8_t   Dec_disp;
+          uint8_t   EMC_DRP;
+          uint8_t   EMC_DRP_Loaded;
+}  EMC_Trace_2[EMC_PTR2_BUF_SIZE];
+uint32_t  Trace_index = 0;
+bool      DRP_has_been_Loaded;
+uint8_t   New_DRP;
+#endif
+
 #endif
 
 volatile bool intEn_1MB5 = false;
@@ -532,7 +564,8 @@ inline void onPhi_1_Rise(void)                  //  This function is running wit
 //
 //  Logic_Analyzer_aux_sample layout is:
 //  Bits          Content
-//  31 ..  8      Currently always 0000 0000 0000 0000 0000 0000
+//  31 .. 16      Currently always 0000 0000 0000 0000
+//  15 ..  8      Current DRP
 //   7 ..  0      RSELEC
 
 //
@@ -546,6 +579,8 @@ inline void onPhi_1_Rise(void)                  //  This function is running wit
                                 Logic_Analyzer_current_bus_cycle_state_LA;    //  data on Phi 1 Rising edge, unlike HP-85 that    Logic_Analyzer_current_bus_cycle_state_LA is setup in the Phi 2 code
                                                                               //  uses the falling edge.
   Logic_Analyzer_aux_sample  =  getRselec() & 0x000000FF;                     //  Get the Bank switched ROM select code
+  Logic_Analyzer_aux_sample  |= ((uint32_t)m_emc_drp << 8);                   //  Track our local copy of DRP
+
   //CLEAR_SCOPE_2;      //  Time point AD
 
   //SET_SCOPE_2;        //  Time point AD
@@ -666,8 +701,13 @@ inline void onPhi_1_Fall(void)
   if (ifetch == true)
   {
     if ((data_from_IO_bus & 0xc0u) == 0x40u)    //  DRP instruction 0x40..0x7f?
+    //if (1)    //  DRP instruction 0x40..0x7f?
     {
       m_emc_drp = data_from_IO_bus;
+#if ENABLE_TRACE_PTR2
+      DRP_has_been_Loaded = true;
+      New_DRP = data_from_IO_bus;
+#endif
     }
     m_emc_mult = data_from_IO_bus & 1u;         //  Set if multiple byte instruction
   }
@@ -752,7 +792,7 @@ inline void mid_cycle_processing(void)                             //  This func
 
 #if ENABLE_EMC_SUPPORT
   //SET_SCOPE_2;        //  Time point CB
-  ifetch = !(GPIO_PAD_STATUS_REG_IFETCH & BIT_MASK_IFETCH);   //  Grab the instruction fetch bit. Only exists on HP85B, 86 and 87
+  ifetch = (GPIO_PAD_STATUS_REG_IFETCH & BIT_MASK_IFETCH);    //  Grab the instruction fetch bit. Only exists on HP85B, 86 and 87
                                                               //  Used for tracking instructions for the extended memory controller
   //if ((rd != schedule_read) || (wr != schedule_write))      //  Reset on any change of read or write
   if (lma != delayed_lma)                                     //  Reset count on change of lma
@@ -761,8 +801,8 @@ inline void mid_cycle_processing(void)                             //  This func
   }
   if (lma == true)
   {
-    lma_cycle(rd);    //for emc support
-    cycleNdx &= 1;    //ensure cycleNdx is only 0 or 1 in an lma cycle
+    lma_cycle(rd);                                            //  For emc support
+    cycleNdx &= 1;                                            //  Ensure cycleNdx is only 0 or 1 in an lma cycle
   }
   else
   {
@@ -1197,10 +1237,25 @@ void mySystick_isr(void)
 //    Need to cycle power (or press the reset button on Teensy)
 ////////////////////////////
 //
+//  In HP86/87 I/O address space, the two pointer registers take up 4 bytes each
+//
+//           Full Addr    I/O Offset
+//                        Octal   Hex
+//  PTR1    DAD 177710    310    0xC8
+//  PTR1-   DAD 177711    311    0xC9
+//  PTR1+   DAD 177712    312    0xCA
+//  PTR1-+  DAD 177713    313    0xCB
+//  PTR2    DAD 177714    314    0xCC
+//  PTR2-   DAD 177715    315    0xCD
+//  PTR2+   DAD 177716    316    0xCE
+//  PTR2-+  DAD 177717    317    0xCF
+//
+//  Diag Read of PTR 2 is at 177760
 
 void emc_init(void)
 {
   m_emc_start_addr = get_EMC_StartAddress();
+  m_emc_end_addr   = get_EMC_EndAddress();
   m_emc_master     = get_EMC_master();           //  When true - we are the only or master EMC in the system. Only on HP85AEMC with IF modification
 
   setIOReadFunc( 0xc8 , &emc_r );
@@ -1220,10 +1275,16 @@ void emc_init(void)
   setIOWriteFunc( 0xcd , &emc_w );
   setIOWriteFunc( 0xce , &emc_w );
   setIOWriteFunc( 0xcf , &emc_w );
+
+  setIOReadFunc( 0360,   &on_Diag_Read_PTR2);  //  177760
 }
 
+uint8_t   Diag_Read_PTR2_ctr = 0;
+uint32_t  diag_snap_PTR2 = 0;
+bool      diag_snap_lock = false;
+
 //
-//  note ! uses C++ 'reference'
+//  note ! uses C++ 'reference', so it returns either a pointer to m_emc_ptr1 or m_emc_ptr2
 //
 
 inline uint32_t &get_ptr()
@@ -1238,18 +1299,59 @@ inline uint32_t &get_ptr()
   }
 }
 
+#if ENABLE_TRACE_EMC
+struct EMC_Trace_1_Struct *trace_ptr;
+#endif
+
+#if ENABLE_TRACE_PTR2
+struct EMC_Trace_2_struct *trace_ptr;
+#endif
+
+
 inline void emc_ptr12_decrement(void)
 {
-  uint8_t disp;
-
-  if (m_emc_drp & 0x20u) //8 byte regs or 2 byte regs?
+  if (m_emc_drp & 0x20u)                //  8 byte regs or 2 byte regs?
   {
-    disp = 8u - (m_emc_drp & 7u);
+    disp = 8u - (m_emc_drp & 7u);       //  For example DRP==055 results in disp == 3
   }
   else
   {
-    disp = 2u - (m_emc_drp & 1u);
+    disp = 2u - (m_emc_drp & 1u);       //  For example DRP==12 results in disp == 2, DRP==13 results in disp == 1
   }
+
+#if ENABLE_TRACE_PTR2
+  if (get_ptr() == m_emc_ptr2)
+  {
+    if ((m_emc_ptr2 > EMC_PTR2_TRACE_WINDOW_LOW) && (m_emc_ptr2 < EMC_PTR2_TRACE_WINDOW_HIGH) && (Trace_index < EMC_PTR2_BUF_SIZE))
+    {
+      trace_ptr                         = &EMC_Trace_2[Trace_index];
+      trace_ptr->Dec_disp               = disp;
+      trace_ptr->EMC_DRP                = m_emc_drp;
+      trace_ptr->ptr_2_contents_pre     = m_emc_ptr2;
+      trace_ptr->Trace_cycleNdx         = cycleNdx;
+      trace_ptr->Cycle_count            = pin_isr_count;
+      if (m_emc_mult)
+      {
+        trace_ptr->Trace_op             = 1;                  //  Op 1 is emc_ptr12_decrement() , multiple
+      }
+      else
+      {
+        trace_ptr->Trace_op             = 2;                  //  Op 2 is emc_ptr12_decrement() , by 1
+      }
+      trace_ptr->ptr_2_contents_post    = (m_emc_mult ? m_emc_ptr2 - disp : m_emc_ptr2 - 1);
+      if (DRP_has_been_Loaded)
+      {
+        trace_ptr->EMC_DRP_Loaded       = New_DRP;
+        DRP_has_been_Loaded = false;
+      }
+      else
+      {
+        trace_ptr->EMC_DRP_Loaded       = 0xff;
+      }
+      Trace_index++;
+    }
+  }
+#endif
 
   if (m_emc_mult)
   {
@@ -1292,21 +1394,46 @@ bool emc_r(void)
     //
     //  decide if the address is in the range we should respond to
     //
-    if ((ptr >= m_emc_start_addr) && ((ptr - m_emc_start_addr) < EMC_RAM_SIZE))
+    if ((ptr >= m_emc_start_addr) && (ptr <= m_emc_end_addr))
     {
       readData = emcram[ptr - m_emc_start_addr];
       didRead = true;
     }
+
+#if ENABLE_TRACE_PTR2
+    if (get_ptr() == m_emc_ptr2)
+    {
+      if ((m_emc_ptr2 > EMC_PTR2_TRACE_WINDOW_LOW) && (m_emc_ptr2 < EMC_PTR2_TRACE_WINDOW_HIGH) && (Trace_index < EMC_PTR2_BUF_SIZE))
+      {
+        trace_ptr                       = &EMC_Trace_2[Trace_index];
+        trace_ptr->ptr_2_contents_pre   = m_emc_ptr2;
+        trace_ptr->Trace_cycleNdx       = cycleNdx;
+        trace_ptr->Cycle_count          = pin_isr_count;
+        trace_ptr->Trace_op             = 3;                  //  Op 3 is read indirect, with inc by 1
+        trace_ptr->ptr_2_contents_post  = ptr + 1;
+        if (DRP_has_been_Loaded)
+        {
+          trace_ptr->EMC_DRP_Loaded     = New_DRP;
+        }
+        else
+        {
+          trace_ptr->EMC_DRP_Loaded     = 0xff;
+        }
+        Trace_index++;
+      }
+    }
+#endif
+
     ptr++;
   }
   else if (m_emc_lmard)
   {
     m_emc_mode = uint8_t((addReg & 0xffu) - 0xC8u);
-    // During a LMARD pair, address 0xffc8 is returned to CPU and indirect mode is activated
+    //  During a LMARD pair, address 0xffc8 is returned to CPU and indirect mode is activated
     if (cycleNdx == 0)
     {
       readData = 0xc8;
-      didRead = m_emc_master;   //only one EMC controller should respond
+      didRead = m_emc_master;           //  Only one EMC controller should respond
     }
     else if (cycleNdx == 1)
     {
@@ -1342,20 +1469,90 @@ void emc_w(uint8_t val)
     {
       emcram[ptr - m_emc_start_addr] = val;
     }
+#if ENABLE_TRACE_PTR2
+    if (get_ptr() == m_emc_ptr2)
+    {
+      if ((m_emc_ptr2 > EMC_PTR2_TRACE_WINDOW_LOW) && (m_emc_ptr2 < EMC_PTR2_TRACE_WINDOW_HIGH) && (Trace_index < EMC_PTR2_BUF_SIZE))
+      {
+        trace_ptr                       = &EMC_Trace_2[Trace_index];
+        trace_ptr->ptr_2_contents_pre   = m_emc_ptr2;
+        trace_ptr->Trace_cycleNdx       = cycleNdx;
+        trace_ptr->Cycle_count          = pin_isr_count;
+        trace_ptr->Trace_op             = 4;                  //  Op 4 is write indirect, with inc by 1
+        trace_ptr->ptr_2_contents_post  = ptr + 1;
+        trace_ptr->Dec_disp             = disp;
+        trace_ptr->EMC_DRP              = m_emc_drp;
+        if (DRP_has_been_Loaded)
+        {
+          trace_ptr->EMC_DRP_Loaded     = New_DRP;
+        }
+        else
+        {
+          trace_ptr->EMC_DRP_Loaded     = 0xff;
+        }
+        Trace_index++;
+      }
+    }
+#endif
     ptr++;
   }
   else
   {
+    uint32_t mask = 0;
     m_emc_mode = uint8_t((addReg & 0xffu) - 0xC8u);
     // Write PTRx
     if (cycleNdx < 3)
     {
       uint32_t &ptr = get_ptr();
-      uint32_t mask = (uint32_t)0xffU << (8u * cycleNdx);
+      mask = (uint32_t)0xffU << (8u * cycleNdx);
       ptr = (ptr & ~mask) | (uint32_t(val) << (8u * cycleNdx));
+      // if(&ptr == &m_emc_ptr2)
+      // {
+      //   if(Trace_ptr_2_writes_index < 1024)
+      //   {
+      //     ptr_2_trace_buffer_w_bytes[Trace_ptr_2_writes_index++] = val;
+      //     //ptr_2_contents[Trace_ptr_2_writes_index] = m_emc_ptr2;
+      //     ptr_2_contents[Trace_ptr_2_writes_index] = cycleNdx;
+      //   }
+      // }
     }
+#if ENABLE_TRACE_EMC
+    if (Trace_index == 0)
+    {
+      pin_isr_count = 0;
+    }
+
+    if (Trace_index < EMC_DIAG_BUF_SIZE)
+    {
+      trace_ptr                 = &EMC_Trace_1[Trace_index];
+      trace_ptr->Trace_val      = val;
+      trace_ptr->ptr_1_contents = m_emc_ptr1;
+      trace_ptr->ptr_2_contents = m_emc_ptr2;
+      trace_ptr->Trace_cycleNdx = cycleNdx;
+      trace_ptr->Trace_mask     = mask;
+      trace_ptr->Cycle_count    = pin_isr_count;
+      Trace_index++;
+    }
+#endif
   }
 }
+
+bool on_Diag_Read_PTR2(void)
+{
+  if(!diag_snap_lock)
+  {
+    diag_snap_PTR2 = m_emc_ptr2;
+    diag_snap_lock = true;
+  }
+  readData = (m_emc_ptr2 >> (8 * Diag_Read_PTR2_ctr++));    //  No need to mask, dest is 8 bits
+  if(Diag_Read_PTR2_ctr >= 3)
+  {
+    Diag_Read_PTR2_ctr = 0;                                 //  Assumes the only Diag reads of Pointer 2 are always 3 bytes
+  }
+  return true;
+}
+
+
 #endif
 //
 //  If you need SCOPE_2 and SCOPE_1 diag pins in non-EBTKS code (like the SdFat library), then

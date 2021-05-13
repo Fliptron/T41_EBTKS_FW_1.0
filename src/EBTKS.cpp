@@ -554,7 +554,7 @@ static bool       CRT_Boot_Message_Pending;
 static bool       CRT_Boot_Message_Pending_to_Serial;
 static bool       Serial_Log_Message_Pending;
 static uint32_t   last_pin_isr_count;                         //  These are used to detect that the HP85 power is off, and Teensy should be reset
-static uint32_t   count_of_pin_isr_count_not_changing;        //  or if we arent in loop(), we should stall boot.
+static uint32_t   count_of_pin_isr_count_not_changing;        //  or if we aren't in loop(), we should stall boot.
 static bool       HP85_has_been_off;
 
 ////
@@ -647,6 +647,11 @@ void setup()
 
   pinMode(CORE_PIN_RXD, INPUT);       //  Communications with the ESP32
   pinMode(CORE_PIN_TXD, INPUT);       //  Communications with the ESP32   one of these needs to be an output.
+
+  digitalWrite(CORE_PIN_ESP_EN,1);
+  digitalWrite(CORE_PIN_ESP_BOOT,1);
+  pinMode(CORE_PIN_ESP_EN,OUTPUT);
+  pinMode(CORE_PIN_ESP_BOOT,OUTPUT);
 
   pinMode(CORE_PIN_T13, OUTPUT);
   //  SET_LED;                        //  T13 On Board LED

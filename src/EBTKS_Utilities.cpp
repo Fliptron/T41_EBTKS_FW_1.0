@@ -202,6 +202,15 @@ void time_down_by_decrement(void);
 void PSRAM_Test(void);
 void show(void);
 void dump_keys(bool hp85kbd , bool octal);
+void ESP_Programmer_Setup(void);
+
+#if ENABLE_TRACE_EMC
+void EMC_Info(void);
+#endif
+#if ENABLE_TRACE_PTR2
+void EMC_Ptr2(void);
+#endif
+
 
 struct S_Command_Entry
 {
@@ -254,6 +263,13 @@ struct S_Command_Entry Command_Table[] =
   {"dump ram window",  dump_ram_window},                  //  Currently broken
   {"graphics test",    Simple_Graphics_Test},
   {"PSRAMTest",        PSRAM_Test},
+  {"ESP32 Prog",       ESP_Programmer_Setup},
+#if ENABLE_TRACE_EMC
+  {"EMC",              EMC_Info},
+#endif
+#if ENABLE_TRACE_PTR2
+  {"EMC",              EMC_Ptr2},
+#endif
   {"jay pi",           jay_pi},
   {"auxint",           proc_auxint},
   {"jo",               just_once_func},
@@ -702,6 +718,15 @@ void help_2(void)
   Serial.printf("     other    Anything else is a file name path\n\n");
   Serial.printf("clean log     Clean the Logfile on the SD Card\n");
   Serial.printf("PSRAMTest     Test the 8 MB PSRAM. You probably should do the PWO command when test has finished\n");
+  Serial.printf("ESP32 Prog    Activate a passthrough serial path to program the ESP32\n");
+#if ENABLE_TRACE_EMC
+  Serial.printf("EMC           display info about the EMC emulation\n");
+#endif
+#if ENABLE_TRACE_PTR2
+  Serial.printf("EMC           display info tracing EMC Ptr2 over a limited range\n");
+#endif
+
+
   Serial.printf("pwo           Pulse PWO, resetting HP85 and EBTKS\n");
 
 //Serial.printf("dump ram window Start(8) Len(8)   Dump RAM in ROM window\n");                          //  Currently broken because of parsing
@@ -1839,8 +1864,8 @@ la_display_results:
   // Serial.printf("PRIMASK Expect 1     = %08X\n", temp);           //  It will be a real surprise if this works. Expect LSB to be 1. Tested, It works and shows Global Interrupt enable
   Serial.printf("\n\n");
 
-  Serial.printf("    Time Sample   Address     Data   Cycle RSE DMA /IR /HAL          LA Data 1\n");
-  Serial.printf("     us                              WRLF  LEC      LX  TX\n");
+  Serial.printf("    Time Sample   Address     Data   Cycle RSE  DRP DMA /IR /HAL          LA Data 1\n");
+  Serial.printf("     us                              WRLF  LEC           LX  TX\n");
   sample_number_relative_to_trigger = - Logic_Analyzer_Pre_Trigger_Samples;
 
   for (i = 0 ; i < Samples_to_display ; i++)
@@ -1888,6 +1913,7 @@ la_display_results:
     Serial.printf("%c", (temp & BIT_MASK_LMA) ? '-' : 'L');
     Serial.printf("%c", (temp & 0x40000000)   ? 'F' : '-');
     Serial.printf("  %03o", Logic_Analyzer_Data_2[j] & 0x000000FF );
+    Serial.printf("  %03o", (Logic_Analyzer_Data_2[j] & 0x0000FF00) >> 8 );
     Serial.printf(" %s", (temp & 0x80000000)     ? " D "  : "   " );
     Serial.printf(" %s",   (temp & 0x20000000)   ? "   "  : " I " );
     Serial.printf(" %s",   (temp & 0x10000000)   ? "   "  : "  H");
@@ -2386,6 +2412,156 @@ bool check_lfsr_pattern(uint32_t seed)
 
 	return true;
 }
+
+#if ENABLE_TRACE_EMC
+struct EMC_Trace_1_Struct {
+          uint32_t  ptr_1_contents;
+          uint32_t  ptr_2_contents;
+          uint32_t  Trace_mask;
+          uint32_t  Cycle_count;
+          uint8_t   Trace_val;
+          uint8_t   Trace_cycleNdx;
+};
+
+extern struct EMC_Trace_1_Struct EMC_Trace_1[EMC_DIAG_BUF_SIZE];
+
+extern uint32_t           m_emc_ptr1 , m_emc_ptr2;        //  EMC pointers
+extern uint32_t           diag_snap_PTR2;
+extern bool               diag_snap_lock;
+extern uint32_t           Trace_index;
+
+
+void EMC_Info(void)
+{
+  struct EMC_Trace_1_Struct *trace_ptr;
+#if !ENABLE_EMC_SUPPORT
+  Serial.printf("The EMC emulation is disabled by a compile time flag\n");
+  return;
+#endif
+  
+#if ENABLE_EMC_SUPPORT
+  Serial.printf("EMC Configurations base on CONFIG.TXT\n");
+  Serial.printf("EMC Support      %s\n",    get_EMC_Enable() ? "true":"false");
+  Serial.printf("EMC Num Banks    %d, 32 KB each\n", get_EMC_NumBanks());
+  Serial.printf("EMC Start Bank   %d\n", get_EMC_StartBank());
+  Serial.printf("EMC Start Addr   %08o Octal\n", get_EMC_StartAddress());
+  Serial.printf("EMC End Addr     %08o Octal\n", get_EMC_EndAddress());
+  Serial.printf("EMC PTR 1        %08o Octal\n", m_emc_ptr1);
+  Serial.printf("EMC PTR 2        %08o Octal\n", m_emc_ptr2);
+  Serial.printf("diag_snap_lock   %s\n",    diag_snap_lock ? "true":"false");
+  Serial.printf("diag_snap_PTR2   %08o Octal\n", diag_snap_PTR2);
+  Serial.printf("Trace_index      %d\n", Trace_index);
+
+  Serial.printf("\ni    val  Ndx    Mask   Ptr1      Ptr2      Cycle\n");
+  for (uint32_t i = 0 ; i < Trace_index ;)
+  {
+    trace_ptr = &EMC_Trace_1[i];
+    Serial.printf("%4d ", i);
+    Serial.printf("%02X   ",  trace_ptr->Trace_val);
+    Serial.printf("%3d ",     trace_ptr->Trace_cycleNdx);
+    Serial.printf("%08X ",    trace_ptr->Trace_mask);
+    Serial.printf("%08X ",    trace_ptr->ptr_1_contents);
+    Serial.printf("%08X  ",   trace_ptr->ptr_2_contents);
+    Serial.printf("%10d",     trace_ptr->Cycle_count);
+    Serial.printf("\n");
+
+    i++;
+    if ((i % 3) == 0)
+    {
+      Serial.printf("\n");
+    }
+  }
+  diag_snap_lock = false;
+  diag_snap_PTR2 = 0xFFFFFFFF;
+  Trace_index = 0;
+
+#endif
+}
+
+#endif
+
+#if ENABLE_TRACE_PTR2
+struct EMC_Trace_2_struct {
+          uint32_t  ptr_2_contents_pre;
+          uint32_t  ptr_2_contents_post;
+          uint32_t  Cycle_count;
+          uint8_t   Trace_cycleNdx;
+          uint8_t   Trace_op;
+          uint8_t   Dec_disp;
+          uint8_t   EMC_DRP;
+          uint8_t   EMC_DRP_Loaded;
+};
+
+extern struct EMC_Trace_2_struct EMC_Trace_2[EMC_PTR2_BUF_SIZE];
+extern uint32_t  Trace_index;
+
+void EMC_Ptr2(void)
+{
+  struct EMC_Trace_2_struct *trace_ptr;
+#if !ENABLE_EMC_SUPPORT
+  Serial.printf("The EMC emulation is disabled by a compile time flag\n");
+  return;
+#endif
+  
+#if ENABLE_EMC_SUPPORT
+  Serial.printf("EMC Configurations base on CONFIG.TXT\n");
+  Serial.printf("EMC Support      %s\n",    get_EMC_Enable() ? "true":"false");
+  Serial.printf("EMC Num Banks    %d, 32 KB each\n", get_EMC_NumBanks());
+  Serial.printf("EMC Start Bank   %d\n", get_EMC_StartBank());
+  Serial.printf("EMC Start Addr   %08o Octal\n", get_EMC_StartAddress());
+  Serial.printf("EMC End Addr     %08o Octal\n", get_EMC_EndAddress());
+  Serial.printf("Trace_index      %d\n", Trace_index);
+
+  Serial.printf("\n  i  Ptr2 Pre Ptr2 Post  Op   Ndx    Cycle   disp DRP   DRPLoad\n\n");
+  for (uint32_t i = 0 ; i < Trace_index ; i++)
+  {
+    trace_ptr = &EMC_Trace_2[i];
+    Serial.printf("%4d ", i);
+    Serial.printf("%8d ", trace_ptr->ptr_2_contents_pre);
+    Serial.printf(" %8d  ", trace_ptr->ptr_2_contents_post);
+    switch (trace_ptr->Trace_op)
+    {
+      case 1:
+        Serial.printf("DecM ");
+        break;
+      case 2:
+        Serial.printf("Dec1 ");
+        break;
+      case 3:
+        Serial.printf("Rd I ");
+        break;
+      case 4:
+        Serial.printf("Wr I ");
+        break;
+      default:
+        Serial.printf("ERR! ");
+        break;
+    }
+    Serial.printf("%3d ", trace_ptr->Trace_cycleNdx);
+    Serial.printf("%10d", trace_ptr->Cycle_count);
+    Serial.printf(" %2d   %03o", trace_ptr->Dec_disp, trace_ptr->EMC_DRP & 077);    //  Mask of the DRP instruction bits (top 2 bits), keep the lower 6
+    // if (Trace_op[i] < 2)
+    // {
+    //   Serial.printf(" %2d   %03o", Dec_disp[i], EMC_DRP[i] & 077);    //  Mask of the DRP instruction bits (top 2 bits), keep the lower 6
+    // }
+    // else
+    // {
+    //   Serial.printf("         ");
+    // }
+    if (trace_ptr->EMC_DRP_Loaded != 0xff)
+    {
+      Serial.printf("   %03o", trace_ptr->EMC_DRP_Loaded);
+    }
+    Serial.printf("\n");
+  }
+  Trace_index = 0;
+
+#endif
+}
+
+#endif
+
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////  Time and Date functions
 //
 //  Based on this thread:  https://forum.pjrc.com/threads/60317-How-to-access-the-internal-RTC-in-a-Teensy-4-0
