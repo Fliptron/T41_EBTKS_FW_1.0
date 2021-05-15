@@ -651,6 +651,12 @@ Changes:
     should be correct on all other Series80 computers that we support,
     including HP85AEMC
 
+## Commit \#121 05/15/2021
+
+Changes:
+
+-   Fix range bug in diag console set_time()
+-   Implement new keyword DATETIME A,B,C,D
 
 
 

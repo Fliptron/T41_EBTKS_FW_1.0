@@ -105,7 +105,7 @@ struct EMC_Trace_2_struct {
           uint32_t  ptr_2_contents_post;
           uint32_t  Cycle_count;
           uint8_t   Trace_cycleNdx;
-          uint8_t   Trace_op;
+          uint8_t   Trace_op;        ##### Trace_op consts should be enums
           uint8_t   Dec_disp;
           uint8_t   EMC_DRP;
           uint8_t   EMC_DRP_Loaded;
@@ -565,7 +565,7 @@ inline void onPhi_1_Rise(void)                  //  This function is running wit
 //  Logic_Analyzer_aux_sample layout is:
 //  Bits          Content
 //  31 .. 16      Currently always 0000 0000 0000 0000
-//  15 ..  8      Current DRP
+//  15 ..  8      Current DRP                               This does not work on HP85A because IFETCH is not connected to the backplane
 //   7 ..  0      RSELEC
 
 //
@@ -579,7 +579,8 @@ inline void onPhi_1_Rise(void)                  //  This function is running wit
                                 Logic_Analyzer_current_bus_cycle_state_LA;    //  data on Phi 1 Rising edge, unlike HP-85 that    Logic_Analyzer_current_bus_cycle_state_LA is setup in the Phi 2 code
                                                                               //  uses the falling edge.
   Logic_Analyzer_aux_sample  =  getRselec() & 0x000000FF;                     //  Get the Bank switched ROM select code
-  Logic_Analyzer_aux_sample  |= ((uint32_t)m_emc_drp << 8);                   //  Track our local copy of DRP
+  Logic_Analyzer_aux_sample  |= ((uint32_t)m_emc_drp << 8);                   //  Track our local copy of DRP.
+                                                                              //     This does not work on HP85A because IFETCH is not connected to the backplane
 
   //CLEAR_SCOPE_2;      //  Time point AD
 
@@ -1332,7 +1333,7 @@ inline void emc_ptr12_decrement(void)
       trace_ptr->Cycle_count            = pin_isr_count;
       if (m_emc_mult)
       {
-        trace_ptr->Trace_op             = 1;                  //  Op 1 is emc_ptr12_decrement() , multiple
+        trace_ptr->Trace_op             = 1;                  //  Op 1 is emc_ptr12_decrement() , multiple   ##### Trace_op consts should be enums
       }
       else
       {

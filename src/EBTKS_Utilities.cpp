@@ -2631,12 +2631,12 @@ void show_RTC(void)
 void protected_rtc_set(void)
 {
   assert_DMA_Request();
-  while(!DMA_Active){};     // Wait for acknowledgment, and Bus ownership. Also locks out interrupts on EBTKS, so can't do USB serial or SD card stuff
+  while(!DMA_Active){};     //  Wait for acknowledgment, and Bus ownership. Also locks out interrupts on EBTKS, so can't do USB serial or SD card stuff
 
   Teensy3Clock.set(now());  //  This take 960 uS
 
   release_DMA_request();
-  while(DMA_Active){};      // Wait for release
+  while(DMA_Active){};      //  Wait for release
 }
 
 //
@@ -2782,13 +2782,13 @@ void set_time(void)
 
   if(strlen(serial_string) == 13)                     //  Handle undocumented "settime hh:mm"
   {
-    memmove(serial_string, &serial_string[8], 6);     // 1 extra to get the trailing 0x00
+    memmove(serial_string, &serial_string[8], 6);     //  1 extra to get the trailing 0x00
     goto time_on_commandline;
   }
   serial_string_used();
 
   Serial.printf("\nThe current time setting is ");
-  Serial.printf("%.2d:%.2d in HH:MM 24 hour format\n", set_hour, set_minute);
+  Serial.printf("%.2d:%.2d in HH:MM 24 hour format. Hours are 0 .. 23\n", set_hour, set_minute);
   Serial.printf("Enter a new time, or just type return to leave it unchanged\n");
 
 set_time_try_again:
@@ -2825,9 +2825,9 @@ time_on_commandline:
   //  Validate the time.
   //
 
-  if ((set_hour > 24) || (set_hour < 1))
+  if ((set_hour > 23) || (set_hour < 0))
   {
-    Serial.printf("Specified Hour is outside the range 1 to 24\n");
+    Serial.printf("Specified Hour is outside the range 0 to 23\n");
     goto set_time_try_again;
   }
   
@@ -2845,7 +2845,6 @@ time_on_commandline:
 
   protected_rtc_set();
 
-  Serial.printf("Time set to\n");
   show_RTC();
   Serial.printf("\n");
 

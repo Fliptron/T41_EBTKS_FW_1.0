@@ -36,7 +36,7 @@
 #define  AUX_USAGE_UNMOUNT       ( 16)      //  UNMOUNT                                           remove a disk/tape from a unit
 #define  AUX_USAGE_FLAGS         ( 17)      //  FLAGS                                             save A.FLAGS to config file
 #define  AUX_USAGE_SDREN         ( 18)      //  SDREN                                             Rename a file
-#define  AUX_USAGE_CLOCK         ( 19)      //  CLOCK                                             Return Real Time Clock
+#define  AUX_USAGE_DATETIME      ( 19)      //  DATETIME                                          Return Real Time Clock: Year, Month, Day, Seconds since midnight
 #define  AUX_USAGE_HELP          ( 20)      //  HELP                                              Provides help
 #define  AUX_USAGE_SDMEDIA       ( 21)      //  MEDIA$                                            Returns the file name of the mounted media on a drive
 #define  AUX_USAGE_MEMCPY        ( 22)      //  MEMCPY
@@ -151,8 +151,8 @@ void AUXROM_Poll(void)
 
   switch (*p_usage)
   {
-    case AUX_USAGE_CLOCK:
-      AUXROM_CLOCK();
+    case AUX_USAGE_DATETIME:
+      AUXROM_DATETIME();
       break;
     case AUX_USAGE_FLAGS:
       AUXROM_FLAGS();

@@ -132,7 +132,7 @@ void post_custom_warning_message(const char * message, uint16_t error_number);
 
 void initialize_SD_functions(void);
 
-          void AUXROM_CLOCK(void);
+void AUXROM_DATETIME(void);
 void AUXROM_FLAGS(void);
 void AUXROM_HELP(void);
 void AUXROM_SDCAT(void);

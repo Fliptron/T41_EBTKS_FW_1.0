@@ -37,6 +37,7 @@
 //                    to
 //                        #define SDFAT_FILE_TYPE 1     // PMF and RB was 3, but caused library problems like can't find isReadOnly()
 //
+//  05/15/2021        Added support for reading the real time clock.
 
 /////////////////////On error message / error codes.  Go see email log for this text in context
 //
@@ -56,7 +57,7 @@
 //                  If just a range is shown, that means none have actually been assigned a specific meaning
 //
 //
-//        300..309      AUXROM_CLOCK
+//        300..309      AUXROM_DATETIME
 //        310..319      AUXROM_FLAGS
 //                                          310       Can't open /AUXROM_FLAGS.TXT
 //                                          311       Can't write /AUXROM_FLAGS.TXT
@@ -153,6 +154,7 @@
 #include <strings.h>                //  needed for strcasecmp() prototype
 #include <math.h>
 #include <stdlib.h>
+#include <TimeLib.h>
 
 #include "Inc_Common_Headers.h"
 #include "HpibDisk.h"
@@ -217,12 +219,27 @@ void initialize_SD_functions(void)
   }
 }
 
-void AUXROM_CLOCK(void)
+//
+//  Returns count of seconds since midnight in 
+//
+
+void AUXROM_DATETIME(void)
 {
 #if VERBOSE_KEYWORDS
-    Serial.printf("Call to CLOCK\n");
+    Serial.printf("Call to DATETIME\n");
 #endif
 
+  *(uint32_t *)(&AUXROM_RAM_Window.as_struct.AR_Opts[0]) = (hour() * 3600) + (minute() * 60) + second();    //  Seconds since midnight  0.. 86400
+  *(uint16_t *)(&AUXROM_RAM_Window.as_struct.AR_Opts[4]) = day();                                           //  Day,      1..31
+  *(uint16_t *)(&AUXROM_RAM_Window.as_struct.AR_Opts[6]) = month();                                         //  Month,    1..12
+  *(uint16_t *)(&AUXROM_RAM_Window.as_struct.AR_Opts[8]) = year();                                          //  Year,     1970 .. 2038
+  Serial.printf("Read Date and time:  %4d_%02d_%02d and %6d secs\n",
+                            *(uint16_t *)(&AUXROM_RAM_Window.as_struct.AR_Opts[8]) ,
+                            *(uint16_t *)(&AUXROM_RAM_Window.as_struct.AR_Opts[6]) ,
+                            *(uint16_t *)(&AUXROM_RAM_Window.as_struct.AR_Opts[4]) ,
+                            *(uint32_t *)(&AUXROM_RAM_Window.as_struct.AR_Opts[0])  );
+  *p_usage = 0;
+  return;
 }
 
 //
