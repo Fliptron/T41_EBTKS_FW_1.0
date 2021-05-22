@@ -664,6 +664,27 @@ enum analyzer_state{
         ANALYZER_ACQUISITION_DONE = 2
         };
 
+
+//
+//  Machine type enumerations. MACH_HP85A must be first, and == 0. The corresponding string
+//  table above needs to follow this sequence. The EMC code assumes that any value higher
+//  than MACH_HP85A is EMC capable.
+//
+enum machine_numbers{
+      MACH_HP85A    = 0,
+      MACH_HP85B    = 1,
+      MACH_HP86A    = 2,
+      MACH_HP86B    = 3,
+      MACH_HP87     = 4,
+      MACH_HP87XM   = 5,
+      MACH_HP85AEMC = 6,        //  This is for a modified HP85A that has the IF signal wired to the I/O bus
+                                //  Since the memory controller for the HP85A is not EMC capable, if EBTKS
+                                //  provides EMC memory for an Electronic Disk, then it must emulate the
+                                //  EMC controller 1MC4 in master mode. For all other machine types, our
+                                //  emulation of the 1MC4 must be in non-master mode.
+                                //  (I don't think we can call it slave mode anymore)
+      MACH_NUM      = 7  };     //  Always ensure MACH_NUM is the last enumeration
+
 //
 //  Configuration related
 //

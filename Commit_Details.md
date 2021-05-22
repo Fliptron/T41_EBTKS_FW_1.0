@@ -658,6 +658,25 @@ Changes:
 -   Fix range bug in diag console set_time()
 -   Implement new keyword DATETIME A,B,C,D
 
+## Commit \#122 05/22/2021
+
+Changes:
+
+-   Start up a little faster by reducing delay to loop() from 5 seconds to 1
+-   Have seen rare times LED near SD Card starts up bright green, suggests there
+    may be a timing issue, or signal integrity.
+-   Removed the diagnostic console command to change the loaded tape image, tload
+-   Added a diagnostic console command to show keyboard codes, for things like the
+    Arrow keys that return multi-character escape sequences. Note that different
+    terminal emulators may return different sequences, and maybe also different
+    sequences based on which iconic terminal is being emulated. Note that VSCode's
+    built-in terminal uses sequences that are quite different from VT100. EBTKS
+    in the diagnostic interface assumes that Tera Term is being used, with VT100
+    emulation, with ANSI escape sequences.  https://en.wikipedia.org/wiki/ANSI_escape_code
+-   Simple Keyboard history buffer for diagnostic console
+-   Update diagnostic console help
+-   Change all reference to machineNum to use the enums for various Series80 computers
+
 
 
 

@@ -168,8 +168,9 @@ void Write_on_CRT_Alpha(uint16_t row, uint16_t column, const char *  text)
   uint16_t        badAddr_restore;
   uint16_t        local_badAddr;
 
-  if (get_screenEmu())          //  Only support direct writing to the CRT if screenEmu is true. Use this to block
-  {                             //  accidentally trying to write to the HP86/87 screen which we don't yet support
+  if (get_MachineNum() <= MACH_HP85B)       //  Lock out writing to the CRT for HP86/87 until we have their CRT controller supported   #######
+                                            //  Use this to block accidentally trying to write to the HP86/87 screen which we don't yet support
+  {                             
     if (crtControl & 0x80)
     {
       return;                   //  CRT is in Graphics mode, so just ignore for now.

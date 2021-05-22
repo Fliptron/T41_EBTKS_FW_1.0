@@ -435,21 +435,6 @@ bool Tape::is_tape_loaded(void)
   return _tape_inserted;
 }
 
-void tape_handle_command_load(void)
-{
-  Serial.printf("\nLoad new tape file. Enter filename including path: ");
-  if (!wait_for_serial_string())                                //  Hang here till we get a file name (hopefully)
-  {
-    return;                                                     //  Got a Ctrl-C , so abort command
-  }
-  Serial.printf("\nOpening tape: %s\n", serial_string);
-  tape.close();
-  blockDirty = false;
-  tapeInCount = 1;                                              //  Flag the tape removal to the HP85
-  tape.setFile(serial_string);
-  serial_string_used();
-}
-
 bool tape_handle_MOUNT(char *path)
 {
   Serial.printf("\nOpening tape: %s\n", path);

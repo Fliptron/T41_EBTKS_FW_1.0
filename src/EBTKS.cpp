@@ -1086,6 +1086,8 @@ void setup()
 
   Serial.printf("Waiting for HP85 to get to prompt\n");
 
+  delay(1000);
+
   Logic_Analyzer_Event_Count_Init = -1000;      // Use this to indicate the Logic analyzer has no default values.
 
   //leds.setLedColor(0,CRGB::Purple);
@@ -1132,6 +1134,8 @@ void setup()
 //      which adds about 800 ns.
 //
 
+// bool once;
+
 void loop()
 {
   if (IS_PWO_LOW)
@@ -1173,6 +1177,13 @@ void loop()
       esp32.poll();                           //  Access with "http://esp32_ebtks.local/"
     }
   }
+
+  // if (!once)
+  // {
+  //   Serial.printf("CRT_Boot_Message_Pending  %d\n",CRT_Boot_Message_Pending);
+  //   Serial.printf("SD_begin_OK  %d\n",SD_begin_OK);
+  //   once = true;
+  // }
 
   if (CRT_Boot_Message_Pending)     //  8 ns test is false, but 800 ns ish if Phi 1 interrupt occurs while running
   {                                 //  which is quite rare because the window is so narrow

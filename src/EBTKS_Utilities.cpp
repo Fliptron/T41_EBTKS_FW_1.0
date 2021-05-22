@@ -171,7 +171,6 @@ void help_5(void);
 void help_6(void);
 void help_7(void);
 void tape_handle_command_flush(void);
-void tape_handle_command_load(void);
 void CRT_Timing_Test_1(void);
 void CRT_Timing_Test_2(void);
 void CRT_Timing_Test_3(void);
@@ -186,6 +185,7 @@ void proc_auxint(void);
 void just_once_func(void);
 void pulse_PWO(void);
 void dump_ram_window(void);
+void show_keyboard_codes(void);
 void jay_pi(void);
 void ulisp(void);
 void diag_dir_tapes(void);
@@ -236,7 +236,6 @@ struct S_Command_Entry Command_Table[] =
   {"5",                help_5},
   {"6",                help_6},
   {"7",                help_7},
-  {"tload",            tape_handle_command_load},
   {"dir tapes",        diag_dir_tapes},
   {"dir disks",        diag_dir_disks},
   {"media",            report_media},
@@ -261,6 +260,7 @@ struct S_Command_Entry Command_Table[] =
   {"pwo",              pulse_PWO},
   {"reset",            pulse_PWO},
   {"dump ram window",  dump_ram_window},                  //  Currently broken
+  {"kbdcode",          show_keyboard_codes},
   {"graphics test",    Simple_Graphics_Test},
   {"PSRAMTest",        PSRAM_Test},
   {"ESP32 Prog",       ESP_Programmer_Setup},
@@ -279,11 +279,12 @@ struct S_Command_Entry Command_Table[] =
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////  Get string from Serial, with editing
 //
-//  Not currently used, but here is some Scan Codes / Escape sequences
-//                  As seen by VSCode   As Seen by SecureCRT
-//  Up Arrow        0xC3 0xA0 0x48      0x1B 0x41
+//  Not currently used, but here is some Scan Codes / Escape sequences. WHY ARE THESE DIFFERENT???
+//
+//                  As seen by VSCode   As Seen by SecureCRT  As Seen by Tera Term
+//  Up Arrow        0xC3 0xA0 0x48      0x1B 0x41             0x1B 0x5B 0x41
 //  Left Arrow      0xC3 0xA0 0x4B      0x1B 0x44
-//  Down Arrow      0xC3 0xA0 0x50      0x1B 0x42
+//  Down Arrow      0xC3 0xA0 0x50      0x1B 0x42             0x1B 0x5B 0x42
 //  Right Arrow     0xC3 0xA0 0x4D      0x1B 0x43
 
 //
@@ -306,9 +307,178 @@ bool wait_for_serial_string(void)
   return true;
 }
 
+//
+//  05/21/2021    Add a little keyboard history buffer. Minimal implementation, KBD_HISTORY_LINES strings of SERIAL_STRING_MAX_LENGTH characters
+//                Up arrow gives previous command, down arrow gives next
+//                See above comment for Arrow codes
+//                Use windows cmd box behavior to guide us:
+//                    Up Arrow gives previous command, back to start of history. No wraparound
+//                    Down arrow will give next command, if we have moved backwards through buffer with up arrow, will do nothing if we are at end of valid entries
+//                    When a command is about to be executed, only store if it does not match the current line in buffer, and add at end, and move pointer to that position
+//                    NOT YET: Command "clear history" to delete all history
+//
+
+#define KBD_HISTORY_LINES      (10)
+#define DEBUG_HISTORY_CODE     ( 0)
+
+//
+//  These all depend on auto initialization to 0
+//
+static char       kbd_history[KBD_HISTORY_LINES][SERIAL_STRING_MAX_LENGTH + 2];
+static int8_t     kbd_history_ptr;                                    //  Index of command to return if Up Arrow 0..(KBD_HISTORY_LINES-1)
+static int8_t     kbd_history_high_water_mark;                        //  Number of valid entries   0..KBD_HISTORY_LINES
+static bool       serial_string_is_from_history = false;
+
+//
+//  If an up arrow is seen, replace the serial_string from the buffer
+//  at the current pointer position, and decrement the pointer, and dead end at 0
+//
+void kbd_history_up_arrow()
+{
+  //
+  //  First, make sure there is some history. If not, do nothing
+  //
+  #if DEBUG_HISTORY_CODE
+  Serial.printf("\nUpArrow, hist? %d\n", serial_string_is_from_history);
+  #endif
+  if (kbd_history_high_water_mark == 0)
+  {
+    return;
+  }
+  if (serial_string_is_from_history)
+  {   //  if the current serial string is from history without modification, then move the pointer first
+    if (kbd_history_ptr)
+    {
+      kbd_history_ptr--;
+    }
+  }
+  Serial.printf("\x1B[2K\r");                         //  VT100 escape code to clear entire line
+  strlcpy(serial_string, kbd_history[kbd_history_ptr], SERIAL_STRING_MAX_LENGTH + 2);
+  serial_string_length = strlen(serial_string);
+  Serial.printf("EBTKS> %s", serial_string);                 //  Show the command from history
+  serial_string_is_from_history = true;
+}
+
+//
+//  If a down arrow is seen, replace the serial_string from the buffer
+//  at the next pointer position. Dead end at the high water mark
+//
+void kbd_history_down_arrow()
+{
+  //
+  //  First, make sure there is some history. If not, do nothing
+  //
+  #if DEBUG_HISTORY_CODE
+  Serial.printf("\nDownArrow, hist? %d\n", serial_string_is_from_history);
+  #endif
+  if (kbd_history_high_water_mark == 0)
+  {
+    return;
+  }
+  //
+  //  If we are at the high water mark, there is no next item to display
+  //
+  if (kbd_history_ptr == (kbd_history_high_water_mark - 1))
+  {
+    return;
+  }
+  if (serial_string_is_from_history)
+  {   //  If the current serial string is from history without modification, then move the pointer first
+      //  We already know it is less than the high water mark
+    kbd_history_ptr++;
+  }
+  Serial.printf("\x1B[2K\r");                         //  VT100 escape code to clear entire line
+  strlcpy(serial_string, kbd_history[kbd_history_ptr], SERIAL_STRING_MAX_LENGTH + 2);
+  serial_string_length = strlen(serial_string);
+  Serial.printf("EBTKS> %s", serial_string);                 //  Show the command from history
+  serial_string_is_from_history = true;
+}
+
+//
+//  Add a command to the history buffer at the high water mark if it doesn't match any
+//  command currently in the buffer. If the buffer is full, discard the
+//  oldest entry and shift every thing down. (yes, I know that is not very efficient)
+//  Don't call this with an empty line in serial_string
+//  If the command is already in the buffer, leave the kbd_history_ptr pointing to it, for a following Up Arrow. This is the way.
+//
+void kbd_history_add_command()
+{
+  #if DEBUG_HISTORY_CODE
+  Serial.printf("\nADD:  serial_string [%s]  Ptr %2d  hwm %2d\n", serial_string, kbd_history_ptr, kbd_history_high_water_mark);
+  #endif
+
+  //
+  //  Search to see if command is already in history buffer
+  //
+  if (kbd_history_high_water_mark)
+  {
+    for (uint8_t i = 0 ; i < (kbd_history_high_water_mark) ; i++)
+    {
+      #if DEBUG_HISTORY_CODE
+      Serial.printf("test %2d: len[%s] %2d    Len[%s] %2d\n", i, serial_string, strlen(serial_string), kbd_history[i], strlen(kbd_history[i]));
+      #endif
+      if (strcmp(serial_string, kbd_history[i]) == 0)
+      {           //  Found an exact match already in the history buffer
+        #if DEBUG_HISTORY_CODE
+        Serial.printf("match\n");
+        #endif
+        kbd_history_ptr = i;
+        return;
+      }
+    }
+  }
+
+  //
+  //  Test if history buffer is full, and if so, flush oldest command
+  //
+  if (kbd_history_high_water_mark == KBD_HISTORY_LINES)
+  {   //  Buffer is full, so make some room by throwing out the oldest entry
+    for (uint8_t i = 1 ; i < KBD_HISTORY_LINES ; i++)
+    { //  shift everything down one line 
+      strlcpy(kbd_history[i - 1], kbd_history[i], SERIAL_STRING_MAX_LENGTH + 2);
+    }
+    //
+    //  Now store the line in the last slot
+    //
+    strlcpy(kbd_history[KBD_HISTORY_LINES - 1], serial_string, SERIAL_STRING_MAX_LENGTH + 2);
+    kbd_history_ptr = KBD_HISTORY_LINES - 1;    //  and point to it
+    return;
+  }
+  //
+  //  History buffer is not full, so append at the end
+  //
+  strlcpy(kbd_history[kbd_history_high_water_mark], serial_string, SERIAL_STRING_MAX_LENGTH + 2);
+  kbd_history_ptr = kbd_history_high_water_mark;
+    kbd_history_high_water_mark++;
+}
+
+#if DEBUG_HISTORY_CODE
+void show_history_buffer()
+{
+  Serial.printf("Dump of History buffer. Pointer %2d  HWM %2d\n", kbd_history_ptr, kbd_history_high_water_mark);
+  for (uint8_t i = 0 ; i < KBD_HISTORY_LINES ; i++)
+  {
+    Serial.printf("%2d  [%s]\n", i, kbd_history[i]);
+  }
+  //Serial.printf("\n");
+}
+#endif
+
+static bool prompt_shown = false;
+static int8_t escape_sequence_state = 0;
+
 void get_serial_string_poll(void)
 {
   char  current_char;
+
+  if (!prompt_shown)
+  {
+    #if DEBUG_HISTORY_CODE
+    show_history_buffer();
+    #endif
+    Serial.printf("EBTKS> ");
+    prompt_shown = true;
+  }
 
   if (serial_string_available)
   {
@@ -321,9 +491,54 @@ void get_serial_string_poll(void)
 
   while(1)    //  Got at least 1 new character
   {
-    //  Serial.printf("\nget_serial_string diag: available chars %2d  current string length %2d  current string [%s]\n%s", Serial.available(), serial_string_length, serial_string, serial_string);
-    //  Serial.printf("[%02X]",current_char );    //  Use this to see what scan codes (as seen by VSCode) or escape sequences as seen by SecureCRT for special PC keys.
     current_char = Serial.read();
+    //
+    //  If an escape sequence is coming in (Up arrow, Down Arrow), we don't want to echo this to the terminal,
+    //  or add to serial_string. So we need to either do some look ahead, or put stuff into a temp buffer, or trivial state machine
+    //  Tough choice. All options are messy. I think state machine is cleaner. We will see...
+    //
+    if (current_char == 0x1B)   //  No plan to handle multiple escapes
+    {
+      escape_sequence_state = 1;
+      return;
+    }
+    if (escape_sequence_state == 1)
+    { //                                              We have seen ESC
+      //
+      //  The only thing we support is esc + [ , so if we don't get '[' , escape processing resets
+      //
+      if (current_char == 0x5B)
+      {
+        escape_sequence_state = 2;
+      }
+      else
+      {
+        escape_sequence_state = 0;
+      }
+      return;
+    }
+    if (escape_sequence_state == 2)
+    { //                                              We have seen ESC + 0x5B
+      //
+      //  The only thing we support is esc + [
+      //
+      escape_sequence_state = 0;                  //  Regardless of what follows, this ends escape processing
+      if (current_char == 'A')                    //  We have found A, Up Arrow
+      {
+        kbd_history_up_arrow();
+        return;
+      }
+      if (current_char == 'B')                    //  We have found B, Down Arrow
+      {
+        kbd_history_down_arrow();
+        return;
+      }
+      return;
+    }
+    //
+    //  End of escape processing
+    //
+
     switch (current_char)
     {
     //
@@ -335,7 +550,16 @@ void get_serial_string_poll(void)
         serial_string[serial_string_length] = '\0';         //  This should already be true, but do it to be extra safe
         Serial.printf("\n");
         serial_string_available = true;                     //  Return the string, do not include \r or \n characters.
+        #if DEBUG_HISTORY_CODE
+        Serial.printf("\n%s\n", serial_string);
+        #endif
+        if (serial_string_length > 0)
+        {
+          kbd_history_add_command();
+        }
         while(Serial.read() >= 0){};                        //  Remove any remaining characters in the serial channel. This will kill type-ahead, which might not be a good idea
+        prompt_shown = false;
+        serial_string_is_from_history = false;
         return;
         break;
       case '\b':                                            //  Backspace. If the string (so far) is not empty, delete the last character, otherwise ignore
@@ -344,16 +568,19 @@ void get_serial_string_poll(void)
           serial_string_length--;
           serial_string[serial_string_length] = '\0';
           Serial.printf("\b \b");                           //  Backspace , Space , Backspace
+          serial_string_is_from_history = false;
         }
         break;
       case '\x03':                                          //  Ctrl-C.  Flush any current string. This fails with the VSCode terminal because it kils the terminal
         serial_string_length    = 0;
         Serial.printf("  ^C\n");
         Ctrl_C_seen = true;
+        prompt_shown = false;
+        serial_string_is_from_history = false;
         break;
       case '\x14':                                          //  Ctrl-T.  Show the current incomplete command
         serial_string[serial_string_length] = '\0';
-        Serial.printf("\n%s", serial_string);
+        Serial.printf("\nEBTKS> %s", serial_string);
         break;
       default:                                              //  If buffer is full, the characteris ignored
         if (serial_string_length >= SERIAL_STRING_MAX_LENGTH)
@@ -363,8 +590,9 @@ void get_serial_string_poll(void)
         serial_string[serial_string_length++] = current_char;
         serial_string[serial_string_length] = '\0';
         Serial.printf("%c", current_char);
+        serial_string_is_from_history = false;
     }
-  if (!Serial.available()) return;                           //  No new characters available
+    if (!Serial.available()) return;                           //  No additional new characters available
   }
 }
 
@@ -522,6 +750,12 @@ void show(void)
     return;
   }
 
+  if(strcasecmp(serial_string + 5, "media") == 0)       //  Not strncasecmp() so nothing after CRT
+  {
+    report_media();
+    return;
+  }
+
   if(strcasecmp(serial_string + 5, "key85_O") == 0)     //  Not strncasecmp() so nothing after key85_O
   {
     dump_keys(true, true);
@@ -671,7 +905,7 @@ void help_0(void)
 {
   Serial.printf("\nEBTKS Control commands - not case-sensitive\n\n");
   Serial.printf("0     Help for the help levels\n");
-  Serial.printf("1     Help for Tape/Disk commands\n");
+  Serial.printf("1     Help for Display Information\n");
   Serial.printf("2     Help for Diagnostic commands\n");
   Serial.printf("3     Help for Directory and Time/Date Commands\n");
 //  Serial.printf("4     Help for Auxiliary programs\n");
@@ -685,13 +919,20 @@ void help_0(void)
 
 void help_1(void)
 {
-  Serial.printf("Commands for the Tape Drive\n");
-  Serial.printf("tload         Load a new tape image from SD\n");
-  Serial.printf("                 You will be prompted for a file name\n");
-//Serial.printf("dload         #Load a new disk image from SD\n");     //  Not yet Implemented
-  Serial.printf("media         Show the currently mounted tape and disk media\n");
-//Serial.printf("dflush        #Force a disk flush and reload\n");     //  Not yet Implemented
-//Serial.printf("dwhich        #Which disk(s) is(are) currently loaded\n");
+  Serial.printf("Commands to Display Information\n");
+  Serial.printf("show -----    Show commands have a parameter after exactly 1 space\n");
+  Serial.printf("     log      Show the System Logfile\n");
+  Serial.printf("     boot     Show the messages from the boot process\n");
+  Serial.printf("     CRT      Show the messages sent to the CRT at startup\n");
+  Serial.printf("     config   Show the CONFIG.TXT file\n");
+  Serial.printf("     media    Show the Disk and Tape assignments\n");
+  Serial.printf("     mb       Display current mailboxes and related data\n");
+  Serial.printf("     key85_O  Display HP85 Special Keys in Octal\n");
+  Serial.printf("     key85_D  Display HP85 Special Keys in Decimal\n");
+  Serial.printf("     key87_O  Display HP87 Special Keys in Octal\n");
+  Serial.printf("     key87_D  Display HP87 Special Keys in Decimal\n");
+  Serial.printf("     other    Anything else is a file name path\n\n");
+  //Serial.printf("media         Show the currently mounted tape and disk media\n");  // still supported for now, but maybe delete later
   Serial.printf("\n");
 }
 
@@ -701,22 +942,12 @@ void help_2(void)
   //uint16_t    i;
 
   Serial.printf("Commands for Diagnostic\n");
-  Serial.printf("sdreadtimer   Test Reading with different start positions\n");
   Serial.printf("la setup      Set up the logic analyzer\n");
   Serial.printf("la go         Start the logic analyzer\n");
   Serial.printf("addr          Instantly show where HP85 is executing\n");
-  Serial.printf("show -----    Show commands have a parameter after exactly 1 space\n");
-  Serial.printf("     log      Show the System Logfile\n");
-  Serial.printf("     boot     Show the messages from the boot process\n");
-  Serial.printf("     CRT      Show the messages sent to the CRT at startup\n");
-  Serial.printf("     config   Show the CONFIG.TXT file\n");
-  Serial.printf("     mb       Display current mailboxes and related data\n");
-  Serial.printf("     key85_O  Display HP85 Special Keys in Octal\n");
-  Serial.printf("     key85_D  Display HP85 Special Keys in Decimal\n");
-  Serial.printf("     key87_O  Display HP87 Special Keys in Octal\n");
-  Serial.printf("     key87_D  Display HP87 Special Keys in Decimal\n");
-  Serial.printf("     other    Anything else is a file name path\n\n");
+  Serial.printf("kbdcode       Show key codes for next 10 characters in the keyboard byffer\n");
   Serial.printf("clean log     Clean the Logfile on the SD Card\n");
+  Serial.printf("sdreadtimer   Test Reading with different start positions\n");
   Serial.printf("PSRAMTest     Test the 8 MB PSRAM. You probably should do the PWO command when test has finished\n");
   Serial.printf("ESP32 Prog    Activate a passthrough serial path to program the ESP32\n");
 #if ENABLE_TRACE_EMC
@@ -725,8 +956,6 @@ void help_2(void)
 #if ENABLE_TRACE_PTR2
   Serial.printf("EMC           display info tracing EMC Ptr2 over a limited range\n");
 #endif
-
-
   Serial.printf("pwo           Pulse PWO, resetting HP85 and EBTKS\n");
 
 //Serial.printf("dump ram window Start(8) Len(8)   Dump RAM in ROM window\n");                          //  Currently broken because of parsing
@@ -1011,7 +1240,7 @@ void report_media(void)
       filename = devices[device]->getFilename(0);
       if (filename)
       {
-        Serial.printf("%d%.2d  %s\n", HPIB_Select, device, filename);
+        Serial.printf("%d%.2d    %s\n", HPIB_Select, device, filename);
       }
     }
   }
@@ -1051,6 +1280,32 @@ void proc_addr(void)
 
   Logic_analyzer_go();
 
+}
+
+void show_keyboard_codes(void)
+{
+  int         chars_to_report = 10;
+  uint8_t     current_char;
+
+  serial_string_used();
+  while (chars_to_report)
+  {
+    while (!Serial.available()) {}
+    //
+    //  Got a charcter
+    //
+    current_char = Serial.read();
+    Serial.printf("Char code 0x%02X\n", current_char);
+    chars_to_report--;
+  }
+  //
+  //  Drain any remaining charcters
+  //
+  while (Serial.available())
+  {
+    current_char = Serial.read();
+  }
+  Serial.printf("\n");
 }
 
 void Setup_Boot_Time_Logic_Analyzer(void)

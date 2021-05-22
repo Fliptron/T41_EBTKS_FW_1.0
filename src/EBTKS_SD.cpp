@@ -43,27 +43,6 @@ bool          EMC_Master = false;
 //
 const char *machineNames[] = {"HP85A", "HP85B", "HP86A", "HP86B", "HP87", "HP87XM", "HP85AEMC"};
 
-//
-//  Machine type enumerations. MACH_HP85A must be first, and == 0. The corresponding string
-//  table above needs to follow this sequence. The EMC code assumes that any value higher
-//  than MACH_HP85A is EMC capable.
-//
-enum machine_numbers{
-      MACH_HP85A    = 0,
-      MACH_HP85B    = 1,
-      MACH_HP86A    = 2,
-      MACH_HP86B    = 3,
-      MACH_HP87     = 4,
-      MACH_HP87XM   = 5,
-      MACH_HP85AEMC = 6,        //  This is for a modified HP85A that has the IF signal wired to the I/O bus
-                                //  Since the memory controller for the HP85A is not EMC capable, if EBTKS
-                                //  provides EMC memory for an Electronic Disk, then it must emulate the
-                                //  EMC controller 1MC4 in master mode. For all other machine types, our
-                                //  emulation of the 1MC4 must be in non-master mode.
-                                //  (I don't think we can call it slave mode anymore)
-      MACH_NUM      = 7  };     //  Always ensure MACH_NUM is the last enumeration
-
-
 extern HpibDevice *devices[];
 
 // extern uint8_t roms[MAX_ROMS][ROM_PAGE_SIZE];        //  Just for diag prints
@@ -224,7 +203,7 @@ bool loadRom(const char *fname, int slotNum, const char *description)
     //
     //  If HP86/87 (machineNum 2 through 5) adding 1 turns a 1's complement into a 2's complement
     //
-    uint8_t comp = ((uint8_t)(~id)) + ((machineNum >= 2) && (machineNum <= 5) ? 1 : 0);
+    uint8_t comp = ((uint8_t)(~id)) + ((machineNum >= MACH_HP86A) && (machineNum <= MACH_HP87XM) ? 1 : 0);
 
     if (id_comp != (comp | (uint8_t)0360))                                      //  Check the ID check byte
     {

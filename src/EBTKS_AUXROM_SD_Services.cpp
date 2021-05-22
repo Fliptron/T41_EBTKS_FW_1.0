@@ -229,7 +229,7 @@ void AUXROM_DATETIME(void)
     Serial.printf("Call to DATETIME\n");
 #endif
 
-  *(uint32_t *)(&AUXROM_RAM_Window.as_struct.AR_Opts[0]) = (hour() * 3600) + (minute() * 60) + second();    //  Seconds since midnight  0.. 86400
+  *(uint32_t *)(&AUXROM_RAM_Window.as_struct.AR_Opts[0]) = (hour() * 3600) + (minute() * 60) + second();    //  Seconds since midnight  0.. 86399
   *(uint16_t *)(&AUXROM_RAM_Window.as_struct.AR_Opts[4]) = day();                                           //  Day,      1..31
   *(uint16_t *)(&AUXROM_RAM_Window.as_struct.AR_Opts[6]) = month();                                         //  Month,    1..12
   *(uint16_t *)(&AUXROM_RAM_Window.as_struct.AR_Opts[8]) = year();                                          //  Year,     1970 .. 2038

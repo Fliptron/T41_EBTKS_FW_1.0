@@ -20,7 +20,6 @@ void setRomMap(uint8_t romId,uint8_t slotNum);
 //
 //  Tape functions
 //
-void tape_handle_command_load(void);
 bool tape_handle_MOUNT(char *path);
 void tape_handle_UNMOUNT(void);
 void report_media(void);             // does both tape and disk
@@ -232,5 +231,5 @@ uint32_t getFlags(void);
 //
 
 extern size_t strlcpy(char *, const char *, size_t);    //  size parameter includes space for the null
-extern size_t strlcat(char *, const char *, size_t);
+extern size_t strlcat(char *, const char *, size_t);    //  size parameter includes space for the null
 
