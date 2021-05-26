@@ -41,7 +41,7 @@ void    DMA_Poke16(uint32_t address, uint16_t val);
 //
 //  CRT Functions
 //
-void initCrtEmu(void);
+void initCrtEmu(bool is8687);
 void dumpCrtAlpha(void);
 void Write_on_CRT_Alpha(uint16_t row, uint16_t column, const char *  text);
 void a3_to_a4(unsigned char *a4, unsigned char *a3);
@@ -213,6 +213,7 @@ bool get_CRTVerbose(void);
 bool get_screenEmu(void);
 bool get_CRTRemote(void);
 bool get_AutoStartEn(void);
+bool get_TapeEn(void);
 
 #if ENABLE_EMC_SUPPORT
 void emc_init(void);

@@ -26,6 +26,7 @@ bool          CRTVerbose;
 bool          screenEmu;
 bool          CRTRemote;
 bool          AutoStartEn;
+bool          tapeEn;
 
 #if ENABLE_EMC_SUPPORT
 bool          EMC_Enable;
@@ -312,6 +313,13 @@ bool get_AutoStartEn(void)
   return AutoStartEn;
 }
 
+bool get_TapeEn(void)
+{
+  return tapeEn;
+}
+
+
+
 #if ENABLE_EMC_SUPPORT
 bool get_EMC_Enable(void)
 {
@@ -357,7 +365,7 @@ void mount_drives_based_on_JSON(JsonDocument& doc)
   //char fname[258];
   char * temp_char_ptr;
 
-  bool tapeEn = doc["tape"]["enable"] | false;
+  tapeEn = doc["tape"]["enable"] | false;
 
   const char *tapeFname = doc["tape"]["filepath"] | "/tapes/tape1.tap";
 

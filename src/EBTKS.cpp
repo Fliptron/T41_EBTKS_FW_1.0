@@ -811,7 +811,9 @@ void setup()
 
   initIOfuncTable();
   initRoms();
-  initCrtEmu();
+  //
+  //  Can't init CRT yet as we need to process CONFIG.TXT
+  //
 
   pinMode(CORE_PIN_NEOPIX_TSY, OUTPUT);       //  The single pin interface to the two WS2812B/E RGB LEDs
 
@@ -951,6 +953,9 @@ void setup()
     config_success = false;
   }
 
+  initCrtEmu(get_MachineNum() >= MACH_HP86A);
+  log_to_serial_ptr += sprintf(log_to_serial_ptr, "get_MachineNum(): %3d\n", get_MachineNum());
+
 //
 //  EMC initialization must occur after CONFIG.TXT processing, as it depends on parameters from that process.
 //
@@ -1058,10 +1063,14 @@ void setup()
   log_to_serial_ptr += sprintf(log_to_serial_ptr, "Config Success is %s\n"   , config_success  ? "true":"false");
 
   log_to_serial_ptr += sprintf(log_to_serial_ptr, "Parameters from the CONFIG.TXT (or defaults)\n");
-  log_to_serial_ptr += sprintf(log_to_serial_ptr, "Machine number   %d\n", get_MachineNum());
-  log_to_serial_ptr += sprintf(log_to_serial_ptr, "Machine type     %s\n", get_machineType());
-  log_to_serial_ptr += sprintf(log_to_serial_ptr, "CRT Verbose      %s\n", get_CRTVerbose() ? "true":"false");
-
+  log_to_serial_ptr += sprintf(log_to_serial_ptr, "Machine number     %d\n", get_MachineNum());
+  log_to_serial_ptr += sprintf(log_to_serial_ptr, "Machine type       %s\n", get_machineType());
+  log_to_serial_ptr += sprintf(log_to_serial_ptr, "CRT Verbose        %s\n", get_CRTVerbose() ? "true":"false");
+  log_to_serial_ptr += sprintf(log_to_serial_ptr, "Screen Emu.        %s\n", get_screenEmu()  ? "true":"false");
+  log_to_serial_ptr += sprintf(log_to_serial_ptr, "Remote CRT         %s\n", get_CRTRemote()  ? "true":"false");
+  log_to_serial_ptr += sprintf(log_to_serial_ptr, "85A 16 KB RAM      %s\n", getHP85RamExp()  ? "true":"false");
+  log_to_serial_ptr += sprintf(log_to_serial_ptr, "HP85A/B Tape Emu.  %s\n", get_TapeEn()     ? "true":"false");
+    
 #if ENABLE_EMC_SUPPORT
   log_to_serial_ptr += sprintf(log_to_serial_ptr, "EMC Support      %s\n",    get_EMC_Enable() ? "true":"false");
   if (get_EMC_Enable())
@@ -1073,10 +1082,9 @@ void setup()
   }
 #endif
 
-  log_to_serial_ptr += sprintf(log_to_serial_ptr, "Screen Emul.     %s\n", get_screenEmu() ? "true":"false");
-  log_to_serial_ptr += sprintf(log_to_serial_ptr, "Remote CRT       %s\n", get_CRTRemote() ? "true":"false");
-  log_to_serial_ptr += sprintf(log_to_serial_ptr, "85A 16 KB RAM    %s\n", getHP85RamExp() ? "true":"false");
 
+    
+    
   //
   //  This should be the end of our writing to this buffer for these startup messages.
   //  All future messages just use Serial.printf()
@@ -1276,6 +1284,9 @@ bool is_hp85_idle(void)
 //  to 000072, which is part of the EXEC loop), we dump the array to the CRT
 //
 
+extern void Safe_Write_CRTBAD(uint16_t badAddr);
+extern void Safe_Write_CRTSAD(uint16_t sadAddr);
+
 void Boot_Messages_to_CRT(void)
 {
 
@@ -1289,7 +1300,7 @@ void Boot_Messages_to_CRT(void)
     return;
   }
 
-  row = 1;
+  row = 1;                                            //  Start at line 1 so there will be a blank line at the top of the screen
   column=0;
 
   while (*log_to_CRT_ptr)
@@ -1302,15 +1313,18 @@ void Boot_Messages_to_CRT(void)
       {
         delay(40);                                    //  A little delay so they see it happening
       }
-    if(row > 63)
+    if (row > 63)                                     //  ##########  These constants for line number are specific to HP85A/B.
+    {                                                 //  ##########  If we have a HP86/87, there are multiple ALPHA modes each with different max lines
+      row = 63;                                       //  Just over-write the last line. Note we start on line 1, so max lines is 63. We leave line 0 alone.
+    }
+    if (row == 15)
     {
-      row = 63;                                     //  Just over-write the last line. Note we start on line 1, so max lines is 63. We leave line 0 alone.
+      Write_on_CRT_Alpha(row++, column, "Scroll up for more");
     }
   }
+  //
   // Write_on_CRT_Alpha(0,0, first_char);
-  while (DMA_Peek8(CRTSTS) & 0x80) {};              //  Wait until video controller is ready
-  DMA_Poke16(CRTBAD, 0);
-  while (DMA_Peek8(CRTSTS) & 0x80) {};              //  Wait until video controller is ready
-  DMA_Poke16(CRTSAD, 0);
-
+  //
+  Safe_Write_CRTBAD(0);
+  Safe_Write_CRTSAD(0);
 }

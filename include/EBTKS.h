@@ -693,31 +693,35 @@ enum machine_numbers{
 //  HP-85 Standard I/O registers
 //
 
-#define GINTEN  (0177400)       //  GL0BAL INTERRUPT ENABLE
-#define GINTDS  (0177401)       //  GLOBAL INTERRUPT DISABLE
-#define KEYSTS  (0177402)       //  KEYBOARD STATUS
-#define KEYCOD  (0177403)       //  KEYBOARD CODE AND EOJOB
-#define CRTSAD  (0177404)       //  CRT START ADDRESS
-#define CRTBAD  (0177405)       //  CRT BYTE ADDRESS
-#define CRTSTS  (0177406)       //  CRT STATUS
-#define CRTDAT  (0177407)       //  CRT DATA
-#define TAPSTS  (0177410)       //  TAPE STATUS
-#define TAPDAT  (0177411)       //  TAPE DATA
-#define CLKSTS  (0177412)       //  CL0CK STATUS
-#define CLKDAT  (0177413)       //  CL0CK DATA
-#define PRMLEN  (0177414)       //  PRINTER MESSAGE LENGTH
-#define PRCHAR  (0177415)       //  PRINTER CHARACTER ROM
-#define PRSTS   (0177416)       //  PRINTER STATUS
-#define PRDATA  (0177417)       //  PRINTER DATA
-#define IOSTAT  (0177420)       //  I0 STATUS
-#define IOINTC  (0177421)       //  I0 C0NTR-INTRUPT
-#define IODATA  (0177422)       //  I0 DATA
-#define PPOLL   (0177423)       //  PARALLEL P0LL REG
-#define MLAD    (0177424)       //  SERIAL P0LL REGISTER
-#define SERPOL  (0177425)       //  MY LISTEN ADDRESS
-#define EXSTAT  (0177426)       //  EXTENDED IO STATUS
-#define RSELEC  (0177430)       //  ROM SELECT
-#define HEYEBTKS (0177740)      //  Mailbox alert for AUXROM Functions. ()
+#define GINTEN          (0177400)       //  GL0BAL INTERRUPT ENABLE
+#define GINTDS          (0177401)       //  GLOBAL INTERRUPT DISABLE
+#define KEYSTS          (0177402)       //  KEYBOARD STATUS
+#define KEYCOD          (0177403)       //  KEYBOARD CODE AND EOJOB
+#define CRTSAD          (0177404)       //  CRT START ADDRESS HP85A/B
+#define CRTBAD          (0177405)       //  CRT BYTE ADDRESS  HP85A/B
+#define CRTSTS          (0177406)       //  CRT STATUS        HP85A/B
+#define CRTDAT          (0177407)       //  CRT DATA          HP85A/B
+#define TAPSTS          (0177410)       //  TAPE STATUS
+#define TAPDAT          (0177411)       //  TAPE DATA
+#define CLKSTS          (0177412)       //  CL0CK STATUS
+#define CLKDAT          (0177413)       //  CL0CK DATA
+#define PRMLEN          (0177414)       //  PRINTER MESSAGE LENGTH
+#define PRCHAR          (0177415)       //  PRINTER CHARACTER ROM
+#define PRSTS           (0177416)       //  PRINTER STATUS
+#define PRDATA          (0177417)       //  PRINTER DATA
+#define IOSTAT          (0177420)       //  I0 STATUS
+#define IOINTC          (0177421)       //  I0 C0NTR-INTRUPT
+#define IODATA          (0177422)       //  I0 DATA
+#define PPOLL           (0177423)       //  PARALLEL P0LL REG
+#define MLAD            (0177424)       //  SERIAL P0LL REGISTER
+#define SERPOL          (0177425)       //  MY LISTEN ADDRESS
+#define EXSTAT          (0177426)       //  EXTENDED IO STATUS
+#define RSELEC          (0177430)       //  ROM SELECT
+#define HP86_87_CRTSAD  (0177700)       //  CRT START ADDRESS   HP86/87
+#define HP86_87_CRTBAD  (0177701)       //  CRT BYTE ADDRESS    HP86/87
+#define HP86_87_CRTSTS  (0177702)       //  CRT STATUS          HP86/87
+#define HP86_87_CRTDAT  (0177703)       //  CRT DATA            HP86/87
+#define HEYEBTKS        (0177740)       //  Mailbox alert for AUXROM Functions. ()
 
 //
 //  HP-85 RAM Mirrors for some Standard I/O registers

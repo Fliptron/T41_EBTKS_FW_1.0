@@ -677,8 +677,28 @@ Changes:
 -   Update diagnostic console help
 -   Change all reference to machineNum to use the enums for various Series80 computers
 
+## Commit \#123 05/26/2021
 
+Changes:
 
+-   Reorganize some startup messages, CRT Log gets note about scrolling up for more
+-   CRT Log message now works with HP85B and HP87A
+-   Added CRT_Timing_Test_5() to check EBTKS direct writing to HP86/87 CRT memory
+-   Ctrl-C escape from PSRAMTest
+-   Allow Tape Drive enable to be seen outside SD Card CONFIG.TXT processing so that
+    log to diagnostic console can show state.
+-   Refactor CRT direct access functions, and make them handle both the 32x16 screen
+    of the HP83/85/9915, and the 80x16 scren of HP86/87. Still need to support the
+    multiple ALPHA modes on HP86/87. Two new sets of functions:
+    -  For situations where only a few register accesses are going to happen, a
+       set of "Safe" functions that sort out both the machine type (CRT controller
+       type) and checking busy status.
+    -  For situations where there will be many register references (such as save/restore screen)
+       a set of "Safe" that require that the EBTKS is already in DMA mode.
+    These routines select the I/O register locations based on the machine type from
+    CONFIG.TXT
+-   Memory for CRT/screen emulation changed from 8 kB to 16 kB.
+-   Tag CRT tests that have not yet been modified to support HP86/87
 
 
 

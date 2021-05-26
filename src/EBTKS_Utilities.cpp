@@ -175,6 +175,7 @@ void CRT_Timing_Test_1(void);
 void CRT_Timing_Test_2(void);
 void CRT_Timing_Test_3(void);
 void CRT_Timing_Test_4(void);
+void CRT_Timing_Test_5(void);
 void diag_sdread_1(void);
 void Setup_Logic_analyzer(void);
 void Logic_analyzer_go(void);
@@ -245,6 +246,7 @@ struct S_Command_Entry Command_Table[] =
   {"crt 2",            CRT_Timing_Test_2},
   {"crt 3",            CRT_Timing_Test_3},
   {"crt 4",            CRT_Timing_Test_4},
+  {"crt 5",            CRT_Timing_Test_5},
   {"sdreadtimer",      diag_sdread_1},
   {"la setup",         Setup_Logic_Analyzer},
   {"la go",            Logic_analyzer_go},
@@ -1020,6 +1022,7 @@ void help_5(void)
   Serial.printf("crt 2         Fast CRT Write Experiments\n");
   Serial.printf("crt 3         Normal CRT Write Experiments\n");
   Serial.printf("crt 4         Test screen Save and Restore\n");
+  Serial.printf("crt 5         Test writing text to HP86/87 CRT\n");
   Serial.printf("\n");
 }
 
@@ -2575,6 +2578,16 @@ bool check_fixed_pattern(uint32_t pattern)
   Serial.flush();
   delay(500);       //  Give the serial data time to go out the door (via USB)
 
+  if (Serial.available())             //  check for early exit
+  {
+    if (Serial.read() == '\x03')      //  Exit with Ctrl_C_seen and false status, otherwise throw the character away
+    {
+      Ctrl_C_seen = true;
+      Serial.printf("CTRL-C seen\n");
+      return false;
+    }
+  }
+
 #if PSRAM_DMA_HALT
   assert_DMA_Request();
   while(!DMA_Active){};     //  Wait for acknowledgment, and Bus ownership. This also disables all EBTKS interrupts, so no pinChange_isr() and no USB Serial
@@ -2617,6 +2630,16 @@ bool check_lfsr_pattern(uint32_t seed)
 	Serial.printf("testing with pseudo-random sequence, seed=%u\n", seed);
   Serial.flush();
   delay(500);   //  Give the serial data time to go out the door (via USB)
+
+  if (Serial.available())             //  check for early exit
+  {
+    if (Serial.read() == '\x03')      //  Exit with Ctrl_C_seen and false status, otherwise throw the character away
+    {
+      Ctrl_C_seen = true;
+      Serial.printf("CTRL-C seen\n");
+      return false;
+    }
+  }
 
 	reg = seed;
 

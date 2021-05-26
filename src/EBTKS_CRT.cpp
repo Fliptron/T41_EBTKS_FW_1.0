@@ -7,6 +7,12 @@
 //  05/05/2021  Use get_screenEmu() to disable writes to CRT memory. Use this
 //              parameter on HP86/87 CONFIG.TXT files to avoid writing to the
 //              HP86/87 CRT memory, which we don't yet support
+//
+//  05/23/2021  Start integrating Russell's HP86/87 CRT support
+//
+//  05/26/2021  Found all the ways to shoot myself in the foot.
+//              Created the Safe...() functions to try and mitigate the problems
+//
 
 #include <Arduino.h>
 
@@ -20,33 +26,116 @@
 //  Graphics memory is 256 x 192 pixels packed into 6144 bytes. Nibble address starts at 010000 to 037777
 //  So total memory is 16384 nibbles, which we store as 8192 bytes
 //
+//  For the HP86/87, the video memory is byte oriented and 16k bytes in size
+//
+//
+//
 
-uint8_t vram[8192];                   //  Virtual Graphics memory, to avoid needing Read-Modify-Write
-volatile uint8_t crtControl = 0;      //  Write to status register stored here. bit 7 == 1 is graphics mode, else char mode
+//
+//  These definitions are for the HP86 and HP87
+//
+//  #define HP86_87_CRTSAD  (0177700)       //  CRT START ADDRESS   HP86/87   These 4 are already defined with the other I/O addresses
+//  #define HP86_87_CRTBAD  (0177701)       //  CRT BYTE ADDRESS    HP86/87   in EBTKS.H
+//  #define HP86_87_CRTSTS  (0177702)       //  CRT STATUS          HP86/87
+//  #define HP86_87_CRTDAT  (0177703)       //  CRT DATA            HP86/87
+//
+//  CRTSTS Read bit functions
+//
+#define CRTSTS87_GRAPH          (1 << 7)    //  1 = graphics mode, 0 = alpha mode
+#define CRTSTS87_MODE           (1 << 6)    //  0 = normal graphics 400 pixels/line/ 1 = graph all 544 pixels/line
+#define CRTSTS87_INV            (1 << 5)    //  1 = inverse, 0 = normal
+#define CRTSTS87_ALPHA          (1 << 3)    //  1 = 24 lines of alpha (10 pixels per char height), 0 = 16 lines (15 pixels height)
+#define CRTSTS87_PWRD           (1 << 2)    //  1 = powerdown,0 = normal operation
+#define CRTSTS87_BLANK          (1 << 1)    //  1 = screen blanked. when blanked, you get higher speed memory access
+#define CRTSTS87_BUSY           (1 << 0)    //  1 = CRT controller is busy
+
+//
+//  These definitions are for the HP83, HP85, and 9915. See HP85 Assembler manual, PDF page 273
+//
+//  #define CRTSAD          (0177404)       //  CRT START ADDRESS HP85A/B   These 4 are already defined with the other I/O addresses
+//  #define CRTBAD          (0177405)       //  CRT BYTE ADDRESS  HP85A/B   in EBTKS.H
+//  #define CRTSTS          (0177406)       //  CRT STATUS        HP85A/B
+//  #define CRTDAT          (0177407)       //  CRT DATA          HP85A/B
+//
+//  CRTSTS Read bit functions
+//
+#define CRTSTS85_GRAPH          (error)     //  Can't read this status
+#define CRTSTS85_MODE           (error)     //  There is no mode bit
+#define CRTSTS85_INV            (error)     //  There is no invert bit
+#define CRTSTS85_ALPHA          (error)     //  Only 1 character height
+#define CRTSTS85_PWRD           (error)     //  Can't read this status
+#define CRTSTS85_BLANK          (error)     //  There is no blank bit
+#define CRTSTS85_BUSY           (1 << 7)    //  1 = CRT controller is busy
+#define CRTSTS85_DISPLAY_TIME   (1 << 1)    //  1 = CRT Controller is sending pixels to CRT (not retrace time)
+#define CRTSTS85_DATA_READY     (1 << 0)    //  Requested data to be read from CRT RAM is now available.  (we could super duper speed this up by just reading our local copy, if we trust it)
+
+uint8_t vram[16384];                        //  Virtual Graphics memory, to avoid needing Read-Modify-Write. This is used for either { HP83, HP85, 9915} or {HP86, HP87}
+
+volatile uint8_t crtControl = 0;            //  Write to status register stored here. bit 7 == 1 is graphics mode, else char mode
 volatile bool writeCRTflag = false;
 
-bool badFlag = false;                 //odd/even flag for Baddr
+bool badFlag = false;                       //  Odd/Even flag for Baddr
 uint16_t badAddr = 0;
 
-bool sadFlag = false;                 //odd/even flag for CRT start address
+bool sadFlag = false;                       //  Odd/Even flag for CRT start address
 uint16_t sadAddr = 0;
 
+bool Is8687 = false;                        //  True if video is HP86/87 else HP85
+
+//
+//  8/1/2021 add HP86/87 video R.Bull
+//
+//  video memory can only be accessed in the retrace time
+//
+//
+//  video memory layout
+//  alpha is 0..4319
+//  alpha all is 0..0x3FC0    80x204 lines (16 visible I think)
+//  graphics normal is 0x10E0..0x3FC0
+//  graphics all is 0x10e0..0x3FFF    68 bytes/line (544 pixels). address wraps around to 0
+//
+#define HP87_87_LAST_ALPHA (4319) //last addr of sad/bad in alpha mode
+#define HP86_87_LAST_GPAPH (0x3FC0)
+
 // structure to hold the video subsystem snapshot
-typedef struct {
+typedef struct
+{
   uint16_t sadAddr;
   uint16_t badAddr;
   uint8_t  ctrl;
-  uint8_t  vram[8192];
+  uint8_t vram[16384];
 } video_capt_t;
 
-video_capt_t current_screen;          // contains the current HP85 screen state
-video_capt_t captured_screen;         // the current screen is copied into here when captured
+video_capt_t current_screen;                // contains the current HP85/86/87 screen state
+video_capt_t captured_screen;               // the current screen is copied into here when captured
 
+void ioWriteCrtSad(uint8_t val);
+void ioWriteCrtBad(uint8_t val);
+void ioWriteCrtCtrl(uint8_t val);
+void ioWriteCrtDat(uint8_t val);
+
+void ioWrite8687CrtSad(uint8_t val);
+void ioWrite8687CrtBad(uint8_t val);
+void ioWrite8687CrtCtrl(uint8_t val);
+void ioWrite8687CrtDat(uint8_t val);
+
+uint8_t Safe_Read_CRTSTS_with_DMA_Active(void);
+bool Safe_CRT_is_Busy_with_DMA_Active(void);
+void Safe_Write_CRTBAD_with_DMA_Active(uint16_t badAddr);
+void Safe_Write_CRTDAT_with_DMA_Active(uint8_t val);
+
+bool Safe_CRT_is_Busy(void);
+void Safe_Write_CRTBAD(uint16_t badAddr);
+void Safe_Write_CRTSAD(uint16_t sadAddr);
+void Safe_Write_CRTDAT(uint8_t val);
+
+void initCrtEmu(bool hp8687);
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////     CRT Mirror Support
 //
 //  Write only 0xFF04/0177404. CRT Start Address . Tells the CRT controller where to start
 //  fetching characters to put on the screen. Supports fast vertical scrolling
+//  For HP83, HP85, and 9915
 //
 
 void ioWriteCrtSad(uint8_t val)                 //  This function is running within an ISR, keep it short and fast.
@@ -65,7 +154,8 @@ void ioWriteCrtSad(uint8_t val)                 //  This function is running wit
 }
 
 //
-//  write only 0xFF05/0177405. Byte address (cursor pos)
+//  Write only 0xFF05/0177405. Byte address (cursor pos)
+//  For HP83, HP85, and 9915
 //
 
 void ioWriteCrtBad(uint8_t val)                 //  This function is running within an ISR, keep it short and fast.
@@ -91,8 +181,9 @@ void ioWriteCrtBad(uint8_t val)                 //  This function is running wit
 }
 
 //
-//  bit 7 determines graphics/alpha mode
-//  write only 0xFF06/0177406
+//  Bit 7 determines graphics/alpha mode
+//  Write only 0xFF06/0177406
+//  For HP83, HP85, and 9915
 //
 
 void ioWriteCrtCtrl(uint8_t val)                //  This function is running within an ISR, keep it short and fast.
@@ -103,7 +194,8 @@ void ioWriteCrtCtrl(uint8_t val)                //  This function is running wit
 
 //
 //  For us this is write only. This pokes data into the Video RAM, and into our Mirror_Video_RAM
-//  write only 0xFF07/0177407
+//  Write only 0xFF07/0177407
+//  For HP83, HP85, and 9915
 //
 
 void ioWriteCrtDat(uint8_t val)                             //  This function is running within an ISR, keep it short and fast.
@@ -141,26 +233,228 @@ void ioWriteCrtDat(uint8_t val)                             //  This function is
   writeCRTflag = true;                                      //  Flag Mirror_Video_RAM has changed
 }
 
-void initCrtEmu(void)
+//
+//  Write only addr 0xFFC0/0177700
+//
+void ioWrite8687CrtSad(uint8_t val) //  This function is running within an ISR, keep it short and fast.
+{
+  if (sadFlag)
+  {                                //  If true, we are doing the high byte
+    sadAddr |= (uint16_t)val << 8; //  High byte
+    current_screen.sadAddr = sadAddr;
+  }
+  else
+  { //  Low byte
+    sadAddr = (uint16_t)val;
+  }
+  sadFlag = !sadFlag; //  Toggle the flag
+}
+//
+//  write only 0xFFC1/0177701. Byte address (cursor pos)
+//
+void ioWrite8687CrtBad(uint8_t val) //  This function is running within an ISR, keep it short and fast.
+{
+  if (badFlag)
+  {
+    badAddr |= (uint16_t)val << 8; //  High byte
+    if (crtControl & 0x80)
+    {
+      badAddr &= 0x3FFFU; //  Graphics mode
+    }
+    else
+    {
+      badAddr &= 0x0FFFU; //  Alpha mode
+    }
+    current_screen.badAddr = badAddr;
+  }
+  else
+  {
+    badAddr = (uint16_t)val; //  Low Byte
+  }
+  badFlag = !badFlag; //toggle the flag
+}
+//
+//  write only 0xFFC2/0177702
+//
+void ioWrite8687CrtCtrl(uint8_t val) //  This function is running within an ISR, keep it short and fast.
+{
+  current_screen.ctrl = val;
+}
+//
+//  For us this is write only. This pokes data into the Mirror_Video_RAM
+//  Write only 0xFF07/0177407
+//
+void ioWrite8687CrtDat(uint8_t val) //  This function is running within an ISR, keep it short and fast.
+{
+  current_screen.vram[badAddr++] = val;
+  if (current_screen.ctrl & CRTSTS87_GRAPH)
+  {
+    badAddr &= 0x3FFFU; //  Constrain the graphics addr
+  }
+  else
+  {
+    badAddr &= 0x0FFFU; //  Constrain the address for alpha
+  }
+  writeCRTflag = true; //  Flag Mirror_Video_RAM has changed
+}
+
+//
+//  This function uses the appropriate registers depending on machine type to read the CRT Status register
+//  DMA must have been previously set up
+//
+
+uint8_t Safe_Read_CRTSTS_with_DMA_Active(void)
+{
+  uint8_t     data;
+  if (Is8687)
+  {
+    DMA_Read_Block(HP86_87_CRTSTS, &data, 1);
+  }
+  else
+  {
+    DMA_Read_Block(CRTSTS, &data, 1);
+  }
+  return data;
+}
+
+bool Safe_CRT_is_Busy_with_DMA_Active(void)
+{
+  uint8_t     data;
+  if (Is8687)
+  {
+    DMA_Read_Block(HP86_87_CRTSTS, &data, 1);
+    return ((data & CRTSTS87_BUSY) == CRTSTS87_BUSY);
+  }
+  else
+  {
+    DMA_Read_Block(CRTSTS, &data, 1);
+    return ((data & CRTSTS85_BUSY) == CRTSTS85_BUSY);
+  }
+}
+
+bool Safe_CRT_is_Busy(void)
+{
+  uint8_t     data;
+  if (Is8687)
+  {
+    data = DMA_Peek8(HP86_87_CRTSTS);
+    return ((data & CRTSTS87_BUSY) == CRTSTS87_BUSY);
+  }
+  else
+  {
+    data = DMA_Peek8(CRTSTS);
+    return ((data & CRTSTS85_BUSY) == CRTSTS85_BUSY);
+  }
+}
+
+//
+//  Test the appropriate bit, and then write a 16 bit to CRTBAD
+//
+
+void Safe_Write_CRTBAD_with_DMA_Active(uint16_t badAddr)
+{
+  while (Safe_CRT_is_Busy_with_DMA_Active()) {};
+  if (Is8687)
+  {
+    DMA_Write_Block(HP86_87_CRTBAD , (uint8_t *)&badAddr , 2);
+  }
+  else
+  {
+    DMA_Write_Block(CRTBAD , (uint8_t *)&badAddr , 2);
+  }
+}
+
+void Safe_Write_CRTBAD(uint16_t badAddr)
+{
+  
+  while (Safe_CRT_is_Busy()) {};
+  if (Is8687)
+  {
+    DMA_Poke16(HP86_87_CRTBAD , badAddr);
+  }
+  else
+  {
+    DMA_Poke16(CRTBAD , badAddr);
+  }
+}
+
+void Safe_Write_CRTSAD(uint16_t sadAddr)
+{
+  
+  while (Safe_CRT_is_Busy()) {};
+  if (Is8687)
+  {
+    DMA_Poke16(HP86_87_CRTSAD , sadAddr);
+  }
+  else
+  {
+    DMA_Poke16(CRTSAD , sadAddr);
+  }
+}
+
+void Safe_Write_CRTDAT_with_DMA_Active(uint8_t val)
+{
+  while (Safe_CRT_is_Busy_with_DMA_Active()) {};
+  if (Is8687)
+  {
+    DMA_Write_Block(HP86_87_CRTDAT , (uint8_t *)&val , 1);
+  }
+  else
+  {
+    DMA_Write_Block(CRTDAT , (uint8_t *)&val , 1);
+  }
+}
+
+void Safe_Write_CRTDAT(uint8_t val)
+{
+  
+  while (Safe_CRT_is_Busy()) {};
+  if (Is8687)
+  {
+    DMA_Poke8(HP86_87_CRTDAT , val);
+  }
+  else
+  {
+    DMA_Poke8(CRTDAT , val);
+  }
+}
+
+void initCrtEmu(bool hp8687)
 {
   if (get_screenEmu() && get_CRTRemote())
   {
     Serial2.begin(115200);                                  //  Init the serial port to the ESP32
   }
 
-  setIOWriteFunc(4,&ioWriteCrtSad);                         //  Address 0xFF04   CRT controller
-  setIOWriteFunc(5,&ioWriteCrtBad);
-  setIOWriteFunc(6,&ioWriteCrtCtrl);
-  setIOWriteFunc(7,&ioWriteCrtDat);
+  Is8687 = hp8687;
+  if (hp8687)
+  {
+    setIOWriteFunc(0xc0, &ioWrite8687CrtSad);   //  Base address is 0177700, offset is 0300 from 0177400
+    setIOWriteFunc(0xc1, &ioWrite8687CrtBad);
+    setIOWriteFunc(0xc2, &ioWrite8687CrtCtrl);
+    setIOWriteFunc(0xc3, &ioWrite8687CrtDat);
+  }
+  else
+  {
+    setIOWriteFunc(4, &ioWriteCrtSad);          //  Base address is 0177404, offset is 0004 from 0177400
+    setIOWriteFunc(5,&ioWriteCrtBad);
+    setIOWriteFunc(6,&ioWriteCrtCtrl);
+    setIOWriteFunc(7,&ioWriteCrtDat);
+  }
 }
 
 //
 //  For diagnostics, status, and menu support, put a string on the CRT, but do it "invisibly" to the rest
-//  of the HP85, by maintaining badAddr and sadAddr. If we are in graphics mode, just return.
+//  of the HP85/86/87, by maintaining badAddr and sadAddr. If we are in graphics mode, just return.
 //  If text goes beyond the end of line, the hardware will just go on to the next line which
 //  is probably what we want. No check that characters are printable.
+//  ######## need to check that the wrap-around at end of line works for 86/87
 //
 //  Row is 0..15 , Column is 0..31  . Row 0 is top , column 0 is left
+//  ######## Need to check HP86/87 support
+//
+//  NOTE: The Row and Column are relative to the current display, not the absolute address in memory
+//        This uses sadAddr, the start address in memory where data is fetched for the top left of the screen
 //
 
 void Write_on_CRT_Alpha(uint16_t row, uint16_t column, const char *  text)
@@ -168,58 +462,70 @@ void Write_on_CRT_Alpha(uint16_t row, uint16_t column, const char *  text)
   uint16_t        badAddr_restore;
   uint16_t        local_badAddr;
 
-  if (get_MachineNum() <= MACH_HP85B)       //  Lock out writing to the CRT for HP86/87 until we have their CRT controller supported   #######
-                                            //  Use this to block accidentally trying to write to the HP86/87 screen which we don't yet support
-  {                             
-    if (crtControl & 0x80)
-    {
-      return;                   //  CRT is in Graphics mode, so just ignore for now.
-                                //  Maybe later we will allow writing text to the
-                                //  Graphics screen (Implies a Character ROM)
-    } 
+  //  If CRT is in Graphics mode, just ignore for now.
+  //  Maybe later we will allow writing text to the
+  //  Graphics screen (Implies a Character ROM in EBTKS)
+  if (crtControl & 0x80)
+  {
+    return;                     
+  } 
 
-    badAddr_restore = badAddr;
-    //Serial.printf("WoCA: R=%2d  C=%2d  badAddr = %04x  timeout %6d\n", row, column, badAddr, timeout);
+  //
+  //  Calculate the byte address for the first character of our string, base on the
+  //  current screen start address, and the supplied row and column. For example,
+  //  if we wanted to display text on the bottom line of the screen, starting at
+  //  the 3rd character position, row would be 15, and column would be 2
+  //
+  badAddr_restore = badAddr;
 
-    //
-    //  Calculate the byte address for the first character of our string, base on the
-    //  current screen start address, and the supplied row and column. For example,
-    //  if we wanted to display text on the bottom line of the screen, starting at
-    //  the 3rd character position, row would be 15, and column would be 2
-    //
-
-    local_badAddr = (sadAddr + (column & 0x1F) * 2 + (row & 0x3F) * 64 ) & 0x0FFF;
-    //  Serial.printf("\nWoCA: local_badAddr %04X   ", local_badAddr);
-    while (DMA_Peek8(CRTSTS) & 0x80) {};          //  Wait until video controller is ready
-    DMA_Poke16(CRTBAD, local_badAddr);
-
-    assert_DMA_Request();
-    while(!DMA_Active){}     // Wait for acknowledgment, and Bus ownership
-
-    while(*text)
-    {
-      while(1)
-      {
-        uint8_t data;
-        DMA_Read_Block(CRTSTS , &data , 1);
-        if ((data & 0x80) == 0)
-        {
-          break;
-        }
-      }
-      //  Busy de-asserted
-      //SET_SCOPE_2;
-      DMA_Write_Block(CRTDAT , (uint8_t *)text , 1);
-      current_screen.vram[local_badAddr>>1] = *text;
-      local_badAddr += 2;
-      text++;
-      //CLEAR_SCOPE_2;
-    }
-    DMA_Write_Block(CRTBAD , (uint8_t *)&badAddr_restore , 2);
-    release_DMA_request();
-    while(DMA_Active){}       // Wait for release
-    //  End of alternate code
+  if (Is8687)
+  {
+    local_badAddr = (sadAddr + (column % 80) + (row * 80)) & 0x0FFF;    //  ####  This is not right. Actual max is 010337 == 0x10DF
+                                                                        //        so not really ammenable to masking. Will need to do better
+                                                                        //        Also, the 010337 is for 53 lines of 80 characters. There is
+                                                                        //        ALPHA_ALL mode that supports 204 lines 0f 80 characters,
+                                                                        //        16320 bytes of the 16384, leaving the last 64 bytes of
+                                                                        //        CRT memory unused. We don't handle this either.
   }
+  else
+  {
+    local_badAddr = (sadAddr + (column & 0x1F) * 2 + (row & 0x3F) * 64 ) & 0x0FFF;    //  for HP85A/B this is a nibble address
+  }
+
+  // Serial.printf("Write_on_CRT_Alpha: Row: %3d  Column: %2d  badAddr: 0x%04X  Addr for write: 0x%04X Is8687: %s  string: [%s]",
+  //                                         row,       column,         badAddr,        local_badAddr, Is8687 ? "true":"false", text);
+  //
+  // Serial.flush();
+  // delay(50);                                      //  Really make sure message gets to Serial port
+
+  assert_DMA_Request();                           //  Don't keep negotiating for DMA. Do it once, send the string, and release. Makes status checks faster too
+  while(!DMA_Active){}                            // Wait for acknowledgment, and Bus ownership
+
+  Safe_Write_CRTBAD_with_DMA_Active(local_badAddr);
+  while (*text)
+  {
+    Safe_Write_CRTDAT_with_DMA_Active(*text);
+    current_screen.vram[local_badAddr>>1] = *text;
+    if (!Is8687)
+    {
+      local_badAddr += 2;
+    }
+    else
+    {
+      local_badAddr++;
+    }
+    text++;
+  }
+  //
+  //  Restore CRTBAD
+  //
+  Safe_Write_CRTBAD_with_DMA_Active(badAddr_restore);
+
+  release_DMA_request();
+  while(DMA_Active){}       // Wait for release
+
+  // Serial.printf(" done\n");
+  return;
 }
 
 //
@@ -250,7 +556,6 @@ void Write_on_CRT_Alpha(uint16_t row, uint16_t column, const char *  text)
 //      BIT6 =
 //      BIT7 = 1 FOR GRAPHICS, = 0 FOR ALPHA
 //    CRTDAT (177407) READS/WRITES TO ACCESS CRT RAM WHEN CRTSTS-BIT7==0
-
 
 //
 //  Go into DMA mode and for about 6 seconds, read CRTSTS and copy bit 1 (display time) to
@@ -323,6 +628,12 @@ void CRT_Timing_Test_1(void)
   int         loops = 1000000;
   uint8_t     data;
 
+  if (Is8687)
+  {
+    Serial.printf("This function is not yet supported on HP86 or HP87\n");
+    return;
+  }
+
   assert_DMA_Request();
   while(!DMA_Active){};     // Wait for acknowledgment, and Bus ownership. Also locks out interrupts on EBTKS, so can't do USB serial or SD card stuff
   while(loops--)
@@ -363,6 +674,12 @@ void CRT_Timing_Test_2(void)
   int         loops = 1;
   uint8_t     data;
   int         index, count;
+
+  if (Is8687)
+  {
+    Serial.printf("This function is not yet supported on HP86 or HP87\n");
+    return;
+  }
 
   assert_DMA_Request();
   while(!DMA_Active){}     // Wait for acknowledgment, and Bus ownership. Also locks out interrupts on EBTKS, so can't do USB serial or SD card stuff
@@ -435,8 +752,8 @@ void CRT_Timing_Test_2(void)
 
 void CRT_Timing_Test_3(void)
 {
-  Write_on_CRT_Alpha(0,0,"01234567890123456789012345678901012345678901234567890123456789010123456789012345678901234567890101234567890123456789012345678901");   // 128
-  Write_on_CRT_Alpha(4,0,"012345678901234567890123456789010123456789012345678901234567890101234567890123456");   // 81
+  Write_on_CRT_Alpha(0, 0, "128 charcters 567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678"); // 128
+  Write_on_CRT_Alpha(4, 0, "81 charcters  5678901234567890123456789012345678901234567890123456789012345678901");                                                // 81
 }
 
 //
@@ -446,6 +763,12 @@ void CRT_Timing_Test_3(void)
 void CRT_Timing_Test_4(void)
 {
   int       temp;
+
+  if (Is8687)
+  {
+    Serial.printf("This function is not yet supported on HP86 or HP87\n");
+    return;
+  }
 
   CRT_capture_screen();
   Serial.printf("Dump of captured_screen Structure\n");
@@ -474,9 +797,29 @@ void CRT_Timing_Test_4(void)
   CRT_restore_screen();
 }
 
+//
+//  Test for writing text on HP86 and HP87
+//
+
+void CRT_Timing_Test_5(void)
+{
+  Write_on_CRT_Alpha(0,0,"Text at Row 0 , Column 0");
+  Write_on_CRT_Alpha(1,0,"Text at Row 1 , Column 0");
+  Write_on_CRT_Alpha(2,0,"79 charcters  56789012345678901234567890123456789012345678901234567890123456789");    // 79
+  Write_on_CRT_Alpha(3,0,"80 charcters  567890123456789012345678901234567890123456789012345678901234567890");   // 80
+  Write_on_CRT_Alpha(4,0,"81 charcters  5678901234567890123456789012345678901234567890123456789012345678901");    // 81
+  Write_on_CRT_Alpha(6,0,"128 charcters 567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678");   // 128
+  Write_on_CRT_Alpha(8,0,"That's all folks");
+}
 
 void writePixel(int x, int y, int color)
 {
+  if (Is8687)
+  {
+    Serial.printf("This function is not yet supported on HP86 or HP87\n");
+    return;
+  }
+
   if (get_screenEmu())          //  Only support direct writing to the CRT if screenEmu is true. Use this to block
   {                               //  accidentally trying to write to the HP86/87 screen which we don't yet support
     if (x >= 256)
@@ -514,6 +857,13 @@ void writeLine(int x0, int y0, int x1, int y1, int color)
 {
   int tmp;
   int16_t steep = abs(y1 - y0) > abs(x1 - x0);
+
+  if (Is8687)
+  {
+    Serial.printf("This function is not yet supported on HP86 or HP87\n");
+    return;
+  }
+
   if (get_screenEmu())          //  Only support direct writing to the CRT if screenEmu is true. Use this to block
   {                             //  accidentally trying to write to the HP86/87 screen which we don't yet support
     if (steep)
@@ -586,6 +936,12 @@ void dumpCrtAlpha(void)
 {
   // dump out the alpha CRT data
   char line[65];
+
+  if (Is8687)
+  {
+    Serial.printf("This function is not yet supported on HP86 or HP87\n");
+    return;
+  }
 
   Serial.printf("\x1b[H");
 
@@ -673,6 +1029,13 @@ int base64_encode(char *output, char *input, int inputLen)
 
 void dumpCrtAlphaAsJSON(uint8_t *frameBuff)
 {
+
+  if (Is8687)
+  {
+    Serial.printf("This function is not yet supported on HP86 or HP87\n");
+    return;
+  }
+
   //char base64Buff[16384];
 
   //uint8_t vbuff[512];
@@ -703,16 +1066,28 @@ void dumpCrtAlphaAsJSON(uint8_t *frameBuff)
 
 void CRT_capture_screen(void)
 {
+  if (Is8687)
+  {
+    Serial.printf("This function is not yet supported on HP86 or HP87\n");
+    return;
+  }
+
   memcpy(&captured_screen, &current_screen, sizeof(video_capt_t));
 }
 
 //
 //  restore the HP85 video state from one previously captured
 //  currently we only restore the alpha pages
-//
+//  #######  @todo Add HP86/87 support
 
 void CRT_restore_screen(void)
 {
+  if (Is8687)
+  {
+    Serial.printf("This function is not yet supported on HP86 or HP87\n");
+    return;
+  }
+
   if (get_screenEmu())                                //  Only support direct writing to the CRT if screenEmu is true. Use this to block
   {                                                   //  accidentally trying to write to the HP86/87 screen which we don't yet support
                                                       //  Copy 2k of alpha data back to the HP85 video controller
