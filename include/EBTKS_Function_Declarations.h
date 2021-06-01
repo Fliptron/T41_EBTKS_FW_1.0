@@ -41,7 +41,7 @@ void    DMA_Poke16(uint32_t address, uint16_t val);
 //
 //  CRT Functions
 //
-void initCrtEmu(bool is8687);
+void initCrtEmu();
 void dumpCrtAlpha(void);
 void Write_on_CRT_Alpha(uint16_t row, uint16_t column, const char *  text);
 void a3_to_a4(unsigned char *a4, unsigned char *a3);
@@ -207,7 +207,7 @@ int int_power(int base, int exp);
 //
 //  various configuration stuff
 //
-int  get_MachineNum(void);
+int  get_machineNum(void);
 char * get_machineType(void);
 bool get_CRTVerbose(void);
 bool get_screenEmu(void);

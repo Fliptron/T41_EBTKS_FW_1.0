@@ -28,6 +28,8 @@ bool          CRTRemote;
 bool          AutoStartEn;
 bool          tapeEn;
 
+extern bool enRam16k;
+
 #if ENABLE_EMC_SUPPORT
 bool          EMC_Enable;
 int           EMC_NumBanks = 4;         //  Correct value is 8. If we see only 4 being supported, it either got it from CONFIG.TXT, or initialization failed
@@ -39,10 +41,10 @@ bool          EMC_Master = false;
 
 
 //
-//  Read machineType string (must match enum machine_numbers {})
+//  Read machineType string (must match enum machine_numbers {} , which is in EBTKS.h) 
 //  Valid strings are:
 //
-const char *machineNames[] = {"HP85A", "HP85B", "HP86A", "HP86B", "HP87", "HP87XM", "HP85AEMC"};
+const char *machineNames[] = {"HP83", "HP9915A", "HP85A", "HP85AEMC", "HP85B", "HP9915B", "HP86A", "HP86B", "HP87", "HP87XM"};
 
 extern HpibDevice *devices[];
 
@@ -197,14 +199,14 @@ bool loadRom(const char *fname, int slotNum, const char *description)
     //
     //  Special check for the the non-primary AUXROMs.  Note that these are not recognized by the HP-85 at boot time scan (by design)
     //
-    //  HP85A/B      use 1's complement for the ID check byte in header[1]
-    //  HP86 or HP87 use 2's complement for the ID check byte in header[1]
-    //  Use machineNum 2 through 5 (HP86A/B,  HP87A/XM) to choose between 1's complement in the following test.
+    //  HP85A/B             use 1's complement for the ID check byte in header[1] (also HP83 and HP9915)
+    //  HP86A/B, HP87A/XM   use 2's complement for the ID check byte in header[1]
+    //
     //  Note: For Secondary AUXROMs (which is what we are testing here), the upper nibble is always 0xF0
     //
-    //  If HP86/87 (machineNum 2 through 5) adding 1 turns a 1's complement into a 2's complement
+    //  If HP86/87 adding 1 turns a 1's complement into a 2's complement
     //
-    uint8_t comp = ((uint8_t)(~id)) + ((machineNum >= MACH_HP86A) && (machineNum <= MACH_HP87XM) ? 1 : 0);
+    uint8_t comp = ((uint8_t)(~id)) + (HAS_2S_COMP_ID ? 1 : 0);
 
     if (id_comp != (comp | (uint8_t)0360))                                      //  Check the ID check byte
     {
@@ -218,9 +220,9 @@ bool loadRom(const char *fname, int slotNum, const char *description)
     }
   }
   else
-  { //  Check for machine type.   This is going to break for HP83 (so CONFIG.TXT should say 85A) and 99151/B (also 85A ?)
-    if ((machineNum == MACH_HP85A) || (machineNum == MACH_HP85B) || (machineNum == MACH_HP85AEMC))
-    {                                   //  CONFIG.TXT says we are loading ROMS for HP85A or HP85B:  One's complement for second byte of ROM
+  { //  Check for machine type.
+    if (HAS_1S_COMP_ID)
+    {                                   //  CONFIG.TXT says we are loading ROMS for HP85A/B, HP83, HP9915A/B:  One's complement for second byte of ROM
       if (id != (uint8_t)(~id_comp))    //  now test normal ROM ID's , including the AUXROM Primary 361.
       {
         // Serial.printf("ROM file header error first two bytes %02X %02X   Expect One's Complement\n", id, (uint8_t)id_comp);
@@ -232,7 +234,7 @@ bool loadRom(const char *fname, int slotNum, const char *description)
         return false;
       }
     }
-    else if ((machineNum >= MACH_HP86A) && (machineNum <= MACH_HP87XM))
+    else if (HAS_2S_COMP_ID)
     {                                         //  CONFIG.TXT says we are loading ROMS for HP86 or HP87:  Two's complement for second byte of ROM
       if (id != (uint8_t)(-id_comp))          //  Now test normal ROM ID's , including the AUXROM Primary.
       {
@@ -283,7 +285,7 @@ bool loadRom(const char *fname, int slotNum, const char *description)
 //
 //  Returns the enumeration of the machine name selected in the config file
 //
-int get_MachineNum(void)
+int get_machineNum(void)
 {
   return machineNum;
 }
@@ -359,32 +361,33 @@ bool get_EMC_master(void)
 //
 //  This covers the disk drives, the printer, and the tape drive
 //
+//  For the MOUNT case we assume that the machineNum has not changed since boot, even though we may be
+//  re-mounting the SD Card, so the tape test uses prior info about machineNum with the macro SUPPORTS_TAPE_DRIVE.
+//  Thus, a MOUNT call could change whether Tape emulation occurs, and be different from the preceding boot, if
+//  CONFIG.TXT was changed between a call to UNMOUNT SDCARD and MOUNT "SDCARD","xyzzy"  .  Damn edge cases.
+//
 
 void mount_drives_based_on_JSON(JsonDocument& doc)
 {
-  //char fname[258];
   char * temp_char_ptr;
 
-  tapeEn = doc["tape"]["enable"] | false;
-
-  const char *tapeFname = doc["tape"]["filepath"] | "/tapes/tape1.tap";
-
-  if (tapeEn) //only set the filepath if the tape subsystem is enabled
+  tapeEn = false;             //  Don't support tape, unless we can, and we do
+  if (SUPPORTS_TAPE_DRIVE)
   {
-    tape.enable(tapeEn);
-    tape.setFile(tapeFname);
+    tapeEn = doc["tape"]["enable"] | false;
   }
-  LOGPRINTF("Tape file: %s is: %s\n", tapeFname, tapeEn ? "Enabled" : "Disabled");
+  tape.enable(tapeEn);
 
-  if (tapeEn)
+  if (tapeEn)                 //  Only set the filepath if the tape subsystem is enabled
   {
+    const char *tapeFname = doc["tape"]["filepath"] | "/tapes/tape1.tap";
+    tape.setFile(tapeFname);
+    LOGPRINTF("Tape emulation is enabled, file is: %s\n", tapeFname);
     log_to_CRT_ptr += sprintf(log_to_CRT_ptr, ":T  %s\n", tape.getFile());
   }
 
   //
   //  Configure the disk drives. Currently we only handle one HPIB interface
-  //
-
   //
   //  Although we don't check it and report an error if necessary, the following things      ####  should we add checks ? ####
   //  MUST be true of the HPIB device configuration comming from the CONFIG.TXT file
@@ -476,6 +479,8 @@ void mount_drives_based_on_JSON(JsonDocument& doc)
 //  Loads the configuration from a file, return true if successful
 //
 
+#define TRACE_LOAD_CONFIG       (0)           //  Activating this will stall the process until the Serial terminal is connected
+
 bool loadConfiguration(const char *filename)
 {
   char fname[258];
@@ -487,12 +492,21 @@ bool loadConfiguration(const char *filename)
   SCOPE_1_Pulser(1);
   EBTKS_delay_ns(10000); //  10 us
 
+  #if TRACE_LOAD_CONFIG
+  while (!Serial){};    //  wait till the Virtual terminal is connected
+  Serial.begin(115200);
+  Serial.printf("\nTracing loadConfiguration()\n"); Serial.flush();
+  #endif
+
   LOGPRINTF("Opening Config File [%s]\n", filename);
 
   // Open file for reading
   File file = SD.open(filename);
   machineNum = -1;                                                    //  In case we have an early exit, make sure this is an invalid
                                                                       //  value. See enum machine_numbers{} at top of file for valid values.
+  #if TRACE_LOAD_CONFIG
+  Serial.printf("\nCheckpoint 1\n"); Serial.flush();
+  #endif
 
   LOGPRINTF("Open was [%s]\n", file ? "Successful" : "Failed");       //  We need to probably push this to the screen if it fails
                                                                       //  Except this happens before the PWO is released
@@ -501,20 +515,31 @@ bool loadConfiguration(const char *filename)
     log_to_CRT_ptr += sprintf(log_to_CRT_ptr, "Couldn't open %s\n", filename);
     return false;
   }
-
+  #if TRACE_LOAD_CONFIG
+  Serial.printf("\nCheckpoint 2\n"); Serial.flush();
+  #endif
   //
   //  Allocate a temporary JsonDocument
   //  Don't forget to change the capacity to match your requirements.
   //  Use arduinojson.org/v6/assistant to compute the capacity.
   //
   StaticJsonDocument<JSON_DOC_SIZE> doc;
+  #if TRACE_LOAD_CONFIG
+  Serial.printf("\nCheckpoint 3\n"); Serial.flush();
+  #endif
 
   //
   //  Deserialize the JSON document
   //
 
   DeserializationError error = deserializeJson(doc, file);
+  #if TRACE_LOAD_CONFIG
+  Serial.printf("\nCheckpoint 4\n"); Serial.flush();
+  #endif
   file.close();
+  #if TRACE_LOAD_CONFIG
+  Serial.printf("\nCheckpoint 5\n"); Serial.flush();
+  #endif
   if (error)
   {
     log_to_CRT_ptr += sprintf(log_to_CRT_ptr, "Config Error: %s\n", filename);
@@ -526,12 +551,14 @@ bool loadConfiguration(const char *filename)
     log_to_CRT_ptr += sprintf(log_to_CRT_ptr, "%s format OK\n", filename);
     LOGPRINTF("%s format OK\n", filename);
   }
-
+  #if TRACE_LOAD_CONFIG
+  Serial.printf("\nCheckpoint 6\n"); Serial.flush();
+  #endif
   strlcpy (machineType, (doc["machineName"]   | "error") , sizeof(machineType));
   //
   //  look through table to find a match to enumerate the machineType
   //
-  for (machineNum = MACH_HP85A ; machineNum < MACH_NUM ; machineNum++)
+  for (machineNum = MACH_FIRST_ENTRY ; machineNum < MACH_LAST_ENTRY ; machineNum++)
   {
     if (strcasecmp(machineNames[machineNum], machineType) == 0)
     {
@@ -541,35 +568,45 @@ bool loadConfiguration(const char *filename)
       break; //found it!
     }
   }
-  if (machineNum == MACH_NUM)
+  #if TRACE_LOAD_CONFIG
+  Serial.printf("\nCheckpoint 7\n"); Serial.flush();
+  #endif
+  if (MACH_NOT_FOUND)
   {
     temp_char_ptr = log_to_CRT_ptr;
     log_to_CRT_ptr += sprintf(log_to_CRT_ptr, "Invalid machineName in %s\n", filename);
     LOGPRINTF("%s", temp_char_ptr);
-    machineNum = -1;                          //  Set it to the invalid state.
   }
 
   CRTVerbose    = doc["CRTVerbose"]    | true;
 
   //
-  //  Only check for the 16K RAM option if we have an HP85A
+  //  Only allow 16k RAM option for systems that might need it
   //
-  if ((machineNum == MACH_HP85A) || (machineNum == MACH_HP85AEMC))
+  enRam16k = false;
+  if (ONLY_HAS_16K_RAM)
   {
     enHP85RamExp(doc["ram16k"] | false);
     temp_char_ptr = log_to_CRT_ptr;
-    log_to_CRT_ptr += sprintf(log_to_CRT_ptr, "HP85A 16 KB RAM: %s\n", getHP85RamExp() ? "Enabled":"None");
+    log_to_CRT_ptr += sprintf(log_to_CRT_ptr, "HP83, HP85A, 9915A 16 KB RAM: %s\n", getHP85RamExp() ? "Enabled":"None");
     LOGPRINTF("%s", temp_char_ptr);
   }
-
+  #if TRACE_LOAD_CONFIG
+  Serial.printf("\nCheckpoint 8\n"); Serial.flush();
+  #endif
   //
-  //  Only check for the the tape drive if we have an HP85A or HP85B
+  //  Only allow tape drive emulation for systems that have system ROMs that support tape drives
   //
-  if ((machineNum == MACH_HP85A) || (machineNum == MACH_HP85AEMC) || (machineNum == MACH_HP85B))
+  tapeEn = false;
+  if (SUPPORTS_TAPE_DRIVE)
   {
-    bool tapeEn = doc["tape"]["enable"] | false;                                                        //  This access is only for the following sprintf().
+    //
+    //  This reading of tapeEn is only for the following sprintf(). We call mount_drives_based_on_JSON() near the end
+    //  of this function, and repeat this setting of tapeEn 
+    //
+    tapeEn = doc["tape"]["enable"] | false;
     temp_char_ptr = log_to_CRT_ptr;
-    log_to_CRT_ptr += sprintf(log_to_CRT_ptr, "HP85A/B Tape Emulation: %s\n", tapeEn ? "Yes":"No");     //  It is repeated in mount_drives_based_on_JSON()
+    log_to_CRT_ptr += sprintf(log_to_CRT_ptr, "HP85A/B, HP9915A/B Tape Emulation: %s\n", tapeEn ? "Yes":"No");
     LOGPRINTF("%s", temp_char_ptr);
   }
 
@@ -580,6 +617,9 @@ bool loadConfiguration(const char *filename)
 
   AutoStartEn = doc["AutoStart"]["enable"] | false;
   initialize_RMIDLE_processing();                       //  Initialize to no text, and pointer points at 0x00
+  #if TRACE_LOAD_CONFIG
+  Serial.printf("\nCheckpoint 10\n"); Serial.flush();
+  #endif
   if (AutoStartEn)
   {
     if ((strlen(doc["AutoStart"]["command"] | "") != 0) && (strlen(doc["AutoStart"]["batch"] | "") != 0))
@@ -621,6 +661,9 @@ bool loadConfiguration(const char *filename)
       LOGPRINTF("%s", temp_char_ptr);
     }
   }
+  #if TRACE_LOAD_CONFIG
+  Serial.printf("\nCheckpoint 11\n"); Serial.flush();
+  #endif
 
 #if ENABLE_EMC_SUPPORT
   //
@@ -629,9 +672,11 @@ bool loadConfiguration(const char *filename)
   //  Model       Built in EMC memory     Notes
   //              (beyond the 32KB in the
   //               lower 64K address space)
-  //  HP85A       0 * 32 K banks          Only works with IF modification to HP85A I/O bus backplane, and then only provides EDisk (with appropriate ROMS)
+  //  HP85A       0 * 32 K banks          Only works with IF modification to HP85A I/O bus backplane, and then only
+  //                                      provides EDisk (with appropriate ROMS). Probably also 9915A
   //  HP85B       1 * 32 K banks          Makes limited sense, and then only provides EDisk (with appropriate ROMS).
-  //                                      HP-catalog-1984 PDF 595 says 32K standard, and 32K for EDisk, 544K max, so matches my reality
+  //                                      HP-catalog-1984 PDF 595 says 32K standard, and 32K for EDisk,
+  //                                      544K max, so matches my reality. Probably also 9915B
   //  HP86A       1 * 32 K banks          HP-catalog-1983 PDF 593 says 86  comes with 64KB expandable to 576KB
   //                                      HP-catalog-1984 PDF 595 says 86A comes with 64KB expandable to 576KB, max as Edisk is 416KB
   //                                      So this seems correct: 32KB lower RAM, and 1 32KB of EMC memory
@@ -641,7 +686,7 @@ bool loadConfiguration(const char *filename)
   //  HP87        0 * 32 K banks          My HP87 only has 32KB RAM (in lower 64K address space)
   //                                      HP-catalog-1983 PDF 594 says 87  comes with 128KB expandable to 640KB
   //                                      which does not match my reality
-  //                                      (I think the context is 87XM, and there is no catalog info for the HP87)
+  //                                      (I think the context is 87XM, and there is no catalog info for the HP87 non XM)
   //  HP87XM      3 * 32 K banks          HP-catalog-1984 PDF 596 says 87XM comes with 128KB expandable to 640KB
   //
   //  With no memory modules plugged in, here are tested EBTKS EMC configs that have worked
@@ -679,52 +724,56 @@ bool loadConfiguration(const char *filename)
   EMC_Enable    = doc["EMC"]["enable"] | false;
   EMC_NumBanks  = doc["EMC"]["NumBanks"] | 0;
   EMC_StartBank = doc["EMC"]["StartBank"] | 4;      //  This would be right for a system with 128K DRAM pre-installed  #### need to check
+  #if TRACE_LOAD_CONFIG
+  Serial.printf("\nCheckpoint 12 EMC\n"); Serial.flush();
+  #endif
+
+  if ((!SUPPORTS_EMC) && EMC_Enable)
+  {
+    EMC_Enable = false;         //  If above code enables EMC support based on CONFIG.TXT, disable EMC support if machine does not handle it.
+    temp_char_ptr = log_to_CRT_ptr;
+    log_to_CRT_ptr += sprintf(log_to_CRT_ptr, "EMC enabled in CONFIG.TXT, but\nthis computer does not\nsupport EMC, so disabled\n");
+    LOGPRINTF("%s", temp_char_ptr);
+    EMC_Enable = false;
+  }
 
   if (EMC_Enable)
   {
-    if (machineNum > MACH_HP85A)
-    {
-      if (EMC_NumBanks > EMC_MAX_BANKS)
-      {   //  Greedy user wants more EMC memory than we can provide. Clip it to EMC_MAX_BANKS
-        temp_char_ptr = log_to_CRT_ptr;
-        log_to_CRT_ptr += sprintf(log_to_CRT_ptr, "Request for more that %d EMC Banks. Setting EMC Banks to %d\n", EMC_MAX_BANKS, EMC_MAX_BANKS);
-        LOGPRINTF("%s", temp_char_ptr);
-        EMC_NumBanks = EMC_MAX_BANKS;
-      }
+    if (EMC_NumBanks > EMC_MAX_BANKS)
+    {   //  Greedy user wants more EMC memory than we can provide. Clip it to EMC_MAX_BANKS
+      temp_char_ptr = log_to_CRT_ptr;
+      log_to_CRT_ptr += sprintf(log_to_CRT_ptr, "Request for more that %d EMC Banks. Setting EMC Banks to %d\n", EMC_MAX_BANKS, EMC_MAX_BANKS);
+      LOGPRINTF("%s", temp_char_ptr);
+      EMC_NumBanks = EMC_MAX_BANKS;
+    }
 
-      if (EMC_NumBanks == 0)
-      {
-        temp_char_ptr = log_to_CRT_ptr;
-        log_to_CRT_ptr += sprintf(log_to_CRT_ptr, "EMC enabled, but Banks set to 0, so disabling EBTKS EMC\n");
-        LOGPRINTF("%s", temp_char_ptr);
-        EMC_Enable = false;
-      }
-      else
-      {
-        temp_char_ptr = log_to_CRT_ptr;
-        log_to_CRT_ptr += sprintf(log_to_CRT_ptr, "EMC On. Banks %d to %d = %d kB\n", EMC_StartBank, EMC_StartBank + EMC_NumBanks - 1, EMC_NumBanks * 32);
-        LOGPRINTF("%s", temp_char_ptr);
-
-        EMC_StartAddress = EMC_StartBank << 15;
-        EMC_EndAddress   = EMC_StartAddress + (EMC_NumBanks << 15) - 1;
-
-        temp_char_ptr = log_to_serial_ptr;
-        log_to_serial_ptr += sprintf(log_to_serial_ptr, "EMC enabled. Start at %8o Octal, %d kB\n", EMC_StartAddress, (EMC_NumBanks * 32768)/1024);
-        LOGPRINTF("%s", temp_char_ptr);
-      }
- 
-      EMC_Master = (machineNum == MACH_HP85AEMC);       //  The only time our EMC functionality is the EMC master is on a modified HP85A
- 
-     }
-    else
+    if (EMC_NumBanks == 0)
     {
       temp_char_ptr = log_to_CRT_ptr;
-      log_to_CRT_ptr += sprintf(log_to_CRT_ptr, "EMC enabled in CONFIG.TXT, but\ncomputer is a HP85A which does\nnot support EMC, so disabled\n");
+      log_to_CRT_ptr += sprintf(log_to_CRT_ptr, "EMC enabled, but Banks set to 0, so disabling EBTKS EMC\n");
       LOGPRINTF("%s", temp_char_ptr);
       EMC_Enable = false;
     }
-  }
+    else
+    {
+      temp_char_ptr = log_to_CRT_ptr;
+      log_to_CRT_ptr += sprintf(log_to_CRT_ptr, "EMC On. Banks %d to %d = %d kB\n", EMC_StartBank, EMC_StartBank + EMC_NumBanks - 1, EMC_NumBanks * 32);
+      LOGPRINTF("%s", temp_char_ptr);
 
+      EMC_StartAddress = EMC_StartBank << 15;
+      EMC_EndAddress   = EMC_StartAddress + (EMC_NumBanks << 15) - 1;
+
+      temp_char_ptr = log_to_serial_ptr;
+      log_to_serial_ptr += sprintf(log_to_serial_ptr, "EMC enabled. Start at %8o Octal, %d kB\n", EMC_StartAddress, (EMC_NumBanks * 32768)/1024);
+      LOGPRINTF("%s", temp_char_ptr);
+    }
+
+  EMC_Master = (machineNum == MACH_HP85AEMC);       //  The only time our EMC functionality is the EMC master is on a modified HP85A.
+                                                    //  Although, I guess you could modify a HP9951A
+  }
+  #if TRACE_LOAD_CONFIG
+  Serial.printf("\nCheckpoint 13 EMC\n"); Serial.flush();
+  #endif
   //
   //  EMC configuration checking should be (somehow) checked by the EMC init code, maybe probing memory to see what is there
   //  and make sure the config is valid. Although if this could be done, then autoconfig should also be possible.
@@ -739,6 +788,9 @@ bool loadConfiguration(const char *filename)
   EBTKS_delay_ns(10000); //  10 us
   SCOPE_1_Pulser(1);
   EBTKS_delay_ns(10000); //  10 us
+  #if TRACE_LOAD_CONFIG
+  Serial.printf("\nCheckpoint 14\n"); Serial.flush();
+  #endif
 
   const char *optionRoms_directory = doc["optionRoms"]["directory"] | "/roms/";
   int romIndex = 0;
@@ -775,8 +827,14 @@ bool loadConfiguration(const char *filename)
   }
   LOGPRINTF("\n");
   log_to_CRT_ptr += sprintf(log_to_CRT_ptr, "\n");
+  #if TRACE_LOAD_CONFIG
+  Serial.printf("\nCheckpoint 15\n"); Serial.flush();
+  #endif
 
   mount_drives_based_on_JSON(doc);
+  #if TRACE_LOAD_CONFIG
+  Serial.printf("\nCheckpoint 16\n"); Serial.flush();
+  #endif
 
   //
   //  Restore the 4 flag bytes
@@ -807,7 +865,10 @@ failed_to_read_flags:
     sscanf(flags_to_read, "%8lx", &AUXROM_RAM_Window.as_struct.AR_FLAGS);
     file.close();
   }
-  
+  #if TRACE_LOAD_CONFIG
+  Serial.printf("\nCheckpoint 17\n"); Serial.flush();
+  #endif
+
   SCOPE_1_Pulser(1);      //  2/7/2021 Time for the whole function, with 7 ROMs loaded is 88ms
   EBTKS_delay_ns(10000);  //  10 us
   SCOPE_1_Pulser(1);
@@ -828,6 +889,21 @@ failed_to_read_flags:
 
 bool remount_drives(const char *filename)
 {
+  //
+  //  Since we will be calling mount_drives_based_on_JSON() which writes to log_to_CRT_ptr and log_to_serial_ptr
+  //  let's reset them so we don't run off the end of the buffer and cause some real damage. We don't actually
+  //  need the stuff that is being written to the buffers for a remount, but mount_drives_based_on_JSON() is
+  //  used during initial boot, when we do. By the time we get to this function, the system is up and running
+  //  doing calculator mode commands or running a BASIC program, so the Serial channel is active, unlike at
+  //  boot time. So stuff will be written to the two buffers, but we won't use it.
+  //
+
+  log_to_CRT_ptr    = &CRT_Log_Buffer[0];
+  log_to_serial_ptr = &Serial_Log_Buffer[0];
+
+  *log_to_CRT_ptr    = 0;
+  *log_to_serial_ptr = 0;
+
   LOGPRINTF("Opening Config File [%s]\n", filename);
   Serial.printf("Opening Config File [%s]\n", filename);
 
@@ -843,20 +919,18 @@ bool remount_drives(const char *filename)
 
   // Allocate a temporary JsonDocument
   // Don't forget to change the capacity to match your requirements.
-  // Use arduinojson.org/v6/assistant to compute the capacity.
+  // Use arduinojson.org/v6/assistant to compute the capacity, and add a safety margin. Currently about 1500 bytes
   StaticJsonDocument<JSON_DOC_SIZE> doc;
 
   DeserializationError error = deserializeJson(doc, file);
   file.close();
   if (error)
   {
-    log_to_CRT_ptr += sprintf(log_to_CRT_ptr, "Config Error: %s\n", filename);
-    LOGPRINTF("Failed to read configuration file %s\n", filename);
+    LOGPRINTF("Failed to read configuration file %s during remount_drives()\n", filename);
     return false;
   }
   else
   {
-    log_to_CRT_ptr += sprintf(log_to_CRT_ptr, "%s format OK\n", filename);
     LOGPRINTF("%s format OK\n", filename);
   }
 

@@ -670,20 +670,61 @@ enum analyzer_state{
 //  table above needs to follow this sequence. The EMC code assumes that any value higher
 //  than MACH_HP85A is EMC capable.
 //
+//  Some of this info is from "Floppy Days 67 podcast"
+//
 enum machine_numbers{
-      MACH_HP85A    = 0,
-      MACH_HP85B    = 1,
-      MACH_HP86A    = 2,
-      MACH_HP86B    = 3,
-      MACH_HP87     = 4,
-      MACH_HP87XM   = 5,
-      MACH_HP85AEMC = 6,        //  This is for a modified HP85A that has the IF signal wired to the I/O bus
+                                //////  Machines with 16 kB RAM starts here
+                                //////  Machines with 32x16 CRT Controller starts here. ALPHA memory is 64 lines of 32 characters
+
+      MACH_HP83     =  0,       //  HP85A minus Tape Drive, minus Printer. (podcast mentions an HP81)
+
+                                //////  Machines with tape drives starts here
+
+      MACH_HP9915A  =  1,       //  No built-in CRT, 16K RAM
+      MACH_HP85A    =  2,       //  16 kB RAM
+
+                                //////  Machines with at least 32 kB RAM starts here
+                                //////  Machines with an EMC memory controller on main board starts here
+
+      MACH_HP85AEMC =  3,       //  This is for a modified HP85A that has the IF signal wired to the I/O bus
                                 //  Since the memory controller for the HP85A is not EMC capable, if EBTKS
                                 //  provides EMC memory for an Electronic Disk, then it must emulate the
                                 //  EMC controller 1MC4 in master mode. For all other machine types, our
                                 //  emulation of the 1MC4 must be in non-master mode.
                                 //  (I don't think we can call it slave mode anymore)
-      MACH_NUM      = 7  };     //  Always ensure MACH_NUM is the last enumeration
+                                //  It is in this position of the table because it EMC like everything below,
+                                //  and it has a 32x16 CRT like 85A/B
+      MACH_HP85B    = 4,        //  64 kB RAM, EMC (for EDisk only), Built-in ROMs I/O, Mass Storage, EDisk
+
+                                //////  Above have 32x16 CRT
+                                //////
+                                //////  Machines with 80xn CRT Controller starts here.
+                                //////  N is 16 or 24. ALPHA memory is 54 lines of 80 characters, select with PAGESIZE {16,24}
+                                //////  ALPHALL disables graphics, and gives 204 lines of 80 characters. ALPHA restores it to 54
+                                //////  CRT memory layout for HP86/87 diagram in User manual on page 29
+
+      MACH_HP9915B  = 5,        //  No built-in CRT, 64 kB RAM, EMC (for EDisk only), Built-in ROMs I/O, Mass Storage, EDisk (podcast)
+
+                                //////  Above use 1's complement ROM IDs, Below use 2's complement ROM IDs
+                                //////  EMC memory is used for BASIC programs and data
+
+      MACH_HP86A    = 6,        //  32 kB RAM ?? , Fake HPIB for directly connected floppys
+      MACH_HP86B    = 7,        //  Real HPIB , 128 kB RAM (so must have an EMC)
+      MACH_HP87     = 8,        //  32K RAM
+      MACH_HP87XM   = 9,        //  128 kB RAM
+      
+      MACH_NUM_END  = 10  };    //  End of table marker. Always ensure MACH_NUM is the last enumeration
+
+
+#define MACH_FIRST_ENTRY        (MACH_HP83)
+#define MACH_LAST_ENTRY         (MACH_NUM_END)
+#define HAS_1S_COMP_ID          ((get_machineNum() >= MACH_FIRST_ENTRY) && (get_machineNum() <= MACH_HP9915B))
+#define HAS_2S_COMP_ID          ((get_machineNum() >= MACH_HP86A)       && (get_machineNum() <= MACH_HP87XM))
+#define IS_HP86_OR_HP87         (HAS_2S_COMP_ID)
+#define ONLY_HAS_16K_RAM        ((get_machineNum() >= MACH_FIRST_ENTRY) && (get_machineNum() <= MACH_HP85AEMC))
+#define MACH_NOT_FOUND          ((get_machineNum() <  MACH_FIRST_ENTRY) || (get_machineNum() >= MACH_NUM_END))
+#define SUPPORTS_TAPE_DRIVE     ((get_machineNum() >= MACH_HP9915A)     && (get_machineNum() <= MACH_HP9915B))   // skipping HP83
+#define SUPPORTS_EMC            ((get_machineNum() >= MACH_HP85AEMC)    && (get_machineNum() <= MACH_HP87XM))
 
 //
 //  Configuration related

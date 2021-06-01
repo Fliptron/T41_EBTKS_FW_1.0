@@ -69,7 +69,7 @@
 #define CRTSTS85_DISPLAY_TIME   (1 << 1)    //  1 = CRT Controller is sending pixels to CRT (not retrace time)
 #define CRTSTS85_DATA_READY     (1 << 0)    //  Requested data to be read from CRT RAM is now available.  (we could super duper speed this up by just reading our local copy, if we trust it)
 
-uint8_t vram[16384];                        //  Virtual Graphics memory, to avoid needing Read-Modify-Write. This is used for either { HP83, HP85, 9915} or {HP86, HP87}
+uint8_t vram[16384];                        //  ######   Virtual Graphics memory, to avoid needing Read-Modify-Write. This is used for either { HP83, HP85, 9915} or {HP86, HP87}
 
 volatile uint8_t crtControl = 0;            //  Write to status register stored here. bit 7 == 1 is graphics mode, else char mode
 volatile bool writeCRTflag = false;
@@ -83,7 +83,7 @@ uint16_t sadAddr = 0;
 bool Is8687 = false;                        //  True if video is HP86/87 else HP85
 
 //
-//  8/1/2021 add HP86/87 video R.Bull
+//  01/08/2021 add HP86/87 video R.Bull
 //
 //  video memory can only be accessed in the retrace time
 //
@@ -129,7 +129,7 @@ void Safe_Write_CRTBAD(uint16_t badAddr);
 void Safe_Write_CRTSAD(uint16_t sadAddr);
 void Safe_Write_CRTDAT(uint8_t val);
 
-void initCrtEmu(bool hp8687);
+void initCrtEmu();
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////     CRT Mirror Support
 //
@@ -419,15 +419,15 @@ void Safe_Write_CRTDAT(uint8_t val)
   }
 }
 
-void initCrtEmu(bool hp8687)
+void initCrtEmu()
 {
   if (get_screenEmu() && get_CRTRemote())
   {
     Serial2.begin(115200);                                  //  Init the serial port to the ESP32
   }
 
-  Is8687 = hp8687;
-  if (hp8687)
+  Is8687 = IS_HP86_OR_HP87;
+  if (Is8687)
   {
     setIOWriteFunc(0xc0, &ioWrite8687CrtSad);   //  Base address is 0177700, offset is 0300 from 0177400
     setIOWriteFunc(0xc1, &ioWrite8687CrtBad);
@@ -499,7 +499,7 @@ void Write_on_CRT_Alpha(uint16_t row, uint16_t column, const char *  text)
   // delay(50);                                      //  Really make sure message gets to Serial port
 
   assert_DMA_Request();                           //  Don't keep negotiating for DMA. Do it once, send the string, and release. Makes status checks faster too
-  while(!DMA_Active){}                            // Wait for acknowledgment, and Bus ownership
+  while(!DMA_Active){}                            //  Wait for acknowledgment, and Bus ownership
 
   Safe_Write_CRTBAD_with_DMA_Active(local_badAddr);
   while (*text)
@@ -525,7 +525,6 @@ void Write_on_CRT_Alpha(uint16_t row, uint16_t column, const char *  text)
   while(DMA_Active){}       // Wait for release
 
   // Serial.printf(" done\n");
-  return;
 }
 
 //
@@ -833,7 +832,7 @@ void writePixel(int x, int y, int color)
     while (DMA_Peek8(CRTSTS) & 0x80) {}; //wait until video controller is ready
     DMA_Poke16(CRTBAD, 0x1000U + (offs * 2));
 
-    uint8_t val = vram[offs];
+    uint8_t val = vram[offs];     //  this needs to use the other version  #################
 
 
     if (color)
@@ -845,7 +844,7 @@ void writePixel(int x, int y, int color)
       val &= ~(1 << ((x ^ 7) & 7));
     }
 
-    vram[offs] = val;
+    vram[offs] = val;           //  this needs to use the other version  #################
     while (DMA_Peek8(CRTSTS) & 0x80)
     {
     }; //wait until video controller is ready

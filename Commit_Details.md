@@ -695,10 +695,34 @@ Changes:
        type) and checking busy status.
     -  For situations where there will be many register references (such as save/restore screen)
        a set of "Safe" that require that the EBTKS is already in DMA mode.
-    These routines select the I/O register locations based on the machine type from
-    CONFIG.TXT
+
+    These routines select the I/O register locations based on the machine type from CONFIG.TXT
 -   Memory for CRT/screen emulation changed from 8 kB to 16 kB.
 -   Tag CRT tests that have not yet been modified to support HP86/87
+
+## Commit \#124 05/31/2021
+
+Changes:
+
+-   Updated Logic Analyzer signal assignments to match the V3.0 Production boards
+
+-   Wake up the diagnostic serial over USB port, without waiting for
+    checking whether the port is available. This cuts down the number
+    of situations where firmware updating requires pressing the button
+    on the Teensy 4.1 processor module
+-   Change the Teensy powered via USB flash pattern, 3 short flashes every 10 seconds
+-   Extensive changes to machineNum and related macros to better support various
+    models of the Series80, and make sure that incompatible settings are disabled
+    and (some are) reported. Mostly in EBTKS_SD.cpp
+-   Refined the list of Series80 computers to include HP83 and HP9915A/B
+-   Caught and fixed unseen but potential buffer overrun error in
+    mount_drives_based_on_JSON() and remount_drives()
+-   Tracked down HP87 crashes to SDWRITE not handling strings over 1 kB length. Issue is
+    probably in AUXROMs for HP86/87
+
+
+
+
 
 
 

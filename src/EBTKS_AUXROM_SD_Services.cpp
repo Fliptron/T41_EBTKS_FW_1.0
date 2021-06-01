@@ -1512,7 +1512,7 @@ void AUXROM_MOUNT(void)
       if(msu_is_tape)
       {
 mount_a_tape:
-        if(!tape_handle_MOUNT(Resolved_Path))
+        if(!tape_handle_MOUNT(Resolved_Path))                             //  #######  Should there be a check of what machineNum is, so we can report differently for non Tape drive systems?
         {
           post_custom_error_message("MOUNT failed", 415);
           goto Mount_exit;
@@ -2573,6 +2573,8 @@ void AUXROM_SDSEEK(void)
 //  Write the specified number of bytes to an open file
 //
 
+#define DIAG_TRACE_SDWRITE          (0)
+
 void AUXROM_SDWRITE(void)
 {
   int         file_index;
@@ -2583,8 +2585,11 @@ void AUXROM_SDWRITE(void)
   Serial.printf("Call to SDWRITE\n");
 #endif
 
-  file_index = AUXROM_RAM_Window.as_struct.AR_Opts[0];               //  File number 1..11
-  bytes_to_write = *p_len;             //  Length of write
+  file_index = AUXROM_RAM_Window.as_struct.AR_Opts[0];              //  File number 1..11
+  bytes_to_write = *p_len;                                          //  Length of write
+  #if DIAG_TRACE_SDWRITE
+  Serial.printf("SDWRITE File Number %d  Length %d  [%.*s]\n", file_index, bytes_to_write, bytes_to_write, p_buffer);
+  #endif
   if (!Auxrom_Files[file_index].isWritable())
   {
     post_custom_error_message("SDWRITE File not open for write", 480);

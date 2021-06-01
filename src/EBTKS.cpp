@@ -84,206 +84,55 @@ ESPComms esp32;
 //
 ////////////////////////////////////////////////////////////////
 //
-//      Logic Analyzer Configuration 1
+//      Logic Analyzer Configurations
 //
+//  
+//  Several configurations have been deleted from this document as they
+//  are no longer relevant. The production V3.0 EBTKS has built in logic
+//  analyzer ports for 3 pre-wired 8 channel pods, and 1 uncommited 8
+//  channel pod. The physical layout for each pod has 8 ground pins
+//  towards the back edge of the PCB, and 8 active pins on the side closer
+//  to Teensy 4.1 . i.e. pins 1,3,5,7,9,11,13,15 are grounds. Designed for
+//  Tektronix P6418 logic analyzer pods, used with a TLA5201 or similar.
+//  
+//  
 //      Channel         Signal
 //
-//      00              Phi_1
-//      01              Phi_2
-//      02              LMA
-//      03              RD
-//      04              WR
-//      05              BUS_CTRL_DIR
-//      06              HALT
-//      07              PWO_OUT
-//      08              PWO_IN
-//      09              RXD
-//      10              TXD
-//      11
-//      12
-//      13
-//      14
-//      15
-//      GND_1           Teensy_Pin  1
-//      GND_2           Teensy_Pin 32
+//      C3-7            B7X
+//      C3-6            B6X
+//      C3-5            B5X
+//      C3-4            B4X
+//      C3-3            B3X
+//      C3-2            B2X
+//      C3-1            B1X
+//      C3-0            B0X
 //
+//      C2-7            IFETCH
+//      C2-6            /LMA
+//      C2-5            /RD
+//      C2-4            /WR
+//      C2-3            RC
+//      C2-2            BUFEN
+//      C2-1            SCOPE_1
+//      C2-0            SCOPE_2
 //
-//      Logic Analyzer Configuration 2
+//      A3-7            IRLX
+//      A3-6            CTRLEN
+//      A3-5            CTRLDIR
+//      A3-4            HALTX
+//      A3-3            INTPRI
+//      A3-2            IPRIH
+//      A3-1            PWO
+//      A3-0            Phase_1
 //
-//      Channel         Signal     Physical Teensy 4.0 Pin
-//                                 1..14, 15..28
-//      00              Phi_1      9
-//      01              Phi_2      10
-//      02              LMA        6
-//      03              RD         7
-//      04              WR         8
-//      05              HALT       13
-//      06              D7         25
-//      07              D6         24
-//      08              D5         18
-//      09              D4         19
-//      10              D3         17
-//      11              D2         16
-//      12              D1         20
-//      13              D0         21
-//      14              RXD        22
-//      15              TXD        23
-//      GND_1                      1
-//      GND_2                      27
-//
-//
-//      Logic Analyzer Configuration 3   I think this table is wrong<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-//
-//      Channel         Signal     Physical Teensy 4.1 Pin
-//                                 1..24, 25..48
-//      00              Phi_1      9
-//      01              Phi_2      10
-//      02              LMA        6
-//      03              RD         7
-//      04              RC         5            view RC (pin 5) instead of WR (pin 8)
-//      05              HALT       13
-//      06              D7         25
-//      07              D6         24
-//      08              D5         18
-//      09              D4         19
-//      10              D3         17
-//      11              D2         16
-//      12              D1         20
-//      13              D0         21
-//      14              RXD        22
-//      15              TXD        23
-//      GND_1                      1
-//      GND_2                      34, 47
-//
-//
-//      Logic Analyzer Configuration 4		See LMA, RD, WR, RC.  Don't see HALT
-//
-//      Channel         Signal     Physical Teensy 4.1 Pin
-//                                 1..24, 25..48
-//      00              Phi_1      43
-//      01              Phi_2      30
-//      02              /LMA       44
-//      03              /RD        45
-//      04              /WR        42
-//      05              /RC        19
-//      06              D7         38
-//      07              D6         39
-//      08              D5         33
-//      09              D4         32
-//      10              D3         37
-//      11              D2         36
-//      12              D1         40
-//      13              D0         41
-//      14              RXD        10
-//      15              TXD        9
-//      GND_1                      1
-//      GND_2                      34
-//      GND_3                      47
-//
-//      Logic Analyzer Configuration 5    Watch all the control signals in/out of Teensy
-//
-//      Channel         Signal     Physical Teensy 4.1 Pin
-//                                 1..24, 25..48
-//      00              Phi_1      43
-//      01              /LMA       44
-//      02              /RD        45
-//      03              /WR        42
-//      04              DIR/RC     19
-//      05              /HALT      20
-//      06              BUFEN       2
-//      07              CTRL_DIR    3
-//      08              CTRLEN     21
-//      09              PRIH       22
-//      10              INTPRI      5
-//      11              INTERRUPT  29
-//      12              /IRLX       6
-//      13              /HALTX      7
-//      14              RXD        10
-//      15              TXD         9
-//      GND_1                       1
-//      GND_2                      34
-//      GND_3                      47
-//
-//
-//      Logic Analyzer Configuration 6 for TLA5201
-//                    11/17/2020
-//
-//      C3-7            B7X         On Extender board
-//      C3-6            B6X         On Extender board
-//      C3-5            B5X         On Extender board
-//      C3-4            B4X         On Extender board
-//      C3-3            B3X         On Extender board
-//      C3-2            B2X         On Extender board
-//      C3-1            B1X         On Extender board
-//      C3-0            B0X         On Extender board
-//
-//      C2-7            IF          On Extender board
-//      C2-6            LMA         On Extender board
-//      C2-5            RD          On Extender board
-//      C2-4            WR          On Extender board
-//      C2-3            RC          On Extender board
-//      C2-2            BUFEN       On Teensy Physical Pin  2
-//      C2-1            RXD         On Teensy Physical Pin 10
-//      C2-0            TXD         On Teensy Physical Pin  9
-//
-//      A3-7            Phi1        On Extender board
-//      A3-6            Phi2        On Extender board
-//      A3-5            IRLX        On Extender board
-//      A3-4            PRIL        On Extender board
-//      A3-3            PRIH        On Extender board
-//      A3-2            PWO         On Extender board
-//      A3-1            HALTX       On Extender board
-//      A3-0            TEENSYRC    On Teensy Physical Pin 19
-//
-//      A2-7            CTRLEN      On Teensy Physical Pin 21
-//      A2-6            CTRLDIR     On Teensy Physical Pin  3
-//      A2-5            INTPRI      On Teensy Physical Pin  5
-//      A2-4            
-//      A2-3            
-//      A2-2            
-//      A2-1            
-//      A2-0            
-//
-//
-//      Logic Analyzer Configuration 7 for TLA5201      moved signals used for diags off RXD/TXD
-//                    01/04/2021                        and put them on core pins 33 and 39. See SCOPE_1 and SCOPE_2
-//
-//      C3-7            B7X         On Extender board
-//      C3-6            B6X         On Extender board
-//      C3-5            B5X         On Extender board
-//      C3-4            B4X         On Extender board
-//      C3-3            B3X         On Extender board
-//      C3-2            B2X         On Extender board
-//      C3-1            B1X         On Extender board
-//      C3-0            B0X         On Extender board
-//
-//      C2-7            IFETCH      On Extender board
-//      C2-6            LMA         On Extender board
-//      C2-5            RD          On Extender board
-//      C2-4            WR          On Extender board
-//      C2-3            RC          On Extender board
-//      C2-2            BUFEN       On Teensy Physical Pin  2
-//      C2-1            SCOPE_1     On Teensy Physical Pin 25
-//      C2-0            SCOPE_2     On Teensy Physical Pin 31
-//
-//      A3-7            Phi1        On Extender board
-//      A3-6            Phi2        On Extender board
-//      A3-5            IRLX        On Extender board
-//      A3-4            PRIL        On Extender board
-//      A3-3            PRIH        On Extender board
-//      A3-2            PWO         On Extender board
-//      A3-1            HALTX       On Extender board
-//      A3-0            TEENSYRC    On Teensy Physical Pin 19
-//
-//      A2-7            CTRLEN      On Teensy Physical Pin 21
-//      A2-6            CTRLDIR     On Teensy Physical Pin  3
-//      A2-5            INTPRI      On Teensy Physical Pin  5
-//      A2-4            
-//      A2-3            
-//      A2-2            
-//      A2-1            
-//      A2-0            
-
+//      A2-7
+//      A2-6
+//      A2-5
+//      A2-4
+//      A2-3
+//      A2-2
+//      A2-1
+//      A2-0
 //
 //
 ////////////////////////////////////////////////////////////////        Assumptions, Expectation, Requirements.
@@ -474,7 +323,7 @@ GPIO9   33         7           CORE_PIN33_PORTREG
 //                                Main Uses of DMAMEM
 //
 //    256 KB      EMC for the HP85B, HP86/87                EMC_MAX_BANKS * 32kB EBTKS_Bus_Interface_ISR.cpp
-//    
+//
 //    144 KB      roms[][]                                  MAX_ROMS            EBTKS_Config.h (assumes MAX_ROMS is 18)
 //                                                          ROM_PAGE_SIZE       EBTKS_Config.h
 //      0.5 KB    Copy Buffer for MOUNT/copy_sd_file()      COPY_BUFFER_SIZE    EBTKS_AUXROM_SD_Services.cpp
@@ -595,13 +444,13 @@ static bool       HP85_has_been_off;
 //  Call back for file timestamps.  Only called for file create and sync().
 
 void dateTime(uint16_t* date, uint16_t* time, uint8_t* ms10) {
-  
+
   // Return date using FS_DATE macro to format fields.
   *date = FS_DATE(year(), month(), day());
 
   // Return time using FS_TIME macro to format fields.
   *time = FS_TIME(hour(), minute(), second());
-  
+
   // Return low time bits in units of 10 ms.
   *ms10 = second() & 1 ? 100 : 0;
 }
@@ -628,6 +477,9 @@ void setup()
 //                                      //    so that means we aren't yet doing initializing correctly
 //  }
 
+//
+//  All of the initial startup tasks are just configuring I/O pins, and none should cause a stall.
+//
   pin_isr_count = 0;
   last_pin_isr_count = 0;
   count_of_pin_isr_count_not_changing = 0;
@@ -741,11 +593,23 @@ void setup()
   HP85_has_been_off = false;                //  We haven't tested it yet
   loop_count = 0;                           //  This normally used in loop() , but we need a counter, and loop() is not yet running, so ...
 
+  //
+  //  End of initial startup (configuring pins). At this point, EBTKS is asserting PWO, so if what follows stalls for any reason,
+  //  then it will also block the Series80 computer from starting, and the user wil not have a clue why, except unplugging EBTKS
+  //  should return the Series80 computer to its native startup process.
+  //
+
+  Serial.begin(115200);                     //  Doing this does not stall the program at this point if there is no
+                                            //  attached virtual terminal, via USB. It is the "while (!Serial){};"
+                                            //  that typically precedes it that causes the stall. But this might fix
+                                            //  Teensy would otherwise not yet initialized the Serial channel, and
+                                            //  this then blocks downloading new firmware. Just guessing at this point.
+
   while(1)
   {
     Phi_1_high_count = Phi_1_low_count = 0;
     loop_count++;
-    for (i = 0 ; i < 5435 ; i++)            //  constant adjusted with SCOPE_2 to run for 100 us
+    for (i = 0 ; i < 5435 ; i++)            //  This constant adjusted with SCOPE_2 to run for 100 us
     {
       if (IS_PHI_1_HIGH)
       {
@@ -758,16 +622,25 @@ void setup()
     }
 
     if ((Phi_1_high_count < 350) || (Phi_1_low_count < 2000))
-    {   //  Teensy is powered, but clock not running, so probably teensy powered over USB and HP85 is off. Flash the TEENSY Orange LED on Core pin 13
+    {   //  Teensy is powered, but clock not running, so probably teensy powered over USB and HP85 is off.
+        //  Flash the TEENSY Orange LED on Core pin 13
       HP85_has_been_off =true;
       //
       //  Don't be too annoying, flash LED once approximately every 10 seconds
       //
       if (loop_count % 10 == 0)
       {
-        SET_LED;
-        delay(1);                       //  Pulse LED for 1 ms, so not too many photons.
-        CLEAR_LED;
+        Serial.printf("Teensy powered by USB cable, Series80 computer is off\n");
+        //
+        //  Little flash sequence on Teensy LED, when Teensy is powered by USB cable, but Series80 computer is off
+        //
+        for (i=0 ; i < 3 ; i++)
+        {
+          SET_LED;
+          delay(3);                       //  Pulse LED for 3 ms, so not too many photons.
+          CLEAR_LED;
+          delay(50);
+        }
       }
       delay(1000);                      //  Wait 1 seconds till we test again
     //
@@ -798,7 +671,7 @@ void setup()
   //  At this point we haven't yet read the CONFIG.TXT file, so we don't yet know if we
   //  should pause booting up until the serial port is active.
   //
-  
+
   log_to_CRT_ptr    = &CRT_Log_Buffer[0];
   log_to_serial_ptr = &Serial_Log_Buffer[0];
 
@@ -953,8 +826,8 @@ void setup()
     config_success = false;
   }
 
-  initCrtEmu(get_MachineNum() >= MACH_HP86A);
-  log_to_serial_ptr += sprintf(log_to_serial_ptr, "get_MachineNum(): %3d\n", get_MachineNum());
+  initCrtEmu();
+  log_to_serial_ptr += sprintf(log_to_serial_ptr, "get_machineNum(): %3d\n", get_machineNum());
 
 //
 //  EMC initialization must occur after CONFIG.TXT processing, as it depends on parameters from that process.
@@ -1063,28 +936,25 @@ void setup()
   log_to_serial_ptr += sprintf(log_to_serial_ptr, "Config Success is %s\n"   , config_success  ? "true":"false");
 
   log_to_serial_ptr += sprintf(log_to_serial_ptr, "Parameters from the CONFIG.TXT (or defaults)\n");
-  log_to_serial_ptr += sprintf(log_to_serial_ptr, "Machine number     %d\n", get_MachineNum());
+  log_to_serial_ptr += sprintf(log_to_serial_ptr, "Machine number     %d\n", get_machineNum());
   log_to_serial_ptr += sprintf(log_to_serial_ptr, "Machine type       %s\n", get_machineType());
   log_to_serial_ptr += sprintf(log_to_serial_ptr, "CRT Verbose        %s\n", get_CRTVerbose() ? "true":"false");
   log_to_serial_ptr += sprintf(log_to_serial_ptr, "Screen Emu.        %s\n", get_screenEmu()  ? "true":"false");
   log_to_serial_ptr += sprintf(log_to_serial_ptr, "Remote CRT         %s\n", get_CRTRemote()  ? "true":"false");
   log_to_serial_ptr += sprintf(log_to_serial_ptr, "85A 16 KB RAM      %s\n", getHP85RamExp()  ? "true":"false");
   log_to_serial_ptr += sprintf(log_to_serial_ptr, "HP85A/B Tape Emu.  %s\n", get_TapeEn()     ? "true":"false");
-    
+
 #if ENABLE_EMC_SUPPORT
-  log_to_serial_ptr += sprintf(log_to_serial_ptr, "EMC Support      %s\n",    get_EMC_Enable() ? "true":"false");
+  log_to_serial_ptr += sprintf(log_to_serial_ptr, "EMC Support        %s\n", get_EMC_Enable() ? "true":"false");
   if (get_EMC_Enable())
   {
-    log_to_serial_ptr += sprintf(log_to_serial_ptr, "EMC Num Banks    %d, 32 KB each\n", get_EMC_NumBanks());
-    log_to_serial_ptr += sprintf(log_to_serial_ptr, "EMC Start Bank   %d\n", get_EMC_StartBank());
-    log_to_serial_ptr += sprintf(log_to_serial_ptr, "EMC Start Addr   %08o Octal\n", get_EMC_StartAddress());
-    log_to_serial_ptr += sprintf(log_to_serial_ptr, "EMC End Addr     %08o Octal\n", get_EMC_EndAddress());
+    log_to_serial_ptr += sprintf(log_to_serial_ptr, "EMC Num Banks      %d, 32 KB each\n", get_EMC_NumBanks());
+    log_to_serial_ptr += sprintf(log_to_serial_ptr, "EMC Start Bank     %d\n", get_EMC_StartBank());
+    log_to_serial_ptr += sprintf(log_to_serial_ptr, "EMC Start Addr     %08o Octal\n", get_EMC_StartAddress());
+    log_to_serial_ptr += sprintf(log_to_serial_ptr, "EMC End Addr       %08o Octal\n", get_EMC_EndAddress());
   }
 #endif
 
-
-    
-    
   //
   //  This should be the end of our writing to this buffer for these startup messages.
   //  All future messages just use Serial.printf()
@@ -1101,7 +971,7 @@ void setup()
   //leds.setLedColor(0,CRGB::Purple);
   //leds.setLedColor(1,CRGB::Blue);
   //
-  //  alternately, hard code the brightness in 
+  //  alternately, hard code the brightness in
 
   setLedColor(0, 10,  0,  0);
   setLedColor(1,  0, 10,  0);
@@ -1118,7 +988,7 @@ void setup()
 
 //
 //  Is it possible with Teensy powered by USB for the double LMA to get out of sync?
-//  
+//
 //  Scenario: Power cycle HP-85 after first cycle but before second. Teensy is running
 //            in loop() and is un-aware that HP- 85 has restarted. Could handle this by
 //            resetting the First/Second address byte flags if a non LMA cycle is seen???
