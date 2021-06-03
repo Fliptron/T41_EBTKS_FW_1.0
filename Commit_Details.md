@@ -720,6 +720,19 @@ Changes:
 -   Tracked down HP87 crashes to SDWRITE not handling strings over 1 kB length. Issue is
     probably in AUXROMs for HP86/87
 
+## Commit \#125 06/03/2021
+
+Changes:
+
+-   Add CRT save and restore support for HP86/87, including ALPHA and ALPHALL modes
+-   Fix mask/limit processing of CRT addresses for HP86/87
+-   Add testing of HP86/87 Save and restore to test function "CRT 4"
+-   Review RMIDLE processing. Looks like the SDBATCH might not have been finished
+
+
+
+
+
 
 
 

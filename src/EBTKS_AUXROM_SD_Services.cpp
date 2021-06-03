@@ -3017,11 +3017,11 @@ void AUXROM_EBTKSREV(void)
 //  The purpose of the hook in this case is to insert characters into the keyboard stream
 //  If there are no characters to insert, just return with *p_usage = 0;
 //  Otherwise, return the next available character from the rmidle_text[] buffer.
-//  The rmidle_text[] buffer is either pre-loaded with a string, maybe from CONGFIG.TXT
-//  or it is associated with a file on the SD card.
+//  The rmidle_text[] buffer is either pre-loaded with a string, maybe from CONFIG.TXT
+//  or it is associated with a file on the SD card. (Autostart and batch support)
 //
 //  If rmidle_file_active is true, when the rmidle_text[] buffer is consumed, get more
-//  from the file until we get to the end of file. 
+//  from the file until we get to the end of file. (batch processing)
 //
 
 #define isoctal(x)  ((x)>='0'&&(x)<='7')
@@ -3042,6 +3042,11 @@ void load_text_for_RMIDLE(char * text)
 {
   strlcpy(RMIDLE_text, text, 257);
 }
+
+//
+//  This is the core of batch file processing. It can be called from loadConfiguration() which processes CONFIG.TXT
+//  or from a BASIC command SDBATCH
+//
 
 bool open_RMIDLE_file(char * SD_filename)
 {
@@ -3114,6 +3119,15 @@ void RMIDLE_file_read_next_record(void)
 //
 //  Here is the actual RMIDLE processing (EBTKS end)
 //
+//  ##############  Looks like I got distracted. Need to re-visit and handle getting more text from a batch file
+//                  Looks like there needs to be a flag saying that we are using a batch file, and when we get
+//                  to the end of the current chunk of text, we need to call RMIDLE_file_read_next_record()
+//
+//  ##############  When RMIDLE command is sent to EBTKS, the AUX ROM rev# is placed in the first two bytes of the A.BUFx
+//                  as a binary number, for EBTKS to do firmware/AUXROM sync checking.  We don't currently do this.
+//                  This was added in the AUXROMs rev 24 5/21/2021  NOT yet supported, or checked that this works
+//                  This needs to be done in conjunction with AUXROMS/EBTKS Firmware/SD Card Image all having the same Rev number
+//
 
 void AUXROM_RMIDLE(void)
 {
@@ -3123,7 +3137,7 @@ void AUXROM_RMIDLE(void)
   RMIDLE_seen = true;
   if (*RMIDLE_text_ptr == 0x00)
   {
-    goto RMIDLE_no_char;                      //  We are done, unless we are getting text from a file.
+    goto RMIDLE_no_char;                      //  We are done, unless we are getting text from a file.   #############   This does NOT get more text
   }
 
   j = *RMIDLE_text_ptr++;
@@ -3186,6 +3200,12 @@ RMIDLE_no_char:
     return;
 }
 
+
+//
+//  Start processing a Batch file. This function just processes the file path
+//  The rest of Batch processing is in open_RMIDLE_file()
+//
+
 void AUXROM_SDBATCH(void)
 {
   char        error_message[33];
@@ -3214,7 +3234,7 @@ void AUXROM_SDBATCH(void)
   }
 
 //#if VERBOSE_KEYWORDS
-    Serial.printf("SDBATCH  open OK\n");
+  Serial.printf("SDBATCH  open OK\n");
 //#endif
 
   *p_usage    = 0;                                                            //  SDEXISTS successful
@@ -3248,6 +3268,10 @@ bool Resolve_Path(char *New_Path)
   char *    dest_ptr2;                                        //  Used while processing ../
   char *    src_ptr;                                          //  Points to next character in New_Path to be processed
   bool      back_up_1_level;
+
+#if VERBOSE_KEYWORDS
+    Serial.printf("Resolve Path [%s]\n", New_Path);
+#endif
 
 //
 //  Remove leading and trailing spaces from New_Path
@@ -3491,11 +3515,6 @@ bool LineAtATime_ls_Next_SDDEL()
   //
   return false;
 }
-
-
-
-
-
 
 //
 //  Custom Error and Warning Messages

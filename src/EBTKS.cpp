@@ -525,7 +525,7 @@ void setup()
   SCOPE_1_Pulser(5);
   EBTKS_delay_ns(10000);    //  10 us
 
-  _VectorsRam[15] = mySystick_isr;
+  _VectorsRam[15] = mySystick_isr;    //  Replace the system SysTick handler with our own, that doesn't call yield()
 
   //
   //  Data Bus Transceiver
