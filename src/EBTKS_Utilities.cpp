@@ -262,6 +262,7 @@ struct S_Command_Entry Command_Table[] =
   {"pwo",              pulse_PWO},
   {"reset",            pulse_PWO},
   {"dump ram window",  dump_ram_window},                  //  Currently broken
+  {"SDCID",            dump_SD_Card_Info},
   {"kbdcode",          show_keyboard_codes},
   {"graphics test",    Simple_Graphics_Test},
   {"PSRAMTest",        PSRAM_Test},
@@ -950,6 +951,7 @@ void help_2(void)
   Serial.printf("kbdcode       Show key codes for next 10 characters in the keyboard byffer\n");
   Serial.printf("clean log     Clean the Logfile on the SD Card\n");
   Serial.printf("sdreadtimer   Test Reading with different start positions\n");
+  Serial.printf("SDCID         Display the CID information for the SD Card\n");
   Serial.printf("PSRAMTest     Test the 8 MB PSRAM. You probably should do the PWO command when test has finished\n");
   Serial.printf("ESP32 Prog    Activate a passthrough serial path to program the ESP32\n");
 #if ENABLE_TRACE_EMC

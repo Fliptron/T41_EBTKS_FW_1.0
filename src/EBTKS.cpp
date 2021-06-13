@@ -1094,7 +1094,7 @@ void loop()
     //  Things to check
     //
     //  1   If Serial is active and the serial log has not been sent, send it now.
-    //  2   If the text sent to the CRT has not yet ben also sent to Serial, send it now.
+    //  2   If the text sent to the CRT has not yet been also sent to Serial, send it now.
     //
     if (Serial)
     {
@@ -1116,6 +1116,7 @@ void loop()
         }
         Serial.printf("\nCRT Log buffer usage is %d of %d charcters\n\n", strlen(CRT_Log_Buffer), CRT_LOG_BUFFER_SIZE);
         Serial.printf("%s\n", CRT_Log_Buffer);
+        Serial.printf("EBTKS> ");
         CRT_Boot_Message_Pending_to_Serial = false;
       }
     }

@@ -729,6 +729,11 @@ Changes:
 -   Add testing of HP86/87 Save and restore to test function "CRT 4"
 -   Review RMIDLE processing. Looks like the SDBATCH might not have been finished
 
+## Commit \#126 06/13/2021
+
+Changes:
+
+-   Add new diagnostic command SDCID that reports technical information about the SD Card
 
 
 
