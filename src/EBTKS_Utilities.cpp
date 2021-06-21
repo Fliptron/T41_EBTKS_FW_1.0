@@ -154,6 +154,42 @@ void EBTKS_delay_ns(int32_t count)
 //  }
 
 
+// ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// //
+// //  The rabbit hole for this leads to
+// //    C:\Users\Philip Freidin\.platformio\packages\framework-arduinoteensy\libraries\EEPROM\EEPROM.h
+// //    C:\Users\Philip Freidin\.platformio\packages\framework-arduinoteensy\cores\teensy4\avr\eeprom.h
+// //    https://forum.pjrc.com/threads/57377?p=214566&viewfull=1#post214566
+// //    https://forum.pjrc.com/threads/59374-Teensy-4-0-how-to-persist-data-how-to-connect-serial
+// //
+// //    Quote: The EEPROM lib provides 1080 bytes, using wear leveling across 60K of the flash. The last 4K stores the recovery program
+// //    I think T4.1 "EEPROM" size is E2END+1 == 0x10BB+1 = 4284 bytes
+// //
+// //  The docs are here:  https://www.pjrc.com/teensy/td_libs_EEPROM.html
+// //  and confirms 4284 bytes of wear leveled storage. Write endurance of 100,000 cycles
+// //  Emulated EEPROM does survive Firmware Updates
+// //
+// //  My Thread:  https://forum.pjrc.com/threads/67472-Teensy-4-1-accessing-the-8-MB-built-in-Flash?p=281210
+// //    Paul wrote:
+// //      Install the latest beta
+// //      https://forum.pjrc.com/threads/67252...no-1-54-Beta-9
+// //      
+// //      Use the LittleFS library
+// //      Create an instance of LittleFS_Program for a filesystem which accesses program memory.
+// //
+// //    So LittleFs can also store info in Flash, but is not persistent with a firmware update
+// //    "Unfortunately, you won't get this until we do a bootloader update, which won't come
+// //     until near the end of 2021 or perhaps sometime in 2022"
+// //
+// #include <EEPROM.h>
+
+// void EEPROM_Write_test(int addr, uint8_t val)
+// {
+//   EEPROM.write(addr, val);
+// }
+
+
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////  All the menu functions, and the function call table
 
 
@@ -1044,33 +1080,9 @@ void help_7(void)
   Serial.printf("\n");
 }
 
-void diag_dir_path(const char * path)
-{
-  char      date[20], file_size[20];
-  uint32_t  temp_uint;
-
-  if (!LineAtATime_ls_Init_SDCAT((char *)path))             //  This is where the whole directory is listed into a buffer
-  {                                                         //  Failed to do a listing of the current directory
-    Serial.printf("Couldn't initialize read directory on SD card\n");
-  }
-  while(1)                                                  //  keep looping till we run out of entries
-  {
-    if (!LineAtATime_ls_Next_SDCAT())
-    {   //  No more directory lines
-      Serial.printf("\n");
-      return;
-    }
-    strlcpy(date, dir_line, 17);
-    strlcpy(file_size, &dir_line[16], 12);                                                //  Get the size of the file. Still needs some processing
-    temp_uint = atoi(file_size);
-    Serial.printf("%-20s   %10d   %s\n", &dir_line[28], temp_uint, date);                      //  filename,  size,  date & time
-  }
-
-}
-
 void diag_dir_tapes(void)
 {
-  diag_dir_path("/tapes/");
+  diag_dir_path("/tapes");
 }
 
 void diag_dir_root(void)
@@ -1080,12 +1092,19 @@ void diag_dir_root(void)
 
 void diag_dir_disks(void)
 {
-  diag_dir_path("/disks/");
+  diag_dir_path("/disks");
 }
 
 void diag_dir_roms(void)
 {
-  diag_dir_path("/roms85/");
+  if (IS_HP86_OR_HP87)
+  {
+    diag_dir_path("/roms87");
+  }
+  else
+  {
+    diag_dir_path("/roms85");
+  }
 }
 
 //
@@ -2481,6 +2500,8 @@ void PSRAM_Test(void)
 
 	Serial.printf("EXTMEM Memory Test, %d Mbyte\n", size);
 
+	Serial.printf("\nHP8x will be put into DMA mode for duration of the test\n");
+
 	Serial.printf("%8d bytes of EXTMEM are used by application, and won't be tested\n", (uint32_t)&_extram_alloc - 0x70000000);
 
 	if (size == 0) return;
@@ -2497,7 +2518,10 @@ void PSRAM_Test(void)
 
   Serial.printf("Start at 0x%08X  end at 0x%08X\n\n", memory_begin, memory_end);
 
-	if (!check_fixed_pattern(0x5A698421)) return;
+  assert_DMA_Request();
+  while(!DMA_Active){};     //  Wait for acknowledgment, and Bus ownership. This also disables all EBTKS interrupts, so no pinChange_isr() and no USB Serial
+
+  if (!check_fixed_pattern(0x5A698421)) return;
 	if (!check_lfsr_pattern(2976674124ul)) return;
 	if (!check_lfsr_pattern(1438200953ul)) return;
 	if (!check_lfsr_pattern(3413783263ul)) return;
@@ -2555,6 +2579,13 @@ void PSRAM_Test(void)
 	if (!check_fixed_pattern(0xFFFFFFFF)) return;
 	if (!check_fixed_pattern(0x00000000)) return;
 
+  release_DMA_request();
+  while(DMA_Active){};          //  Wait for release
+
+//
+//  With the SCOPE_2 stuff turned on below, the test takes about 7 minutes
+//  Turning SCOPE_2 stuff off ahs little effect on timing.
+//
 
 	Serial.printf("All memory tests passed :-)\n");
   Serial.printf("\nEven though this test only tested memory not used by the main application,\n");
@@ -2590,11 +2621,6 @@ bool check_fixed_pattern(uint32_t pattern)
     }
   }
 
-#if PSRAM_DMA_HALT
-  assert_DMA_Request();
-  while(!DMA_Active){};     //  Wait for acknowledgment, and Bus ownership. This also disables all EBTKS interrupts, so no pinChange_isr() and no USB Serial
-#endif
-
 	for (p = memory_begin; p < memory_end; p++)
 	{
 		*p = pattern;
@@ -2607,19 +2633,9 @@ bool check_fixed_pattern(uint32_t pattern)
 		uint32_t actual = *p;
 		if (actual != pattern)
     {
-#if PSRAM_DMA_HALT
-      release_DMA_request();
-      while(DMA_Active){};      // Wait for release
-#endif
       return fail_message(p, actual, pattern);
     }
 	}
-
-#if PSRAM_DMA_HALT
-  release_DMA_request();
-  while(DMA_Active){};      // Wait for release
-#endif
-
 	return true;
 }
 
@@ -2645,13 +2661,10 @@ bool check_lfsr_pattern(uint32_t seed)
 
 	reg = seed;
 
-#if PSRAM_DMA_HALT
-  assert_DMA_Request();
-  while(!DMA_Active){};     //  Wait for acknowledgment, and Bus ownership. This also disables all EBTKS interrupts, so no pinChange_isr() and no USB Serial
-#endif
-
 	for (p = memory_begin; p < memory_end; p++) {
+    //  SET_SCOPE_2;
 		*p = reg;
+    //  CLEAR_SCOPE_2;
 		for (int i=0; i < 3; i++) {
 			if (reg & 1) {
 				reg >>= 1;
@@ -2661,17 +2674,14 @@ bool check_lfsr_pattern(uint32_t seed)
 			}
 		}
 	}
-	arm_dcache_flush_delete((void *)memory_begin,
-		(uint32_t)memory_end - (uint32_t)memory_begin);
+	arm_dcache_flush_delete((void *)memory_begin, (uint32_t)memory_end - (uint32_t)memory_begin);
 	reg = seed;
 	for (p = memory_begin; p < memory_end; p++) {
+    //  SET_SCOPE_2;
 		uint32_t actual = *p;
+    //  CLEAR_SCOPE_2;
 		if (actual != reg)
     {
-#if PSRAM_DMA_HALT
-      release_DMA_request();
-      while(DMA_Active){};      // Wait for release
-#endif
       return fail_message(p, actual, reg);
     }
 		//Serial.printf(" reg=%08X\n", reg);
@@ -2684,12 +2694,6 @@ bool check_lfsr_pattern(uint32_t seed)
 			}
 		}
 	}
-
-#if PSRAM_DMA_HALT
-  release_DMA_request();
-  while(DMA_Active){};      // Wait for release
-#endif
-
 	return true;
 }
 
@@ -3189,13 +3193,17 @@ void str_tolower(char *p)
 
 
 
-///**********************************************************   From Everett, 9/22/2020 , with just formatting changes to conform with the rest of the source code
-/// Checks pT against possibly wild-card-containing pP.                                   and change of case for bool, true, false
-/// Returns TRUE if there's a match, otherwise FALSE.
-/// pT must NOT have any wildcards, just be a valid filename.
-/// pP may or may not have wildcards (* and ?).
-/// * matches 0 or more "any characters"
-/// ? matches exactly one "any character"
+//**********************************************************   From Everett, 9/22/2020 , with just formatting changes to conform with the rest of the source code
+//  Checks pT against possibly wild-card-containing pP.                                   and change of case for bool, true, false
+//  Returns TRUE if there's a match, otherwise FALSE.
+//  pT must NOT have any wildcards, just be a valid filename.
+//  pP may or may not have wildcards (* and ?).
+//  * matches 0 or more "any characters"
+//  ? matches exactly one "any character"
+//
+//  This uses recursion, so you know this will bite us in the ass some day
+//
+
 bool MatchesPattern(char *pT, char *pP)
 {
   if ( *pT==0 )

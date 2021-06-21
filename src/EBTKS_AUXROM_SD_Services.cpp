@@ -64,7 +64,7 @@
 //        320..329      AUXROM_HELP
 //        330..339      AUXROM_SDCAT
 //                                          330       Can't resolve path                  Used by multiple functions when Resolve_Path() fails
-//                                          331       Can't list directory
+//                                          331       Can't list directory                UNUSED due to removed code
 //                                          332       No SDCAT init or past end
 //                                          333       SDCAT no wildcards in path
 //        340..349      AUXROM_SDCD
@@ -159,21 +159,17 @@
 #include "Inc_Common_Headers.h"
 #include "HpibDisk.h"
 
-#define   VERBOSE_KEYWORDS          (0)
+#define   VERBOSE_KEYWORDS          (1)
 #define   VERBOSE_SPRINTF           (0)
 
 #define MAX_SD_PATH_LENGTH          (256)
 
 extern HpibDevice *devices[];
 
-EXTMEM static char          Current_Path[MAX_SD_PATH_LENGTH  + 2];    //  I don't think initialization of EXTMEM is supported yet
-EXTMEM static char          Resolved_Path[MAX_SD_PATH_LENGTH + 2];
-static bool                 Resolved_Path_ends_with_slash;
-EXTMEM static char          SDCAT_path_part_of_Resolved_Path[MAX_SD_PATH_LENGTH + 2];
-EXTMEM static char          SDCAT_pattern_part_of_Resolved_Path[MAX_SD_PATH_LENGTH + 2];
-EXTMEM static char          SDDEL_path_part_of_Resolved_Path[MAX_SD_PATH_LENGTH + 2];
-EXTMEM static char          SDDEL_pattern_part_of_Resolved_Path[MAX_SD_PATH_LENGTH + 2];
-EXTMEM static char          Resolved_Old_Path[MAX_SD_PATH_LENGTH + 2];
+static char          Current_Path[MAX_SD_PATH_LENGTH  + 2];
+static char          Resolved_Path[MAX_SD_PATH_LENGTH + 2];
+static bool          Resolved_Path_ends_with_slash;
+static char          Resolved_Old_Path[MAX_SD_PATH_LENGTH + 2];
 
 
 bool parse_MSU(char *msu);
@@ -206,7 +202,6 @@ File        file;
 FatFile     Fat_File;
 FatVolume   Fat_Volume;
 File        HP85_file[11];                                          //  10 file handles for the user, and one for Everett
-EXTMEM      char HP85_file_name[11][MAX_SD_PATH_LENGTH + 2];        //  Full path to the file name (the last part)
 
 void initialize_SD_functions(void)
 {
@@ -404,23 +399,169 @@ void AUXROM_HELP(void)
 
 //static int              SDCAT_line_count = 0;
 static bool               SDCAT_First_seen = false;     //  keeping track of whether we have seen a call for a first line of a SD catalog
-static int32_t            get_line_char_count;
+
+struct s_Dir_Entry {
+  int   file_size;
+  char  dir_entry_text[MAX_SD_CARD_FILE_OR_DIR_NAME_LENGTH + 2];
+  char  date_text[12];
+  char  time_text[6];
+  bool  is_directory;
+  bool  is_hidden;
+  bool  is_read_only;
+  bool  struct_is_valid;
+};
+
+class DirLine : public Print
+{
+
+public:
+  virtual int availableForWrite(void) { return 0; }
+
+  DirLine()
+  {
+    //nothing for the moment
+    _currNdx = 0;
+    _open = false;
+    //_lineBuff[0] = '\0';
+  }
+
+  bool beginDir(const char *path)
+  {
+    if (_open)
+    { //  previous request abandoned before end of itteration
+      _rootPath.close();
+      _open = false;
+    }
+
+    if (!_rootPath.open(path, O_RDONLY))
+    {
+      Serial.printf("beginDir failed at _rootPath.open(path, O_RDONLY)  path is [%s]\n", path);
+      return false;
+    }
+    _rootPath.getName(_dirName, 50);
+
+    if (!_rootPath.isDir())
+    {
+      Serial.printf("beginDir failed at _rootPath.isDir()  path is [%s]\n", path);
+      return false;
+    }
+    _rootPath.rewind();
+    _open = true;
+    return true;
+  }
+
+  bool getNextLine(struct s_Dir_Entry *entry)
+  {
+    uint16_t    date = 0, time = 0;
+
+
+    // char        *str;
+    // { // Allow YYYY-MM-DD hh:mm
+    //   str = &entry->time_text[5];               //  Point at trailing 0x00
+    //   *str = 0;
+    //   str = fsFmtTime(str, time);               //  Save str, in case we add diag prints later.
+    //                                             //  fsFmtTime() and fsFmtDate() expect the pointer to be the trailing 0x00
+    //   str = &entry->date_text[10];              //  And write from the end of the string !!!. Both are of known length.
+    //   *str = 0;                                 //  Come back and review when date gets to 9999-12-31
+    //   str = fsFmtDate(str, date);
+    // }
+    // else
+    // {
+    //   strcpy(entry->date_text, "          ");
+    //   strcpy(entry->time_text, "     ");
+
+    entry->file_size = 0;
+    entry->dir_entry_text[0] = 0x00;
+    entry->date_text[0] = 0x00;
+    entry->time_text[0] = 0x00;
+    entry->is_directory = false;
+    entry->is_hidden = false;
+    entry->is_read_only = false;
+    entry->struct_is_valid = false;
+
+    if (_open == false)
+    {
+        return false;
+    }
+
+    if (_currPath.openNext(&_rootPath, O_RDONLY))
+    {
+      entry->file_size = _currPath.fileSize();
+      _currPath.getName(entry->dir_entry_text, MAX_SD_CARD_FILE_OR_DIR_NAME_LENGTH - 2);    //  allocated storage is 2 bytes longer, to leave room for trailing slash
+                                                                                            //  Knock off two more bytes, for some safety margin
+      entry->is_directory = _currPath.isDir();
+      //entry->is_directory = _currPath.isSubDir();     // #### how is this different
+      entry->is_read_only = _currPath.isReadOnly();
+      entry->is_hidden = _currPath.isHidden();
+      if (_currPath.getModifyDateTime(&date, &time))
+      {   // Time is formatted  HH:MM , Date is formatted YYYY-MM-DD
+        if (date)
+        {
+          sprintf(entry->time_text, "%02d:%02d",      time >> 11, (time >> 5) & 63);
+          sprintf(entry->date_text, "%04d-%02d-%02d", ((date >> 9) + 1980), (date >> 5 & 15), date & 31);
+        }
+        else
+        {
+          strcpy(entry->time_text, "     ");
+          strcpy(entry->date_text, "          ");
+        }
+      }
+      _currPath.close();
+      entry->struct_is_valid = true;
+    }
+    else
+    {   //  At end of itterating through directory entries
+      _rootPath.close();
+      _open = false;
+      return false;
+    }
+    return true;
+  }
+
+  virtual size_t write(uint8_t b)
+  {
+    if (_currNdx < (_maxLineLen - 1))
+    {
+      _lineBuff[_currNdx++] = (char)b;
+      _lineBuff[_currNdx] = '\0'; //null terminate as we go
+      return 1;
+    }
+    return 0;
+  }
+
+private:
+  bool _open;
+  File _rootPath;
+  File _currPath;
+  char _dirName[60];
+  char *_lineBuff;
+  uint32_t _currNdx;
+  uint32_t _maxLineLen;
+
+  void setBuff(char *buff, uint32_t len)
+  {
+      _lineBuff = buff;
+      _maxLineLen = len;
+      _lineBuff[0] = '\0';
+      _currNdx = 0;
+  }
+};
+
+
+DirLine                   sdcat_dl;                                                       //  Used during both setup, and the iteration calls, so needs to be persistent
+static char               SDCAT_pattern_part_of_Resolved_Path[MAX_SD_PATH_LENGTH + 2];    //  This too
+struct s_Dir_Entry        SDCAT_entry;                                                    //  This might not need to be persistent ###
 
 void AUXROM_SDCAT(void)
 {
   char        *c_ptr;
   uint32_t    temp_uint;
-  char        file_size[12];
-  File        temp_file;
   bool        match;
-  char        temp_file_path[258];
+  char        SDCAT_path_part_of_Resolved_Path[MAX_SD_PATH_LENGTH + 2];                   // Only used during the intial setup call, so does not need to be persistent
 
 #if VERBOSE_KEYWORDS
-    Serial.printf("Call to SDCAT\n");
+  Serial.printf("Call to SDCAT\n");
 #endif
-
-
-  //  ta ta bye bye   SD.cacheClear();      ###########  deleted because new SdFat lib
 
   //
   //  Show Parameters
@@ -468,7 +609,7 @@ void AUXROM_SDCAT(void)
     c_ptr = strrchr(SDCAT_path_part_of_Resolved_Path, '/');                   //  Search backwards from the end of the string. Find the last '/'
     //Serial.printf("[%s]  %08x  %08x\n", SDCAT_path_part_of_Resolved_Path, SDCAT_path_part_of_Resolved_Path, c_ptr);
     strcpy(SDCAT_pattern_part_of_Resolved_Path, ++c_ptr);                     //  Copy what ever is after the last slash into the pattern
-    *c_ptr = 0x00;                                                      //  Follow the last '/' with 0x00, thus trimming SDCAT_path_part_of_Resolved_Path to just the path.
+    *c_ptr = 0x00;                                                            //  Follow the last '/' with 0x00, thus trimming SDCAT_path_part_of_Resolved_Path to just the path.
     if (strlen(SDCAT_pattern_part_of_Resolved_Path) == 0)
     {   //  Apparently no pattern to match, so set it to "*"
       strcpy(SDCAT_pattern_part_of_Resolved_Path, "*");
@@ -477,7 +618,7 @@ void AUXROM_SDCAT(void)
 #if VERBOSE_KEYWORDS
     Serial.printf("SDCAT call 0   Path Part is [%s]   Pattern part is [*]\n", SDCAT_path_part_of_Resolved_Path, SDCAT_pattern_part_of_Resolved_Path);
 #endif
-    //  At this ponint the path part is either a single '/' or a path with '/' at each end
+    //  At this point the path part is either a single '/' or a path with '/' at each end
     if (strchr(SDCAT_path_part_of_Resolved_Path, '*') || strchr(SDCAT_path_part_of_Resolved_Path, '?'))
     {   //  No wildcards allowed in path part
       post_custom_error_message("SDCAT no wildcards in path", 333);
@@ -504,15 +645,39 @@ void AUXROM_SDCAT(void)
     //  Come back to this another day, and see if we can avoid the 64K buffer
     //
     // Serial.printf("Catalogging directory of [%s]\n", SDCAT_path_part_of_Resolved_Path);
-    if (!LineAtATime_ls_Init_SDCAT(SDCAT_path_part_of_Resolved_Path))               //  This is where the whole directory is listed into a buffer
-    {                                                                   //  Failed to do a listing of the current directory
-      post_custom_error_message("Can't list directory", 331);
-      *p_mailbox = 0;                                                   //  Indicate we are done
-      Serial.printf("SDCAT Error exit 2.  Failed to do a listing of the directory [%s]\n", Resolved_Path);
-      return;
+
+    //
+    //  The path for beginDir must not have a trailing slash, unless it is also the leading slash (path length is 1 character)
+    //
+    bool slash_strip;
+    slash_strip = false;
+    if (strlen(SDCAT_path_part_of_Resolved_Path) > 1)
+    {
+      SDCAT_path_part_of_Resolved_Path[strlen(SDCAT_path_part_of_Resolved_Path)-1] = 0;     //  Remove the trailing slash
+      Serial.printf("\nStripped a trailing slash: %s\n", SDCAT_path_part_of_Resolved_Path);
+      slash_strip = true;
     }
+    if (!sdcat_dl.beginDir(SDCAT_path_part_of_Resolved_Path))
+    {
+      Serial.printf("sdcat_dl.beginDir() returned false.  Failed to initialise (path part) [%s]\n", SDCAT_path_part_of_Resolved_Path);
+    }
+    else
+    {
+      Serial.printf("sdcat_dl.beginDir() returned true   (path part) [%s]\n", SDCAT_path_part_of_Resolved_Path);
+    }
+    if (slash_strip)
+    {
+      strcat(SDCAT_path_part_of_Resolved_Path,"/");
+      Serial.printf("Trailing slash restored:  %s\n\n", SDCAT_path_part_of_Resolved_Path);
+    }
+
+    //  Error message 331 was used in now removed code
+
     SDCAT_First_seen = true;
-    //Serial.printf("SDCAT Initial call, Pattern is [%s], directory is [%s]\n", sdcat_filespec, Resolved_Path);
+    Serial.printf("SDCAT Initial call, Pattern is [%s], directory is [%s]\n", SDCAT_pattern_part_of_Resolved_Path, SDCAT_path_part_of_Resolved_Path);
+    //
+    //  fall into getting the first catalog line
+    //
   }
 
   if (!SDCAT_First_seen)
@@ -528,7 +693,7 @@ void AUXROM_SDCAT(void)
 
   while(1)  //  keep looping till we run out of entries or we get a match between a directory entry and the match pattern
   {
-    if (!LineAtATime_ls_Next_SDCAT())
+    if (!sdcat_dl.getNextLine(&SDCAT_entry))
     {   //  No more directory lines
       SDCAT_First_seen = false;                             //  Make sure the next call is a starting call
       *p_len   = 0;                                         //  nothing more to return
@@ -538,64 +703,55 @@ void AUXROM_SDCAT(void)
       *p_mailbox = 0;                                       //  Indicate we are done
       return;
     }
+    Serial.printf("date_text [%s] time_text [%s] dir_entry_text [%s]  ",
+              SDCAT_entry.date_text, SDCAT_entry.time_text, SDCAT_entry.dir_entry_text);
+    Serial.printf("is_dir: %s  is_ro: %s  file_size: %d\n\n", SDCAT_entry.is_directory ? "true":"false", SDCAT_entry.is_read_only ? "true":"false", SDCAT_entry.file_size);
     //
-    //  Got an initial or another directory entry. Parse it into little bitz
+    //  put the file/directory name in the pattern match buffer, and make it lower case
     //
-    //  A directory entry looks like this:
-    //    2020-09-07 16:24          0 pathtest/
-    //    01234567890123456789012345678901234567890     Sub-directories are marked by a trailing slash, otherwise it is a file
-    //
-    //Serial.printf("dir_line   [%s]\n", dir_line);
-    //
-    //
-    temp_uint = strlcpy(p_buffer, &dir_line[28], 129);      //  Copy the filename to buffer 6, and get its length
-    *p_len = temp_uint;                                     //  Put the filename length in the right place
-    //  Make another copy for matching, which will be case insensitive
-    strcpy(&p_buffer[256], p_buffer);
+    strcpy(&p_buffer[256], SDCAT_entry.dir_entry_text);                 // does not include a trailing slash if a directory
     str_tolower(&p_buffer[256]);
     //
-    //  Not part of the spec, but I think I want to strip the trailing slash for the pattern match
+    //  Append a trailing slash to the copy that is passed back to AUXROMs
     //
-    if (p_buffer[temp_uint - 1] == '/')
-    {   //  Entry is a subdirectory
-      p_buffer[temp_uint - 1 + 256] = 0x00;                           //  Remove the '/' for pattern match
+    if (SDCAT_entry.is_directory)
+    {
+      strcat(SDCAT_entry.dir_entry_text, "/");
       *(uint32_t *)(AUXROM_RAM_Window.as_struct.AR_Opts + 4) = 1;     //  Record that the file is actually a directory
-
     }
     else
     {   //  Entry is a file name
-      *(uint32_t *)(AUXROM_RAM_Window.as_struct.AR_Opts + 4) = 0;                 //  Record that the file is not a directory
+      *(uint32_t *)(AUXROM_RAM_Window.as_struct.AR_Opts + 4) = 0;     //  Record that the file is not a directory
     }
-    match = MatchesPattern(&p_buffer[256], SDCAT_pattern_part_of_Resolved_Path);  //  See if we have a match
 
+    if (SDCAT_entry.is_read_only)
+    {
+      *(uint32_t *)(AUXROM_RAM_Window.as_struct.AR_Opts + 4) |= 0x02; //  Indicate the file is read only
+    }
+
+    temp_uint = strlcpy(p_buffer, SDCAT_entry.dir_entry_text, 128);   //  Copy the filename to buffer 6, and get its length
+    *p_len = temp_uint;                                               //  Put the filename length in the right place
+
+    match = MatchesPattern(&p_buffer[256], SDCAT_pattern_part_of_Resolved_Path);  //  See if we have a match
     if (!match)
     {
+      Serial.printf("Pattern match failed\n");
       continue;                                                                   //  See if the next entry is a match
     }
-    //
+    Serial.printf("Pattern match success\n");
+
     //  We have a match, and have alread updated these:
     //    Name        p_buffer starting at position 0
-    //    Length      *p_len
+    //    nameLength  *p_len
     //    Dir Status  AUXROM_RAM_Window.as_struct.AR_Opts[4] (as uint32_t)
     //
     //  Now finish things
-    //
-    strlcpy(&p_buffer[256], dir_line, 17);                                                //  The DATE & TIME string is copied to Buffer 6, starting at position 256
-    strlcpy(file_size, &dir_line[16], 12);                                                //  Get the size of the file. Still needs some processing
-    temp_uint = atoi(file_size);                                                          //  Convert the file size to an int
-    *(uint32_t *)(AUXROM_RAM_Window.as_struct.AR_Opts) = temp_uint;                       //  Return file size in A.BOPT60-63
-    //
-    //  Need to get read-only status
-    //
-    strcpy(temp_file_path, SDCAT_path_part_of_Resolved_Path);
-    strcat(temp_file_path, p_buffer);
-    //  Serial.printf("Read only test of %s\n", temp_file_path);
-    temp_file = SD.open(temp_file_path);                                                  //  SD.open() does not mind the trailing slash if the name is a directory
-    if (temp_file.isReadOnly())                                                           //  If this throws an error (no member named isReadOnly) see note at top of this file
-    {
-      *(uint32_t *)(AUXROM_RAM_Window.as_struct.AR_Opts + 4) |= 0x02;                     //  Indicate the file is read only
-    }
-    temp_file.close();
+    
+    strlcpy(&p_buffer[256], SDCAT_entry.date_text, 11);                             //  The DATE & TIME strings are copied to Buffer 6, starting at position 256
+    p_buffer[256+10] = ' ';                                                         //  Date is YYYY-MM-DD (10 characters) , Time is HH:MM (5 characters)
+    strlcpy(&p_buffer[256+11], SDCAT_entry.time_text, 6);                           //  Note: strlcpy size field includes the terminating 0x00
+    *(uint32_t *)(AUXROM_RAM_Window.as_struct.AR_Opts) = SDCAT_entry.file_size;     //  Return file size in A.BOPT60-63
+
 //    Serial.printf("Filename [%s]   Date/time [%s]   Size [%s] = %d  DIR&RO status %d\n\n",  p_buffer,
 //                                                                                            &p_buffer[256],
 //                                                                                            file_size, temp_uint,
@@ -605,6 +761,36 @@ void AUXROM_SDCAT(void)
     *p_mailbox = 0;      //  Indicate we are done
     return;
   }
+}
+
+void diag_dir_path(const char * path)
+{
+  DirLine Diag_Catalog;
+  struct s_Dir_Entry        Diag_Catalog_entry;
+
+  if (!Diag_Catalog.beginDir(path))
+  {
+    Serial.printf("Couldn't initialize read directory on SD card for [%s]\n", path);
+    return;
+  }
+
+  if (strlen(path) == 1)
+  { //  root is a special case
+    Serial.printf("\nShowing SD Card directory /\n\n");
+  }
+  else
+  {
+    Serial.printf("\nShowing SD Card directory %s/\n\n", path);
+  }
+
+  while (Diag_Catalog.getNextLine(&Diag_Catalog_entry))
+  {
+    Serial.printf("%-30s  %7d %s %s\n", Diag_Catalog_entry.dir_entry_text,
+                                        Diag_Catalog_entry.file_size,
+                                        Diag_Catalog_entry.date_text,
+                                        Diag_Catalog_entry.time_text);
+  }
+  Serial.printf("\n");
 }
 
 //
@@ -762,31 +948,39 @@ void AUXROM_SDCUR(void)
 //  SDDEL
 //      If the resolved path ends in a "/" exit with an error that no file specified
 //      Otherwise, use SDCAT like code to match files and delete them. Report an error if none are deleted.
-//          Maybe we should have SDDEL pattern$ , A  with A being set to the number of files deleted
+//          Maybe we should have SDDEL pattern$ , A  with A being set to the number of files deleted   #####
 //
+//  Unlike SDCAT that uses iteration, SDDEL is a single call, so no persistent data needed
+//
+
+#define VERY_VERBOSE_SDDEL    (0)
 
 void AUXROM_SDDEL(void)
 {
-  int         number_of_deleted_files = 0;
-  char        *c_ptr;
-  uint32_t    temp_uint;
-  bool        match;
+  int                   number_of_deleted_files = 0;
+  char                  *c_ptr;
+  bool                  match;
+  char                  SDDEL_path_part_of_Resolved_Path[MAX_SD_PATH_LENGTH + 2];
+  DirLine               sddel_dl;
+  static char           SDDEL_pattern_part_of_Resolved_Path[MAX_SD_PATH_LENGTH + 2];
+  struct s_Dir_Entry    SDDEL_entry;
 
 #if VERBOSE_KEYWORDS
-  Serial.printf("Call to SDDEL\n");
+  Serial.printf("Call to SDDEL, filespec [%s]\n", p_buffer);
 #endif
 
-  //  Serial.printf("SDDEL 1:  %s\n", p_buffer);
   if (!Resolve_Path(p_buffer))
   {   //  Error, Parsing problems with path
     post_custom_error_message("Can't resolve path", 330);
     *p_mailbox = 0;      //  Indicate we are done
     return;
   }
-  //  Serial.printf("SDDEL 2:  %s\n", Resolved_Path);
+  #if VERY_VERBOSE_SDDEL
+  Serial.printf("SDDEL: resolved path [%s]\n", Resolved_Path);
+  #endif
   if (Resolved_Path_ends_with_slash)
   {
-    post_custom_error_message("SDDEL no file specified", 370);
+    post_custom_error_message("SDDEL: no file specified", 370);
     *p_mailbox = 0;      //  Indicate we are done
     return;
   }
@@ -794,10 +988,15 @@ void AUXROM_SDDEL(void)
   //  Use code very similar to SDCAT to delete files with potentially wildcards
   //
   if ((strchr(Resolved_Path, '*') == NULL) && (strchr(Resolved_Path, '?') == NULL))
-  {   //  No wild cards, so we are just deleting 1 file, or failing
-    //  Serial.printf("SDDEL 3:  No wildcards\n");
+  { //  No wild cards, so we are just deleting 1 file, or failing
+    #if VERY_VERBOSE_SDDEL
+    Serial.printf("SDDEL:  No wildcards detected\n");
+    #endif
     if (!SD.remove(Resolved_Path))
     {
+      #if VERY_VERBOSE_SDDEL
+      Serial.printf("SDDEL:  filespec didn't match anything\n");
+      #endif
       post_custom_error_message("Couldn't delete file", 371);
       *p_mailbox = 0;      //  Indicate we are done
       return;
@@ -811,7 +1010,9 @@ void AUXROM_SDDEL(void)
   //
   //  Resolved_Path has wildcards
   //
-  //  Serial.printf("SDDEL 4:  Wildcards in match pattern\n");
+  #if VERY_VERBOSE_SDDEL
+  Serial.printf("SDDEL: Wildcards in match pattern\n");
+  #endif
   SD.cacheClear();
 
   //
@@ -819,80 +1020,130 @@ void AUXROM_SDDEL(void)
   //  We have already rejected Resolved_Path that has trailing '/' and
   //  since Resolved_Path is an absolute path, we know it has a leading '/'
   //  Also, non-wildcard deletes have also been dealt with.
+  //  So wild cards (which are present) must be in the last segment of the path
   //
   strcpy(SDDEL_path_part_of_Resolved_Path, Resolved_Path);
   c_ptr = strrchr(SDDEL_path_part_of_Resolved_Path, '/');             //  Find the last '/'
-  //Serial.printf("[%s]  %08x  %08x\n", SDDEL_path_part_of_Resolved_Path, SDDEL_path_part_of_Resolved_Path, c_ptr);
   if (c_ptr == SDDEL_path_part_of_Resolved_Path)
   {   //  We have found the leading '/' , so the file(s) to be deleted are in root
-    SDDEL_path_part_of_Resolved_Path[1] = 0x00;                       //  special case, leave the slash alone
-    strcpy(SDDEL_pattern_part_of_Resolved_Path, &Resolved_Path[1]);
+    #if VERY_VERBOSE_SDDEL
+    Serial.printf("path part is root\n");
+    #endif
+    SDDEL_path_part_of_Resolved_Path[1] = 0x00;                       //  Special case, leave the slash alone
+    strcpy(SDDEL_pattern_part_of_Resolved_Path, &Resolved_Path[1]);   //  Copy all but the leading slash
   }
   else
   {
-    strcpy(SDDEL_pattern_part_of_Resolved_Path, ++c_ptr);
-    *c_ptr = 0x00;                                              //  Follow the last '/' with 0x00, thus trimming SDDEL_path_part_of_Resolved_Path to just the path.
+    strcpy(SDDEL_pattern_part_of_Resolved_Path, ++c_ptr);             //  Copy what is after the last slash, that can't be a trailing slash
+    *c_ptr = 0x00;                                                    //  Follow the last '/' with 0x00, thus trimming SDDEL_path_part_of_Resolved_Path to just the path.
   }
-
   str_tolower(SDDEL_pattern_part_of_Resolved_Path);                   //  Make it lower case, for case insensitive matching
+  #if VERY_VERBOSE_SDDEL
+  Serial.printf("SDDEL: Path part [%s]  Pattern part [%s]\n", SDDEL_path_part_of_Resolved_Path, SDDEL_pattern_part_of_Resolved_Path);
+  #endif
 
-  //  At this ponint the path part is either a single '/' or a path with '/' at each end
+  //  At this point the path part is either a single '/' or a path with '/' at each end
   if (strchr(SDDEL_path_part_of_Resolved_Path, '*') || strchr(SDDEL_path_part_of_Resolved_Path, '?'))
   {   //  No wildcards allowed in path part
+    #if VERY_VERBOSE_SDDEL
+    Serial.printf("SDDEL: Error, found wild cards in path part\n");
+    #endif
     post_custom_error_message("SDDEL no wildcards in path", 372);
       *p_mailbox = 0;      //  Indicate we are done
       return;
   }
   //  Serial.printf("SDDEL 5: path [%s]    pattern [%s]\n", SDDEL_path_part_of_Resolved_Path, SDDEL_pattern_part_of_Resolved_Path);
   //
-  //  Create a directory listing of the specified path
   //
-  if (!LineAtATime_ls_Init_SDDEL(SDDEL_path_part_of_Resolved_Path))   //  This is where the whole directory is listed into a buffer
-  {                                                                   //  Failed to do a listing of the current directory
+  //  The path for sddel_dl.beginDir() must not have a trailing slash, unless it is also the leading slash (path length is 1 character)
+  //
+  bool slash_strip;
+  slash_strip = false;
+  if (strlen(SDDEL_path_part_of_Resolved_Path) > 1)
+  {
+    SDDEL_path_part_of_Resolved_Path[strlen(SDDEL_path_part_of_Resolved_Path)-1] = 0x00;     //  Remove the trailing slash
+    #if VERY_VERBOSE_SDDEL
+    Serial.printf("\nSDDEL: Stripped a trailing slash from path: [%s]\n", SDDEL_path_part_of_Resolved_Path);
+    #endif
+    slash_strip = true;
+  }
+  if (!sddel_dl.beginDir(SDDEL_path_part_of_Resolved_Path))
+  {
+    #if VERY_VERBOSE_SDDEL
+    Serial.printf("sddel_dl.beginDir() returned false.  Failed to initialise (path part) [%s]\n", SDDEL_path_part_of_Resolved_Path);
+    #endif
     post_custom_error_message("SDDEL problem with path", 373);
     *p_mailbox = 0;      //  Indicate we are done
-    Serial.printf("SDDEL Error.  Failed to do a listing of the directory [%s]\n", SDDEL_path_part_of_Resolved_Path);
     return;
   }
-  //
-  //  Now loop through the directory listing doing pattern matches to see what to delete
-  //
-  while(1)  //  keep looping till we run out of entries or we get a match between a directory entry and the match pattern
+  else
   {
-    if (!LineAtATime_ls_Next_SDDEL())
-    {   //  No more directory lines
-      goto SDDEL_Exit;
-    }
-    //
-    //  See what we found. Throw away subdirectory entries. Since we no longer need Resolved_Path, use it as a temporary buffer
-    //
-    //  A directory entry looks like this:
-    //    2020-09-07 16:24          0 pathtest/
-    //    01234567890123456789012345678901234567890     Sub-directories are marked by a trailing slash, otherwise it is a file
-    //
-    temp_uint = strlcpy(Resolved_Path, &dir_line[28], 129);                   //  Copy the filename to Resolved_Path, and get its length
-    if(Resolved_Path[temp_uint-1] == '/')
-    {
-      continue;                                                               //  This entry ends with a '/' (a subdirectory), so just move on
-    }
-    str_tolower(Resolved_Path);                                               //  Make it lower case, for case insensitive matching
-    match = MatchesPattern(Resolved_Path, SDDEL_pattern_part_of_Resolved_Path);     //  See if we have a match
+    #if VERY_VERBOSE_SDDEL
+    Serial.printf("sddel_dl.beginDir() returned true   (path part) [%s]\n", SDDEL_path_part_of_Resolved_Path);
+    #endif
+  }
+  if (slash_strip)
+  { //  Restore the trailing slash
+    strcat(SDDEL_path_part_of_Resolved_Path,"/");
+    #if VERY_VERBOSE_SDDEL
+    Serial.printf("Trailing slash restored:  %s\n\n", SDDEL_path_part_of_Resolved_Path);
+    #endif
+  }
 
-    //  Serial.printf("SDDEL 6: Matching %s   with   %20s   %s\n", SDDEL_pattern_part_of_Resolved_Path, Resolved_Path, match ? "true":"false");
+  #if VERY_VERBOSE_SDDEL
+  Serial.printf("SDDEL Initialized, path is [%s] , pattern is [%s]\n", SDDEL_path_part_of_Resolved_Path, SDDEL_pattern_part_of_Resolved_Path);
+  #endif
+
+  while(1)      //  Now loop through the directory doing pattern matches to see what to delete
+  {
+    if (!sddel_dl.getNextLine(&SDDEL_entry))
+    { //  No more directory lines
+      //  Serial.printf("SDDEL We are done, no more entries\n");
+      //  show_mailboxes_and_usage();
+      *p_usage   = 0;                 //  Success and END
+      *p_mailbox = 0;                 //  Indicate we are done
+      return;
+    }
+    #if VERY_VERBOSE_SDDEL
+    Serial.printf("SDDEL found [%s] , is_dir: %s\n", SDDEL_entry.dir_entry_text, SDDEL_entry.is_directory ? "true":"false");
+    #endif
     //
-    //  If it matches, delete the file. We need another buffer, and the one pointed to by p_buffer is not in use anymore
+    //  See what we found. Throw away subdirectory entries, as we don't support deleting them (yet)   ######  also there is a rmRfStar() function available
+    //
+    if (SDDEL_entry.is_directory)
+    {
+      continue;
+    }
+    //
+    //  See if we have a pattern match
+    //
+    strlcpy(Resolved_Path, SDDEL_entry.dir_entry_text, 129);                  //  Make a copy of it. We aren't using Resolved_Path, so use it
+    str_tolower(Resolved_Path);                                               //  Make it lower case, for case insensitive matching
+
+    match = MatchesPattern(Resolved_Path, SDDEL_pattern_part_of_Resolved_Path);     //  See if we have a match
+    #if VERY_VERBOSE_SDDEL
+    Serial.printf("SDDEL: Matching Pat[%s] to Entry[%s]  result:  %s\n", SDDEL_pattern_part_of_Resolved_Path, Resolved_Path, match ? "true":"false");
+    #endif
+    //
+    //  If it matches, delete the file. We need another buffer, and the one pointed to by p_buffer is not used by SDDEL, so use it here
     //
     if (match)
     {
       strcpy(p_buffer, SDDEL_path_part_of_Resolved_Path);     //  This already has a trailing '/'
-      strcat(p_buffer, Resolved_Path);                  //  Remember that we are using Resolved_Path as a temp buffer at this point and it has the filename currently
-      //  Serial.printf("SDDEL 7: Deleting %s\n", p_buffer);
+      strcat(p_buffer, SDDEL_entry.dir_entry_text);
+      #if VERY_VERBOSE_SDDEL
+      Serial.printf("SDDEL: Deleting %s\n", p_buffer);
+      #endif
       if (!SD.remove(p_buffer))
       {
+        #if VERY_VERBOSE_SDDEL
+        Serial.printf("Couldn't delete %s\n", p_buffer);
+        #endif
         post_custom_error_message("Couldn't delete file", 371);
         *p_mailbox = 0;      //  Indicate we are done
         return;
       }
+      Serial.printf("%s deleted\n", p_buffer);
       number_of_deleted_files++;
     }
   }
@@ -1241,7 +1492,7 @@ bool parse_MSU(char *msu)
 
 #define COPY_BUFFER_SIZE          512
 
-DMAMEM char Copy_buffer[COPY_BUFFER_SIZE];       //  Must be in DMAMEM (or maybe ITCM/DTCM, but definitely not EXTMEM)
+DMAMEM char Copy_buffer[COPY_BUFFER_SIZE];       //  Must be in DMAMEM (or maybe ITCM/DTCM, but definitely not EXTMEM. See commit 85)
 
 bool copy_sd_file(const char * Source_Path, const char * Destination_Path)
 {
@@ -2253,10 +2504,6 @@ void AUXROM_SDREAD(void)
   int         bytes_to_read;
   int         bytes_actually_read;
 
-#if VERBOSE_KEYWORDS
-  Serial.printf("Call to SDREAD\n");
-#endif
-
   file_index = AUXROM_RAM_Window.as_struct.AR_Opts[0];               //  File number 1..11
   bytes_to_read = *p_len;                                            //  Length of read
   if (!Auxrom_Files[file_index].isOpen())
@@ -2267,6 +2514,9 @@ void AUXROM_SDREAD(void)
     return;
   }
   bytes_actually_read = Auxrom_Files[file_index].read(p_buffer, bytes_to_read);
+#if VERBOSE_KEYWORDS
+  Serial.printf("Call to SDREAD , File number %d , Max Bytes to read %d , Bytes actually read %d\n", file_index, bytes_to_read, bytes_actually_read);
+#endif
   //  Serial.printf("Read file # %2d , requested %d bytes, got %d\n", file_index, bytes_to_read, bytes_actually_read);
   //
   //  Assume all is good
@@ -3270,7 +3520,7 @@ bool Resolve_Path(char *New_Path)
   bool      back_up_1_level;
 
 #if VERBOSE_KEYWORDS
-    Serial.printf("Resolve Path [%s]\n", New_Path);
+    Serial.printf("\nResolve_Path:  Input [%s]\n", New_Path);
 #endif
 
 //
@@ -3300,7 +3550,6 @@ bool Resolve_Path(char *New_Path)
     }
   }
 
-
   if (*src_ptr == '/')
   {
     Resolved_Path[0] = '/';                                 //  Handle an absolute path
@@ -3315,10 +3564,16 @@ bool Resolve_Path(char *New_Path)
     dest_ptr = Resolved_Path + strlen(Resolved_Path);
     if (Resolved_Path[0] != '/')
     {
+      #if VERBOSE_KEYWORDS
+      Serial.printf("Resolve_Path() exit false because first char is not a / [%s]\n", Resolved_Path);
+      #endif
       return false;                                           //  make sure that the first character of the path we are building is a '/'
     }
     if (dest_ptr[-1] != '/')
     {
+      #if VERBOSE_KEYWORDS
+      Serial.printf("Resolve_Path() exit false because last char is not a / [%s]\n", Resolved_Path);
+      #endif
       return false;                                           //  make sure that the last character of the path we are building is a '/'
     }
   }
@@ -3350,6 +3605,9 @@ bool Resolve_Path(char *New_Path)
     }
     if (src_ptr[0] == '/')
     {
+      #if VERBOSE_KEYWORDS
+      Serial.printf("Resolve_Path() exit false because found // [%s]\n", Resolved_Path);
+      #endif
       return false;                                   //  Can't have an embedded //. We would have picked the first one when copying a path segment
     }
     if (src_ptr[0] == '.' && src_ptr[1] == '/')
@@ -3370,13 +3628,19 @@ bool Resolve_Path(char *New_Path)
     }
     if (back_up_1_level)
     {
-      if (strlen(Resolved_Path) <= 2)                  //  The minimal Resolved_Path that could have a directory to be removed is 3 characters"/x/"
+      if (strlen(Resolved_Path) <= 2)                 //  The minimal Resolved_Path that could have a directory to be removed is 3 characters"/x/"
       {                                               //    This could have been done with dest_ptr - Resolved_Path, strlen is clearer and less bug prone.
+        #if VERBOSE_KEYWORDS
+        Serial.printf("Resolve_Path() exit false because no directory to be removed from path (by a ../) [%s]\n", Resolved_Path);
+        #endif
         return false;                                 //  The built path does not have a trailing directory to be removed
       }
       dest_ptr2 = dest_ptr - 1;                       //  Point at the last character of the path built so far. Should be a '/'
       if (dest_ptr2[0] != '/')
       {
+        #if VERBOSE_KEYWORDS
+        Serial.printf("Resolve_Path() exit false because no trailing / (indicates code bug) [%s]\n", Resolved_Path);
+        #endif
         return false;                                 //  The built path must have a trailing '/'. This would indicate a bug somewhere in this function
       }
       dest_ptr2--;                                    //  Move just before the trailing '/'
@@ -3421,99 +3685,10 @@ bool Resolve_Path(char *New_Path)
   //  We have finished Resolving the path.
   //
   Resolved_Path_ends_with_slash = (dest_ptr[-1] == '/');
-  //Serial.printf("Resolved_Path is [%s]\n", Resolved_Path);
+  #if VERBOSE_KEYWORDS
+  Serial.printf("Resolved_Path: Output [%s]\n\n", Resolved_Path);
+  #endif
   return true;
-}
-
-File dir;
-File dir_entry;
-uint8_t dir_flags;
-uint8_t dir_indent;
-uint32_t    Listing_Buffer_Index;
-
-//
-//  Do a directory listing of the specified Directory
-//  The text buffer is 65536 bytes, so with a line limit of 32 characters per line,
-//  this would allow for 2048 lines. If directory listing exceeds 64K characters,
-//  we just truncate the listing. The user should split the directory into mutiple
-//  separate directories. Sorry. Also, we just do 1 level. If a recursive directory
-//  is desired, then the user must implement walking the directory tree in BASIC
-//  code.
-//
-//  Returns true if the directory was opened successfuly. There might not be any
-//  listing text, if the directory has no files or sub directories.
-//
-
-bool LineAtATime_ls_Init_SDCAT(char * path)
-{
-  char      dir_name[51];
-
-  Listing_Buffer_Index  = 0;
-  if (dir)
-  {
-    dir.close();
-  }
-  if (!dir.open(path, O_RDONLY))
-  {
-    return false;
-  }
-  dir.getName(dir_name, 50);
-  //Serial.printf("LAAT_ls path [%s]   dir_name [%s]\n", path, dir_name);
-  PS_SDCAT.init(Directory_Listing_Buffer_for_SDCAT, DIRECTORY_LISTING_BUFFER_SIZE);
-  dir.ls(&PS_SDCAT, LS_SIZE | LS_DATE, 0);    //  No indent needed (3rd parameter) because we are not doing a recursive listing
-  dir.close();
-  return true;
-}
-
-bool LineAtATime_ls_Next_SDCAT()
-{
-  get_line_char_count = PS_SDCAT.get_line(dir_line, 128);
-
-  if (get_line_char_count >= 0)
-  {
-    //Serial.printf("%s\n", dir_line);
-    return true;
-  }
-  //
-  //  Must be negative, so no more lines
-  //
-  return false;
-}
-
-bool LineAtATime_ls_Init_SDDEL(char * path)
-{
-  char      dir_name[51];
-
-  Listing_Buffer_Index  = 0;
-  if (dir)
-  {
-    dir.close();
-  }
-  if (!dir.open(path, O_RDONLY))
-  {
-    return false;
-  }
-  dir.getName(dir_name, 50);
-  //Serial.printf("LAAT_ls path [%s]   dir_name [%s]\n", path, dir_name);
-  PS_SDDEL.init(Directory_Listing_Buffer_for_SDDEL, DIRECTORY_LISTING_BUFFER_SIZE);
-  dir.ls(&PS_SDDEL, LS_SIZE | LS_DATE, 0);    //  No indent needed (3rd parameter) because we are not doing a recursive listing
-  dir.close();
-  return true;
-}
-
-bool LineAtATime_ls_Next_SDDEL()
-{
-  get_line_char_count = PS_SDDEL.get_line(dir_line, 128);
-
-  if (get_line_char_count >= 0)
-  {
-    //Serial.printf("%s\n", dir_line);
-    return true;
-  }
-  //
-  //  Must be negative, so no more lines
-  //
-  return false;
 }
 
 //

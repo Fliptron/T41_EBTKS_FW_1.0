@@ -735,13 +735,24 @@ Changes:
 
 -   Add new diagnostic command SDCID that reports technical information about the SD Card
 
+## Commit \#127 06/21/2021
 
+Changes:
 
-
-
-
-
-
-
+-   Rewrite SDCAT, SDDEL, Diagnostic directory listings
+-   Rewrite diag_dir_path
+-   Remove Print_Splitter.h and all references
+-   Removed all remaining usage of EXTMEM. Note that previously this memory
+    region had issues with DMA. See commit 85
+-   Diag Show ROMs now selects based on machine type
+-   Changes to PSRAMTest, now puts HP8x into DMA mode for duration of test and
+    now there does not seem to be any problems. Assume that access to PSRAM is
+    causing interrupt latency issues, but no test setup yet detects this.
+-   Integrated and modified Russell's DirLine Class, so that the big listing
+    buffers and the associated Print_Splitter.h Class are no longer needed.
+    This is part of the rewrite of SDCAT, SDDEL, and Diagnostic directory listings
+-   Deleted Print_Splitter.h from project
+-   Changed memory for CRT_Log_Buffer and Serial_Log_Buffer from EXTMEM to DTCM
+    If we get in a bind, it could be moved to DMAMEM in the future.
 
 

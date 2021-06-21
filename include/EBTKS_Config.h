@@ -80,6 +80,8 @@
                                                         //  So 4 ROM slots for AUXROMs, leaving 14 for user selected ROMs
 #define MAX_ROM_NAME_LENGTH               (32)
 
+#define MAX_SD_CARD_FILE_OR_DIR_NAME_LENGTH     (126)
+
 //
 //    Special handling of AUXROMS
 //

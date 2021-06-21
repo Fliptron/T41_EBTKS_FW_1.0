@@ -85,6 +85,7 @@ bool remount_drives(const char *filename);
 void printDirectory(File dir, int numTabs);
 void no_SD_card_message(void);
 void dump_SD_Card_Info(void);
+void diag_dir_path(const char * path);
 
 //
 //  HP85 16k exp ram
