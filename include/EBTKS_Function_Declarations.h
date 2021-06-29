@@ -51,6 +51,8 @@ void writePixel(int x, int y, int color);
 void writeLine(int x0, int y0, int x1, int y1, int color);
 void CRT_capture_screen(void);
 void CRT_restore_screen(void);
+void Send_Visible_CRT_to_Serial(void);
+void Send_All_CRT_to_Serial(void);
 
 //
 //  Bank Switched ROM support
@@ -188,6 +190,7 @@ time_t getTeensy3Time(void);
 void show_RTC(void);
 
 void ESP_Programmer_Setup(void);
+void ESP_Reset(void);
 
 //void show_file(void);
 

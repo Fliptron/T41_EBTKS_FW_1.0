@@ -1281,8 +1281,8 @@ void emc_init(void)
 }
 
 uint8_t   Diag_Read_PTR2_ctr = 0;
-uint32_t  diag_snap_PTR2 = 0;
-bool      diag_snap_lock = false;
+uint32_t  diag_snap_PTR2 = 0;                 //  Looks like this is only needed when ENABLE_TRACE_EMC is enabled
+bool      diag_snap_lock = false;             //  Looks like this is only needed when ENABLE_TRACE_EMC is enabled
 
 //
 //  note ! uses C++ 'reference', so it returns either a pointer to m_emc_ptr1 or m_emc_ptr2
@@ -1542,13 +1542,15 @@ bool on_Diag_Read_PTR2(void)
 {
   if(!diag_snap_lock)
   {
-    diag_snap_PTR2 = m_emc_ptr2;
-    diag_snap_lock = true;
+    diag_snap_PTR2 = m_emc_ptr2;                            //  Looks like this is only needed when ENABLE_TRACE_EMC is enabled
+    diag_snap_lock = true;                                  //  Looks like this is only needed when ENABLE_TRACE_EMC is enabled, and is only set false in that potentially (usually) disabled code.
   }
   readData = (m_emc_ptr2 >> (8 * Diag_Read_PTR2_ctr++));    //  No need to mask, dest is 8 bits
   if(Diag_Read_PTR2_ctr >= 3)
   {
-    Diag_Read_PTR2_ctr = 0;                                 //  Assumes the only Diag reads of Pointer 2 are always 3 bytes
+    Diag_Read_PTR2_ctr = 0;                                 //  Assumes the only Diag reads of Pointer 2 are always 3 bytes, atomic transaction.
+                                                            //  Depends on initialization to 0. If this got out of sync, there is no recovery code
+                                                            //  such as a memory transfer that didnt involve this I/O address
   }
   return true;
 }

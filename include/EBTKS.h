@@ -705,6 +705,7 @@ enum machine_numbers{
 
       MACH_HP9915B  = 5,        //  No built-in CRT, 64 kB RAM, EMC (for EDisk only), Built-in ROMs I/O, Mass Storage, EDisk (podcast)
 
+                                //////  Machines with tape drives ends here
                                 //////  Above use 1's complement ROM IDs, Below use 2's complement ROM IDs
                                 //////  EMC memory is used for BASIC programs and data
 
@@ -719,6 +720,7 @@ enum machine_numbers{
 #define MACH_FIRST_ENTRY        (MACH_HP83)
 #define MACH_LAST_ENTRY         (MACH_NUM_END)
 #define HAS_1S_COMP_ID          ((get_machineNum() >= MACH_FIRST_ENTRY) && (get_machineNum() <= MACH_HP9915B))
+#define HAS_TAPEDRIVE           ((get_machineNum() >= MACH_HP9915A)     && (get_machineNum() <= MACH_HP9915B))
 #define HAS_2S_COMP_ID          ((get_machineNum() >= MACH_HP86A)       && (get_machineNum() <= MACH_HP87XM))
 #define IS_HP86_OR_HP87         (HAS_2S_COMP_ID)
 #define ONLY_HAS_16K_RAM        ((get_machineNum() >= MACH_FIRST_ENTRY) && (get_machineNum() <= MACH_HP85AEMC))

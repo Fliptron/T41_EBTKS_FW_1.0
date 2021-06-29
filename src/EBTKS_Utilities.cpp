@@ -759,7 +759,7 @@ void show(void)
     return;
   }
 
-  if(strcasecmp(serial_string + 5, "CRT") == 0)       //  Not strncasecmp() so nothing after CRT
+  if(strcasecmp(serial_string + 5, "CRTboot") == 0)    //  Not strncasecmp() so nothing after CRT
   {
     Serial.printf("%s\n", CRT_Log_Buffer);
     return;
@@ -786,6 +786,18 @@ void show(void)
       Serial.printf("%02x ", AUXROM_RAM_Window.as_struct.AR_Opts[i]);
     }
     Serial.printf("\n");
+    return;
+  }
+
+  if(strcasecmp(serial_string + 5, "crtvis") == 0)      //  Not strncasecmp() so nothing after CRTVis
+  {
+    Send_Visible_CRT_to_Serial();
+    return;
+  }
+
+  if(strcasecmp(serial_string + 5, "crtall") == 0)      //  Not strncasecmp() so nothing after CRTAll
+  {
+    Send_All_CRT_to_Serial();
     return;
   }
 
@@ -961,11 +973,13 @@ void help_1(void)
   Serial.printf("Commands to Display Information\n");
   Serial.printf("show -----    Show commands have a parameter after exactly 1 space\n");
   Serial.printf("     log      Show the System Logfile\n");
-  Serial.printf("     boot     Show the messages from the boot process\n");
-  Serial.printf("     CRT      Show the messages sent to the CRT at startup\n");
+  Serial.printf("     boot     Show the messages from the boot process, sent to Serial port\n");
+  Serial.printf("     CRTboot  Show the messages sent to the CRT at startup\n");
   Serial.printf("     config   Show the CONFIG.TXT file\n");
   Serial.printf("     media    Show the Disk and Tape assignments\n");
   Serial.printf("     mb       Display current mailboxes and related data\n");
+  Serial.printf("     CRTVis   Show what is visible on the CRT\n");
+  Serial.printf("     CRTAll   Show all of the CRT ALPHA memory\n");
   Serial.printf("     key85_O  Display HP85 Special Keys in Octal\n");
   Serial.printf("     key85_D  Display HP85 Special Keys in Decimal\n");
   Serial.printf("     key87_O  Display HP87 Special Keys in Octal\n");
@@ -1110,7 +1124,7 @@ void diag_dir_roms(void)
 //
 //  Explore the time it takes to do SDREADs of less than a sector at a time
 //
-//      need to circle back to this: ifstream sdin("getline.txt");
+//      need to circle back to this: ifstream sdin("getline.txt");      ##########
 //        which supports:  } else if (sdin.eof()) {
 //        found in: G:\PlatformIO_Projects\Teensy_V4.1\T41_EBTKS_FW_1.0\.pio\libdeps\teensy41\SdFat\examples\examplesV1\getline\getline.ino
 //
@@ -1126,10 +1140,10 @@ void diag_sdread_1(void)
 
   Serial.printf("\n\n\nTest pass 1: reading 256 bytes from a file with varying start positions\n");
   Serial.printf("Test pass 1: Using readBytes() and default timeout\n");
-  File testfile = SD.open("/help85/00/85_INDEX.txt", FILE_READ);
+  File testfile = SD.open("/CONFIG.TXT", FILE_READ);
   if(!testfile)
   {
-    Serial.printf("File open for /help85/85_INDEX.txt failed\n");
+    Serial.printf("File open for /CONFIG.TXT failed\n");
     return;
   }
   file_offset = 0;
@@ -1156,10 +1170,10 @@ void diag_sdread_1(void)
 //
   Serial.printf("\n\n\nTest pass 2: reading 256 bytes from a file with varying start positions\n");
   Serial.printf("Test pass 2: Using readBytes() and timeout set to 0\n");
-  testfile = SD.open("/help85/00/85_INDEX.txt", FILE_READ);
+  testfile = SD.open("/CONFIG.TXT", FILE_READ);
   if(!testfile)
   {
-    Serial.printf("File open for /help85/85_INDEX.txt failed\n");
+    Serial.printf("File open for /CONFIG.TXT failed\n");
     return;
   }
   file_offset = 0;
@@ -1186,10 +1200,10 @@ void diag_sdread_1(void)
 //
   Serial.printf("\n\n\nTest pass 3: reading 256 bytes from a file with varying start positions\n");
   Serial.printf("Test pass 3: Using read() and timeout set to 1000 (but it should have no effect)\n");
-  testfile = SD.open("/help85/00/85_INDEX.txt", FILE_READ);
+  testfile = SD.open("/CONFIG.TXT", FILE_READ);
   if(!testfile)
   {
-    Serial.printf("File open for /help85/85_INDEX.txt failed\n");
+    Serial.printf("File open for /CONFIG.TXT failed\n");
     return;
   }
   file_offset = 0;
@@ -1211,7 +1225,6 @@ void diag_sdread_1(void)
   Serial.printf("Total time for test is %5d ms\n", Stop_time - Start_time_total);
   Serial.printf("Test pass 3 finished, no more characters\n\n");
   testfile.close();
-
 }
 
 ////
@@ -2710,8 +2723,8 @@ struct EMC_Trace_1_Struct {
 extern struct EMC_Trace_1_Struct EMC_Trace_1[EMC_DIAG_BUF_SIZE];
 
 extern uint32_t           m_emc_ptr1 , m_emc_ptr2;        //  EMC pointers
-extern uint32_t           diag_snap_PTR2;
-extern bool               diag_snap_lock;
+extern uint32_t           diag_snap_PTR2;                 //  Looks like this is only needed when ENABLE_TRACE_EMC is enabled
+extern bool               diag_snap_lock;                 //  Looks like this is only needed when ENABLE_TRACE_EMC is enabled
 extern uint32_t           Trace_index;
 
 

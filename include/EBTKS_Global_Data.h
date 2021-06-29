@@ -264,7 +264,6 @@ EXTERN  uint32_t      pin_isr_count;
 
         extern  const char *Config_filename;
 
-        extern  volatile uint8_t crtControl;
         extern  volatile bool writeCRTflag;
 
         extern  bool badFlag;

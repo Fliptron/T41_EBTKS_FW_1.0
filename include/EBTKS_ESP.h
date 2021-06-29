@@ -224,7 +224,8 @@ class ESPComms
       {
         dumpCrtAlphaAsJSON(_buff);
         Base64.encode(_strBuff, (char *)_buff, 512);
-        JsonObject reply = jreply.createNestedObject("hp85text");
+        JsonObject reply = jreply.createNestedObject("hpText");
+        reply["isHP87"] = false;    //only HP85 for the moment
         reply["image"] = _strBuff;
       }
       serializeJson(jreply, Serial2);

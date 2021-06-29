@@ -159,7 +159,7 @@
 #include "Inc_Common_Headers.h"
 #include "HpibDisk.h"
 
-#define   VERBOSE_KEYWORDS          (1)
+#define   VERBOSE_KEYWORDS          (0)
 #define   VERBOSE_SPRINTF           (0)
 
 #define MAX_SD_PATH_LENGTH          (256)
@@ -411,11 +411,10 @@ struct s_Dir_Entry {
   bool  struct_is_valid;
 };
 
-class DirLine : public Print
+class DirLine
 {
 
 public:
-  virtual int availableForWrite(void) { return 0; }
 
   DirLine()
   {
@@ -443,6 +442,8 @@ public:
     if (!_rootPath.isDir())
     {
       Serial.printf("beginDir failed at _rootPath.isDir()  path is [%s]\n", path);
+      _rootPath.close();    //  Apparently not a directory
+      _open = false;
       return false;
     }
     _rootPath.rewind();
@@ -518,17 +519,6 @@ public:
     return true;
   }
 
-  virtual size_t write(uint8_t b)
-  {
-    if (_currNdx < (_maxLineLen - 1))
-    {
-      _lineBuff[_currNdx++] = (char)b;
-      _lineBuff[_currNdx] = '\0'; //null terminate as we go
-      return 1;
-    }
-    return 0;
-  }
-
 private:
   bool _open;
   File _rootPath;
@@ -552,6 +542,8 @@ DirLine                   sdcat_dl;                                             
 static char               SDCAT_pattern_part_of_Resolved_Path[MAX_SD_PATH_LENGTH + 2];    //  This too
 struct s_Dir_Entry        SDCAT_entry;                                                    //  This might not need to be persistent ###
 
+#define VERY_VERBOSE_SDCAT    (0)
+
 void AUXROM_SDCAT(void)
 {
   char        *c_ptr;
@@ -560,7 +552,14 @@ void AUXROM_SDCAT(void)
   char        SDCAT_path_part_of_Resolved_Path[MAX_SD_PATH_LENGTH + 2];                   // Only used during the intial setup call, so does not need to be persistent
 
 #if VERBOSE_KEYWORDS
-  Serial.printf("Call to SDCAT\n");
+  if (AUXROM_RAM_Window.as_struct.AR_Opts[0] == 0)
+  {
+    Serial.printf("Call to SDCAT_first with path [%s]\n", p_buffer);
+  }
+  else
+  {
+    Serial.printf("Call to SDCAT_next\n");
+  }
 #endif
 
   //
@@ -607,16 +606,15 @@ void AUXROM_SDCAT(void)
     //
     strcpy(SDCAT_path_part_of_Resolved_Path, Resolved_Path);
     c_ptr = strrchr(SDCAT_path_part_of_Resolved_Path, '/');                   //  Search backwards from the end of the string. Find the last '/'
-    //Serial.printf("[%s]  %08x  %08x\n", SDCAT_path_part_of_Resolved_Path, SDCAT_path_part_of_Resolved_Path, c_ptr);
     strcpy(SDCAT_pattern_part_of_Resolved_Path, ++c_ptr);                     //  Copy what ever is after the last slash into the pattern
     *c_ptr = 0x00;                                                            //  Follow the last '/' with 0x00, thus trimming SDCAT_path_part_of_Resolved_Path to just the path.
     if (strlen(SDCAT_pattern_part_of_Resolved_Path) == 0)
-    {   //  Apparently no pattern to match, so set it to "*"
+    {   //  Apparently no pattern to match, so set it to "*".
       strcpy(SDCAT_pattern_part_of_Resolved_Path, "*");
     }
     str_tolower(SDCAT_pattern_part_of_Resolved_Path);                         //  Make it lower case, for case insensitive matching
 #if VERBOSE_KEYWORDS
-    Serial.printf("SDCAT call 0   Path Part is [%s]   Pattern part is [*]\n", SDCAT_path_part_of_Resolved_Path, SDCAT_pattern_part_of_Resolved_Path);
+    Serial.printf("SDCAT call 0   Path Part is [%s]   Pattern part is [%s]\n", SDCAT_path_part_of_Resolved_Path, SDCAT_pattern_part_of_Resolved_Path);
 #endif
     //  At this point the path part is either a single '/' or a path with '/' at each end
     if (strchr(SDCAT_path_part_of_Resolved_Path, '*') || strchr(SDCAT_path_part_of_Resolved_Path, '?'))
@@ -625,27 +623,6 @@ void AUXROM_SDCAT(void)
       *p_mailbox = 0;      //  Indicate we are done
       return;
     }
-    //
-    //  Since this is a first call, initialize by reading the whole directory into a buffer (curently 64K)
-    //  This conveniently uses the ls() member function.  Alternatively, I could investigate using the built in
-    //  SdFat openNext() function.
-    //
-    //  See EBTKS_Function_and_Keyword_List_2020_09_03.xlsx   for list of functions,  or  G:/PlatformIO_Projects/Teensy_V4.1/T41_EBTKS_FW_1.0/.pio/libdeps/teensy41/SdFat/extras/html/class_fat_file.html
-    //    For later reference, it seems the approach it to open the directory     THIS MAY BE WRONG
-    //      File dir;
-    //      File entry;
-    //      if (!dir.open(Current_Path, O_RDONLY))  ....
-    //    then do a rewind
-    //      dir.rewind();
-    //    then open files in that directory, and extract info about them
-    //      entry.openNext(dir, oflag)      //  really unsure about this
-    //
-    //  Hmmmm:  go find this function written a while ago:  printDirectory()   in     EBTKS_SD.cpp
-    //          I think the issue is that this works, but maybe there is info that can't be retrieved that the ls() does retrieve  ????
-    //  Come back to this another day, and see if we can avoid the 64K buffer
-    //
-    // Serial.printf("Catalogging directory of [%s]\n", SDCAT_path_part_of_Resolved_Path);
-
     //
     //  The path for beginDir must not have a trailing slash, unless it is also the leading slash (path length is 1 character)
     //
@@ -660,6 +637,9 @@ void AUXROM_SDCAT(void)
     if (!sdcat_dl.beginDir(SDCAT_path_part_of_Resolved_Path))
     {
       Serial.printf("sdcat_dl.beginDir() returned false.  Failed to initialise (path part) [%s]\n", SDCAT_path_part_of_Resolved_Path);
+      //
+      //  We will fall into an exit with no result when we get to the getNextLine() below.
+      //
     }
     else
     {
@@ -691,6 +671,12 @@ void AUXROM_SDCAT(void)
     return;
   }
 
+  //
+  //  This loops through the directory for the given path, even if the match pattern does not have wild cards
+  //  Maybe we should detect that there are no wild cards and take an alternative path, to just get the info
+  //  for the specified file
+  //
+
   while(1)  //  keep looping till we run out of entries or we get a match between a directory entry and the match pattern
   {
     if (!sdcat_dl.getNextLine(&SDCAT_entry))
@@ -703,9 +689,10 @@ void AUXROM_SDCAT(void)
       *p_mailbox = 0;                                       //  Indicate we are done
       return;
     }
-    Serial.printf("date_text [%s] time_text [%s] dir_entry_text [%s]  ",
-              SDCAT_entry.date_text, SDCAT_entry.time_text, SDCAT_entry.dir_entry_text);
-    Serial.printf("is_dir: %s  is_ro: %s  file_size: %d\n\n", SDCAT_entry.is_directory ? "true":"false", SDCAT_entry.is_read_only ? "true":"false", SDCAT_entry.file_size);
+    #if VERY_VERBOSE_SDCAT
+    Serial.printf("date_text [%s] time_text [%s] dir_entry_text [%s]  ", SDCAT_entry.date_text, SDCAT_entry.time_text, SDCAT_entry.dir_entry_text);
+    Serial.printf("is_dir: %s  is_ro: %s  file_size: %d\n", SDCAT_entry.is_directory ? "true":"false", SDCAT_entry.is_read_only ? "true":"false", SDCAT_entry.file_size);
+    #endif
     //
     //  put the file/directory name in the pattern match buffer, and make it lower case
     //
@@ -735,9 +722,15 @@ void AUXROM_SDCAT(void)
     match = MatchesPattern(&p_buffer[256], SDCAT_pattern_part_of_Resolved_Path);  //  See if we have a match
     if (!match)
     {
+      #if VERBOSE_KEYWORDS & (!VERY_VERBOSE_SDCAT)
+      Serial.printf("Found [%s], no match\n", SDCAT_entry.dir_entry_text);
+      #endif
       Serial.printf("Pattern match failed\n");
       continue;                                                                   //  See if the next entry is a match
     }
+    #if VERBOSE_KEYWORDS & (!VERY_VERBOSE_SDCAT)
+    Serial.printf("Found [%s], match\n", SDCAT_entry.dir_entry_text);
+    #endif
     Serial.printf("Pattern match success\n");
 
     //  We have a match, and have alread updated these:
@@ -2935,15 +2928,18 @@ void AUXROM_UNMOUNT(void)
       devices[device] = NULL;             //  Need to discuss with RB  #########
     }
 
-    //
-    //  Close any Tape-file
-    //
- 
-    filename = tape.getFile();
-    if(filename)
+    if (HAS_TAPEDRIVE)
     {
-      Serial.printf("Closing Tape drive  media: %s\n", filename);
-      tape_handle_UNMOUNT();                                                //  Will get a spurious "Closing tape" message, which is not worth fixing
+      //
+      //  Close any Tape-file
+      //
+  
+      filename = tape.getFile();
+      if(filename)
+      {
+        Serial.printf("Closing Tape drive  media: %s\n", filename);
+        tape_handle_UNMOUNT();                                                //  Will get a spurious "Closing tape" message, which is not worth fixing
+      }
     }
     goto Unmount_exit;
   }                         //  End of UNMOUNT "SDCard"    --- not case-sensitive

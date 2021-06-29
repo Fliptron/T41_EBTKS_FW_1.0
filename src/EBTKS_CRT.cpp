@@ -69,7 +69,6 @@
 #define CRTSTS85_DISPLAY_TIME   (1 << 1)    //  1 = CRT Controller is sending pixels to CRT (not retrace time)
 #define CRTSTS85_DATA_READY     (1 << 0)    //  Requested data to be read from CRT RAM is now available.  (we could super duper speed this up by just reading our local copy, if we trust it)
 
-volatile uint8_t crtControl = 0;            //  Write to status register stored here. bit 7 == 1 is graphics mode, else char mode
 volatile bool writeCRTflag = false;
 
 bool badFlag = false;                       //  Odd/Even flag for Baddr
@@ -98,7 +97,8 @@ typedef struct
   uint8_t vram[16384];
   uint16_t sadAddr;
   uint16_t badAddr;
-  uint8_t  ctrl;} video_capt_t;
+  uint8_t  ctrl;
+} video_capt_t;
 
 video_capt_t current_screen;                // contains the current HP85/86/87 screen state
 video_capt_t captured_screen;               // the current screen is copied into here when captured
@@ -188,7 +188,6 @@ void ioWriteCrtBad(uint8_t val)                 //  This function is running wit
 
 void ioWriteCrtCtrl(uint8_t val)                //  This function is running within an ISR, keep it short and fast.
 {
-  crtControl = val;
   current_screen.ctrl = val;
 }
 
@@ -422,6 +421,7 @@ void initCrtEmu()
   if (get_screenEmu() && get_CRTRemote())
   {
     Serial2.begin(115200);                                  //  Init the serial port to the ESP32
+     ESP_Reset();
   }
 
   Is8687 = IS_HP86_OR_HP87;
@@ -463,7 +463,7 @@ void Write_on_CRT_Alpha(uint16_t row, uint16_t column, const char *  text)
   //  If CRT is in Graphics mode, just ignore for now.
   //  Maybe later we will allow writing text to the
   //  Graphics screen (Implies a Character ROM in EBTKS)
-  if (crtControl & 0x80)
+  if (current_screen.ctrl & 0x80)     //  All series80 CRT controllers use the same bit for ALPHA(0)/GRAPHICS(1)
   {
     return;                     
   } 
@@ -1064,6 +1064,110 @@ int base64_encode(char *output, char *input, int inputLen)
   output[encLen] = '\0';
   return encLen;
 }
+
+//
+//  For HP85 et al, 16 lines of 32 characters. Address wraps at 2047 in our local copy
+//  For HP86 et al, 16 (PAGESIZE 16) or 24 (PAGESIZE 24) lines of 80 characters. Address wraps at 4319 (010337) in our local copy
+//    if we are in normal ALPHA mode. In ALPHALL mode, we wrap at 16319 (037677) in our local copy
+//
+
+void Send_Visible_CRT_to_Serial(void)   //  Implement diag command "show crtvis"
+{
+  if (current_screen.ctrl & 0x80)
+  {
+    Serial.printf("I'm sorry Dave, I'm afraid I can't do that. Screen is in Graphics mode\n");
+    return;
+  }
+  Serial.printf("------------------\n");
+  if (IS_HP86_OR_HP87)
+  {
+    int visible_lines = (current_screen.ctrl & 0x08) ?    24 :   16;
+    int addr_wrap     = (current_screen.ctrl & 0x40) ? 16319 : 4319;    // 204 lines : 54 lines
+    int addr = current_screen.sadAddr;
+    for (int row = 0 ; row < visible_lines ; row++)
+    {
+      for (int col = 0; col < 80; col++)
+      {        
+        Serial.printf("%c", current_screen.vram[addr++]);
+        if (addr > addr_wrap)
+        {
+          addr = 0;
+        }
+      }
+      Serial.printf("\n");
+    }
+  }
+  else
+  { //  must be HP85A/B (or 83 or 9915)
+    int addr = current_screen.sadAddr / 2;
+    for (int row = 0 ; row < 16 ; row++)
+    {
+      for (int col = 0; col < 32; col++)
+      {        
+        Serial.printf("%c", current_screen.vram[addr++]);
+        if (addr > 2047)
+        {
+          addr = 0;
+        }
+      }
+      Serial.printf("\n");
+    }
+  }
+  Serial.printf("------------------\n");
+}
+
+//
+//  For HP85 et al, 16 lines of 32 characters. Address wraps at 2047 in our local copy
+//  For HP86 et al, 16 (PAGESIZE 16) or 24 (PAGESIZE 24) lines of 80 characters. Address wraps at 4319 (010337) in our local copy
+//    if we are in normal ALPHA mode. In ALPHALL mode, we wrap at 16319 (037677) in our local copy
+//
+
+void Send_All_CRT_to_Serial(void)   //  Implement diag command "show crtall"
+{
+  if (current_screen.ctrl & 0x80)
+  {
+    Serial.printf("I'm sorry Dave, I'm afraid I can't do that. Screen is in Graphics mode\n");
+    return;
+  }
+  Serial.printf("------------------\n");
+  if (IS_HP86_OR_HP87)
+  {
+    int addr_wrap     = (current_screen.ctrl & 0x40) ? 16319 : 4319;    // 204 lines : 54 lines
+    int rows = (current_screen.ctrl & 0x40) ? 204 : 54;
+    int addr = current_screen.sadAddr;
+    for (int row = 0 ; row < rows ; row++)
+    {
+      for (int col = 0; col < 80; col++)
+      {        
+        Serial.printf("%c", current_screen.vram[addr++]);
+        if (addr > addr_wrap)
+        {
+          addr = 0;
+        }
+      }
+      Serial.printf("\n");
+    }
+
+  }
+  else
+  { //  must be HP85A/B (or 83 or 9915)
+    int addr = current_screen.sadAddr / 2;
+    for (int row = 0 ; row < 64 ; row++)
+    {
+      for (int col = 0; col < 32; col++)
+      {        
+        Serial.printf("%c", current_screen.vram[addr++]);
+        if (addr > 2047)
+        {
+          addr = 0;
+        }
+      }
+      Serial.printf("\n");
+    }
+  }
+  Serial.printf("------------------\n");
+}
+
 
 // void dumpCrtAlphaAsJSON(void)
 // {

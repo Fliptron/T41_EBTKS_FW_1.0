@@ -820,13 +820,20 @@ void setup()
                                                           //  2/7/2021 Time for the whole function, with 7 ROMs loaded is 88ms
   }
   else
-  {
+  { //  SD.begin failed
     log_to_serial_ptr += sprintf(log_to_serial_ptr, "Logfile is not active\n");
     logfile_active = false;
     config_success = false;
   }
 
-  initCrtEmu();
+  //
+  //  CRT Emu initialization must occur after CONFIG.TXT processing, as it depends on parameters from that process.
+  //  #####  Note, if config failed (for example, SD Card not plugged in) then many parameters may be wrong
+  //
+  if (config_success)   //  Can't emulate the CRT if we don't know if we have a HP85 style CRT controller, or HP86/87 CRT
+  {
+    initCrtEmu();
+  }
   log_to_serial_ptr += sprintf(log_to_serial_ptr, "get_machineNum(): %3d\n", get_machineNum());
 
 //
@@ -922,6 +929,16 @@ void setup()
                                             //  real PWO high is 187 ms later
   //PHI_1_and_2_IMR = (BIT_MASK_PHASE1 | BIT_MASK_PHASE2);   //  Enable Phi 1 and Phi 2 interrupts
   PHI_1_and_2_IMR = (BIT_MASK_PHASE1);      //  Enable Phi 1 only.  2020_12_06
+
+  //
+  //  We have just released PWO, and have enabled our pin-change interrupts. So this is our earliest opportunity to use DMA to snoop
+  //  around.
+  //  ####  What if we snooped the CRT controller if the config failed, so we could figure out whether we are on a HP85A/B/83/9915
+  //  ####  or a HP86/87, and do initCrtEmu() here using our snoop info, and in particular, set Is8687 and IS_HP86_OR_HP87
+  //  ####  Probably should also set all config things that didn't get set from failed SD.begin or failed loadConfiguration()
+  //  ####  to safe values. This would allow the    no_SD_card_message()   call in loop() a chance to work on HP86 and HP87
+  //  ####  Current default behavior assumes HP85 style CRT controller, which crashes on an HP87 with SDCard unplugged
+  //
 
   delay(10);                                //  Wait 10 ms before falling into loop()  This might be BAD. What if a device op occurs while we are waiting?    ########
                                             //  Seems there are some issues of loop functions interfering with the Service ROM initial sanity check,

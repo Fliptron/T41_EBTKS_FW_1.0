@@ -112,7 +112,7 @@
 #define EMC_DIAG_BUF_SIZE                 (2048)
 #endif
 
-//      This is mutually exclusive with ENABLE_TRACE_EMC
+//      At most one of ENABLE_TRACE_EMC and ENABLE_TRACE_PTR2 can be enabled, or both can be disabled. See commit #120
 #define ENABLE_TRACE_PTR2                 (0)
 
 #if ENABLE_TRACE_PTR2

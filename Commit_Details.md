@@ -755,4 +755,25 @@ Changes:
 -   Changed memory for CRT_Log_Buffer and Serial_Log_Buffer from EXTMEM to DTCM
     If we get in a bind, it could be moved to DMAMEM in the future.
 
+## Commit \#128 06/29/2021
+
+Changes:
+
+-   Add reset of ESP32 module during boot
+-   If we don't have configuration success (reading CONFIG.TXT), don't do CRT
+    emulation initialization, as we don't know what type of CRT controller we have.
+-   On diag console, add new commands to dump the visible part of the CRT text
+    buffer, or the whole buffer. For both types of CRT controller. No support
+    yet for graphics mode. Update Help 1.
+-   Update test function sdreadtimer
+-   Remove data duplication related to CRT controll register mirror.
+-   Finish removing Print Splitter references in Class DirLine
+-   Add support for starting a new directory scan (First/Next) even if the prior
+    scan did not complete.
+-   Add much more verbose tracking of the SDCAT function. A compile time selection
+-   Remove misleading/deprecated documentation from SDCAT
+-   Don't try unmounting the emulated tape drive on computers that can't have a tape drive (HP86, HP87)
+
+
+
 
