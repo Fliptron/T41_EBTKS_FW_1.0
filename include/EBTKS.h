@@ -672,6 +672,10 @@ enum analyzer_state{
 //
 //  Some of this info is from "Floppy Days 67 podcast"
 //
+//  NOTE:  This enum must match the string initialization for machineNames[] in EBTKS_SD.cpp at about line 47 (7/6/2021)
+//
+
+
 enum machine_numbers{
                                 //////  Machines with 16 kB RAM starts here
                                 //////  Machines with 32x16 CRT Controller starts here. ALPHA memory is 64 lines of 32 characters

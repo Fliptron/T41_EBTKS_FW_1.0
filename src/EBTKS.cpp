@@ -779,7 +779,16 @@ void setup()
     logfile_active = open_logfile();
     log_to_serial_ptr += sprintf(log_to_serial_ptr, "logfile_active is %s\n", logfile_active ? "true":"false");
     LOGPRINTF("\n----------------------------------------------------------------------------------------------------------\n");
-    LOGPRINTF("\nBegin new Logging session\n");
+    LOGPRINTF("\nBegin new Logging session at ");
+
+    int now_day     = day();  
+    int now_month   = month();
+    int now_year    = year(); 
+    int now_hour    = hour();  
+    int now_minute  = minute();
+    int now_second  = second();
+    LOGPRINTF("%.2d/%.2d/%4d ", now_month, now_day, now_year);
+    LOGPRINTF("%.2d:%.2d:%.2d\n", now_hour, now_minute, now_second);
 
     // uint32_t ccsidr;
     // SCB_ID_CSSELR = 0;            //  Select the Data Cache     DDI0403E_B_armv7m_arm.pdf page 725
@@ -1031,6 +1040,15 @@ void setup()
 
 // bool once;
 
+
+#define TRACE_LOOPTRANSLATOR_TIMING        (0)
+
+#if TRACE_LOOPTRANSLATOR_TIMING
+//uint32_t      loopTranslator_prior_exit_time;
+uint32_t      loopTranslator_entry_time;
+uint32_t      loopTranslator_duration_ms;
+#endif
+
 void loop()
 {
   if (IS_PWO_LOW)
@@ -1062,8 +1080,23 @@ void loop()
   tape.poll();              //  72 ns when idle, but 800 ns ish if Phi 1 interrupt occurs while running
   AUXROM_Poll();            //  32 ns when idle, but 760 ns ish if Phi 1 interrupt occurs while running
   Logic_Analyzer_Poll();    //  54 ns when idle, but 780 ns ish if Phi 1 interrupt occurs while running
+
+#if TRACE_LOOPTRANSLATOR_TIMING
+  loopTranslator_entry_time = systick_millis_count;
+  //Serial.printf("SDWRITE entry. Time since last exit %d ms  ,", loopTranslator_entry_time - loopTranslator_prior_exit_time);
+#endif
+
   loopTranslator();         //  1MB5 / HPIB / DISK poll
                             //  150 ns when idle, but 920 ns ish if Phi 1 interrupt occurs while running
+#if TRACE_LOOPTRANSLATOR_TIMING
+  loopTranslator_duration_ms = systick_millis_count - loopTranslator_entry_time;
+  if (loopTranslator_duration_ms > 1)
+  {
+    Serial.printf("loopTranslator() took %d ms\n", loopTranslator_duration_ms);
+  }
+#endif
+
+
   if (get_CRTRemote())
   {
     if ((systick_millis_count % 10) == 0)     //  Only do this every 10 ms, although it may occur multiple times during that 1 ms

@@ -1672,6 +1672,7 @@ redo_bus_control:
                     (Logic_Analyzer_Trigger_Value_1 & BIT_MASK_WR)  ? '1' : '0',
                     (Logic_Analyzer_Trigger_Value_1 & BIT_MASK_RD)  ? '1' : '0',
                     (Logic_Analyzer_Trigger_Value_1 & BIT_MASK_LMA) ? '1' : '0'           );
+  prompt_shown = true;          //  Suppress the EBTKS> prompt
   if (!wait_for_serial_string())
   {
     return;                                           //  Got a Ctrl-C , so abort command
@@ -1701,6 +1702,7 @@ redo_bus_control_mask:
                     (Logic_Analyzer_Trigger_Mask_1 & BIT_MASK_RD)  ? '1' : '0',
                     (Logic_Analyzer_Trigger_Mask_1 & BIT_MASK_LMA) ? '1' : '0' );
 
+  prompt_shown = true;          //  Suppress the EBTKS> prompt
   if (!wait_for_serial_string())
   {
     Ctrl_C_seen = false; return;                           //  Got a Ctrl-C , so abort command
@@ -1726,6 +1728,7 @@ redo_bus_control_mask:
 
 redo_address_pattern:
   Serial.printf("Address pattern is 6 octal digits[%06o]:", (Logic_Analyzer_Trigger_Value_1 >> 8) & 0x0000FFFF);
+  prompt_shown = true;          //  Suppress the EBTKS> prompt
   if (!wait_for_serial_string())
   {
     Ctrl_C_seen = false; return;                           //  Got a Ctrl-C , so abort command
@@ -1746,6 +1749,7 @@ redo_address_mask:
     Logic_Analyzer_Trigger_Mask_1 |= 0x00FFFF00;          //  for this situation, default the mask to 0xFFFF  (0177777)
   }
   Serial.printf("Address mask is 6 octal digits[%06o]:", (Logic_Analyzer_Trigger_Mask_1 >> 8) & 0x0000FFFF);
+  prompt_shown = true;          //  Suppress the EBTKS> prompt
   if (!wait_for_serial_string())
   {
     Ctrl_C_seen = false; return;                           //  Got a Ctrl-C , so abort command
@@ -1762,6 +1766,7 @@ redo_address_mask:
 
 redo_data_pattern:
   Serial.printf("Data pattern is 3 octal digits[%03o]:", Logic_Analyzer_Trigger_Value_1 & 0x000000FF);
+  prompt_shown = true;          //  Suppress the EBTKS> prompt
   if (!wait_for_serial_string())
   {
     Ctrl_C_seen = false; return;                           //  Got a Ctrl-C , so abort command
@@ -1782,6 +1787,7 @@ redo_data_mask:
     Logic_Analyzer_Trigger_Mask_1 |= 0x000000FF;          //  for this situation, default the mask to 0xFF  (0377)
   }
   Serial.printf("Data mask is 3 octal digits[%03o]:", Logic_Analyzer_Trigger_Mask_1 & 0x000000FF);
+  prompt_shown = true;          //  Suppress the EBTKS> prompt
   if (!wait_for_serial_string())
   {
     Ctrl_C_seen = false; return;                           //  Got a Ctrl-C , so abort command
@@ -1798,6 +1804,7 @@ redo_data_mask:
 
 redo_rselec_pattern:
   Serial.printf("RSELEC is 3 octal digits[%03o]:", Logic_Analyzer_Trigger_Value_2 & 0x000000FF);
+  prompt_shown = true;          //  Suppress the EBTKS> prompt
   if (!wait_for_serial_string())
   {
     Ctrl_C_seen = false; return;                           //  Got a Ctrl-C , so abort command
@@ -1818,6 +1825,7 @@ redo_rselec_mask:
     Logic_Analyzer_Trigger_Mask_2 |= 0x000000FF;          //  for this situation, default the mask to 0xFF  (0377)
   }
   Serial.printf("RSELEC mask is 3 octal digits[%03o]:", Logic_Analyzer_Trigger_Mask_2 & 0x000000FF);
+  prompt_shown = true;          //  Suppress the EBTKS> prompt
   if (!wait_for_serial_string())
   {
     Ctrl_C_seen = false; return;                           //  Got a Ctrl-C , so abort command
@@ -1842,6 +1850,7 @@ redo_state_pattern:
 //////                    (Logic_Analyzer_Trigger_Value_1 & 0x40000000)  ? '1' : '0',
 //////                    (Logic_Analyzer_Trigger_Value_1 & 0x20000000)  ? '1' : '0',
 //////                    (Logic_Analyzer_Trigger_Value_1 & 0x10000000)  ? '1' : '0' );
+//////  prompt_shown = true;          //  Suppress the EBTKS> prompt
 //////  if (!wait_for_serial_string())
 //////  {
 //////    return;                                           //  Got a Ctrl-C , so abort command
@@ -1876,6 +1885,7 @@ redo_state_pattern:
 //////                    (Logic_Analyzer_Trigger_Mask_1 & 0x20000000)  ? '1' : '0',
 //////                    (Logic_Analyzer_Trigger_Mask_1 & 0x10000000) ? '1' : '0'  );
 //////
+//////  prompt_shown = true;          //  Suppress the EBTKS> prompt
 //////  if (!wait_for_serial_string())
 //////  {
 //////    Ctrl_C_seen = false; return;                           //  Got a Ctrl-C , so abort command
@@ -1941,6 +1951,7 @@ redo_state_pattern:
 
 redo_buffer_length:
   Serial.printf("Set the buffer length 32 .. %d , must be power of 2)[%d]:", LOGIC_ANALYZER_BUFFER_SIZE, Logic_Analyzer_Current_Buffer_Length);
+  prompt_shown = true;          //  Suppress the EBTKS> prompt
   if (!wait_for_serial_string())
   {
     Ctrl_C_seen = false; return;                           //  Got a Ctrl-C , so abort command
@@ -1980,6 +1991,7 @@ redo_buffer_length:
   }
 
   Serial.printf("Pretrigger samples (2 to %d)[%d]:", Logic_Analyzer_Current_Buffer_Length - 2, Logic_Analyzer_Pre_Trigger_Samples);
+  prompt_shown = true;          //  Suppress the EBTKS> prompt
   if (!wait_for_serial_string())
   {
     Ctrl_C_seen = false; return;                           //  Got a Ctrl-C , so abort command
@@ -2004,6 +2016,7 @@ redo_buffer_length:
 //  Set the number of occurences of the pattern match to cause a trigger
 //
   Serial.printf("Event Count 1..N[%d]:", Logic_Analyzer_Event_Count_Init);
+  prompt_shown = true;          //  Suppress the EBTKS> prompt
   if (!wait_for_serial_string())
   {
     Ctrl_C_seen = false; return;                           //  Got a Ctrl-C , so abort command
@@ -2961,6 +2974,7 @@ void set_date(void)
 
 set_date_try_again:
   Serial.printf("\nDate> ");
+  prompt_shown = true;
   if (!wait_for_serial_string())
   {
     Ctrl_C_seen = false;
@@ -3090,6 +3104,7 @@ void set_time(void)
 
 set_time_try_again:
   Serial.printf("\nTime> ");
+  prompt_shown = true;
   if (!wait_for_serial_string())
   {
     Ctrl_C_seen = false;

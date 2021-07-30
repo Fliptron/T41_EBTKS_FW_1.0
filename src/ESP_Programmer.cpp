@@ -1,6 +1,27 @@
-
-//  All that is needed to act as a usb->serial gateway
-//  to program the esp32.  tested on real hardware!
+//
+//  All that is needed to act as a usb->serial gateway to program the esp32.
+//
+//  Notes on using non IDE Firmware downloading for ESP32
+//    https://community.platformio.org/t/export-of-binary-firmware-files-for-esp32-download-tool/9253
+//    https://github.com/espressif/esptool
+//    D:\2021\HP-85_EBTKS_V1.0\ESP32_Binaries\Where_stuff_comes_from.txt    (on Philip's computer)
+//
+//  Need to install pyserial.py
+//    python -m pip install pyserial
+//
+//  esptool.py is already installed as a by product of setting up platformio for esp32.
+//    it can be found here:   C:\Users\Philip Freidin\.platformio\packages\tool-esptoolpy\esptool.py
+//    see D:\2021\HP-85_EBTKS_V1.0\ESP32_Binaries\Where_stuff_comes_from.txt  for an example of use
+//
+//  The 30 second timeout is reset by activity on the USB-to-Serial
+//  port which is used by the ESP32 programmer software on a PC, as well as the
+//  service console. After 30 seconds of idle, ESP_Programmer_Setup() exits back to
+//  the main console command loop. While ESP_Programmer_Setup() is running, the main
+//  background polling loop is stalled, anything that depends on being polled will
+//  not get serviced. For example: All AUXROM keywords. A BASIC program that does
+//  not try and use EBTKS disk/tape emulation, logic analyzer, remote CRT, or AUXROM
+//  keywords, should continue running.
+//
 
 #include <Arduino.h>
 #include "Inc_Common_Headers.h"
@@ -58,6 +79,8 @@ void usb_ser_rts_dtr(void)
     }   
 }
 
+static uint32_t ESP32_link_timeout;
+
 void ESP_Programmer_Setup(void) {
   // put your setup code here, to run once:
   //while(!Serial);
@@ -80,10 +103,17 @@ digitalWrite(PIN_ESP_BOOT,1);
 */
 
   Serial.printf("Ready....\r\n");
+  ESP32_link_timeout = systick_millis_count;
 
   while(1)
   {
     ESP_Prog_Loop();
+    if (ESP32_link_timeout + 30000 < systick_millis_count)
+    {
+      Serial.printf("\nExit ESP32 programming link due to 30 second timeout\n");
+      ESP_Reset();
+      break;
+    }
   }
 }
 
@@ -95,6 +125,7 @@ void ESP_Prog_Loop() {
     {
       uint8_t ch = Serial.read();
       Serial2.write(ch);
+      ESP32_link_timeout = systick_millis_count;
     }
   if (Serial2.available())
   {

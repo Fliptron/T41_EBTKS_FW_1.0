@@ -418,13 +418,13 @@ void Safe_Write_CRTDAT(uint8_t val)
 
 void initCrtEmu()
 {
-  if (get_screenEmu() && get_CRTRemote())
-  {
+  // if (get_screenEmu() && get_CRTRemote())
+  // {
     Serial2.begin(115200);                                  //  Init the serial port to the ESP32
-     ESP_Reset();
-  }
+    ESP_Reset();
+  // }
 
-  Is8687 = IS_HP86_OR_HP87;
+  Is8687 = IS_HP86_OR_HP87;                     //  ######  Need a way to deal with no SD Card or CONFIG.TST , and probe registers to figure this out, AFTER PWO goes high   ####
   if (Is8687)
   {
     setIOWriteFunc(0xc0, &ioWrite8687CrtSad);   //  Base address is 0177700, offset is 0300 from 0177400

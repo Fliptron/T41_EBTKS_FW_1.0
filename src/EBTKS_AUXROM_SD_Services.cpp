@@ -725,13 +725,13 @@ void AUXROM_SDCAT(void)
       #if VERBOSE_KEYWORDS & (!VERY_VERBOSE_SDCAT)
       Serial.printf("Found [%s], no match\n", SDCAT_entry.dir_entry_text);
       #endif
-      Serial.printf("Pattern match failed\n");
+      //  Serial.printf("Pattern match failed\n");
       continue;                                                                   //  See if the next entry is a match
     }
     #if VERBOSE_KEYWORDS & (!VERY_VERBOSE_SDCAT)
     Serial.printf("Found [%s], match\n", SDCAT_entry.dir_entry_text);
     #endif
-    Serial.printf("Pattern match success\n");
+    //  Serial.printf("Pattern match success\n");
 
     //  We have a match, and have alread updated these:
     //    Name        p_buffer starting at position 0
@@ -1491,6 +1491,7 @@ bool copy_sd_file(const char * Source_Path, const char * Destination_Path)
 {
   int chars_read, chars_written;
 
+  Serial.printf("\nCreating new media by copying an image of blank media to the new media file name\n");
   Serial.printf("Copy file from [%s] to [%s]\n", Source_Path, Destination_Path);
   File Source = SD.open(Source_Path, FILE_READ);
   if (!Source)
@@ -1622,6 +1623,8 @@ bool copy_sd_file(const char * Source_Path, const char * Destination_Path)
 
 //    Not yet tested are errors 409 and 410 , and mode 2
 
+#define DIAG_TRACE_MOUNT          (1)
+
 void AUXROM_MOUNT(void)
 {
 //
@@ -1697,6 +1700,7 @@ void AUXROM_MOUNT(void)
     return;
   }
 
+
   if (!Resolve_Path(p_buffer))
   {
     post_custom_error_message("Can't resolve path", 330);
@@ -1704,12 +1708,20 @@ void AUXROM_MOUNT(void)
     goto Mount_exit;
   }
 
+    #if VERBOSE_KEYWORDS
+    Serial.printf("MOUNT Resolved_Path [%s]\n", Resolved_Path);
+    #endif
+
   if (!parse_MSU(p_buffer + 256))
   {
     Serial.printf("Failing MSU [%s]\n", p_buffer + 256);
     post_custom_error_message("MOUNT MSU$ error", 412);
     goto Mount_exit;
   }
+
+    #if VERBOSE_KEYWORDS
+    Serial.printf("MOUNT MSUS  istape:%s isdisk:%s selectcode:%2d devicecode:%2d\n", msu_is_tape? "true":"false", msu_is_disk? "true":"false", msu_select_code, msu_device_code);
+    #endif
 
   //
   //  There are significant similarities but also differences between how MOUNT works for tapes and disks.
@@ -1748,6 +1760,10 @@ void AUXROM_MOUNT(void)
   switch (AUXROM_RAM_Window.as_struct.AR_Opts[0]) //  Switch on MODE
   {
     case 0:   //  Mount an existing file, Error if it does not exist
+      #if VERBOSE_KEYWORDS
+        Serial.printf("MOUNT Mode 0\n");
+      #endif
+
       if (!SD.exists(Resolved_Path))
       {
         post_custom_error_message("MOUNT file does not exist", 411);
@@ -1815,7 +1831,7 @@ mount_a_disk:
       { //  Create and mount for tape
 Mount_create_and_mount_tape:
         Serial.printf("   Create and mount a tape\n");
-        if (!copy_sd_file("/Original_images/blank_T.tap", Resolved_Path))     //  If this fails, the error status and message has already been setup in create_tape_image()
+        if (!copy_sd_file("/Original_images/Blank_Tape.tap", Resolved_Path))  //  If this fails, the error status and message has already been setup in create_tape_image()
         {                                                                     //  Possible errors are 426 , 427 , and 428
           if (AUXROM_RAM_Window.as_struct.AR_ERR_NUM == 417)
           {
@@ -1839,7 +1855,7 @@ Mount_create_and_mount_tape:
         Serial.printf("   Create and mount a disk\n");
         #endif
 Mount_create_and_mount_disk:
-        if (!copy_sd_file("/Original_images/blank_D.dsk", Resolved_Path)) //  If this fails, the error status and message has already been setup
+        if (!copy_sd_file("/Original_images/Blank_3.5.dsk", Resolved_Path)) //  If this fails, the error status and message has already been setup
         {
           Serial.printf("   Create (copy) failed\n");
           goto Mount_exit;
@@ -1851,11 +1867,16 @@ Mount_create_and_mount_disk:
 
 
     case 2:   //  Mount new file, error if already exists, create & mount
+      #if VERBOSE_KEYWORDS
+        Serial.printf("MOUNT Mode 2\n");
+      #endif
+
       if (SD.exists(Resolved_Path))
       {     //  File exist which is an error in Mode 2
         #if VERBOSE_KEYWORDS
-        post_custom_error_message("MOUNT File already exists", 409);
+          Serial.printf("MOUNT Mode 2, error File already exists\n");
         #endif
+        post_custom_error_message("MOUNT File already exists", 409);
         goto Mount_exit;
       }
       if(msu_is_tape)
@@ -2818,6 +2839,36 @@ void AUXROM_SDSEEK(void)
 
 #define DIAG_TRACE_SDWRITE          (0)
 
+//
+//  TRACE_SDWRITE_TIMING was active on 7/1/2021. Test was writing 512 blocks of 256 bytes, sequentialy to a file in the root directory of the SD Card
+//  Consistenty, the time from the end of 1 call to the beginning of the next (time doing the loop in BASIC land) was 18 or 19 ms
+//  Time from entry to exit of this function, for successful writes of 256 bytes were mostly alternating between 0 ms and 2 or 3 ms
+//  (timing resolution is the 1 ms systick timer), with an occaisional 12 or 16 ms
+//  here is an example, in ms
+//  3, 0, 2, 0, 2, 0, 3, 0, 2, 0, 2, 0, 2, 0, 3, 0, 2, 0, 2, 0, 3, 0, 2, 0, 2, 0, 2, 0, 3, 0, 2, 0,
+//  2, 0, 3, 0, 2, 0, 2, 0, 2, 0, 3, 0, 2, 0, 2, 0, 3, 0, 2, 0, 3, 0, 3, 0, 2, 0, 2, 0, 3, 0, 2, 0,
+//  2, 0, 12, 0, 3, 0, 2, 0, 2, 0, 2, 0, 3, 0, 2, 0, 2, 0, 2, 0, 3, 0, 2, 0, 2, 0, 2, 0, 3, 0, 2, 0,
+//  2, 0, 3, 0, 2, 0, 2, 0, 3, 0, 3, 0, 2, 0, 2, 0, 3, 0, 3, 0, 2, 0, 2, 0, 3, 0, 3, 0, 2, 0, 2, 0,
+//  3, 0, 3, 0, 2, 0, 2, 0, 3, 0, 3, 0, 2, 0, 2, 0, 3, 0, 3, 0, 2, 0, 2, 0, 3, 0, 2, 0, 2, 0, 2, 0,
+//  3, 0, 2, 0, 2, 0, 2, 0, 3, 0, 2, 0, 2, 0, 2, 0, 3, 0, 2, 0, 2, 0, 2, 0, 3, 0, 2, 0, 2, 0, 2, 0,
+//  3, 0, 2, 0, 2, 0, 3, 0, 3, 0, 2, 0, 2, 0, 3, 0, 3, 0, 2, 0, 2, 0, 3, 0, 3, 0, 2, 0, 2, 0, 3, 0,
+//  3, 0, 2, 0, 2, 0, 3, 0, 3, 0, 2, 0, 2, 0, 3, 0, 3, 0, 2, 0, 2, 0, 3, 0, 3, 0, 2, 0, 2, 0, 3, 0,
+//  3, 0, 2, 0, 2, 0, 3, 0, 3, 0, 2, 0, 2, 0, 3, 0, 3, 0, 2, 0, 2, 0, 3, 0, 3, 0, 2, 0, 2, 0, 3, 0,
+//  3, 0, 2, 0, 2, 0, 3, 0, 3, 0, 2, 0, 2, 0, 3, 0, 3, 0, 2, 0, 2, 0, 3, 0, 3, 0, 2, 0, 2, 0, 3, 0,
+//  3, 0, 2, 0, 2, 0, 3, 0, 3, 0, 2, 0, 2, 0, 2, 0, 3, 0, 3, 0, 2, 0, 2, 0, 3, 0, 3, 0, 2, 0, 2, 0,
+//  2, 0, 3, 0, 2, 0, 2, 0, 2, 0, 3, 0, 2, 0, 2, 0, 2, 0, 3, 0, 3, 0, 2, 0, 2, 0, 3, 0, 3, 0, 2, 0,
+//  2, 0, 2, 0, 3, 0, 3, 0, 2, 0, 2, 0, 3, 0, 3, 0, 2, 0, 2, 0, 2, 0, 2, 0, 3, 0, 3, 0, 2, 0, 2, 0,
+//  3, 0, 3, 0, 2, 0, 2, 0, 2, 0, 3, 0, 3, 0, 2, 0, 2, 0, 3, 0, 3, 0, 2, 0, 2, 0, 2, 0, 3, 0, 3, 0,
+//  16, 0, 2, 0, 3, 0, 3, 0, 2, 0, 2, 0, 3, 0, 3, 0, 2, 0, 2, 0, 2, 0, 3, 0, 3, 0, 2, 0, 2, 0, 3, 0,
+//  3, 0, 2, 0, 2, 0, 2, 0, 3, 0, 2, 0, 2, 0, 2, 0, 3, 0, 3, 0, 2, 0, 2, 0, 3, 0, 3, 0, 2, 0, 2, 0
+//
+#define TRACE_SDWRITE_TIMING        (0)
+
+#if TRACE_SDWRITE_TIMING                  //  Only traces normal entry and exit
+uint32_t      sdwrite_prior_exit_time;
+uint32_t      sdwrite_entry_time;
+#endif
+
 void AUXROM_SDWRITE(void)
 {
   int         file_index;
@@ -2826,6 +2877,11 @@ void AUXROM_SDWRITE(void)
 
 #if VERBOSE_KEYWORDS
   Serial.printf("Call to SDWRITE\n");
+#endif
+
+#if TRACE_SDWRITE_TIMING
+  sdwrite_entry_time = systick_millis_count;
+  Serial.printf("SDWRITE entry. Time since last exit %d ms  ,", sdwrite_entry_time - sdwrite_prior_exit_time);
 #endif
 
   file_index = AUXROM_RAM_Window.as_struct.AR_Opts[0];              //  File number 1..11
@@ -2845,6 +2901,11 @@ void AUXROM_SDWRITE(void)
   //
   //  Assume all is good
   //
+#if TRACE_SDWRITE_TIMING
+  sdwrite_prior_exit_time = systick_millis_count;
+  Serial.printf("time to complete SDWRITE %d\n", sdwrite_prior_exit_time - sdwrite_entry_time);
+#endif
+
   *p_len      = bytes_actually_written;
   *p_usage    = 0;                                                        //  SDWRITE successful
   *p_mailbox  = 0;                                                        //  Indicate we are done
@@ -3044,11 +3105,21 @@ void AUXROM_MEMCPY(void)
 //  AR_Opts[3]    BLUE  value 0..255
 //
 
+#define VERBOSE_SETLED                  (0)
+
 void AUXROM_SETLED(void)
 {
 
-#if VERBOSE_KEYWORDS
+#if VERBOSE_KEYWORDS || VERBOSE_SETLED
   Serial.printf("Call to SETLED\n");
+#endif
+
+#if VERBOSE_SETLED
+  Serial.printf("SETLED Parameters:  %02X,%02X,%02X,%02X\n",
+                    AUXROM_RAM_Window.as_struct.AR_Opts[0],
+                    AUXROM_RAM_Window.as_struct.AR_Opts[1],   //  Red
+                    AUXROM_RAM_Window.as_struct.AR_Opts[2],   //  Green
+                    AUXROM_RAM_Window.as_struct.AR_Opts[3] ); //  Blue
 #endif
 
   if ((AUXROM_RAM_Window.as_struct.AR_Opts[0] == 1) || (AUXROM_RAM_Window.as_struct.AR_Opts[0] == 3))

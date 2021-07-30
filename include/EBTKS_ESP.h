@@ -3,6 +3,10 @@
     Object to manage communications between the teensy and the esp32 of the EBTKS board
     Comms is via a uart to uart serial link
 
+    See here on non IDE Firmware downloading for ESP32
+      https://community.platformio.org/t/export-of-binary-firmware-files-for-esp32-download-tool/9253
+      https://github.com/espressif/esptool
+      D:\2021\HP-85_EBTKS_V1.0\ESP32_Binaries\Where_stuff_comes_from.txt
 
 */
 

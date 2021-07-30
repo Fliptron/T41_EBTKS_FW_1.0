@@ -4,16 +4,40 @@
 
 extern SdFat SD;
 
-extern size_t strlcpy(char , const char , size_t);
+//extern size_t strlcpy(char , const char , size_t);
+
+//
+//  Primary source for this comment section is http://www.hpmuseum.net/display_item.php?hw=287 and related pages and PDFs
+//
+//  Philip's notes on Disk Drive models
+//  Model   KibiBytes   Description
+//  82901M  2 x 264     Dual 5.25" floppy drives, Master (has controller)
+//  82901S  2 x 264     Dual 5.25" floppy drives, can be added to 82901M, does not have a controller
+//  82902M  1 x 264     Single 5.25" floppy drive, Master (has controller)
+//  82902S  1 x 264     Single 5.25" floppy drive, can be added to 82901M, does not have a controller
+//            Either 8290xS can be used with either 8290xM
+//
+//  9885M   1 x 457     Opt 025  Single 8" floppy drive and controller, can support 3 9885S add-ons, DD/SS media
+//          1 x 487     Opt 031
+//
+//  9895A   1 x 1080    Opt 010  Single 8" floppy drive and controller, DD/DS media
+//  9895D   2 x 1080             Dual   8" floppy drive and controller, DD/DS media
+//
+//  9121S   1 x 264     Single 3.5" floppy drives, Single Density
+//  9121D   2 x 528     Dual   3.5" floppy drives, Single Density
+
 
 enum DISK_TYPE
-    {
-    DISK_TYPE_35 = 0,
-    DISK_TYPE_5Q,
-    DISK_TYPE_QMINI,
-    DISK_TYPE_8,
-    DISK_TYPE_HD5,
-    DISK_TYPE_HD10
+    {                       //  Force enumeration values because these numbers are used in CONFIG.TXT to specify drive type
+    DISK_TYPE_35    = 0,    //  3.5"  Floppy, HP9121  , 1056 sectors , 264 Kibibytes, uses SS/SD disks
+    DISK_TYPE_5Q    = 1,    //  5.25" Floppy, HP82901 , 1056 sectors , 264 Kibibytes
+    DISK_TYPE_QMINI = 2,
+    DISK_TYPE_8     = 3,    //  8"    Floppy, 9134A/9895A , 4320 sectors , 1080 Kibibytes
+    DISK_TYPE_HD5   = 4,
+    DISK_TYPE_HD10  = 5
+                            //  Not supported yet (may not be supported by Amigo predefined drive list?)
+                            //  HP82902   http://www.hpmuseum.net/display_item.php?hw=263   apparently uses DS/DD 5.25" media, yet only provides 264 Kibibytes
+                            //  
     };
 
 // From Everett Kaser's HP emulator:

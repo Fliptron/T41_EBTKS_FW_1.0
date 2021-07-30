@@ -774,6 +774,29 @@ Changes:
 -   Remove misleading/deprecated documentation from SDCAT
 -   Don't try unmounting the emulated tape drive on computers that can't have a tape drive (HP86, HP87)
 
+## Commit \#129 07/30/2021
 
+This commit is the first after the production release snapshot on 7/12/2021 . There were no changes between commit 128 and the snapshot.
 
+Changes:
 
+-   ESP32 programmer pass-through function (console command is: esp32 prog)
+    updated with documentation about the need for pyserial.py , and the
+    addition of a 30 second timeout that is reset by activity on the USB-to-Serial
+    port which is used by the ESP32 programmer software on a PC, as well as the
+    service console. After 30 seconds of idle, ESP_Programmer_Setup() exits back to
+    the main console command loop. While ESP_Programmer_Setup() is running, the main
+    background polling loop is stalled, anything that depends on being polled will
+    not get serviced. For example: All AUXROM keywords. A BASIC program that does
+    not try and use EBTKS disk/tape emulation, logic analyzer, remote CRT, or AUXROM
+    keywords, should continue running.
+-   Add Date and time to start of the startup logfile that is written to the SD Card
+-   Serial2 link begin() is no longer conditional on HP85 style screen. Remote
+    transfer to HP86/87 not yet supported
+-   Improved diagnostic tracing around MOUNT and SETLED keyword
+-   Added more documentation to top of HPDisk.h . Still need to do documention for emulated
+    Winchester disk drives
+-   Added documenatation to EBTKS_ESP.h about programming the ESP32 without the IDE
+-   
+
+    
