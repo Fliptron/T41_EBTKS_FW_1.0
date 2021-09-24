@@ -662,6 +662,21 @@ void setup()
   }
 
   //
+  //  LOGGING  LOGGING  LOGGING  LOGGING  LOGGING  LOGGING  LOGGING  LOGGING  LOGGING  LOGGING  LOGGING  
+  //
+  //  There are 3 logging "channels" used during system boot:
+  //    A) Logging to the file EBTKSLog.log the SDCARD root directory.       Look for calls to LOGPRINTF()
+  //    B) Logging to the HP8x CRT.                                          Look for usage of log_to_CRT_ptr which is almost entirely in loadConfiguration()
+  //    C) Logging to the diagnostic serial port (over USB).                 Look for usage of log_to_serial_ptr which is in this file and loadConfiguration()
+  //
+  //  (A) Depends on a functioning SD Card interface and an SD Card.
+  //  (B) Depends on the HP8x being in run mode and able to do DMA. Until that occurs (when the boot process has completed), we buffer these messages
+  //      in CRT_Log_Buffer, which has limited size. We DO NOT check for overflow of this buffer, but we do send a message to (A) and (C) indicating
+  //      the amount of the buffer used. Look for something like this "CRT Log buffer usage is 685 of 1024 charcters"
+  //  (C) Like (B), we hold off sending these messages to the USB serial port, except the wait is until we get to loop().
+  //      The buffer also has a limited size. We DO NOT check for overflow of this buffer, but we do send a message to (A) and (C) indicating
+  //      the amount of the buffer used. Look for something like this "Serial Log buffer usage is 1027 of 2048 charcters"
+  //
   //  Initially, we can't write to the CRT because PWO is still asserted, and the HP85 bus
   //  is not yet active.
   //
@@ -1153,8 +1168,10 @@ void loop()
         if (strlen(Serial_Log_Buffer) > SERIAL_LOG_BUFFER_SIZE)
         {
            Serial.printf("\nWarning Warning Warning Warning Warning Warning Warning SERIAL_LOG_BUFFER_SIZE is too small\n");
+           LOGPRINTF("\nWarning Warning Warning Warning Warning Warning Warning SERIAL_LOG_BUFFER_SIZE is too small\n");      //  Clearly this is inefficient. fix it later
         }
         Serial.printf("\nSerial Log buffer usage is %d of %d charcters\n\n", strlen(Serial_Log_Buffer), SERIAL_LOG_BUFFER_SIZE);
+        LOGPRINTF    ("\nSerial Log buffer usage is %d of %d charcters\n", strlen(Serial_Log_Buffer), SERIAL_LOG_BUFFER_SIZE);      //  Clearly this is inefficient. fix it later
         Serial.printf("%s\n", Serial_Log_Buffer);
         Serial_Log_Message_Pending = false;
       }
@@ -1163,8 +1180,10 @@ void loop()
         if (strlen(CRT_Log_Buffer) > CRT_LOG_BUFFER_SIZE)
         {
            Serial.printf("\nWarning Warning Warning Warning Warning Warning Warning CRT_LOG_BUFFER_SIZE is too small\n");
+           LOGPRINTF    ("\nWarning Warning Warning Warning Warning Warning Warning CRT_LOG_BUFFER_SIZE is too small\n");      //  Clearly this is inefficient. fix it later
         }
         Serial.printf("\nCRT Log buffer usage is %d of %d charcters\n\n", strlen(CRT_Log_Buffer), CRT_LOG_BUFFER_SIZE);
+        LOGPRINTF    ("CRT Log buffer usage is %d of %d charcters\n", strlen(CRT_Log_Buffer), CRT_LOG_BUFFER_SIZE);      //  Clearly this is inefficient. fix it later
         Serial.printf("%s\n", CRT_Log_Buffer);
         Serial.printf("EBTKS> ");
         CRT_Boot_Message_Pending_to_Serial = false;

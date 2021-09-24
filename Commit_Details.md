@@ -799,4 +799,25 @@ Changes:
 -   Added documenatation to EBTKS_ESP.h about programming the ESP32 without the IDE
 -   
 
-    
+## Commit \#130 09/24/2021
+
+Changes:
+
+-   This commit is mostly about a complete rewrite of the RMIDLE handling, and a fair bit of new
+    documentation in related code. Also improvements to escape sequence processing in the RMIDLE
+    code for commands from CONFIG.TXT and batch files. None needed for characters over WiFi
+-   Add hook for inserting characters into keyboard stream from WiFi (i.e. a remote Browser)
+-   Add place holder for capturing HP8x keystrokes and redirecting to an alternative keystroke
+    consumer, such as an emulator for some other process (PDP-8/E emu, HP8x emu, terminal emu...)
+-   Serial and CRT startup message buffer usage now reported in EBTKSLog.log
+-   Autostart from CONFIG.TXT now reported in EBTKSLog.log
+-   JSON_DOC_SIZE bumped up from 5500 to 7000 to give some safety room for end users playing with
+    the CONFIG.TXT file
+-   Fix line wrap and overwrite issue on CRT boot up messages for 16 kB RAM and tape drive emulation
+
+
+
+
+
+
+   

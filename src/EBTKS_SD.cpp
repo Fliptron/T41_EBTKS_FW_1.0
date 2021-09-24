@@ -14,7 +14,7 @@
 
 #include <strings.h>                                    //  Needed for strcasecmp() prototype
 
-#define JSON_DOC_SIZE   5500
+#define JSON_DOC_SIZE   7000
 
 //
 //  Parameters from the CONFIG.TXT file
@@ -478,6 +478,11 @@ void mount_drives_based_on_JSON(JsonDocument& doc)
 //
 //  Loads the configuration from a file, return true if successful
 //
+//  Scattered throughout the following function you will see text being sent to two logging
+//  channels. Because this is being processed while the HP8x is being held in HALT/PWO, the
+//  HP I/O bus is not runing yet, and we can't put stuff on the CRT. So we buffer the text
+//  that is intended for the CRT until we can send it.
+//
 
 #define TRACE_LOAD_CONFIG       (0)           //  Activating this will stall the process until the Serial terminal is connected
 
@@ -588,7 +593,10 @@ bool loadConfiguration(const char *filename)
   {
     enHP85RamExp(doc["ram16k"] | false);
     temp_char_ptr = log_to_CRT_ptr;
-    log_to_CRT_ptr += sprintf(log_to_CRT_ptr, "HP83, HP85A, 9915A 16 KB RAM: %s\n", getHP85RamExp() ? "Enabled":"None");
+    log_to_CRT_ptr += sprintf(log_to_CRT_ptr, "HP83, HP85A, 9915A 16 KB RAM:\n");
+    LOGPRINTF("%s", temp_char_ptr);
+    temp_char_ptr = log_to_CRT_ptr;
+    log_to_CRT_ptr += sprintf(log_to_CRT_ptr, "  %s\n", getHP85RamExp() ? "Enabled":"None");
     LOGPRINTF("%s", temp_char_ptr);
   }
   #if TRACE_LOAD_CONFIG
@@ -606,7 +614,10 @@ bool loadConfiguration(const char *filename)
     //
     tapeEn = doc["tape"]["enable"] | false;
     temp_char_ptr = log_to_CRT_ptr;
-    log_to_CRT_ptr += sprintf(log_to_CRT_ptr, "HP85A/B, HP9915A/B Tape Emulation: %s\n", tapeEn ? "Yes":"No");
+    log_to_CRT_ptr += sprintf(log_to_CRT_ptr, "85A/B, 9915A/B Tape Emulation:\n");
+    LOGPRINTF("%s", temp_char_ptr);
+    temp_char_ptr = log_to_CRT_ptr;
+    log_to_CRT_ptr += sprintf(log_to_CRT_ptr, "  %s\n", tapeEn ? "Enabled":"Disabled");
     LOGPRINTF("%s", temp_char_ptr);
   }
 
@@ -636,7 +647,7 @@ bool loadConfiguration(const char *filename)
       load_text_for_RMIDLE(doc["AutoStart"]["command"]);
       temp_char_ptr = log_to_CRT_ptr;
       log_to_CRT_ptr += sprintf(log_to_CRT_ptr, "AutoStart with Command\n");
-      LOGPRINTF("%s", temp_char_ptr);
+      //  No LOGPRINTF("%s", temp_char_ptr); needed here because it was handled in load_text_for_RMIDLE()
     }
     else if (strlen(doc["AutoStart"]["batch"] | "") != 0)
     {

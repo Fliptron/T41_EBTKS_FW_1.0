@@ -998,7 +998,7 @@ void help_2(void)
   Serial.printf("la setup      Set up the logic analyzer\n");
   Serial.printf("la go         Start the logic analyzer\n");
   Serial.printf("addr          Instantly show where HP85 is executing\n");
-  Serial.printf("kbdcode       Show key codes for next 10 characters in the keyboard byffer\n");
+  Serial.printf("kbdcode       Show key codes for next 10 characters in the keyboard buffer\n");
   Serial.printf("clean log     Clean the Logfile on the SD Card\n");
   Serial.printf("sdreadtimer   Test Reading with different start positions\n");
   Serial.printf("SDCID         Display the CID information for the SD Card\n");
@@ -1047,7 +1047,7 @@ void help_3(void)
   Serial.printf("SetDate       Set the Date in MM/DD/YYYY format\n");
   Serial.printf("SetTime       Set the Time in HH:MM 24 hour format\n");
   Serial.printf("adj min       The U and D command will adjust minutes\n");
-  Serial.printf("adj hour      The U and D command will adjust hourss\n");
+  Serial.printf("adj hour      The U and D command will adjust hours\n");
   Serial.printf("U             Increment the time by 1 minute or hour\n");
   Serial.printf("D             Decrement the time by 1 minute or hour\n");
 //Serial.printf("screen        #Screen emulation\n");        //  Not yet Implemented
@@ -1057,7 +1057,7 @@ void help_3(void)
 
 void help_4(void)
 {
-  Serial.printf("Comands for Auxiliary programs\n");
+  Serial.printf("Commands for Auxiliary programs\n");
 //Serial.printf("cpm           #CP/M operating system\n");                           //  Not yet Implemented
 //Serial.printf("ulisp         #uLisp interpreter\n");
 //Serial.printf("python        #uPython\n");                                         //  Not yet Implemented

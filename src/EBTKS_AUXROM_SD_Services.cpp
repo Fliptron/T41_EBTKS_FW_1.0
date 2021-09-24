@@ -3327,12 +3327,25 @@ void AUXROM_EBTKSREV(void)
   return;
 }
 
-//
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //          RMIDLE Processing
 //
 //  AUXROM_RMIDLE() gets called whenever the EXEC loop on the HP85 gets to the RMIDLE hook
 //  The purpose of the hook in this case is to insert characters into the keyboard stream
 //  If there are no characters to insert, just return with *p_usage = 0;
+//    *p_usage = 1; Indicates we are returning a character. See below. Used for when system is idle, or at an input statement
+//    *p_usage = 2; Take ownership of the HP85/6/7 keyboard, and we get the folowing characters. Untested at EBTKS end, but supported in AUXROMS
+//    *p_usage = 3; Release ownership of HP85/6/7 keyboard. Untested at EBTKS end, but supported in AUXROMS
+//
+//    For 2 and 3, look in rom361.lst at about line 1517, label RHNOTKEY for the hooks, and rom364.lst
+//    at about line 1133, label KBDISR for related code. In Everett's emulator, in auxrom.c at line
+//    1406 (case U_RMIDLE) there is his emulator implementation (of EBTKS functionality) that shows
+//    usage, and there is some commented out test code. Follow "TestKeyCnt" to find related commented
+//    out test code.
+//    Taking ownership of the keyboard will be used if we ever do emulation of CP/M, PDP8-E, LISP, ....
+//
+//  Now, back to the *p_usage = 0 or 1 case, where we are inserting characters either at startup
+//  of for the batch command. (And soon for WiFi support of keboard characters coming from a remote keyboard)
 //  Otherwise, return the next available character from the rmidle_text[] buffer.
 //  The rmidle_text[] buffer is either pre-loaded with a string, maybe from CONFIG.TXT
 //  or it is associated with a file on the SD card. (Autostart and batch support)
@@ -3343,178 +3356,286 @@ void AUXROM_EBTKSREV(void)
 
 #define isoctal(x)  ((x)>='0'&&(x)<='7')
 
-bool RMIDLE_seen = false;
-File RMIDLE_source;
-bool RMIDLE_file_active;
-char RMIDLE_text[258];        //  That should be enough, bad news as no checking is done.
-char * RMIDLE_text_ptr;
+enum  RMIDLE_char_source{
+        RMIDLE_NOT_ACTIVE = 0,
+        RMIDLE_FROM_CONFIG = 1,     //  A one time only (per boot) string from CONFIG.TXT                     Needs LF/CRLF/escaped-octal processing
+        RMIDLE_FROM_FILE = 2,       //  From a batch file, possibly at boot, or from user/program keyword     Needs LF/CRLF/escaped-octal processing
+        RMIDLE_FROM_WIFI = 3,       //  From WiFi from remote browser interface                               No extra processing, use data literally
+                                    //  We never actually enter this mode, as the chars from WiFi can
+                                    //  arrive at any time. So we just check for a WiFi character
+        RMIDLE_KBD_CAPTURED = 4     //  Keyboard channel in reverse: Series 80 keyboard keystrokes
+                                    //  captured and sent to an emulator or other keystroke consumer.
+      };
+
+enum  RMIDLE_char_source RMIDLE_mode;
+File  RMIDLE_batch_file;
+char  RMIDLE_text[258];             //  Only used for RMIDLE_FROM_CONFIG. 258 should be enough, bad news as no checking is done.
+char  * RMIDLE_text_ptr;
+int   lookahead_char;               //  Needs to be int so that we can send -1 , or 0..255
+#define HP8X_NEWLINE      (0232)
+
+//bool  RMIDLE_seen = false;
+//bool  RMIDLE_file_active;
 
 void initialize_RMIDLE_processing(void)
 {
-  RMIDLE_text_ptr = &RMIDLE_text[0];
-  *RMIDLE_text_ptr = 0x00;
+  RMIDLE_mode = RMIDLE_NOT_ACTIVE;
+  lookahead_char = -1;
 }
 
-void load_text_for_RMIDLE(char * text)
+void load_text_for_RMIDLE(char * text)    //  Handle RMIDLE text coming from a command in the CONFIG.TXT file
 {
   strlcpy(RMIDLE_text, text, 257);
+
+  RMIDLE_mode = RMIDLE_FROM_CONFIG;
+  RMIDLE_text_ptr = &RMIDLE_text[0];
+
+  LOGPRINTF("\nAutoStart Command [%s]\n", RMIDLE_text_ptr);
 }
 
-//
-//  This is the core of batch file processing. It can be called from loadConfiguration() which processes CONFIG.TXT
-//  or from a BASIC command SDBATCH
-//
-
-bool open_RMIDLE_file(char * SD_filename)
+bool open_RMIDLE_file(char * SD_filename)   // Handle RMIDLE text coming from a batch file
 {
-  int   read_length;
-
-  RMIDLE_text_ptr = RMIDLE_text;
-  *RMIDLE_text_ptr = 0;
-  RMIDLE_file_active = true;
-  RMIDLE_source = SD.open(SD_filename, FILE_READ);
-  if (RMIDLE_source)
-  {
-    read_length = RMIDLE_source.read(RMIDLE_text, 256);
-    if (read_length < 0)                //  Read error
-    {
-      RMIDLE_source.close();
-      RMIDLE_file_active = false;
-      return false;
-    }
-    if (read_length == 0)               //  File opened, but it is zero length
-    {
-      RMIDLE_source.close();
-      RMIDLE_file_active = false;
-      return true;                      //  Successful, but useless
-    }
-    //
-    //  Successful read. Stick a 0x00 at the end
-    //
-    RMIDLE_text[read_length] = 0x00;
+  if ((RMIDLE_batch_file = SD.open(SD_filename, FILE_READ)))
+  {   //  Successfully opened the batch file
+    RMIDLE_mode = RMIDLE_FROM_FILE;
+    lookahead_char = -1;
     return true;
   }
-  //
-  //  if we get here, we couldn't open the file
-  //
-  RMIDLE_file_active = false;
-  return false;
-}
-
-void close_RMIDLE_file(void)
-{
-  RMIDLE_source.close();
-  RMIDLE_file_active = false;
+  else
+  {   //  Couldn't open batch file
+    RMIDLE_mode = RMIDLE_NOT_ACTIVE;
+    return false;
+  }
 }
 
 //
-//  If we are pulling RMIDLE text from a file, and we reach the end of the RMIDLE_text[] buffer,
-//  this function reads the next chunk.
+//  Autostart command(s) can be specified on a single line in CONFIG.TXT .
+//  Embedded HP8X_NEWLINE characters are allowed, so multiple lines of text
+//  can be provided. A maximum of 256 characters. All special key codes can
+//  be done as octal constants of the form \\123 . Double backslash is needed
+//  because the JSON library requires two backslashes to create one backslash
+//  in the returned string. This implies that JSON has some sort of escape
+//  processing, but none has been identified. Maybe this is just a side
+//  effect of system functions that the JSON library depends on.
 //
-
-void RMIDLE_file_read_next_record(void)
+int16_t RMIDLE_character_from_buffer(void)
 {
-  int   read_length;
-
-  RMIDLE_text_ptr = RMIDLE_text;          //  Reset the pointer o the beginning of the buffer
-  *RMIDLE_text_ptr = 0;                   //  and set the first character to 0x00 , just in case.
-                                          //  It will be overwritten with a successful read.
-
-  read_length = RMIDLE_source.read(RMIDLE_text, 256);
-  if (read_length <= 0)                  //  Read error, or end of file
+  if (*RMIDLE_text_ptr)
   {
-    close_RMIDLE_file();
-    return;
+    return 0x00FF & *RMIDLE_text_ptr++;       //  return next character from buffer
+  }
+  RMIDLE_mode = RMIDLE_NOT_ACTIVE;            //  No more characters
+  return -1;
+}
+
+//
+//  Get a character from a batch file. Close the file if we are at the end.
+//
+int16_t RMIDLE_character_from_BATCH_file(void)
+{
+  int     read_length;
+
+  read_length = RMIDLE_batch_file.read(RMIDLE_text, 1);     //  Just get 1 character from the batch file
+  if (read_length != 1)
+  {
+    RMIDLE_batch_file.close();
+    RMIDLE_mode = RMIDLE_NOT_ACTIVE;            //  No more characters
+    return -1;
+  }
+  return *RMIDLE_text;
+}
+
+//
+//  Get a character via WiFi from remote browser application
+//
+int16_t RMIDLE_character_from_WiFi(void)
+{
+  return -1;                                //  Stub for now
+}
+
+//
+//  Handle fetching a character and if esc_processing is true, do the following conversions
+//    input     output
+//    LF        0232      Convert to the Series80 ENDLINE code
+//    CRLF      0232      Convert to the Series80 ENDLINE code
+//    CRxx      0232      Convert to the Series80 ENDLINE code , following character xx is not consumed
+//    \\        \         A double backslash is an escapped single backslash, and not the prefix of an octal constant
+//    \OOO      0OOO      Backslash followed by exactly 3 Octal digits 0..377(octal) returns the appropriate 8 bit value.
+//                        less than 3 octal digits causes sequence to be ignored, and a \ character is returned
+//
+int16_t get_next_RMIDLE_character(int16_t (*f_ptr)(void), bool esc_processing)
+{
+  int16_t     next_char, i;
+
+  //
+  //  If there is a lookahead_char character, it takes priority over fetching another character
+  //
+  if (lookahead_char >= 0)
+  {
+    next_char       = lookahead_char;
+    lookahead_char  = -1;
+  }
+  else
+  {
+    next_char = f_ptr();
+  }
+
+  //
+  //  Only do esc_processing if enabled for this stream, or if we already know we are done
+  //  
+  if ((!esc_processing) || (next_char < 0))
+  {
+    return next_char;
+  }
+
+  //
+  //  Process LF.  LFCR is not a valid sequence, it will result in a LF and CR
+  //
+  if (next_char == '\n')                   //  Handle LF
+  {
+    return HP8X_NEWLINE;
+  }
+
+  //
+  //  Process CRLF, CRxx, CR(at end of stream)
+  //
+  if (next_char == '\r')                   //  Handle CR , need to do lookahead to see if CRLF
+  {
+    lookahead_char = f_ptr();
+    //
+    //  Handle end of stream and CRLF
+    //
+    if ((lookahead_char == -1) || (lookahead_char == '\n'))
+    {
+      lookahead_char = -1;                    //  consume the LF, if there was one
+      return HP8X_NEWLINE;
+    }
+    //
+    //  Got CRxx, so return HP8X_NEWLINE , and we now have a lookahead character
+    //
+    return HP8X_NEWLINE;
+  }
+
+  //
+  //  At this point, we have handled LF , CR+LF , CR+EOF , CRxx (xx is not LF)
+  //
+  //  Now check for an octal constant in the form \OOO , must always be 3 octal digits.
+  //  And also double backslash '\\' which is an escaped '\'.
+  //
+
+  if (next_char != '\\')
+  {   //  Not an octal constant or an escapped '\', so just return the character
+    return next_char;
+  }
+
+  //
+  //  We have a '\' . Handle a 3 digit octal constant, or double backslash
+  //
+  next_char = 0;                          //  Build the octal constant in this var
+  for (i = 0 ; i < 3 ; i++)
+  {
+    lookahead_char = f_ptr();             //  Get the next character from the stream
+
+    if (lookahead_char < 0)
+    {   //  End of the stream while trying to process an octal constant or double backslash
+      return '\\';                        //  Failed octal constant returns a '\'
+    }
+    //
+    //  check for double backslash
+    //
+    if ((i == 0) && (lookahead_char == '\\'))
+    {
+      lookahead_char = -1;                //  Consume the lookahead character
+      return '\\';                        //  Found \\ , return \  Note: all the '\\' in the surrounding code are a single '\'
+    }
+    //
+    //  Check for and process an octal digit
+    //
+    if ((lookahead_char >= '0') && (lookahead_char <= '7'))
+    {   //  Got a valid octal digit
+      next_char = (next_char << 3) + (lookahead_char - '0');
+    }
+    else
+    {   //  Got an invalid octal digit, and thus, did not get 3 digits
+        //  The first non octal digit is now a lookahead charcter
+      return '\\';                        //  Failed octal constant returns a '\'
+    }
+  }
+  //  We have now processed the octal constant.
+  lookahead_char = -1;                    //  Consume the lookahead character
+  return next_char;
+}
+
+//
+//  This function returns the next character to be inserted into the HP85/6/7 keyboard stream
+//  via the hook function RMIDLE in the system software. The hook call gets turned into an
+//  AUXROM call, that calls this function to see if any more characters are available.
+//  Possible sources include:
+//    CONFIG.TXT file
+//    Batch files initiated by CONFIG.TXT
+//    Batch files initiated by the SDBATCH keyword
+//    Keystrokes that arrive via the WiFi link to an external browser
+//
+int16_t select_next_RMIDLE_character_source(void)
+{
+  if (RMIDLE_mode == RMIDLE_KBD_CAPTURED)
+  {
+    return -1;                                        //  This is not yet supported  #####
+  }
+  if (RMIDLE_mode == RMIDLE_FROM_CONFIG)
+  {
+    return get_next_RMIDLE_character(RMIDLE_character_from_buffer, true);
+  }
+  if (RMIDLE_mode == RMIDLE_FROM_FILE)
+  {
+    return get_next_RMIDLE_character(RMIDLE_character_from_BATCH_file, true);
   }
   //
-  //  Successful read. Stick a 0x00 at the end
+  //  See if Wifi has anything for us. Characters via WiFi are already processed with respect to escape
+  //  characters (there aren't any), and all conversion to HP8x key codes has already occured.
   //
-  RMIDLE_text[read_length] = 0x00;
-  return;
+  return get_next_RMIDLE_character(RMIDLE_character_from_WiFi, false);
 }
 
 //
-//  Here is the actual RMIDLE processing (EBTKS end)
+//  AUXROM_RMIDLE Test cases for the command from CONFIG.TXT mode
 //
-//  ##############  Looks like I got distracted. Need to re-visit and handle getting more text from a batch file
-//                  Looks like there needs to be a flag saying that we are using a batch file, and when we get
-//                  to the end of the current chunk of text, we need to call RMIDLE_file_read_next_record()
+//  Load and run LEDTEST2
+//    "command": "\\222\\242\\242LOAD \"LEDTEST2\"\\232\\215"
+//  Load and run LEDTEST2. Type PAUSE, then runs EBTKS-TEST
+//    "command": "\\222\\242\\242LOAD \"LEDTEST2\"\\232\\215\\222\\242\\242LOAD \"EBTKS-TEST\"\\232\\215"
+//  Type in a program, LIST it, RUN it, pass a value to an input statement, and display the result
+//    "command": "\\222\\242\\24210 REM This tests INPUT\\23220 INPUT A\\23230 DISP \"The answer is: \";A\\232999 END\\232\\224\\21542\\232REM DONE\\232"
+//
+//  There are many more tests possible, that exercise various errors in formatting these strings. Maybe do that in the future.
+//  For now, the above tests demonstrate loading and running a program, and that the stream can be stalled while a
+//  program runs, and that the stream correctly restarts after the program stops.
+
 //
 //  ##############  When RMIDLE command is sent to EBTKS, the AUX ROM rev# is placed in the first two bytes of the A.BUFx
 //                  as a binary number, for EBTKS to do firmware/AUXROM sync checking.  We don't currently do this.
 //                  This was added in the AUXROMs rev 24 5/21/2021  NOT yet supported, or checked that this works
 //                  This needs to be done in conjunction with AUXROMS/EBTKS Firmware/SD Card Image all having the same Rev number
 //
-
 void AUXROM_RMIDLE(void)
 {
-  char    i, j;
-  char    * start_of_octal_const;
+  int     newchar;        //  Needs to be int so that we can send -1 , or 0..255
 
-  RMIDLE_seen = true;
-  if (*RMIDLE_text_ptr == 0x00)
-  {
-    goto RMIDLE_no_char;                      //  We are done, unless we are getting text from a file.   #############   This does NOT get more text
-  }
+  newchar = select_next_RMIDLE_character_source();
 
-  j = *RMIDLE_text_ptr++;
-  if (j != '\\')
+  if (newchar >= 0)
   {
-    //
-    //  Not a slash, so check for LF and CR,LF
-    //        LF            CR                           LF
-    if ((j == 10) || ((j == 13)  && (*RMIDLE_text_ptr == 10) ))
-    {
-      if(j == 13)
-      {                                         //  Handle CR, LF
-        RMIDLE_text_ptr++;
-      }
-      j = 0232;                                 //  Replace LF or CR,LF with HP85 'ENDLINE' . We don't handle LF,CR
-    }
-    goto RMIDLE_char_in_j;                      //  Normal character, or translater LF or CR,LF
-  }
-  //
-  //  Got a slash. If two, we just return 1. If 1, then expect 3 octal digits next
-  //
-  if (*RMIDLE_text_ptr == '\\' )	              //  Handle "\\" for a single '\'
-  {
-    ++RMIDLE_text_ptr;
-    goto RMIDLE_char_in_j;                      //  Result is a single '\'
-  }
-  //
-  //  If we get here, we have a single '\' which means an octal constant
-  //
-  start_of_octal_const = RMIDLE_text_ptr - 1;     //  May need this to report an error
-                                                  //  Handle \ooo  3 digit octal number
-  for (i = j = 0; (i < 3) && isoctal(*RMIDLE_text_ptr) ; i++)
-  {
-    j = (j << 3) + (*RMIDLE_text_ptr++ - '0');
-  }
-  if (i == 3)
-  {
-    goto RMIDLE_char_in_j;
-  }
-  //
-  //  If we get here, we didn't get 3 octal digits
-  //
-  Serial.printf("RMIDLE bad Octal constant [%.4s]\n", start_of_octal_const);
-  *RMIDLE_text_ptr = 0;                           //  Kill off any further processing of the string
-  if (RMIDLE_file_active)
-  {
-    close_RMIDLE_file();
-  }
-  goto RMIDLE_no_char;
-
-RMIDLE_char_in_j:
-    AUXROM_RAM_Window.as_struct.AR_Opts[0] = j;
+    AUXROM_RAM_Window.as_struct.AR_Opts[0] = newchar;
     *p_usage = 1;
     *p_mailbox  = 0;
     return;
-
-RMIDLE_no_char:
+  }
+  else
+  {
     *p_usage = 0;
     *p_mailbox  = 0;
     return;
+  }
 }
 
 
