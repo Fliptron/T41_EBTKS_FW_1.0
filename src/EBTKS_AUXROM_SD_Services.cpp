@@ -16,7 +16,7 @@
 //
 //  10/17/2020        Fix pervasive errors in how I was handling buffers
 //
-//  10/19/2020        SDMOUNT
+//  10/19/2020        SDMOUNT   (later renamed to MOUNT)
 //  10/20/2020        SDMOUNT
 //  10/21/2020        SDMOUNT
 //  10/22/2020        SDDEL  rewrite to handle wildcards. Not as easy as you might think.
@@ -32,6 +32,7 @@
 //                    On trying to build the cloned project, got multiple errors in EBTKS_AUXROM_SD_Services.cpp
 //                    like:   src\EBTKS_AUXROM_SD_Services.cpp:565:19: error: 'File {aka class FsFile}' has no member named 'isReadOnly'
 //                    The fix is to edit D:\2021\HP-85_EBTKS_V1.0\Firmware\.pio\libdeps\teensy41\SdFat\src\SdFatConfig.h at line 78
+//                      (2022:   D:\_Multi_Year_Files\EBTKS_V1.0\Firmware\.pio\libdeps\teensy41\SdFat\src\SdFatConfig.h   new location, not sure if this edit is still needed)
 //                    and change it from
 //                        #define SDFAT_FILE_TYPE 3
 //                    to
@@ -159,9 +160,43 @@
 #include "Inc_Common_Headers.h"
 #include "HpibDisk.h"
 
+//  Setting VERBOSE_KEYWORDS to 1 turns on all verbose reporting.
+
 #define   VERBOSE_KEYWORDS          (0)
 #define   VERBOSE_SPRINTF           (0)
 
+//  Setting any of these enables individual control of which keywords have verbose reporting.
+
+#define   VERBOSE_AUXROM_DATETIME   (0)
+#define   VERBOSE_AUXROM_FLAGS      (0)
+#define   VERBOSE_AUXROM_HELP       (0)
+#define   VERBOSE_AUXROM_SDCAT      (0)
+#define   VERBOSE_AUXROM_SDCD       (0)
+#define   VERBOSE_AUXROM_SDCLOSE    (0)
+#define   VERBOSE_AUXROM_SDCUR      (0)
+#define   VERBOSE_AUXROM_SDDEL      (0)
+#define   VERBOSE_AUXROM_SDFLUSH    (0)
+#define   VERBOSE_AUXROM_MEDIA      (0)
+#define   VERBOSE_AUXROM_SDMKDIR    (0)
+#define   VERBOSE_AUXROM_MOUNT      (0)
+#define   VERBOSE_AUXROM_SDOPEN     (0)
+#define   VERBOSE_AUXROM_SPF        (0)
+#define   VERBOSE_AUXROM_SDREAD     (0)
+#define   VERBOSE_AUXROM_SDREN      (0)
+#define   VERBOSE_AUXROM_SDRMDIR    (0)
+#define   VERBOSE_AUXROM_SDSEEK     (0)
+#define   VERBOSE_AUXROM_SDWRITE    (0)
+#define   VERBOSE_AUXROM_UNMOUNT    (0)
+#define   VERBOSE_AUXROM_WROM       (0)
+#define   VERBOSE_AUXROM_MEMCPY     (0)
+#define   VERBOSE_AUXROM_SETLED     (0)
+#define   VERBOSE_AUXROM_SDCOPY     (0)
+#define   VERBOSE_AUXROM_SDEOF      (0)
+#define   VERBOSE_AUXROM_SDEXISTS   (0)
+#define   VERBOSE_AUXROM_EBTKSREV   (0)
+#define   VERBOSE_AUXROM_RMIDLE     (0)
+#define   VERBOSE_AUXROM_SDBATCH    (0)
+#define   VERBOSE_AUXROM_BOOT       (0)
 #define MAX_SD_PATH_LENGTH          (256)
 
 extern HpibDevice *devices[];
@@ -1503,7 +1538,7 @@ bool copy_sd_file(const char * Source_Path, const char * Destination_Path)
   File Destination = SD.open(Resolved_Path, FILE_WRITE);
   if (!Destination)
   {
-    Serial.printf("Couldn't open New disk image for Write\n");
+    Serial.printf("Couldn't open New disk image for Write, Path is [%s]\n", Resolved_Path);
     Source.close();
     post_custom_error_message("Couldn't open New Disk", 418);
     return false;
@@ -1560,7 +1595,7 @@ bool copy_sd_file(const char * Source_Path, const char * Destination_Path)
 
       int read_error_bits = Source.getError();
       Serial.printf("Error bits %08X\n", read_error_bits);
-      Source.clearError();
+      Source.clearError();					//	this will cause a compile time error when we upgrate to 1.57. look for clearReadError()
       uint8_t sd_error = SD.sdErrorCode();
       Serial.printf("SD Error code %02X\n", sd_error);
       Serial.printf("\nCopy failed\n");
@@ -1595,7 +1630,7 @@ bool copy_sd_file(const char * Source_Path, const char * Destination_Path)
 //    expect: Error 109 : Can't resolve path
 //    AUXERRN
 //    expect: 330
-//    MOUNT "Z"&M$,O$,0                         Should fail msu$ can be parsed"
+//    MOUNT "Z"&M$,O$,0                         Should fail msu$ can't be parsed"
 //    expect: Error 109 : MOUNT MSU$ error
 //    AUXERRN
 //    expect: 412
@@ -1653,7 +1688,7 @@ void AUXROM_MOUNT(void)
 
   //bool  SD_begin_OK;
 
-  #if VERBOSE_KEYWORDS
+  #if (VERBOSE_KEYWORDS || VERBOSE_AUXROM_MOUNT)
   Serial.printf("Call to MOUNT\n");
   #endif
 
@@ -1666,7 +1701,7 @@ void AUXROM_MOUNT(void)
   //  be a complementary function to SD.begin()  , i.e. a close/detach. Hopefully a new SD.begin()
   //  just over-writes any previous state
   //
-  #if VERBOSE_KEYWORDS
+  #if (VERBOSE_KEYWORDS || VERBOSE_AUXROM_MOUNT)
   Serial.printf("p_buffer + 256 is [%s]\n", p_buffer + 256);
   #endif
   if (strcasecmp(p_buffer + 256, "SDCard") == 0)
@@ -1682,11 +1717,11 @@ void AUXROM_MOUNT(void)
       logfile_active = false;
       return;
     }
-    #if VERBOSE_KEYWORDS
+    #if (VERBOSE_KEYWORDS || VERBOSE_AUXROM_MOUNT)
     Serial.printf("SD.begin ok\n");
     #endif
     logfile_active = open_logfile();
-    #if VERBOSE_KEYWORDS
+    #if (VERBOSE_KEYWORDS || VERBOSE_AUXROM_MOUNT)
     Serial.printf("logfile_active is %s\n", logfile_active ? "true":"false");
     Serial.printf("calling remount\n");
     #endif
@@ -1694,7 +1729,7 @@ void AUXROM_MOUNT(void)
     {
       Serial.printf("Failed to re-mount SD Card\n");
     }
-    #if VERBOSE_KEYWORDS
+    #if (VERBOSE_KEYWORDS || VERBOSE_AUXROM_MOUNT)
     Serial.printf("MOUNT SDCard exit\n\n\n");
     #endif
     return;
@@ -1708,7 +1743,7 @@ void AUXROM_MOUNT(void)
     goto Mount_exit;
   }
 
-    #if VERBOSE_KEYWORDS
+    #if (VERBOSE_KEYWORDS || VERBOSE_AUXROM_MOUNT)
     Serial.printf("MOUNT Resolved_Path [%s]\n", Resolved_Path);
     #endif
 
@@ -1719,7 +1754,7 @@ void AUXROM_MOUNT(void)
     goto Mount_exit;
   }
 
-    #if VERBOSE_KEYWORDS
+    #if (VERBOSE_KEYWORDS || VERBOSE_AUXROM_MOUNT)
     Serial.printf("MOUNT MSUS  istape:%s isdisk:%s selectcode:%2d devicecode:%2d\n", msu_is_tape? "true":"false", msu_is_disk? "true":"false", msu_select_code, msu_device_code);
     #endif
 
@@ -1760,7 +1795,7 @@ void AUXROM_MOUNT(void)
   switch (AUXROM_RAM_Window.as_struct.AR_Opts[0]) //  Switch on MODE
   {
     case 0:   //  Mount an existing file, Error if it does not exist
-      #if VERBOSE_KEYWORDS
+      #if (VERBOSE_KEYWORDS || VERBOSE_AUXROM_MOUNT)
         Serial.printf("MOUNT Mode 0\n");
       #endif
 
@@ -1794,24 +1829,24 @@ mount_a_disk:
 
 
     case 1:   //  Mount an existing file, Create if it does not exist
-      #if VERBOSE_KEYWORDS
+      #if (VERBOSE_KEYWORDS || VERBOSE_AUXROM_MOUNT)
       Serial.printf("MOUNT mode 1: Resolved_Path [%s]\n", Resolved_Path);
       #endif
       if (SD.exists(Resolved_Path))
       {
-        #if VERBOSE_KEYWORDS
+        #if (VERBOSE_KEYWORDS || VERBOSE_AUXROM_MOUNT)
         Serial.printf("   Resolved_Path already exists\n");
         #endif
         if(msu_is_tape)
         {
-          #if VERBOSE_KEYWORDS
+          #if (VERBOSE_KEYWORDS || VERBOSE_AUXROM_MOUNT)
           Serial.printf("   Mounting a tape\n");
           #endif
           goto mount_a_tape;
         }
         else
         { //    Must be a disk (checked in parse_MSU()  )
-          #if VERBOSE_KEYWORDS
+          #if (VERBOSE_KEYWORDS || VERBOSE_AUXROM_MOUNT)
           Serial.printf("   Mounting a disk\n");
           #endif
           goto mount_a_disk;
@@ -1824,7 +1859,7 @@ mount_a_disk:
       //
       //  Does not exist so create a new file by copying the reference image
       //
-      #if VERBOSE_KEYWORDS
+      #if (VERBOSE_KEYWORDS || VERBOSE_AUXROM_MOUNT)
       Serial.printf("   Resolved_Path does not exists, need to create\n");
       #endif
       if(msu_is_tape)
@@ -1851,7 +1886,7 @@ Mount_create_and_mount_tape:
       }
       else
       { //  Create and mount for disk
-        #if VERBOSE_KEYWORDS
+        #if (VERBOSE_KEYWORDS || VERBOSE_AUXROM_MOUNT)
         Serial.printf("   Create and mount a disk\n");
         #endif
 Mount_create_and_mount_disk:
@@ -1867,13 +1902,13 @@ Mount_create_and_mount_disk:
 
 
     case 2:   //  Mount new file, error if already exists, create & mount
-      #if VERBOSE_KEYWORDS
+      #if (VERBOSE_KEYWORDS || VERBOSE_AUXROM_MOUNT)
         Serial.printf("MOUNT Mode 2\n");
       #endif
 
       if (SD.exists(Resolved_Path))
       {     //  File exist which is an error in Mode 2
-        #if VERBOSE_KEYWORDS
+        #if (VERBOSE_KEYWORDS || VERBOSE_AUXROM_MOUNT)
           Serial.printf("MOUNT Mode 2, error File already exists\n");
         #endif
         post_custom_error_message("MOUNT File already exists", 409);
@@ -1918,7 +1953,7 @@ void AUXROM_SDOPEN(void)
 
   file_index = AUXROM_RAM_Window.as_struct.AR_Opts[0];               //  File number 1..11
 
-#if VERBOSE_KEYWORDS
+#if (VERBOSE_KEYWORDS || VERBOSE_AUXROM_SDOPEN)
   Serial.printf("Call to SDOPEN Name: [%s]  Mode %d  File # %d\n", p_buffer,
                                                             AUXROM_RAM_Window.as_struct.AR_Opts[1],
                                                             file_index);
@@ -1967,7 +2002,7 @@ void AUXROM_SDOPEN(void)
     *p_usage    = 0;     //  File opened successfully
     *p_mailbox = 0;     //  Indicate we are done
 
-#if VERBOSE_KEYWORDS
+#if (VERBOSE_KEYWORDS || VERBOSE_AUXROM_SDOPEN)
     Serial.printf("SDOPEN Success [%s]\nHandle status:", Resolved_Path);
     Serial.printf("curPosition :       %d\n", Auxrom_Files[file_index].curPosition());
     Serial.printf("isOpen :            %s\n", Auxrom_Files[file_index].isOpen()  ? "true":"false");
@@ -1981,7 +2016,7 @@ void AUXROM_SDOPEN(void)
   //  This is the shared error exit
   //
 
-#if VERBOSE_KEYWORDS
+#if (VERBOSE_KEYWORDS || VERBOSE_AUXROM_SDOPEN)
     Serial.printf("SDOPEN failed Message [%s]  error_number %d\n", error_message, error_number);
 #endif
 
@@ -3450,7 +3485,7 @@ int16_t RMIDLE_character_from_BATCH_file(void)
 //
 int16_t RMIDLE_character_from_WiFi(void)
 {
-  return -1;                                //  Stub for now
+  return (int16_t)get_wifi_key();
 }
 
 //

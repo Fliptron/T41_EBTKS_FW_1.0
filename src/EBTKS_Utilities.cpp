@@ -1149,7 +1149,7 @@ void diag_sdread_1(void)
   file_offset = 0;
   testfile.setTimeout(1000);        //  Default timeout is 1000 ms
   Stop_time = Start_time_total = systick_millis_count;
-  while(testfile.available32())
+  while(testfile.available32())			//  This will cause a compile time error when we upgrade to 1.57  Look for available64()
   {
     Start_time = systick_millis_count;
     if(!testfile.seekSet(file_offset))
@@ -1179,7 +1179,7 @@ void diag_sdread_1(void)
   file_offset = 0;
   testfile.setTimeout(0);
   Stop_time = Start_time_total = systick_millis_count;
-  while(testfile.available32())
+  while(testfile.available32())				//  Probably change to available64() when 1.57
   {
     Start_time = systick_millis_count;
     if(!testfile.seekSet(file_offset))
@@ -1209,7 +1209,7 @@ void diag_sdread_1(void)
   file_offset = 0;
   testfile.setTimeout(1000);        //  Default timeout is 1000 ms (but it should have no effect)
   Stop_time = Start_time_total = systick_millis_count;
-  while(testfile.available32())
+  while(testfile.available32())			//  Probably change to available64() when 1.57
   {
     Start_time = systick_millis_count;
     if(!testfile.seekSet(file_offset))
@@ -2253,31 +2253,54 @@ int int_power(int base, int exp)
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+#define DIAG_WS2812_LEDS        (0)
+#define LED_DATA_LENGTH         (6+(DIAG_WS2812_LEDS*3))      //  so 6 or 9
+
 //
 //  Philip's replacement of the FASTLED library
 //
-uint8_t   led_data[6];
+uint8_t   led_data[LED_DATA_LENGTH];         //  Extra 3 bytes so that we can send out diagnostic stuff out of LED 2
 
-#define WS2812_0_ON_VAL          300
-#define WS2812_0_OFF_VAL        1300
-#define WS2812_1_ON_VAL         1300
-#define WS2812_1_OFF_VAL         300
-#define WS2812_FRAME_OFF_VAL  300000
+#if !DIAG_WS2812_LEDS
+//
+//  Standard WS2812E timing
+//                                                                          Data sheet, ns
+//                                                                          Min     Max
+#define WS2812_0_ON_VAL          300      //  Scope measurement is 336      220     380
+#define WS2812_0_OFF_VAL        1300      //  Scope measurement is 1290     580     1000
+#define WS2812_1_ON_VAL         1300      //  Scope measurement is 1320     580     1000
+#define WS2812_1_OFF_VAL         300      //  Scope measurement is 296      220     420
+#define WS2812_FRAME_OFF_VAL  500000      //                                280000
+#else
+//
+//  Experimental tweaked set, slower, but should be rock-solid
+//
+#define WS2812_0_ON_VAL          400
+#define WS2812_0_OFF_VAL        2000
+#define WS2812_1_ON_VAL         2000
+#define WS2812_1_OFF_VAL        2000
+#define WS2812_FRAME_OFF_VAL 1000000      //                                280000
+#endif
 
 #define SET_NEOPIX              (GPIO_DR_SET_NEOPIX_TSY    = BIT_MASK_NEOPIX_TSY)
 #define CLEAR_NEOPIX            (GPIO_DR_CLEAR_NEOPIX_TSY  = BIT_MASK_NEOPIX_TSY)
 #define TOGGLE_NEOPIX           (GPIO_DR_TOGGLE_NEOPIX_TSY = BIT_MASK_NEOPIX_TSY)
 
-void WS2812_init(void)
-{
-  led_data[0] = 0;    //  LED 1 G     //  GRB is the data sequence that the WS2812B/E require , nor RGB
-  led_data[1] = 0;    //  LED 1 R
-  led_data[2] = 0;    //  LED 1 B
-  led_data[3] = 0;    //  LED 2 G
-  led_data[4] = 0;    //  LED 2 R
-  led_data[5] = 0;    //  LED 2 B
-  WS2812_update();
-}
+// void WS2812_init(void)
+// {
+//   led_data[0] = 0;    //  LED 1 G     //  GRB is the data sequence that the WS2812B/E require , nor RGB
+//   led_data[1] = 0;    //  LED 1 R
+//   led_data[2] = 0;    //  LED 1 B
+//   led_data[3] = 0;    //  LED 2 G
+//   led_data[4] = 0;    //  LED 2 R
+//   led_data[5] = 0;    //  LED 2 B
+// #if DIAG_WS2812_LEDS
+//   led_data[6] = 0xF0; //  Test byte 1
+//   led_data[7] = 0xAA; //  Test byte 2
+//   led_data[8] = 0x0F; //  Test byte 3
+// #endif
+//   WS2812_update();
+// }
 
 void setLedColor(uint8_t led, uint8_t r, uint8_t g, uint8_t b)
 {
@@ -2302,7 +2325,7 @@ void WS2812_update(void)
   assert_DMA_Request();
   while(!DMA_Active){}     // Wait for acknowledgment, and Bus ownership
 
-  for(i = 0 ; i < 6 ; i++)
+  for(i = 0 ; i < LED_DATA_LENGTH ; i++)
   {
     j = 8;
     while(j)
@@ -2323,21 +2346,24 @@ void WS2812_update(void)
       }
     }
   }
-  //  EBTKS_delay_ns(WS2812_FRAME_OFF_VAL);   The > 280 us end of frame delay that moves the shifted
-  //                                          data into the LED control registers is not needed, because
-  //                                          the fastest HP85 BASIC code with back-to-back calls to SETLED LED,R,G,B
-  //                                          takes about 4 ms. So BASIC cant generate LED updates too quickly that
-  //                                          we have to expressly generate the 280+ us delay
-
   release_DMA_request();
   while(DMA_Active){}       // Wait for release
+  EBTKS_delay_ns(WS2812_FRAME_OFF_VAL);       //  The > 280 us end of frame delay that moves the shifted
+                                              //  data into the LED control registers is not needed, because
+                                              //  the fastest HP85 BASIC code with back-to-back calls to SETLED LED,R,G,B
+                                              //  takes about 4 ms. So BASIC can't generate LED updates too quickly that
+                                              //  we have to expressly generate the 280+ us delay
+                                              //
+                                              //  Update, this delay was commented out, and may have been the root cause
+                                              //  of some LED initialization failures.
+
 }
 
 //    Memory usage analysis of FASTLED library (that needs inverted data, and has LSB of all data stuck high)
 //    versus the above purpose built code for EBTKS
 //
 //    TLDR: FASTLED library is 7 KB and doesn't work
-//          This code is 320 bytes and works great.
+//          This code is 320 bytes and works great.   //  at time of writing this note. Not updated when diag code was added 2021_10_06
 //
 //    ------------------
 //    FASTLED Library memory usage

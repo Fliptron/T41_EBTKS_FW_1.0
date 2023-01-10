@@ -13,6 +13,8 @@
 //    it can be found here:   C:\Users\Philip Freidin\.platformio\packages\tool-esptoolpy\esptool.py
 //    see D:\2021\HP-85_EBTKS_V1.0\ESP32_Binaries\Where_stuff_comes_from.txt  for an example of use
 //
+//  This comment about the 30 second time out in post 7/12/2021 sources of production firmware
+//  shipped to all EBTKS users, is a doc update only. The timeout is part of the 7/12/2021 firmware
 //  The 30 second timeout is reset by activity on the USB-to-Serial
 //  port which is used by the ESP32 programmer software on a PC, as well as the
 //  service console. After 30 seconds of idle, ESP_Programmer_Setup() exits back to
@@ -136,6 +138,10 @@ void ESP_Prog_Loop() {
 
 
 ////////////////////////////////////  Example of what is seen on service terminal when this code starts up (command is esp32 prog)
+//                                    5/19/2022 Note: it is not made clear that this block of comments pre-dates the production
+//                                              hardware, which uses the service terminal port (COM over USB) for doing the download,
+//                                              thus these messages no longer appear, since the terminal function is disconnected.
+//                                              Actually, how did this ever work, I've forgotten. Maybe Russell remembers.
 //      
 //      
 //      EBTKS> esp32 prog

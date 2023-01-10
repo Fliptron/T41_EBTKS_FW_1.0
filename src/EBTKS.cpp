@@ -455,6 +455,32 @@ void dateTime(uint16_t* date, uint16_t* time, uint8_t* ms10) {
   *ms10 = second() & 1 ? 100 : 0;
 }
 
+//
+//  There is something strange about LED initialization, maybe related to an undocumented power up delay in the LEDs.
+//  If we initialize too early, the results are random bright LEDs, but not on all boards, just a few.
+//  So we repeatedly set them to 0,0,0 until enough time has passed that (empirically) the LEDs will accept the data
+//
+
+bool LEDs_Initialized = false;
+
+void Initial_LED_load(bool set_initial_values)
+{
+
+  if (set_initial_values)
+  {
+    setLedColor(0, 10,  0,  0);
+    setLedColor(1,  0, 10,  0);
+    WS2812_update();
+    LEDs_Initialized = true;
+  }
+  else
+  {
+    setLedColor(0, 0,  0,  0);
+    setLedColor(1,  0, 0,  0);
+    WS2812_update();
+  }
+}
+
 void setup()
 {
 
@@ -734,7 +760,7 @@ void setup()
 
   log_to_serial_ptr += sprintf(log_to_serial_ptr, "EBTKS Firmware built on %s\n\n", EBTKS_COMPILE_TIME);
   SCOPE_1_Pulser(3);                          //  2/7/2021 This occurs about 18 us after the previous call to Pulser(4) (inc 10 us delay)
-  EBTKS_delay_ns(10000);      //  10 us
+  EBTKS_delay_ns(10000);                      //  10 us
 
   log_to_serial_ptr += sprintf(log_to_serial_ptr, "%s", LOGLEVEL_GEN_MESSAGE);
   log_to_serial_ptr += sprintf(log_to_serial_ptr, "%s", LOGLEVEL_AUX_MESSAGE);
@@ -1005,18 +1031,13 @@ void setup()
 
   Serial.printf("Waiting for HP85 to get to prompt\n");
 
+  Initial_LED_load(false);      //  turn the LEDs off, if they are on
+
   delay(1000);
 
+  Initial_LED_load(false);      //  turn the LEDs off, if they are on
+
   Logic_Analyzer_Event_Count_Init = -1000;      // Use this to indicate the Logic analyzer has no default values.
-
-  //leds.setLedColor(0,CRGB::Purple);
-  //leds.setLedColor(1,CRGB::Blue);
-  //
-  //  alternately, hard code the brightness in
-
-  setLedColor(0, 10,  0,  0);
-  setLedColor(1,  0, 10,  0);
-  WS2812_update();
 
 //
 //  hook in time/date to the filesystem
@@ -1053,7 +1074,7 @@ void setup()
 //      which adds about 800 ns.
 //
 
-// bool once;
+
 
 
 #define TRACE_LOOPTRANSLATOR_TIMING        (0)
@@ -1111,7 +1132,6 @@ void loop()
   }
 #endif
 
-
   if (get_CRTRemote())
   {
     if ((systick_millis_count % 10) == 0)     //  Only do this every 10 ms, although it may occur multiple times during that 1 ms
@@ -1121,12 +1141,17 @@ void loop()
     }
   }
 
-  // if (!once)
-  // {
-  //   Serial.printf("CRT_Boot_Message_Pending  %d\n",CRT_Boot_Message_Pending);
-  //   Serial.printf("SD_begin_OK  %d\n",SD_begin_OK);
-  //   once = true;
-  // }
+  if (!LEDs_Initialized)
+  {
+    if (systick_millis_count > 2000)
+    {
+      Initial_LED_load(true);      //  Set LEDs to initial value
+    }
+    else
+    {
+      Initial_LED_load(false);    //  Turn LEDs off
+    }
+  }
 
   if (CRT_Boot_Message_Pending)     //  8 ns test is false, but 800 ns ish if Phi 1 interrupt occurs while running
   {                                 //  which is quite rare because the window is so narrow
@@ -1182,8 +1207,8 @@ void loop()
            Serial.printf("\nWarning Warning Warning Warning Warning Warning Warning CRT_LOG_BUFFER_SIZE is too small\n");
            LOGPRINTF    ("\nWarning Warning Warning Warning Warning Warning Warning CRT_LOG_BUFFER_SIZE is too small\n");      //  Clearly this is inefficient. fix it later
         }
-        Serial.printf("\nCRT Log buffer usage is %d of %d charcters\n\n", strlen(CRT_Log_Buffer), CRT_LOG_BUFFER_SIZE);
-        LOGPRINTF    ("CRT Log buffer usage is %d of %d charcters\n", strlen(CRT_Log_Buffer), CRT_LOG_BUFFER_SIZE);      //  Clearly this is inefficient. fix it later
+        Serial.printf("\nCRT Log buffer usage is %d of %d characters\n\n", strlen(CRT_Log_Buffer), CRT_LOG_BUFFER_SIZE);
+        LOGPRINTF    ("CRT Log buffer usage is %d of %d characters\n", strlen(CRT_Log_Buffer), CRT_LOG_BUFFER_SIZE);      //  Clearly this is inefficient. fix it later
         Serial.printf("%s\n", CRT_Log_Buffer);
         Serial.printf("EBTKS> ");
         CRT_Boot_Message_Pending_to_Serial = false;
@@ -1268,3 +1293,9 @@ void Boot_Messages_to_CRT(void)
   Safe_Write_CRTBAD(0);
   Safe_Write_CRTSAD(0);
 }
+int get_wifi_key()
+{
+  return esp32.getKybdCh();
+}
+
+

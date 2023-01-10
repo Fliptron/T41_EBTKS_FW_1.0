@@ -147,7 +147,7 @@ Changes:
     reads occur by changing the operating mode of the SD Card from FIFO_SDIO to
     DMA_SDIO which then leads to the code never going down the path in the SdFat
     library that has the critical section (RB). Unless further issues are
-    identified, we will stick with this solution 
+    identified, we will stick with this solution
 -   Change from supporting Pin interrupts for Phi 1 Rising and Phi 2 Rising to
     only Phi 1 Rising
 -   Rename onPhi_2_Rise() to mid_cycle_processing() since it is no longer anchored
@@ -158,9 +158,10 @@ Changes:
     pinChange_isr() in EBTKS_Bus_Interface_ISR.cpp
 -   Change some global functions to local static
 -   Extensive changes to EBTKS_Bus_Interface_ISR.cpp
->       Significant new documentation, detailed timing analysis will be in next commit
->       In mid_cycle_processing() move some code that recognizes DMA and Interrupt acknowledgment
->       Merge various ENABLE_EMC_SUPPORT code sequences  (was EMC_SUPPORT)
+
+    -   Significant new documentation, detailed timing analysis will be in next commit
+    -   In mid_cycle_processing() move some code that recognizes DMA and Interrupt acknowledgment
+    -   Merge various ENABLE_EMC_SUPPORT code sequences  (was EMC_SUPPORT)
 
 -   Delete some of Philip's code that has been commented out for months
 -   Mark places in the code that we need to return to with #### tags
@@ -192,16 +193,18 @@ Changes:
 -   Added a documentation section titled "Main Uses of DMAMEM" to EBTKS.cpp
 -   In EBTKS_Bus_Interface_ISR.cpp , added note above pinChange_isr() reminding
     that the function prototype must include
->        __attribute__ ((interrupt ("IRQ")))
+
+    -   __attribute__ ((interrupt ("IRQ")))
 
 -   Now that MOUNT LIF create works, benchmark different read block sizes
 -   General improvements to copy_sd_file() that catches errors better, and
     reports them. Part of MOUNT improvement.
 -   General improvements to MOUNT error reporting and diagnostic prints.
 -   Platformio.ini
->       Changed SdFat library from 2.0.0-beta.8 to 2.0.2-beta.3
->       Added "-Wl,--print-memory-usage" which better reports memory usage at
->       and of compile/Link
+
+    -   Changed SdFat library from 2.0.0-beta.8 to 2.0.2-beta.3
+    -   Added "-Wl,--print-memory-usage" which better reports memory usage at
+    -   and of compile/Link
 
 ## Commit \#89 12/20/2020
 
@@ -211,7 +214,8 @@ Changes:
 -   Added dump_devices_array() in EBTKS_Utilities.cpp , not currently used
 -   There is an unresolved issue with the Serial Monitor command "media"
     with handling the printer association with the file
->      /printers/printfile.txt
+
+    -   /printers/printfile.txt
 
 -   There is an unresolved issue with the "printer is 310" assignment (which
     needs ROM 360 printer/plotter to be installed) does not actually seem to
@@ -229,10 +233,11 @@ Changes:
 -   Changed all the TXD_Pulser() to RXD_Pulser()
 -   Minor documentation edit to platformio.ini
 -   Updates to HPIB based Printing (to a file on the SD Card)
->       HpibDisk type becomes HpibDevice type
->       HpibDevice array now includes device type and Talk/Listen address (tla / _tla)
->       New virtual functions close() and getFilename()
->       New function to check device type isType()
+
+    -   HpibDisk type becomes HpibDevice type
+    -   HpibDevice array now includes device type and Talk/Listen address (tla / \_tla)
+    -   New virtual functions close() and getFilename()
+    -   New function to check device type isType()
 
 -   Modify HPIBOutput if the character is EOL
 -   Diagnostic terminal "media" command now lists printer output file
@@ -339,10 +344,11 @@ Changes:
     with the name of the LIF image. Now also correctly displays the
     virtual printer and tape assignment.
 -   FYI:
->         CygWin wc of include directory:  3456  12788 130393
->                      src     directory: 11925  59107 491150
->                      --------------------------------------
->                      total              15381 lines of code and comments
+
+    -     CygWin wc of include directory:  3456  12788 130393
+    -                  src     directory: 11925  59107 491150
+    -                  --------------------------------------
+    -                  total              15381 lines of code and comments
 
 -   Added some diagnostics to EBTKS_LED.h to try and figure out why
     sending 0,0,0 doesn't turn the LED off. TLA5201 shows that all bytes
@@ -477,22 +483,23 @@ Changes:
 -   Partial update of EMC code to new CONFIG.TXT parameters. Still all
     commented out until all changes have been made. So mostly folding
     in Russell's EMC update that predates the CONFIG.TXT changes
-   
+
 ## Commit \#107 03/09/2021
 
 Changes:
 -   Modified critical sections of the Serial driver (not part of this code base, but part of a library we depend on).
     Here are the edit notes:
->    Multiple changes to --- .platformio\packages\framework-arduinoteensy\cores\teensy4\HardwareSerial.cpp
->    
->    4 occurences	at line (approx)	404, 449, 488, 569 (after edits)
->    Replace 	__disable_irq();
->    with		NVIC_DISABLE_IRQ(hardware->irq);	
->    
->    6 occurrences	at line (approx)	413, 464, 468, 498, 503, 575 (after edits)
->    Replace 	__enable_irq();
->    with		NVIC_ENABLE_IRQ(hardware->irq);	
->    
+
+    -   Multiple changes to --- .platformio\packages\framework-arduinoteensy\cores\teensy4\HardwareSerial.cpp
+    -
+    -   4 occurences    at line (approx)        404, 449, 488, 569 (after edits)
+    -   Replace         __disable_irq();
+    -   with            NVIC_DISABLE_IRQ(hardware->irq);
+    -
+    -   6 occurrences   at line (approx)        413, 464, 468, 498, 503, 575 (after edits)
+    -   Replace         __enable_irq();
+    -   with            NVIC_ENABLE_IRQ(hardware->irq);
+    -
 
 -   Start integration of Russell's ESP32 support. CRT is sent to http://esp32_ebtks.local/
 -   Add EBTKS_ESP.h to the file set. Thanks RB.
@@ -584,7 +591,9 @@ Changes:
 -   Better usage of machineNum matching enums, rather than in-line constants.
 -   Apparently EMC for EDisk works on an HP85AEMC even without the IF signal
     modification. Still requires CONFIG.TXT to have
+
     -   "machineName": "HP85AEMC"
+
     since it enables the EMC setup code. Don't know if master mode is a requirement
 
 ## Commit \#117 05/05/2021
@@ -592,14 +601,18 @@ Changes:
 Changes:
 -   Add tester for PSRAM, including avoiding allocated PSRAM memory, which requires
     an additional line to be added to
+
     -  C:\Users\me\\.platformio\packages\framework-arduinoteensy\cores\teensy4\imxrt1062_t41.ld
+
 -   which is not tracked by Git. The change is to add the following at line 89
-    -  _extram_alloc = SIZEOF(.bss.extram) + 0x70000000;
+
+    -  \_extram_alloc = SIZEOF(.bss.extram) + 0x70000000;
 
 ## Commit \#118 05/05/2021
 
 Changes:
 -   Add support for "screenEmu" in CONFIG.TXT
+
     -   screenEmu is needed for the help system, for CRTRemote, and terminal emulation
     -   it is not currently supported for HP86 and HP87
     -   even if screenEmu is false, we still track CRTBAD and CRTSAD, but don't
@@ -690,6 +703,7 @@ Changes:
 -   Refactor CRT direct access functions, and make them handle both the 32x16 screen
     of the HP83/85/9915, and the 80x16 scren of HP86/87. Still need to support the
     multiple ALPHA modes on HP86/87. Two new sets of functions:
+
     -  For situations where only a few register accesses are going to happen, a
        set of "Safe" functions that sort out both the machine type (CRT controller
        type) and checking busy status.
@@ -780,7 +794,9 @@ This commit is the first after the production release snapshot on 7/12/2021 . Th
 
 Changes:
 
--   ESP32 programmer pass-through function (console command is: esp32 prog)
+-   This is a documentation update only. The 30 second timeout is part of the 7/12/2021
+    firmware on all shipped EBTKS.
+    ESP32 programmer pass-through function (console command is: esp32 prog)
     updated with documentation about the need for pyserial.py , and the
     addition of a 30 second timeout that is reset by activity on the USB-to-Serial
     port which is used by the ESP32 programmer software on a PC, as well as the
@@ -797,7 +813,7 @@ Changes:
 -   Added more documentation to top of HPDisk.h . Still need to do documention for emulated
     Winchester disk drives
 -   Added documenatation to EBTKS_ESP.h about programming the ESP32 without the IDE
--   
+
 
 ## Commit \#130 09/24/2021
 
@@ -815,9 +831,92 @@ Changes:
     the CONFIG.TXT file
 -   Fix line wrap and overwrite issue on CRT boot up messages for 16 kB RAM and tape drive emulation
 
+## Commit \#131 01/06/2023
 
+Changes:
 
+-   Note: As of this date all 260+ EBTKSes were shipped with firmware dated 07/12/2021, which
+    was built after commit 128
+-   This commit will be the base for EBTKS firmware V2.0 . It includes all the changes
+    that were under development in V1.0 (mostly minor cleanup, and experimental WiFi
+    file transfer), and the starting point for using the integrated SdFAT support in
+    the updated TeensyDuino. Jumping from TeensyDuino V1.53 to 1.57
+-   Related:  https://forum.pjrc.com/threads/71148-SD-library-issues
+-   This commit is a catch-all for multiple small changes that happened over 3 months and
+    wern't pushed to github, as some of it was/is experimental. Some of the WiFi related
+    changes are likely to be reverted. Look to the next commit as a starting point for any
+    non Philip/Russell development work. i.e. things are in flux more than normal.
+-   Formatting changes scatterd through this file, correcting MarkDown errors, mostly related
+    to indented sub-lists and escaping leading underscores
+-   No longer pulling in the Base64 library, as it has an initialization fault. Although the patch
+    is easy to implement, the PlatformIO "Clean all" deletes the libraries in \\.pio\\libdeps,
+    including the patch. Instead I copied it to the include and src directories, and modified
+    platformio.ini so that it would no longer fetch it from the interwebs. Local copies of the
+    following file.  **Looks like HardwareSerial.cpp** might also need this attention
 
+    -   Base64.h            **This is now in the include directory**
 
+-   LZS Compression and Decompression havs been added. This is used in
+    EBTKS_CRT.cpp as part of the transmission of CRT images over WiFi
+    to a remote browser. These files were released with the  MIT license.
+    This code may be removed in a future commit, as this functionality is fairly experimental
 
-   
+    -   lzs.h               **This is now in the include directory**
+    -   lzs-common.h        **This is now in the include directory**
+    -   lzs-compression.c   **This is now in the src directory**
+    -   lzs-simple-compression.c   **This is now in the src directory**
+
+-   Initial test of file transfer over WiFi
+-   Starting around manufacturing batch 4 or 5, (around October 2021) some strange startup
+    issues were observed with the LEDs, not seen in prior manufacturing batches. A workaround
+    was added to the CONFIG.TXT files that executed a batch command to initialize the LEDs
+    once the HP8X system got to the RMIDLE prompt. This workaround had no effect if the LEDs
+    did not have this issue (which appeaed to be somewhat random). The issue is the LEDs
+    initialized to very bright green.
+-   The LED initialization has been changed to turn LEDs off during setup(), and initialize
+    them in loop() which is then over-ridden by startup batch from CONFIG.TXT . This has not
+    been extensively tested, since this firmware work around has not shipped with any EBTKS.
+-   Initialize LEDs in loop() after 2000ms. This may setup a race condition with the batch
+    command workaround described in the prior bullet. May need to inform end users to edit
+    CONFIG.TXTs to remove the batch command if this firmware fix works.
+-   Fix some spellink errers, and some punctuation
+-   Initial hooks to insert characters into the HP8x keyboard buffer from the WiFi link
+-   Try and standardize formatting
+
+    -   Allman style braces (the curly ones)
+    -   Keywords followed by spaces before brackets (the curved ones)
+    -   Empty brace pair on while can be on 1 line:  while (condition) {}   // explain
+    -   Spaces around operators:  use "value >> 3"  rather than "value>>3"
+    -   In parameter list, no space before a comma, space after comma:  func(param1, param2, param3);
+
+-   The DirLine.h class looks like it was extracted from EBTKS_AUXROM_SD_Services.cpp (around line 400)
+    and placed in /include, but there is still a copy in EBTKS_AUXROM_SD_Services.cpp , so this looks
+    like an incomplete edit. There is a single reference to it in EBTKS_ESP.h . This class declaration
+    should probably be removed from EBTKS_AUXROM_SD_Services.cpp, and appropriate changes made to use
+    DirLine.h .
+-   In file SdFatConfig.h at line 78:
+
+    -  #define SDFAT_FILE_TYPE 1     // PMF and RB was 3, but caused library problems like can't find isReadOnly()
+
+    This was done ages ago, but not documented in this file.
+-   Note:  PlatformIO "Clean All" wipes all of .pio/build and .pio/libdeps. So on the next build,
+    the libraries will be retrieved from the interwebs. platformio.ini specifies the folowing libraries
+    with specific versions.
+
+    -   ArduinoJson@6.16.1
+    -   https://github.com/greiman/SdFat-beta.git#2.0.2-beta.3
+    All other libraries will fetch the most current. see the previous item about SDFAT_FILE_TYPE in
+    SdFatConfig.h, since this will fetch the internet version which won't have this patch.
+    On first build after "Clean All" , expect to see the following excerpts in the build log:
+
+    -   Library Manager: SdFat@2.0.2-beta.3+sha.ee0df78 has been installed!
+    -   framework-arduinoteensy @ 1.153.0 (1.53)  (this is not installed, because it is not deleted by
+        the Clean All, as it is not part of the repo.
+    -   Library Manager: Installing ArduinoJson @ 6.16.1
+    It then starts compiling project sources and gets errors in EBTKS_Logging.cpp.o     , and many more.
+    Edit SdFatConfig.h and replace line 78 with
+    
+    -   #define SDFAT_FILE_TYPE 1     // PMF and RB was 3, but caused library problems like can't find isReadOnly()
+        
+    Now do a normal clean and build, and there should be no errors
+

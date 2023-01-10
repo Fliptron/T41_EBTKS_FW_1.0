@@ -199,7 +199,7 @@ bool loadRom(const char *fname, int slotNum, const char *description)
     //
     //  Special check for the the non-primary AUXROMs.  Note that these are not recognized by the HP-85 at boot time scan (by design)
     //
-    //  HP85A/B             use 1's complement for the ID check byte in header[1] (also HP83 and HP9915)
+    //  HP85A/B             use 1's complement for the ID check byte in header[1] (also HP83 and HP9915A/B)
     //  HP86A/B, HP87A/XM   use 2's complement for the ID check byte in header[1]
     //
     //  Note: For Secondary AUXROMs (which is what we are testing here), the upper nibble is always 0xF0

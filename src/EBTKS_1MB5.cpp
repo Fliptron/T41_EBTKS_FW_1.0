@@ -41,7 +41,7 @@
 #define HPIB_IF_BASE_ADDR 0x50 //only need the lower 8 bits. We already know it's in the i/o address space of 0xffxx
 
 // The CCR is read-only to us
-#define CCR_INT (1 << 0) //set if the HP85 is interrupting the IOP (IO Processor - in this case us)
+#define CCR_INT (1 << 0) //set if the HP85 is interrupting the IOP (IO Processor - in this case, us)
 #define CCR_COM (1 << 1) //set if the OB has a command value
 #define CCR_CED (1 << 2)
 #define CCR_RST (1 << 7) //set if the HP85 wants to reset the IOP

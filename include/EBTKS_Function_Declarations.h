@@ -44,9 +44,7 @@ void    DMA_Poke16(uint32_t address, uint16_t val);
 void initCrtEmu();
 void dumpCrtAlpha(void);
 void Write_on_CRT_Alpha(uint16_t row, uint16_t column, const char *  text);
-void a3_to_a4(unsigned char *a4, unsigned char *a3);
-int  base64_encode(char *output, char *input, int inputLen);
-void dumpCrtAlphaAsJSON(uint8_t *frameBuff);
+void dumpCrtAlphaAsBase64(char *buff, bool comp_graph);
 void writePixel(int x, int y, int color);
 void writeLine(int x0, int y0, int x1, int y1, int color);
 void CRT_capture_screen(void);
@@ -200,7 +198,7 @@ void Logic_Analyzer_Poll(void);
 
 void Simple_Graphics_Test(void);
 
-void WS2812_init(void);
+//void WS2812_init(void);
 void setLedColor(uint8_t led, uint8_t r, uint8_t g, uint8_t b);
 void WS2812_update(void);
 void initialize_RMIDLE_processing(void);
@@ -231,6 +229,7 @@ bool get_EMC_master(void);
 #endif
 
 uint32_t getFlags(void);
+int get_wifi_key();
 //
 //  Functions that Visual Studio Code can't find, but are in the Arduino library.
 //  So this is to just shut up some warning messages
