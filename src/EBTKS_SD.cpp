@@ -96,7 +96,7 @@ bool loadRom(const char *fname, int slotNum, const char *description)
     return false;
   }
 
-  File rfile = SD.open(fname, FILE_READ);
+  FsFile rfile = SD.open(fname, FILE_READ);         //   Changed for 1.57
 
   if (!rfile)
   {
@@ -506,7 +506,7 @@ bool loadConfiguration(const char *filename)
   LOGPRINTF("Opening Config File [%s]\n", filename);
 
   // Open file for reading
-  File file = SD.open(filename);
+  FsFile file = SD.open(filename);                                    //   Changed for 1.57
   machineNum = -1;                                                    //  In case we have an early exit, make sure this is an invalid
                                                                       //  value. See enum machine_numbers{} at top of file for valid values.
   #if TRACE_LOAD_CONFIG
@@ -854,7 +854,7 @@ bool loadConfiguration(const char *filename)
   //  Restore the 4 flag bytes
   //
 
-  if (!(file = SD.open("/AUXROM_FLAGS.TXT", READ_ONLY)))
+  if (!(file = SD.open("/AUXROM_FLAGS.TXT", O_RDONLY)))     //   Changed for 1.57  (this may have been an un-caught bug: READ_ONLY)
   {   //  File does not exist, so create it with default contents
 failed_to_read_flags:
     log_to_serial_ptr += sprintf(log_to_serial_ptr, "Creating /AUXROM_FLAGS.TXT with default contents of 00000000 because it does not exist\n");
@@ -922,7 +922,7 @@ bool remount_drives(const char *filename)
   Serial.printf("Opening Config File [%s]\n", filename);
 
   // Open file for reading
-  File file = SD.open(filename);
+  FsFile file = SD.open(filename);         //   Changed for 1.57
 
   LOGPRINTF("Open was [%s]\n", file ? "Successful" : "Failed");
   Serial.printf("Open was [%s]\n", file ? "Successful" : "Failed");
@@ -954,7 +954,7 @@ bool remount_drives(const char *filename)
   //  Restore the 4 flag bytes
   //
 
-  if (!(file = SD.open("/AUXROM_FLAGS.TXT", READ_ONLY)))
+  if (!(file = SD.open("/AUXROM_FLAGS.TXT", O_RDONLY)))     //   Changed for 1.57  (this may have been an un-caught bug: READ_ONLY)
   {   //  File does not exist, so create it with default contents
 failed_to_read_flags:
     Serial.printf("Creating /AUXROM_FLAGS.TXT with default contents of 00000000 because it does not exist\n");
@@ -982,11 +982,13 @@ failed_to_read_flags:
   return true;        //  Maybe we should be more specific about individual successes and failures. Currently only return false if no SD card
 }
 
-void printDirectory(File dir, int numTabs)
+#if 0
+void printDirectory(FsFile dir, int numTabs)
 {
+  char      tempname[260];
   while (true)
   {
-    File entry = dir.openNextFile();
+    FsFile entry = dir.openNextFile();
     if (!entry)
     {
       // no more files
@@ -997,7 +999,8 @@ void printDirectory(File dir, int numTabs)
     {
       Serial.print('\t');
     }
-    Serial.print(entry.name());
+    entry.getName(tempname, 258);
+    Serial.print(tempname);
     if (entry.isDirectory())
     {
       Serial.println("/");
@@ -1011,6 +1014,7 @@ void printDirectory(File dir, int numTabs)
     }
   }
 }
+#endif
 
 /////////////////////////////////////////////// Get CID  ////////////////////////////////////////////////
 //

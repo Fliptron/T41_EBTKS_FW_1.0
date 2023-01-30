@@ -55,6 +55,12 @@ public:
     return true;
   }
 
+  //
+  //  A note about line 78 in SdFatConfig.h (2021), which we used to patch.
+  //  As distributed, this is 3, but with the 2021 version of SdFat we had
+  //  problems like can't find isReadOnly()  .  This was fixed by patching it to 1
+  //  Apparently not needed in 2023 version of SdFat, but do need to change "File" to "SdFile"
+
   bool getNextLine(struct s_Dir_Entry *entry)
   {
     uint16_t    date = 0, time = 0;
@@ -125,8 +131,8 @@ public:
 
 private:
   bool _open;
-  File _rootPath;
-  File _currPath;
+  FsFile _rootPath;                     //   Changed for 1.57
+  FsFile _currPath;                     //   Changed for 1.57
   char _dirName[60];
   char *_lineBuff;
   uint32_t _currNdx;

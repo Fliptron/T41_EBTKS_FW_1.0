@@ -807,6 +807,9 @@ void setup()
   //  memory in the EXTMEM region (accessed via its own serial interface).
   //  So just make sure that all SD Card read/writes are to FASTRUN or DMAMEM memory
   //
+  //  Update 2023_01_12   SdioTeensy.cpp does not seem to have changed with regard to these observations. need to do a diff #####
+  //
+
 
   SD_begin_OK = SD.begin(SdioConfig(DMA_SDIO));   //  This takes about 9 ms.
   CLEAR_SCOPE_1;                                  //  2/7/2021 This occurs about 9 ms after the previous call to Pulser(2)

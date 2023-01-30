@@ -2,7 +2,7 @@
 #include <Arduino.h>
 #include <SdFat.h>
 
-extern SdFat SD;
+extern SdFs SD;         //   Changed for 1.57
 
 //extern size_t strlcpy(char , const char , size_t);
 
@@ -73,7 +73,7 @@ class HPDisk
 
         static constexpr int SECTOR_SIZE = 256;
 
-        HPDisk(DISK_TYPE typeName, SdFat *sd)
+        HPDisk(DISK_TYPE typeName, SdFs *sd)            //   Changed for 1.57
             {
             _sd = sd;
             _error = false;
@@ -402,8 +402,8 @@ class HPDisk
         int _currSector;
         int _lba;
 
-        SdFat *_sd;
-        File _diskFile;
+        SdFs *_sd;                  //   Changed for 1.57
+        FsFile _diskFile;           //   Changed for 1.57
         bool _error;
         bool _loaded;
         bool _writeProtect;

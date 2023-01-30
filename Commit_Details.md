@@ -343,12 +343,14 @@ Changes:
 -   Improved reporting of mount/unmount of LIF images to the Serial port,
     with the name of the LIF image. Now also correctly displays the
     virtual printer and tape assignment.
--   FYI:
+-   FYI: CygWin wordcounts (wc):
 
-    -     CygWin wc of include directory:  3456  12788 130393
-    -                  src     directory: 11925  59107 491150
-    -                  --------------------------------------
-    -                  total              15381 lines of code and comments
+        Directory   Lines   Words   Characters
+        --------------------------------------
+        include      3456   12788   130393
+        src         11925   59107   491150
+        --------------------------------------
+        total       15381   lines of code and comments
 
 -   Added some diagnostics to EBTKS_LED.h to try and figure out why
     sending 0,0,0 doesn't turn the LED off. TLA5201 shows that all bytes
@@ -487,19 +489,18 @@ Changes:
 ## Commit \#107 03/09/2021
 
 Changes:
--   Modified critical sections of the Serial driver (not part of this code base, but part of a library we depend on).
-    Here are the edit notes:
 
-    -   Multiple changes to --- .platformio\packages\framework-arduinoteensy\cores\teensy4\HardwareSerial.cpp
-    -
-    -   4 occurences    at line (approx)        404, 449, 488, 569 (after edits)
-    -   Replace         __disable_irq();
-    -   with            NVIC_DISABLE_IRQ(hardware->irq);
-    -
-    -   6 occurrences   at line (approx)        413, 464, 468, 498, 503, 575 (after edits)
-    -   Replace         __enable_irq();
-    -   with            NVIC_ENABLE_IRQ(hardware->irq);
-    -
+-   Modified critical sections of the Serial driver (not part of this code base, but part of a library we depend on). Here are the edit notes
+
+    Multiple changes to .platformio\packages\framework-arduinoteensy\cores\teensy4\HardwareSerial.cpp
+
+        4 occurences    at line (approx)        404, 449, 488, 569 (after edits)
+        Replace         __disable_irq();
+        with            NVIC_DISABLE_IRQ(hardware->irq);
+
+        6 occurrences   at line (approx)        413, 464, 468, 498, 503, 575 (after edits)
+        Replace         __enable_irq();
+        with            NVIC_ENABLE_IRQ(hardware->irq);
 
 -   Start integration of Russell's ESP32 support. CRT is sent to http://esp32_ebtks.local/
 -   Add EBTKS_ESP.h to the file set. Thanks RB.
@@ -842,7 +843,7 @@ Changes:
     file transfer), and the starting point for using the integrated SdFAT support in
     the updated TeensyDuino. Jumping from TeensyDuino V1.53 to 1.57
 -   Related:  https://forum.pjrc.com/threads/71148-SD-library-issues
--   This commit is a catch-all for multiple small changes that happened over 3 months and
+-   This commit is a catch-all for multiple small changes that happened over 15 months and
     wern't pushed to github, as some of it was/is experimental. Some of the WiFi related
     changes are likely to be reverted. Look to the next commit as a starting point for any
     non Philip/Russell development work. i.e. things are in flux more than normal.
@@ -852,19 +853,21 @@ Changes:
     is easy to implement, the PlatformIO "Clean all" deletes the libraries in \\.pio\\libdeps,
     including the patch. Instead I copied it to the include and src directories, and modified
     platformio.ini so that it would no longer fetch it from the interwebs. Local copies of the
-    following file.  **Looks like HardwareSerial.cpp** might also need this attention
+    following file.
+    
+    **Looks like HardwareSerial.cpp** might also need this attention
 
-    -   Base64.h            **This is now in the include directory**
+        Base64.h                    **This is now in the include directory**
 
 -   LZS Compression and Decompression havs been added. This is used in
     EBTKS_CRT.cpp as part of the transmission of CRT images over WiFi
     to a remote browser. These files were released with the  MIT license.
     This code may be removed in a future commit, as this functionality is fairly experimental
 
-    -   lzs.h               **This is now in the include directory**
-    -   lzs-common.h        **This is now in the include directory**
-    -   lzs-compression.c   **This is now in the src directory**
-    -   lzs-simple-compression.c   **This is now in the src directory**
+        lzs.h                       **This is now in the include directory**
+        lzs-common.h                **This is now in the include directory**
+        lzs-compression.c           **This is now in the src directory**
+        lzs-simple-compression.c    **This is now in the src directory**
 
 -   Initial test of file transfer over WiFi
 -   Starting around manufacturing batch 4 or 5, (around October 2021) some strange startup
@@ -919,4 +922,22 @@ Changes:
     -   #define SDFAT_FILE_TYPE 1     // PMF and RB was 3, but caused library problems like can't find isReadOnly()
         
     Now do a normal clean and build, and there should be no errors
+
+## Commit \#132 01/29/2023
+
+-   Release freeze on which linraries are being used. The freeze happened when hardware started shipping on 7/12/2021. At that time we were using the TeensyDuino library V1.53, and the SdFat library was separate from TeensyDuino. We were using version #2.0.2-beta.3 . With this commit the Current Teensy duino V1.57 is being used. The most significant change is that SdFat is now part of this library, and both libraries have had 15 months of updates. The impact to this EBTKS firmware are listed below, and after a bit of a rough start at the development desk, the required changes are not too significant.
+-   There has been a known issue with the Mass Storage ROM COPY command when copying a complete disk image from one disk to another, including from an external physical disk to an emulated disk. All files are not copied. For example:
+
+    COPY ":D300" TO ":D302"
+
+    This problem does not seem to be repeatable now. While it is nice for bugs to go away, some more research is need to try and confirm that this "fix" is due to the new external libraries.
+-   Replaced all usage of "File" as a type with "FsFile" as part of update to TeensyDuino 1.57
+-   Change references to available32() to available64()
+-   Caught a bug in EBTKS_SD.cpp at line 857 and 957, READ_ONLY  should be  O_RDONLY.
+-   In printDirectory() the openNextFile() return value is an FsFile rather than File, and FsFile does not have a file.name() function (that returns a pointer to the file name). The new way to do it requires a local buffer (tempname[260]) and the file name is retrieved  with entry.getName(tempname, 258);
+
+    Hmmm: this function is recursive, and it does not appear to be called by anything. Disabled it with "#if 0
+" and also in EBTKS_Function_Declarations.h and the project still links without errors.
+
+
 

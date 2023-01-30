@@ -140,7 +140,7 @@ public:
         }
         return 1;
     }
-    //
+    //
     //  return character if character was not consumed
     //
     uint8_t translate(uint8_t ch)

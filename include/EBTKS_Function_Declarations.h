@@ -65,7 +65,7 @@ uint8_t * getROMEntry(uint8_t romId);
 void assert_DMA_Request(void);
 void release_DMA_request(void);
 FASTRUN void pinChange_isr(void) __attribute__ ((interrupt ("IRQ")));     //  This fixed the keyboard random errors, which was caused by unsaved registers on interrupt
-                                                                          //  not being saved by normal function entry
+                                                                          //  not being saved by normal function entry          #####
 void setupPinChange(void);
 void mySystick_isr(void);
 void initIOfuncTable(void);
@@ -82,7 +82,7 @@ void removeIOWriteFunc(uint8_t addr);
 bool loadRom(const char *fname, int slotNum, const char * description);
 bool loadConfiguration(const char *filename);
 bool remount_drives(const char *filename);
-void printDirectory(File dir, int numTabs);
+//  void printDirectory(FsFile dir, int numTabs);
 void no_SD_card_message(void);
 void dump_SD_Card_Info(void);
 void diag_dir_path(const char * path);

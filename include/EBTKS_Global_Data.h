@@ -165,9 +165,9 @@ EXTERN  jmp_buf   PWO_While_Running;
 
 EXTERN  char  serial_string[SERIAL_STRING_MAX_LENGTH + 2];
 
-EXTERN  volatile  uint8_t   just_once;       // This is used to trigger a temporary diagnostic function in a piece of code, where dumping with Serial.printf() is not an option
-EXTERN  volatile bool globalIntAck;          // set when our interrupt was acknowleged
-EXTERN  volatile bool globalIntEn;           // global interrupt enable
+EXTERN  volatile  uint8_t   just_once;        // This is used to trigger a temporary diagnostic function in a piece of code, where dumping with Serial.printf() is not an option
+EXTERN  volatile bool globalIntAck;           // set when our interrupt was acknowleged
+EXTERN  volatile bool globalIntEn;            // global interrupt enable
 
 //
 //  map handler functions for each i/o address                        All of these functions that aren't NULL need to be timed.
@@ -181,9 +181,9 @@ typedef bool (*ioReadFuncPtr_t)(void);
 //  Log file support
 //
 
-EXTERN  File logfile;
+EXTERN  FsFile logfile;                       //   Changed for 1.57
 EXTERN  bool logfile_active;
-EXTERN  char logfile_temp_text[200];    //  That should be enough, bad news as no checking is done.
+EXTERN  char logfile_temp_text[200];          //  That should be enough, bad news as no checking is done.
 
 //
 //  Logic Analyzer
@@ -216,7 +216,7 @@ EXTERN  volatile uint32_t  Logic_Analyzer_aux_sample;
 
 EXTERN  Tape tape;
 
-EXTERN  SdFat SD;
+EXTERN  SdFs SD;               //   Changed for 1.57
 
 EXTERN  char CRT_Log_Buffer[CRT_LOG_BUFFER_SIZE];
 

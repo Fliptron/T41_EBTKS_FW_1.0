@@ -82,6 +82,8 @@ int encode(char *output, char *input, int inputLength)
 }
 
 //  deprecated. see above function
+//
+//	Except it is still referenced in EBTKS_CRT.cpp at line 1148.  Need to resolve with Russell ####
 int Xencode(char *output, char *input, int inputLength) {
 	int i = 0, j = 0;
 	int encodedLength = 0;

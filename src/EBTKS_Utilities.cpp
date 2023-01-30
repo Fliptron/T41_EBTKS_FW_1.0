@@ -838,7 +838,7 @@ void show(void)
 
   if (SD.exists(serial_string + 5))
   {
-    File showfile = SD.open(serial_string + 5, FILE_READ);
+    FsFile showfile = SD.open(serial_string + 5, FILE_READ);
     if(!showfile)
     {
       Serial.printf("File open for %s failed\n", serial_string + 5);
@@ -1140,7 +1140,7 @@ void diag_sdread_1(void)
 
   Serial.printf("\n\n\nTest pass 1: reading 256 bytes from a file with varying start positions\n");
   Serial.printf("Test pass 1: Using readBytes() and default timeout\n");
-  File testfile = SD.open("/CONFIG.TXT", FILE_READ);
+  FsFile testfile = SD.open("/CONFIG.TXT", FILE_READ);
   if(!testfile)
   {
     Serial.printf("File open for /CONFIG.TXT failed\n");
@@ -1149,7 +1149,7 @@ void diag_sdread_1(void)
   file_offset = 0;
   testfile.setTimeout(1000);        //  Default timeout is 1000 ms
   Stop_time = Start_time_total = systick_millis_count;
-  while(testfile.available32())			//  This will cause a compile time error when we upgrade to 1.57  Look for available64()
+  while(testfile.available64())			//  This will cause a compile time error when we upgrade to 1.57  Look for available64()
   {
     Start_time = systick_millis_count;
     if(!testfile.seekSet(file_offset))
@@ -1179,7 +1179,7 @@ void diag_sdread_1(void)
   file_offset = 0;
   testfile.setTimeout(0);
   Stop_time = Start_time_total = systick_millis_count;
-  while(testfile.available32())				//  Probably change to available64() when 1.57
+  while(testfile.available64())				//  Probably change to available64() when 1.57
   {
     Start_time = systick_millis_count;
     if(!testfile.seekSet(file_offset))
@@ -1209,7 +1209,7 @@ void diag_sdread_1(void)
   file_offset = 0;
   testfile.setTimeout(1000);        //  Default timeout is 1000 ms (but it should have no effect)
   Stop_time = Start_time_total = systick_millis_count;
-  while(testfile.available32())			//  Probably change to available64() when 1.57
+  while(testfile.available64())			//  Probably change to available64() when 1.57
   {
     Start_time = systick_millis_count;
     if(!testfile.seekSet(file_offset))
@@ -1503,7 +1503,7 @@ void just_once_func(void)
 //
 //void show_file(void)
 //{
-//  File          file;
+//  FsFile          file;
 //  int           character;
 //  Serial.printf("\nEnter filename including path to be displayed: ");
 //  if (!wait_for_serial_string())       //  Hang here till we get a file name (hopefully)

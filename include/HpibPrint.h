@@ -176,7 +176,7 @@ private:
     uint8_t _prevHPIBCmd;
     int _readLen;
     char _fileName[258];
-    File _printFile;
+    FsFile _printFile;
     bool _fileOpen;
     uint32_t _flushTimer;
 };

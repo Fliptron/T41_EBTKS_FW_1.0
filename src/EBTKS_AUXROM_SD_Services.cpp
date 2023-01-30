@@ -214,7 +214,7 @@ bool parse_MSU(char *msu);
 //
 #define MAX_AUXROM_SDFILES        (11)                                //  Usage is 1 through 11, so add 1 when allocating (see next line)
 
-static File Auxrom_Files[MAX_AUXROM_SDFILES+1];                       //  These are the file handles used by the following functions: SDOPEN, SDCLOSE, SDREAD, SDWRITE, SDFLUSH, SDSEEK
+static FsFile Auxrom_Files[MAX_AUXROM_SDFILES+1];                     //  These are the file handles used by the following functions: SDOPEN, SDCLOSE, SDREAD, SDWRITE, SDFLUSH, SDSEEK
                                                                       //                                      and probably these too: SDEOL,  SDEOL$
                                                                       //  The plus 1 is so we can work with the BASIC universe that numbers file 1..N, and the reserved file number 11 that
                                                                       //  is used by some AUXROM internal commands like SDSAVE, SDGET, SDEXPORT(EXPORTLIF?), SDIMPORT (IMPORTLIF ?)
@@ -230,13 +230,17 @@ static File Auxrom_Files[MAX_AUXROM_SDFILES+1];                       //  These 
 //  5) No apparent way to access the Volume working durectory (vwd) or Current Working Directory (cwd)
 //
 
-File        file;
+FsFile        file;
 //  SdFile      SD_file;    //  We never used this. How is this different from File?
                             //  Apparently "FAT16/FAT32 file with Print"
                             //  See G:\PlatformIO_Projects\Teensy_V4.1\T41_EBTKS_FW_1.0\.pio\libdeps\teensy41\SdFat\examples\examplesV1\rename\rename.ino  line 53
-FatFile     Fat_File;
-FatVolume   Fat_Volume;
-File        HP85_file[11];                                          //  10 file handles for the user, and one for Everett
+//FatFile     Fat_File;
+//FatVolume   Fat_Volume;
+FsFile        HP85_file[11];                                          //  Was "File"   Changed for 1.57
+                                                                      //  10 file handles for the user, and one for Everett
+                                                                      //  Changed for 1.57, and prior two commented out for now. 
+                                                                      //  Did find FsVolume , but what would FatFile change to
+                                                                      //  that is different from FsFile. How was "FatFile" different from "File"
 
 void initialize_SD_functions(void)
 {
@@ -282,7 +286,7 @@ void AUXROM_DATETIME(void)
 
 void AUXROM_FLAGS(void)
 {
-  File      temp_file;
+  FsFile      temp_file;
   char      flags_to_write[12];
   uint8_t   chars_written;
 
@@ -556,8 +560,8 @@ public:
 
 private:
   bool _open;
-  File _rootPath;
-  File _currPath;
+  FsFile _rootPath;                     //   Changed for 1.57
+  FsFile _currPath;                     //   Changed for 1.57
   char _dirName[60];
   char *_lineBuff;
   uint32_t _currNdx;
@@ -1041,7 +1045,7 @@ void AUXROM_SDDEL(void)
   #if VERY_VERBOSE_SDDEL
   Serial.printf("SDDEL: Wildcards in match pattern\n");
   #endif
-  SD.cacheClear();
+  //  SD.cacheClear();         //  Not supported for SdFs, in 2023
 
   //
   //  Split Resolved_Path into the path and filename/template sections
@@ -1528,14 +1532,14 @@ bool copy_sd_file(const char * Source_Path, const char * Destination_Path)
 
   Serial.printf("\nCreating new media by copying an image of blank media to the new media file name\n");
   Serial.printf("Copy file from [%s] to [%s]\n", Source_Path, Destination_Path);
-  File Source = SD.open(Source_Path, FILE_READ);
+  FsFile Source = SD.open(Source_Path, FILE_READ);
   if (!Source)
   {
     Serial.printf("Couldn't open [%s] for Read\n", Source_Path);
     post_custom_error_message("Couldn't open Ref Disk", 417);
     return false;
   }
-  File Destination = SD.open(Resolved_Path, FILE_WRITE);
+  FsFile Destination = SD.open(Resolved_Path, FILE_WRITE);
   if (!Destination)
   {
     Serial.printf("Couldn't open New disk image for Write, Path is [%s]\n", Resolved_Path);
@@ -1595,7 +1599,8 @@ bool copy_sd_file(const char * Source_Path, const char * Destination_Path)
 
       int read_error_bits = Source.getError();
       Serial.printf("Error bits %08X\n", read_error_bits);
-      Source.clearError();					//	this will cause a compile time error when we upgrate to 1.57. look for clearReadError()
+      //  Source.clearError();        //	<Source.clearError();>  this will cause a compile time error when we upgrate to 1.57
+      Source.clearReadError();        //  This not documented (in HTML Docs) for SdFat, because it is part of Stream.h
       uint8_t sd_error = SD.sdErrorCode();
       Serial.printf("SD Error code %02X\n", sd_error);
       Serial.printf("\nCopy failed\n");
@@ -2704,8 +2709,8 @@ SDREN_Error_exit:
 void AUXROM_SDRMDIR(void)
 {
   bool  rmdir_status;
-  File  dirfile;
-  File  file;
+  FsFile  dirfile;
+  FsFile  file;
   int   file_count;
 
 #if VERBOSE_KEYWORDS
@@ -3403,7 +3408,7 @@ enum  RMIDLE_char_source{
       };
 
 enum  RMIDLE_char_source RMIDLE_mode;
-File  RMIDLE_batch_file;
+FsFile  RMIDLE_batch_file;
 char  RMIDLE_text[258];             //  Only used for RMIDLE_FROM_CONFIG. 258 should be enough, bad news as no checking is done.
 char  * RMIDLE_text_ptr;
 int   lookahead_char;               //  Needs to be int so that we can send -1 , or 0..255

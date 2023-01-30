@@ -21,7 +21,7 @@ class Tape
     bool is_tape_loaded(void);
 
     private:
-    File _tapeFile;
+    FsFile _tapeFile;
     char _filename[258];
     uint32_t _tick;
     uint8_t _prevCtrl;

@@ -4,7 +4,8 @@
       "*.tcc": "cpp",
       "ostream": "cpp",
       "istream": "cpp",
-      "utility": "cpp"
+      "utility": "cpp",
+      "typeinfo": "cpp"
     },
     "zenMode.restore": false
 }

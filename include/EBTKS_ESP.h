@@ -454,7 +454,7 @@ public:
 private:
   int _lineNdx = 0;
   char _line[MAX_LINE];
-  File _currFile;
+  FsFile _currFile;
   int _currFd = -1;
   uint8_t _buff[MAX_READ_LEN];
   char _strBuff[MAX_STR_LEN];
