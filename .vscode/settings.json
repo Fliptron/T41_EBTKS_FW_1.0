@@ -5,7 +5,12 @@
       "ostream": "cpp",
       "istream": "cpp",
       "utility": "cpp",
-      "typeinfo": "cpp"
+      "typeinfo": "cpp",
+      "array": "cpp",
+      "bitset": "cpp",
+      "string_view": "cpp",
+      "initializer_list": "cpp",
+      "regex": "cpp"
     },
     "zenMode.restore": false
 }

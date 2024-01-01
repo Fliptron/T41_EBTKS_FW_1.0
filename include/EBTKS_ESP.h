@@ -457,7 +457,11 @@ private:
   FsFile _currFile;
   int _currFd = -1;
   uint8_t _buff[MAX_READ_LEN];
-  char _strBuff[MAX_STR_LEN];
+  char _strBuff[MAX_STR_LEN+2];   //  +2 to try and fix this error message:
+                                  //  include/EBTKS_ESP.h:322:14: warning: 'char* strncpy(char*, const char*, size_t)' specified bound 4096 equals destination size [-Wstringop-truncation]
+                                  //  322 |       strncpy(_strBuff, jdoc["Write"]["data"], MAX_STR_LEN);
+                                  //
+                                  //  Yep, no more error message. I think the issues is that it could result in a string in _strBuff without a trailing 0x00
   CircBuff kbuff;
 };
 

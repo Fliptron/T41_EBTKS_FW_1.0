@@ -137,6 +137,12 @@ void AUXROM_Poll(void)
   // Serial.printf("Mailbox_to_be_processed %d\n", Mailbox_to_be_processed);
 
   p_mailbox = &AUXROM_RAM_Window.as_struct.AR_Mailboxes[Mailbox_to_be_processed];         //  Pointer to the selected primary mailbox for keyword
+
+//
+//  warning: taking address of packed member of 'AUXROM_RAM' may result in an unaligned pointer value [-Waddress-of-packed-member]
+//
+#pragma GCC diagnostic ignored "-Waddress-of-packed-member"
+
   p_len     = &AUXROM_RAM_Window.as_struct.AR_Lengths[Mailbox_to_be_processed];           //  Pointer to the selected buffer length
   p_usage   = &AUXROM_RAM_Window.as_struct.AR_Usages[Mailbox_to_be_processed];            //  Pointer to the selected buffer usage , and return success/error status
   p_buffer  = &AUXROM_RAM_Window.as_struct.AR_Buffer_0[Mailbox_to_be_processed * 256];    //  Pointer to the selected primary buffer for keyword.

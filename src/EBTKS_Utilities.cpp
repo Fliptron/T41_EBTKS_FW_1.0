@@ -2045,8 +2045,8 @@ void Logic_analyzer_go(void)
 //
 //  This re-initialization allows re issuing la_go without re-entering parameters
 //
-  memset(Logic_Analyzer_Data_1, 0, 1024);
-  memset(Logic_Analyzer_Data_2, 0, 1024);
+  memset(Logic_Analyzer_Data_1, 0, 1024*sizeof(uint32_t));
+  memset(Logic_Analyzer_Data_2, 0, 1024*sizeof(uint32_t));
   Logic_Analyzer_Data_index         = 0;
   Logic_Analyzer_Valid_Samples      = 0;
   Logic_Analyzer_Index_of_Trigger   = -1;                             //  A negative value means that if we display the buffer without a trigger event (time out) we won't display the Trigger message
@@ -2528,10 +2528,12 @@ void Simple_Graphics_Test(void)
 #define PSRAM_DMA_HALT         (0)                //  Set this to 1 to bracket PSRAM R/W with HP85 HALT and TEENSY global interrupt disable
                                                   //  via the HP85 DMA mode
 
-extern "C" uint8_t external_psram_size;           //  Either 8MB or 16 MB, i.e. 8 or 16 . Base address is 0x70000000
+extern "C" uint8_t external_psram_size;           //  startup.c does a simple test to see if there is either no PSRAM, or 8MB (one chip) or
+                                                  //  16 MB (2 chips).  Returns one of {0,8,16}  Base address is 0x70000000
+                                                  //  startup.c neither zeroes this memory , or pre-loads it (as of 12/27/2023)
 
-extern "C" uint32_t *_extram_alloc;               //  Needed an extra line in the .LD file
-                                                  //    _extram_alloc = SIZEOF(.bss.extram) + 0x70000000;
+extern "C" uint32_t *	  _extram_start;
+extern "C" uint32_t *	  _extram_end;
 
 bool memory_ok = false;
 
@@ -2548,25 +2550,25 @@ bool check_lfsr_pattern(uint32_t seed);
 
 void PSRAM_Test(void)
 {
-	uint8_t size = external_psram_size;
-
-	Serial.printf("EXTMEM Memory Test, %d Mbyte\n", size);
+	Serial.printf("EXTMEM Memory Test, %d Mbyte\n", external_psram_size);
+	Serial.printf("EXTMEM Memory Alloc start  %08X\n", _extram_start);
+	Serial.printf("EXTMEM Memory Alloc end    %08X\n", _extram_end);
 
 	Serial.printf("\nHP8x will be put into DMA mode for duration of the test\n");
 
-	Serial.printf("%8d bytes of EXTMEM are used by application, and won't be tested\n", (uint32_t)&_extram_alloc - 0x70000000);
+	Serial.printf("%8d bytes of EXTMEM are used by application, and won't be tested\n", (uint32_t)((uint32_t)_extram_end) - (uint32_t)_extram_start);
 
-	if (size == 0) return;
+	if (external_psram_size == 0) return;
 
 	const float clocks[4] = {396.0f, 720.0f, 664.62f, 528.0f};
 	const float frequency = clocks[(CCM_CBCMR >> 8) & 3] / (float)(((CCM_CBCMR >> 29) & 7) + 1);
 
 	Serial.printf(" CCM_CBCMR=%08X (%.1f MHz)\n", CCM_CBCMR, frequency);
 
-	// memory_begin = (uint32_t *)(0x70000000) + _extram_alloc + 16;
-	memory_begin = (uint32_t *)(&_extram_alloc + 16);                   //  Start 16 * 4 bytes above the end of allocated PSRAM
+	
+	memory_begin = (uint32_t *)(&_extram_end + 16);                     //  Start 16 * 4 bytes above the end of allocated PSRAM, so allocated memory is not tested
   memory_begin = (uint32_t *)(0xFFFFFFF0 & (uint32_t)(memory_begin)); //  but make sure it is on a word boundary
-	memory_end = (uint32_t *)(0x70000000 + size * 1048576);
+	memory_end =   (uint32_t *)(0x70000000 + (external_psram_size * 1048576));
 
   Serial.printf("Start at 0x%08X  end at 0x%08X\n\n", memory_begin, memory_end);
 

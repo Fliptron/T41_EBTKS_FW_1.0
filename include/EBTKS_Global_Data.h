@@ -183,7 +183,9 @@ typedef bool (*ioReadFuncPtr_t)(void);
 
 EXTERN  FsFile logfile;                       //   Changed for 1.57
 EXTERN  bool logfile_active;
-EXTERN  char logfile_temp_text[200];          //  That should be enough, bad news as no checking is done.
+EXTERN  char logfile_temp_text[300];          //  That should be enough, bad news as no checking is done.
+                                              //  bmped from 200 to 300 to silence a warning from 
+                                              //  EBTKS_AUXROM_SD_Services.cpp:3442:13: warning: '%s' directive writing up to 257 bytes into a region of size 180 [-Wformat-overflow=]
 
 //
 //  Logic Analyzer

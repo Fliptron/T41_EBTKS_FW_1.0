@@ -870,11 +870,14 @@ Changes:
         lzs-simple-compression.c    **This is now in the src directory**
 
 -   Initial test of file transfer over WiFi
--   Starting around manufacturing batch 4 or 5, (around October 2021) some strange startup
-    issues were observed with the LEDs, not seen in prior manufacturing batches. A workaround
-    was added to the CONFIG.TXT files that executed a batch command to initialize the LEDs
-    once the HP8X system got to the RMIDLE prompt. This workaround had no effect if the LEDs
-    did not have this issue (which appeaed to be somewhat random). The issue is the LEDs
+
+-   Starting around manufacturing batch 4 or 5, (around October 2021) some
+    strange startup issues were observed with the LEDs, not seen in prior
+    manufacturing batches. (suspect that reflow profile allows temp to get
+    too high). A workaround was added to the CONFIG.TXT files that executed
+    a batch command to initialize the LEDs once the HP8X system got to the
+    RMIDLE prompt. This workaround had no effect if the LEDs did not have
+    this issue (which appeared to be somewhat random). The issue is the LEDs
     initialized to very bright green.
 -   The LED initialization has been changed to turn LEDs off during setup(), and initialize
     them in loop() which is then over-ridden by startup batch from CONFIG.TXT . This has not
@@ -886,11 +889,25 @@ Changes:
 -   Initial hooks to insert characters into the HP8x keyboard buffer from the WiFi link
 -   Try and standardize formatting
 
-    -   Allman style braces (the curly ones)
+    -   Allman style braces, {the curly ones}
     -   Keywords followed by spaces before brackets (the curved ones)
-    -   Empty brace pair on while can be on 1 line:  while (condition) {}   // explain
-    -   Spaces around operators:  use "value >> 3"  rather than "value>>3"
-    -   In parameter list, no space before a comma, space after comma:  func(param1, param2, param3);
+    -   Empty brace pair on while can be on 1 line:
+    
+            while (condition) {}   // explain
+
+    -   Spaces around operators:
+    
+        use
+  
+            value >> 3
+  
+        rather than
+  
+            value>>3
+
+    -   In parameter list, no space before a comma, space after comma:
+    
+            func(param1, param2, param3);
 
 -   The DirLine.h class looks like it was extracted from EBTKS_AUXROM_SD_Services.cpp (around line 400)
     and placed in /include, but there is still a copy in EBTKS_AUXROM_SD_Services.cpp , so this looks
@@ -899,16 +916,18 @@ Changes:
     DirLine.h .
 -   In file SdFatConfig.h at line 78:
 
-    -  #define SDFAT_FILE_TYPE 1     // PMF and RB was 3, but caused library problems like can't find isReadOnly()
+        #define SDFAT_FILE_TYPE 1     // PMF and RB: was 3, but caused library problems like
+                                      // can't find isReadOnly()
 
-    This was done ages ago, but not documented in this file.
+    This was done ages ago, but not documented in this Commit_Details.md file.
 -   Note:  PlatformIO "Clean All" wipes all of .pio/build and .pio/libdeps. So on the next build,
     the libraries will be retrieved from the interwebs. platformio.ini specifies the folowing libraries
     with specific versions.
 
     -   ArduinoJson@6.16.1
     -   https://github.com/greiman/SdFat-beta.git#2.0.2-beta.3
-    All other libraries will fetch the most current. see the previous item about SDFAT_FILE_TYPE in
+
+    All other libraries will fetch the most current. See the previous item about SDFAT_FILE_TYPE in
     SdFatConfig.h, since this will fetch the internet version which won't have this patch.
     On first build after "Clean All" , expect to see the following excerpts in the build log:
 
@@ -925,19 +944,80 @@ Changes:
 
 ## Commit \#132 01/29/2023
 
--   Release freeze on which linraries are being used. The freeze happened when hardware started shipping on 7/12/2021. At that time we were using the TeensyDuino library V1.53, and the SdFat library was separate from TeensyDuino. We were using version #2.0.2-beta.3 . With this commit the Current Teensy duino V1.57 is being used. The most significant change is that SdFat is now part of this library, and both libraries have had 15 months of updates. The impact to this EBTKS firmware are listed below, and after a bit of a rough start at the development desk, the required changes are not too significant.
+-   Release freeze on which libraries are being used. The freeze happened when hardware started shipping on 7/12/2021. At that time we were using the TeensyDuino library V1.53, and the SdFat library was separate from TeensyDuino. We were using version #2.0.2-beta.3 . With this commit the Current TeensyDuino V1.57 is being used. The most significant change is that SdFat is now part of this library, and both libraries have had 15 months of updates. The impact to this EBTKS firmware are listed below, and after a bit of a rough start at the development desk, the required changes are not too significant.
 -   There has been a known issue with the Mass Storage ROM COPY command when copying a complete disk image from one disk to another, including from an external physical disk to an emulated disk. All files are not copied. For example:
 
     COPY ":D300" TO ":D302"
 
     This problem does not seem to be repeatable now. While it is nice for bugs to go away, some more research is need to try and confirm that this "fix" is due to the new external libraries.
+
+    Update: The bug seems to be related to how much use of the SD card has occured, impacting the response time to SD operations, and leading to timeouts. It appears that the integrated SDFat
+    library (including updates to that library) have been fixed within TeensyDuino V1.57. 100's of megabytes of data transfers have occured in tests without a failure.
+
 -   Replaced all usage of "File" as a type with "FsFile" as part of update to TeensyDuino 1.57
 -   Change references to available32() to available64()
 -   Caught a bug in EBTKS_SD.cpp at line 857 and 957, READ_ONLY  should be  O_RDONLY.
--   In printDirectory() the openNextFile() return value is an FsFile rather than File, and FsFile does not have a file.name() function (that returns a pointer to the file name). The new way to do it requires a local buffer (tempname[260]) and the file name is retrieved  with entry.getName(tempname, 258);
+-   In printDirectory() the openNextFile() return value is an FsFile rather than File, and FsFile does not have a file.name() function (that returns a pointer to the file name).
+    The new way to do it requires a local buffer (tempname[260]) and the file name is retrieved  with entry.getName(tempname, 258);
 
     Hmmm: this function is recursive, and it does not appear to be called by anything. Disabled it with "#if 0
 " and also in EBTKS_Function_Declarations.h and the project still links without errors.
 
+## Commit \#133 12/31/2023
+
+Changes:
+
+-   This is the first commit with everything updated to current versions. Was being held back by PMF's fixation on tool chain of July 2021 and Windows 7 Pro.
+    -   TeensyDuino library V1.58
+        -  Was at 1.57
+    -   Arduino JSON V6.21.4
+        -  Was at V6.16.1
+    -   SdFat V2.1.2 , integrated into TeensyDuino V1.58
+        -  Was an external library fetched from Github, Vintage July 2021
+    -   GCC V11.3.1
+        -  Was at 5.4.1
+    -   PlatformIO Core 6.1.11 , Home 3.4.4
+        -  Was at Core 6.1.11 , Home 3.4.4 (maybe incorrect)
+    -   Python V3.12.1
+        -  Was at V3.8.10
+    -   Visual Studio Code V1.85.1
+        -  Was at V1.60.2
+    -   Windows 11 Pro 23H2
+        -  Was at Windows 7 Pro SP1
+
+-   Three functions in Teensyduino still need to be updated due to issues discovered in 2020 and 2021 that we have been unable to convince the maintainers are an issue. **Before** and **After**
+    versions are now available in a new directory named **Library_Patches**
+    
+    The recomendation is to match the before versions of the functions with the copy in TeensyDuino V1.58. They should be identical. Then rename the ones in the TeensyDuino Library by appending **_OLD** to file name extension.
+    Then copy the replacement from the after directory to the appropriate place.
+    
+    In C:\Users\YOURNAME\.platformio\packages\framework-arduinoteensy\cores\teensy4 you will find
+
+    -   HardwareSerial.cpp
+    -   usb.c
+
+    In C:\Users\YOURNAME\.platformio\packages\framework-arduinoteensy\libraries\USBHost_t36 you will find
+    
+    -   ehci.cpp
+
+-   There may be some problems with this commit, as the change of computers, operating systems,
+    and every piece of software, has led me to lose the magic incantation that includes the built .hex
+    file from the .pio directory build tree, but not all the rest of .pio . Looks like there is a .gitignore
+    that performs this task.
+
+-   The new GCC is catching some issues in prior code. This commit cleans these issues up
+
+-   Prior version required edits to the Linker script, to add info of the PSRAM size. TeensyDuino 1.58 has equivalent code so we have switched to that. One less file to change
+
+-   Some things that were returned as sting pointers in the earlier JSON library, are now
+    returned as an object.
+
+-   Creating new floppy media (virtual) now works more reliably, using MOUNT and INITIALIZE. The underlying
+    AMIGO FORMAT now does not fail with a MEDIA error. Unexplained is how it ever worked prior to the
+    corrections in this commit. The equivalent support for creating new 5MB Winchester disk images has
+    not yet had an equivalent fix. For now, new 5MB disks can be created offline using PC copy and rename
+    command of the reference image. Code is in HpibDisk.h
 
 
+
+  

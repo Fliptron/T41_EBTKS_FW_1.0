@@ -7,14 +7,18 @@
 #define HPIB_UNT 0x5f
 #define HPIB_UNL 0x3f
 
+
+//
+//  See 9895A Disk Drive Service manual, PDF page 95 (A-10), Opcode column (with Secondary address 0x08, except Format - with 0x0C)
+//
 enum {
     AMIGO_SEEK = 2,
     AMIGO_REQ_STATUS = 3,
     AMIGO_READ = 5,
     AMIGO_VERIFY = 7,
     AMIGO_WRITE = 8,
-    AMIGO_REQ_ADDR = 0x14,
-    AMIGO_FORMAT = 0x18
+    AMIGO_REQ_ADDR = 0x14,      //  20   (OCT 24)
+    AMIGO_FORMAT = 0x18         //  24
     };
 
 #define MAX_DISKS 4                                       //  Only allow a maximum of 4 disk drives (units)
@@ -23,9 +27,20 @@ extern uint8_t diskBuff[];
 extern void loadReadBuff(int count, bool pack);
 extern bool isReadBuffMT();
 
-/*
-    enscapulates a hpib disk unit
-*/
+//  Philip's notes while trying to understand this code.
+//
+//  AMIGO SEEK:
+//      Seek has 6 bytes:  02    00    00    00    00    00
+//                         SEEK  Unit  CylH  CylL  Head  Sector
+//
+//      This command does validity checks, and sets up appropriate variables for the
+//      selected unit, cylinder, head and sector. No SD Card data transfer.
+//
+
+//
+//  Enscapulates a hpib disk unit
+//
+
 class HpibDisk : public HpibDevice
     {
     public:
@@ -50,6 +65,10 @@ class HpibDisk : public HpibDevice
             if (_numDisks < MAX_DISKS)
                 {
                 _disks[_numDisks] = new HPDisk((enum DISK_TYPE)type, &SD);
+                _diskAddr[0] = 0;                       //  PMF  seems to fix responses like this:
+                _diskAddr[1] = 0;                       //    Request disk address  Cylinder 20405   Head 36   Sector 248
+                _diskAddr[2] = 0;                       //    See Mass Storage ROM listing at 074646 for unexplained
+                _diskAddr[3] = 0;                       //    writing to OB of the data just read from IB.
                 _numDisks++;
                 err = false;
                 }
@@ -80,8 +99,8 @@ class HpibDisk : public HpibDevice
 
             LOGPRINTF_1MB5("\nComplete device command %02X len:%02X\n", cmdBuff[0], length);
 
-            switch (cmdBuff[0] & 0x1f)
-                {
+            switch (cmdBuff[0] & 0x1f)				//  #############   This does not seem to be checking the secodary address (should be 0x08)
+                {															//  except for FORMAT, which is 0x0C
                 case 0:
                 case AMIGO_SEEK: //seek cmd,unit,cyl lo,cyl hi,head,sector
                     cyl = ((uint16_t)cmdBuff[2]) << 8;
@@ -89,9 +108,9 @@ class HpibDisk : public HpibDevice
                     head = cmdBuff[4];
                     sector = cmdBuff[5];
 
-                    if (isUnitValid(cmdBuff[1]) && isUnitLoaded(cmdBuff[1]))
+                    if (isUnitValid(cmdBuff[1]) && isUnitLoaded(cmdBuff[1]))			//  Has side effect of setting _currUnit
                         {
-                        _disks[_currUnit]->seekCHS(cyl, head, sector); //@todo add error handling
+                        _disks[_currUnit]->seekCHS(cyl, head, sector); 						//  #####  to do add error handling
                         clearErrorStatus(cmdBuff[1]);
                         }
                     else
@@ -119,7 +138,7 @@ class HpibDisk : public HpibDevice
                     LOGPRINTF_1MB5("Read device %d unit %d\n", _tla, cmdBuff[1]);
                     if (isUnitValid(cmdBuff[1]) && isUnitLoaded(cmdBuff[1]))
                         {
-                        _disks[_currUnit]->readSector(diskBuff); //@todo add error handling
+                        _disks[_currUnit]->readSector(diskBuff); //  ##### to do add error handling
                         clearErrorStatus(cmdBuff[1]);
                         }
                     else
@@ -129,7 +148,9 @@ class HpibDisk : public HpibDevice
 
                     break;
 
-                case AMIGO_VERIFY: //verify cmd,unit   @todo always return success
+                case AMIGO_VERIFY:                                    //  Verify cmd,unit   #### to do always return success  #####  Ahhhh but that is not enough!!!
+                                                                      //  Mass Storage ROM at 076102 compares last disk address of format with current last address
+                                                                      //  fetched with "REQUEST DISC ADDRESS (LOGICAL)" at 077056
                     LOGPRINTF_1MB5("Verify unit %d\n", cmdBuff[1]);
                     if (isUnitValid(cmdBuff[1]) && isUnitLoaded(cmdBuff[1]))
                         {
@@ -171,8 +192,18 @@ class HpibDisk : public HpibDevice
 
                     break;
 
-                case AMIGO_FORMAT: //format disk cmd x x x x x
+                case AMIGO_FORMAT:                            //  Format disk cmd x x x x x     #####  this seems a little light
                     LOGPRINTF_1MB5("Format unit %d\n", cmdBuff[1]);
+                    //
+                    //  Wild ass guess that after formatting the last address should be in these variables: 0,32,1,31
+                    //  Second guess  0,33,0,0  position after last sector.  Apparently a good guess (so far)
+                    //  #####  Need to go back and figure out what to do for all other drive sizes, including creation #####
+                    
+                    _diskAddr[0] = 0;       //  high byte of cylinders
+                    _diskAddr[1] = 33;      //  low byte of cylinders, assumes 0 based, for 3.5" disks with 33 cylinders
+                    _diskAddr[2] = 0;       //  heads 0,1
+                    _diskAddr[3] = 0;       //  32 sectors per cylinder (256 bytes each) == 33*32 = 1056 sectors, == 270336 bytes == 264 kb
+        
                     if (isUnitValid(cmdBuff[1]) && isUnitLoaded(cmdBuff[1]))
                         {
                         clearErrorStatus(cmdBuff[1]);
@@ -190,14 +221,16 @@ class HpibDisk : public HpibDevice
                     break;
                 }
             _prevDiskCmd = cmdBuff[0] & 0x1f;
-            }
+            }   //  end of processCmd()
 
+  //
         //called when a burst write has completed. usually when there is data to write the the disk
+  //
         void onBurstWrite(uint8_t *buff, int length)
             {
             if (_prevDiskCmd == AMIGO_WRITE)       //disk write command previously issued?
                 {
-                _disks[_currUnit]->writeSector(buff); //@todo add error handling
+                _disks[_currUnit]->writeSector(buff);                             //  ####   to do add error handling
                 }
             }
 

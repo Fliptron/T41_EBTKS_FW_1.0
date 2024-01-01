@@ -64,6 +64,17 @@ uint8_t * getROMEntry(uint8_t romId);
 
 void assert_DMA_Request(void);
 void release_DMA_request(void);
+
+//
+//  warning: FP registers might be clobbered despite 'interrupt' attribute: compile with '-mgeneral-regs-only' [-Wattributes]
+//
+//  Unfortunately, the compiler's recommendation of compiling with -mgeneral-regs-only creates other errors
+//
+//  #####   Will ned to come back to this and figure out what to do. Do we do any floating point stuff anywhere in the code
+//          that could be affected?  Maybe a non issue, since we don't do any FP code in the ISR.
+//          More research needed.
+//
+#pragma GCC diagnostic ignored "-Wattributes"
 FASTRUN void pinChange_isr(void) __attribute__ ((interrupt ("IRQ")));     //  This fixed the keyboard random errors, which was caused by unsaved registers on interrupt
                                                                           //  not being saved by normal function entry          #####
 void setupPinChange(void);
@@ -202,8 +213,8 @@ void Simple_Graphics_Test(void);
 void setLedColor(uint8_t led, uint8_t r, uint8_t g, uint8_t b);
 void WS2812_update(void);
 void initialize_RMIDLE_processing(void);
-void load_text_for_RMIDLE(char * text);
-bool open_RMIDLE_file(char * SD_filename);
+void load_text_for_RMIDLE(const char * text);
+bool open_RMIDLE_file(const char * SD_filename);
 
 int int_power(int base, int exp);
 

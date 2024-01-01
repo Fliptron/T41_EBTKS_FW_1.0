@@ -490,7 +490,8 @@ bool loadConfiguration(const char *filename)
 {
   char fname[258];
   char * temp_char_ptr;
-  
+
+  JsonObject AutoStart;  
 
   SCOPE_1_Pulser(1);
   EBTKS_delay_ns(10000); //  10 us
@@ -626,14 +627,16 @@ bool loadConfiguration(const char *filename)
 
   CRTRemote     = doc["CRTRemote"]     | false;
 
-  AutoStartEn = doc["AutoStart"]["enable"] | false;
+  AutoStart = doc["AutoStart"];
+
+  AutoStartEn = AutoStart["enable"] | false;
   initialize_RMIDLE_processing();                       //  Initialize to no text, and pointer points at 0x00
   #if TRACE_LOAD_CONFIG
   Serial.printf("\nCheckpoint 10\n"); Serial.flush();
   #endif
   if (AutoStartEn)
   {
-    if ((strlen(doc["AutoStart"]["command"] | "") != 0) && (strlen(doc["AutoStart"]["batch"] | "") != 0))
+    if ((strlen(AutoStart["command"] | "") != 0) && (strlen(AutoStart["batch"] | "") != 0))
     {
       temp_char_ptr = log_to_CRT_ptr;
       log_to_CRT_ptr += sprintf(log_to_CRT_ptr, "Error AutoStart Command & Batch\n");
@@ -642,16 +645,16 @@ bool loadConfiguration(const char *filename)
       //  Can't have both, so ignore
       //
     }
-    else if (strlen(doc["AutoStart"]["command"] | "") != 0)
+    else if (strlen(AutoStart["command"] | "") != 0)
     {
-      load_text_for_RMIDLE(doc["AutoStart"]["command"]);
+      load_text_for_RMIDLE(AutoStart["command"]);
       temp_char_ptr = log_to_CRT_ptr;
       log_to_CRT_ptr += sprintf(log_to_CRT_ptr, "AutoStart with Command\n");
       //  No LOGPRINTF("%s", temp_char_ptr); needed here because it was handled in load_text_for_RMIDLE()
     }
-    else if (strlen(doc["AutoStart"]["batch"] | "") != 0)
+    else if (strlen(AutoStart["batch"] | "") != 0)
     {
-      if (open_RMIDLE_file(doc["AutoStart"]["batch"]))
+      if (open_RMIDLE_file(AutoStart["batch"]))
       {
         temp_char_ptr = log_to_CRT_ptr;
         log_to_CRT_ptr += sprintf(log_to_CRT_ptr, "AutoStart with Batch file\n");

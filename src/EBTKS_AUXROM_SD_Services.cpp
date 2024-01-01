@@ -1542,6 +1542,47 @@ bool copy_sd_file(const char * Source_Path, const char * Destination_Path)
   FsFile Destination = SD.open(Resolved_Path, FILE_WRITE);
   if (!Destination)
   {
+    //  ########
+    //  2023_05_08  I saw this error while running INITCOPY on the 334th pass (about 5.1 hours run time)
+    //              and retrying this command:   MOUNT ":D302",F$,1
+    //              succeeded and I was able to continue.
+    //              So maybe add a retry here, before giving up??
+    //              Might have been the SD card doing some house cleaning??
+    //
+    //  115 seconds per pass. INITCOPY creates a unique new diskimage, does an INITIALIZE, then copies a full floppy to it
+    //  Previously it woud crash or fail to copy all files on pass 1 (rare) to 40 (at the longest)
+    //  With the edits up to this date the test program has now run 1305 passes == 41.6 hours
+    //  Only one error, as noted above, and it appears to be timeout related. After restarting
+    //  (CONTINUE) I finally stopped it at 1306 passes. No other failures seen.
+    //      Deleting all files with a wildcard is probably best done on PC, as I'm guessing the
+    //      file list creation with a fixed buffer is an un-anticipated possible failure point.
+    //      Might also affect SDCAT.  Hmmmmm SDCAT didn't crash
+    //      ##########  should probably add buffer overflow code in anything that uses the 64 kb catalogging buffer(s?)
+    //      Well, SDDEL /DISKS/scratch_*.dsk also appears to have worked, but I was expecting 1306 lines on the console.
+    //      There were only 1237. Not sure what that means, but it did delete all scratch files from /DISKS/
+    //      Maybe something to do with random file name collisions??? Would need to review INITCOPY source
+    //      but I'm guessing that when it trys a new random name after a collision, it still counts the
+    //      initial attempt as a pass???
+    //
+    //  The failure looked like this on console:
+    //
+    //    Creating new media by copying an image of blank media to the new media file name
+    //    Copy file from [/Original_images/Blank_3.5.dsk] to [/disks/scratch_7047.dsk]
+    //    Couldn't open New disk image for Write, Path is [/disks/scratch_7047.dsk]
+    //       Create (copy) failed
+    //
+    //  The retry looked like this on console:
+    //
+    //    Creating new media by copying an image of blank media to the new media file name
+    //    Copy file from [/Original_images/Blank_3.5.dsk] to [/disks/scratch_7047.dsk]
+    //    Copying [/Original_images/Blank_3.5.dsk] to [/disks/scratch_7047.dsk]
+    //    ....................................................................................................
+    //    ....................................................................................................
+    //    ....................................................................................................
+    //    ....................................................................................................
+    //    ....................................................................................................
+    //    ............................
+    //
     Serial.printf("Couldn't open New disk image for Write, Path is [%s]\n", Resolved_Path);
     Source.close();
     post_custom_error_message("Couldn't open New Disk", 418);
@@ -1978,29 +2019,38 @@ void AUXROM_SDOPEN(void)
     switch (AUXROM_RAM_Window.as_struct.AR_Opts[1])
     {
       case 0:       //  Mode 0 (READ-ONLY), error if the file doesn't exist
-      error_number = 422;
-      strlcpy(error_message, "Open failed Mode 0", 32);
-      if (!Auxrom_Files[file_index].open(Resolved_Path, O_RDONLY | O_BINARY))
-        error_occured = true;
-        break;
+            error_number = 422;
+            strlcpy(error_message, "Open failed Mode 0", 32);
+            if (!Auxrom_Files[file_index].open(Resolved_Path, O_RDONLY | O_BINARY))
+            {
+              error_occured = true;
+            }
+            break;
+
       case 1:       //  Mode 1 (R/W, append)
-      error_number = 423;
-      strlcpy(error_message, "Open failed Mode 1", 32);
-      if (!Auxrom_Files[file_index].open(Resolved_Path, O_RDWR | O_APPEND | O_CREAT | O_BINARY))
-        error_occured = true;
-        break;
+            error_number = 423;
+            strlcpy(error_message, "Open failed Mode 1", 32);
+            if (!Auxrom_Files[file_index].open(Resolved_Path, O_RDWR | O_APPEND | O_CREAT | O_BINARY))
+            {
+              error_occured = true;
+            }
+            break;
+
       case 2:       //  Mode 2 (R/W, truncate)
-      error_number = 424;
-      strlcpy(error_message, "Open failed Mode 2", 32);
-        //if (!Auxrom_Files[file_index].open(Resolved_Path , O_RDWR | O_TRUNC | O_CREAT | O_BINARY)) error_occured = true;
-      if (!Auxrom_Files[file_index].open(Resolved_Path, O_RDWR | O_TRUNC | O_CREAT))
-        error_occured = true;
-       break;
+            error_number = 424;
+            strlcpy(error_message, "Open failed Mode 2", 32);
+              //if (!Auxrom_Files[file_index].open(Resolved_Path , O_RDWR | O_TRUNC | O_CREAT | O_BINARY)) error_occured = true;
+            if (!Auxrom_Files[file_index].open(Resolved_Path, O_RDWR | O_TRUNC | O_CREAT))
+            {
+              error_occured = true;
+            }
+            break;
+
       default:
-      error_number = 425;
-      strlcpy(error_message, "Open failed, Illegal Mode", 32); // This should never happen because AUXROM checks Mode is 0,1,2
-        error_occured = true;                                                              //  And yet, we have seen it due to a bug in AUXROM code
-        break;
+            error_number = 425;
+            strlcpy(error_message, "Open failed, Illegal Mode", 32); // This should never happen because AUXROM checks Mode is 0,1,2
+              error_occured = true;                                                              //  And yet, we have seen it due to a bug in AUXROM code
+            break;
     }
     if (error_occured)
       break;
@@ -3423,7 +3473,7 @@ void initialize_RMIDLE_processing(void)
   lookahead_char = -1;
 }
 
-void load_text_for_RMIDLE(char * text)    //  Handle RMIDLE text coming from a command in the CONFIG.TXT file
+void load_text_for_RMIDLE(const char * text)    //  Handle RMIDLE text coming from a command in the CONFIG.TXT file
 {
   strlcpy(RMIDLE_text, text, 257);
 
@@ -3433,7 +3483,7 @@ void load_text_for_RMIDLE(char * text)    //  Handle RMIDLE text coming from a c
   LOGPRINTF("\nAutoStart Command [%s]\n", RMIDLE_text_ptr);
 }
 
-bool open_RMIDLE_file(char * SD_filename)   // Handle RMIDLE text coming from a batch file
+bool open_RMIDLE_file(const char * SD_filename)   // Handle RMIDLE text coming from a batch file
 {
   if ((RMIDLE_batch_file = SD.open(SD_filename, FILE_READ)))
   {   //  Successfully opened the batch file
