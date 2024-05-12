@@ -1018,6 +1018,67 @@ Changes:
     not yet had an equivalent fix. For now, new 5MB disks can be created offline using PC copy and rename
     command of the reference image. Code is in HpibDisk.h
 
+## Commit \#134 05/11/2024
+
+Changes:
+
+-   The main intent of this commit is to work around bug(s) in
+    Microsoft's USB driver for serial communication (on Windows 11
+    Pro), using the console port on Teensy 4.1 . The issue is that
+    apparently the sideband signals DTR and RTS can be sent out of
+    order from the order in which esptool.py makes changes. These two
+    signale control the EN signal on the ESP32 (effectively Reset) and
+    D0 signal on the ESP32 which is sampled when EN goes from low to
+    high. If D0 is high, then ESP32 executes the code already in the
+    flash memory. If D0 is low, the ESP32 goes into flash memory
+    programming mode. The bug seen is that esptool.py was setting D0
+    low, then raising EN, then raising D0. What was actually being
+    seen is that D0 was going high prior to EN going high, leading to
+    the inability to load new firmware into the ESP32. This issue
+    does not exist on Windows 7 Pro systems, which has been working
+    without issues for several years.
+    
+    The solution is to generate EN and D0 to the ESP32 directly in
+    the EBTKS firmware, triggered by the console command:
+    
+    EBTKS> esp32 prog
+
+    The DTR and RTS signals received from the USB/Serial interface are ignored.
+
+-   Added a routine to display the startup message from the ESP32
+    to the console, that is sent after EN goes high. This confirms
+    the mode that the ESP32 is in.
+
+        ets Jun  8 2016 00:22:57
+
+        rst:0x1 (POWERON_RESET),boot:0x3 (DOWNLOAD_BOOT(UART0/UART1/SDIO_REI_REO_V2))
+        waiting for download
+
+-   In the ESP32 programming code, replaced digitalWrite() with macros
+    that directly change GPIO bits (EN and D0) and are much faster.
+    Note that D0 is called BOOT, since that is the actual functionality.
+    The four signals between T4.1 and ESP32 are:
+
+        CORE_PIN_ESP32_TXD      Data from ESP32-WROOM-32D (or E)
+        CORE_PIN_ESP32_RXD      Data to ESP32-WROOM-32D (or E)
+        CORE_PIN_ESP_EN         Resets ESP32-WROOM-32D (or E) when LOW
+        CORE_PIN_ESP_BOOT       D0 , selects between running firmware,
+                                or programming the flash memory
+
+-   Rename some #defines for RX and TX between T4.1 and ESP32 to make clear
+    which way the serial data is going.
+
+-   Starting with this commit, a copy of the build log is included, build.log
+    This needs to be created manually after a successful build. This shows
+    the versions of libraries and the GCC compiler.
+
+        Teensy Hardware is      V4.1
+        TeensyDuino is          1.58
+        Processor is            IMXRT1062 600MHz, 512KB RAM, 7.75MB Flash
+        GCC is                  11.3.1
+        SPI                     1.0
+        ArduinoJson             6.21.4+sha.3e1be98
+        SdFat                   2.1.2
+        Time                    1.6.1
 
 
-  

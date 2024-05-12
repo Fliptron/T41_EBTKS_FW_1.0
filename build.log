@@ -1,0 +1,189 @@
+ *  Executing task: C:\Users\Philip Freidin\.platformio\penv\Scripts\platformio.exe run 
+
+Processing teensy41 (platform: teensy; board: teensy41; framework: arduino)
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Verbose mode can be enabled via `-v, --verbose` option
+CONFIGURATION: https://docs.platformio.org/page/boards/teensy/teensy41.html
+PLATFORM: Teensy (4.18.0) > Teensy 4.1
+HARDWARE: IMXRT1062 600MHz, 512KB RAM, 7.75MB Flash
+DEBUG: Current (jlink) External (jlink)
+PACKAGES: 
+ - framework-arduinoteensy @ 1.158.0 (1.58) 
+ - tool-teensy @ 1.158.0 (1.58) 
+ - toolchain-gccarmnoneeabi-teensy @ 1.110301.0 (11.3.1)
+LDF: Library Dependency Finder -> https://bit.ly/configure-pio-ldf
+LDF Modes: Finder ~ chain, Compatibility ~ soft
+Found 93 compatible libraries
+Scanning dependencies...
+Dependency Graph
+|-- SPI @ 1.0
+|-- ArduinoJson @ 6.21.4+sha.3e1be98
+|-- SdFat @ 2.1.2
+|-- Time @ 1.6.1
+Building in release mode
+Compiling .pio\build\teensy41\src\EBTKS.cpp.o
+Compiling .pio\build\teensy41\src\EBTKS_1MB5.cpp.o
+Compiling .pio\build\teensy41\src\EBTKS_AUXROM.cpp.o
+Compiling .pio\build\teensy41\src\EBTKS_AUXROM_SD_Services.cpp.o
+Compiling .pio\build\teensy41\src\EBTKS_Bank_Switched_ROM.cpp.o
+Compiling .pio\build\teensy41\src\EBTKS_Bus_Interface_ISR.cpp.o
+Compiling .pio\build\teensy41\src\EBTKS_CRT.cpp.o
+Compiling .pio\build\teensy41\src\EBTKS_DMA.cpp.o
+Compiling .pio\build\teensy41\src\EBTKS_Logging.cpp.o
+Compiling .pio\build\teensy41\src\EBTKS_SD.cpp.o
+Compiling .pio\build\teensy41\src\EBTKS_Tape_Drive.cpp.o
+Compiling .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
+Compiling .pio\build\teensy41\src\EBTKS_sysmon.cpp.o
+Compiling .pio\build\teensy41\src\ESP_Programmer.cpp.o
+Compiling .pio\build\teensy41\src\lzs-compression.c.o
+Compiling .pio\build\teensy41\src\lzs-simple-compression.c.o
+Compiling .pio\build\teensy41\lib04e\SPI\SPI.cpp.o
+Compiling .pio\build\teensy41\libe34\SdFat\ExFatLib\ExFatDbg.cpp.o
+Compiling .pio\build\teensy41\libe34\SdFat\ExFatLib\ExFatFile.cpp.o
+Compiling .pio\build\teensy41\libe34\SdFat\ExFatLib\ExFatFilePrint.cpp.o
+Compiling .pio\build\teensy41\libe34\SdFat\ExFatLib\ExFatFileWrite.cpp.o
+Compiling .pio\build\teensy41\libe34\SdFat\ExFatLib\ExFatFormatter.cpp.o
+Compiling .pio\build\teensy41\libe34\SdFat\ExFatLib\ExFatName.cpp.o
+Compiling .pio\build\teensy41\libe34\SdFat\ExFatLib\ExFatPartition.cpp.o
+Compiling .pio\build\teensy41\libe34\SdFat\ExFatLib\ExFatVolume.cpp.o
+Compiling .pio\build\teensy41\libe34\SdFat\ExFatLib\upcase.cpp.o
+Compiling .pio\build\teensy41\libe34\SdFat\FatLib\FatDbg.cpp.o
+Compiling .pio\build\teensy41\libe34\SdFat\FatLib\FatFile.cpp.o
+Compiling .pio\build\teensy41\libe34\SdFat\FatLib\FatFileLFN.cpp.o
+Compiling .pio\build\teensy41\libe34\SdFat\FatLib\FatFilePrint.cpp.o
+Compiling .pio\build\teensy41\libe34\SdFat\FatLib\FatFileSFN.cpp.o
+Compiling .pio\build\teensy41\libe34\SdFat\FatLib\FatFormatter.cpp.o
+Compiling .pio\build\teensy41\libe34\SdFat\FatLib\FatName.cpp.o
+Compiling .pio\build\teensy41\libe34\SdFat\FatLib\FatPartition.cpp.o
+Archiving .pio\build\teensy41\lib04e\libSPI.a
+Compiling .pio\build\teensy41\libe34\SdFat\FatLib\FatVolume.cpp.o
+Compiling .pio\build\teensy41\libe34\SdFat\FreeStack.cpp.o
+Compiling .pio\build\teensy41\libe34\SdFat\FsLib\FsFile.cpp.o
+Compiling .pio\build\teensy41\libe34\SdFat\FsLib\FsNew.cpp.o
+Compiling .pio\build\teensy41\libe34\SdFat\FsLib\FsVolume.cpp.o
+Compiling .pio\build\teensy41\libe34\SdFat\MinimumSerial.cpp.o
+Compiling .pio\build\teensy41\libe34\SdFat\SdCard\SdCardInfo.cpp.o
+Compiling .pio\build\teensy41\libe34\SdFat\SdCard\SdSpiCard.cpp.o
+Compiling .pio\build\teensy41\libe34\SdFat\SdCard\SdioTeensy.cpp.o
+Compiling .pio\build\teensy41\libe34\SdFat\SpiDriver\SdSpiArtemis.cpp.o
+Compiling .pio\build\teensy41\libe34\SdFat\SpiDriver\SdSpiChipSelect.cpp.o
+Compiling .pio\build\teensy41\libe34\SdFat\SpiDriver\SdSpiDue.cpp.o
+Compiling .pio\build\teensy41\libe34\SdFat\SpiDriver\SdSpiESP.cpp.o
+Compiling .pio\build\teensy41\libe34\SdFat\SpiDriver\SdSpiParticle.cpp.o
+Compiling .pio\build\teensy41\libe34\SdFat\SpiDriver\SdSpiSTM32.cpp.o
+Compiling .pio\build\teensy41\libe34\SdFat\SpiDriver\SdSpiSTM32Core.cpp.o
+Compiling .pio\build\teensy41\libe34\SdFat\SpiDriver\SdSpiTeensy3.cpp.o
+Compiling .pio\build\teensy41\libe34\SdFat\common\FmtNumber.cpp.o
+Compiling .pio\build\teensy41\libe34\SdFat\common\FsCache.cpp.o
+Compiling .pio\build\teensy41\libe34\SdFat\common\FsDateTime.cpp.o
+Compiling .pio\build\teensy41\libe34\SdFat\common\FsName.cpp.o
+Compiling .pio\build\teensy41\libe34\SdFat\common\FsStructs.cpp.o
+Compiling .pio\build\teensy41\libe34\SdFat\common\FsUtf.cpp.o
+Compiling .pio\build\teensy41\libe34\SdFat\common\PrintBasic.cpp.o
+Compiling .pio\build\teensy41\libe34\SdFat\common\upcase.cpp.o
+Compiling .pio\build\teensy41\libe34\SdFat\iostream\StdioStream.cpp.o
+Compiling .pio\build\teensy41\libe34\SdFat\iostream\StreamBaseClass.cpp.o
+Compiling .pio\build\teensy41\libe34\SdFat\iostream\istream.cpp.o
+Compiling .pio\build\teensy41\libe34\SdFat\iostream\ostream.cpp.o
+Compiling .pio\build\teensy41\liba0e\Time\DateStrings.cpp.o
+Compiling .pio\build\teensy41\liba0e\Time\Time.cpp.o
+Compiling .pio\build\teensy41\FrameworkArduino\AudioStream.cpp.o
+Compiling .pio\build\teensy41\FrameworkArduino\CrashReport.cpp.o
+Compiling .pio\build\teensy41\FrameworkArduino\DMAChannel.cpp.o
+Compiling .pio\build\teensy41\FrameworkArduino\EventResponder.cpp.o
+Compiling .pio\build\teensy41\FrameworkArduino\HardwareSerial.cpp.o
+Compiling .pio\build\teensy41\FrameworkArduino\HardwareSerial1.cpp.o
+Compiling .pio\build\teensy41\FrameworkArduino\HardwareSerial2.cpp.o
+Compiling .pio\build\teensy41\FrameworkArduino\HardwareSerial3.cpp.o
+Compiling .pio\build\teensy41\FrameworkArduino\HardwareSerial4.cpp.o
+Compiling .pio\build\teensy41\FrameworkArduino\HardwareSerial5.cpp.o
+Compiling .pio\build\teensy41\FrameworkArduino\HardwareSerial6.cpp.o
+Compiling .pio\build\teensy41\FrameworkArduino\HardwareSerial7.cpp.o
+Compiling .pio\build\teensy41\FrameworkArduino\HardwareSerial8.cpp.o
+Compiling .pio\build\teensy41\FrameworkArduino\IPAddress.cpp.o
+Archiving .pio\build\teensy41\liba0e\libTime.a
+Compiling .pio\build\teensy41\FrameworkArduino\IntervalTimer.cpp.o
+Archiving .pio\build\teensy41\libe34\libSdFat.a
+Compiling .pio\build\teensy41\FrameworkArduino\Print.cpp.o
+Compiling .pio\build\teensy41\FrameworkArduino\Stream.cpp.o
+Compiling .pio\build\teensy41\FrameworkArduino\Time.cpp.o
+Compiling .pio\build\teensy41\FrameworkArduino\Tone.cpp.o
+Compiling .pio\build\teensy41\FrameworkArduino\WMath.cpp.o
+Compiling .pio\build\teensy41\FrameworkArduino\WString.cpp.o
+Compiling .pio\build\teensy41\FrameworkArduino\analog.c.o
+Compiling .pio\build\teensy41\FrameworkArduino\bootdata.c.o
+Compiling .pio\build\teensy41\FrameworkArduino\clockspeed.c.o
+Compiling .pio\build\teensy41\FrameworkArduino\debugprintf.c.o
+Compiling .pio\build\teensy41\FrameworkArduino\delay.c.o
+Compiling .pio\build\teensy41\FrameworkArduino\digital.c.o
+Compiling .pio\build\teensy41\FrameworkArduino\eeprom.c.o
+Compiling .pio\build\teensy41\FrameworkArduino\extmem.c.o
+Compiling .pio\build\teensy41\FrameworkArduino\fuse.c.o
+Compiling .pio\build\teensy41\FrameworkArduino\interrupt.c.o
+Compiling .pio\build\teensy41\FrameworkArduino\keylayouts.c.o
+Compiling .pio\build\teensy41\FrameworkArduino\main.cpp.o
+Compiling .pio\build\teensy41\FrameworkArduino\memcpy-armv7m.S.o
+Compiling .pio\build\teensy41\FrameworkArduino\memset.S.o
+Compiling .pio\build\teensy41\FrameworkArduino\new.cpp.o
+Compiling .pio\build\teensy41\FrameworkArduino\nonstd.c.o
+Compiling .pio\build\teensy41\FrameworkArduino\pwm.c.o
+Compiling .pio\build\teensy41\FrameworkArduino\rtc.c.o
+Compiling .pio\build\teensy41\FrameworkArduino\serialEvent.cpp.o
+Compiling .pio\build\teensy41\FrameworkArduino\serialEvent1.cpp.o
+Compiling .pio\build\teensy41\FrameworkArduino\serialEvent2.cpp.o
+Compiling .pio\build\teensy41\FrameworkArduino\serialEvent3.cpp.o
+Compiling .pio\build\teensy41\FrameworkArduino\serialEvent4.cpp.o
+Compiling .pio\build\teensy41\FrameworkArduino\serialEvent5.cpp.o
+Compiling .pio\build\teensy41\FrameworkArduino\serialEvent6.cpp.o
+Compiling .pio\build\teensy41\FrameworkArduino\serialEvent7.cpp.o
+Compiling .pio\build\teensy41\FrameworkArduino\serialEvent8.cpp.o
+Compiling .pio\build\teensy41\FrameworkArduino\serialEventUSB1.cpp.o
+Compiling .pio\build\teensy41\FrameworkArduino\serialEventUSB2.cpp.o
+Compiling .pio\build\teensy41\FrameworkArduino\sm_alloc_valid.c.o
+Compiling .pio\build\teensy41\FrameworkArduino\sm_calloc.c.o
+Compiling .pio\build\teensy41\FrameworkArduino\sm_free.c.o
+Compiling .pio\build\teensy41\FrameworkArduino\sm_hash.c.o
+Compiling .pio\build\teensy41\FrameworkArduino\sm_malloc.c.o
+Compiling .pio\build\teensy41\FrameworkArduino\sm_malloc_stats.c.o
+Compiling .pio\build\teensy41\FrameworkArduino\sm_pool.c.o
+Compiling .pio\build\teensy41\FrameworkArduino\sm_realloc.c.o
+Compiling .pio\build\teensy41\FrameworkArduino\sm_realloc_i.c.o
+Compiling .pio\build\teensy41\FrameworkArduino\sm_realloc_move.c.o
+Compiling .pio\build\teensy41\FrameworkArduino\sm_szalloc.c.o
+Compiling .pio\build\teensy41\FrameworkArduino\sm_util.c.o
+Compiling .pio\build\teensy41\FrameworkArduino\sm_zalloc.c.o
+Compiling .pio\build\teensy41\FrameworkArduino\startup.c.o
+Compiling .pio\build\teensy41\FrameworkArduino\tempmon.c.o
+Compiling .pio\build\teensy41\FrameworkArduino\usb.c.o
+Compiling .pio\build\teensy41\FrameworkArduino\usb_audio.cpp.o
+Compiling .pio\build\teensy41\FrameworkArduino\usb_desc.c.o
+Compiling .pio\build\teensy41\FrameworkArduino\usb_flightsim.cpp.o
+Compiling .pio\build\teensy41\FrameworkArduino\usb_inst.cpp.o
+Compiling .pio\build\teensy41\FrameworkArduino\usb_joystick.c.o
+Compiling .pio\build\teensy41\FrameworkArduino\usb_keyboard.c.o
+Compiling .pio\build\teensy41\FrameworkArduino\usb_midi.c.o
+Compiling .pio\build\teensy41\FrameworkArduino\usb_mouse.c.o
+Compiling .pio\build\teensy41\FrameworkArduino\usb_mtp.c.o
+Compiling .pio\build\teensy41\FrameworkArduino\usb_rawhid.c.o
+Compiling .pio\build\teensy41\FrameworkArduino\usb_seremu.c.o
+Compiling .pio\build\teensy41\FrameworkArduino\usb_serial.c.o
+Compiling .pio\build\teensy41\FrameworkArduino\usb_serial2.c.o
+Compiling .pio\build\teensy41\FrameworkArduino\usb_serial3.c.o
+Compiling .pio\build\teensy41\FrameworkArduino\usb_touch.c.o
+Compiling .pio\build\teensy41\FrameworkArduino\yield.cpp.o
+Archiving .pio\build\teensy41\libFrameworkArduino.a
+Linking .pio\build\teensy41\firmware.elf
+Memory region         Used Size  Region Size  %age Used
+            ITCM:      163724 B       512 KB     31.23%
+            DTCM:      146304 B       512 KB     27.91%
+             RAM:      435904 B       512 KB     83.14%
+           FLASH:        230 KB      7936 KB      2.90%
+            ERAM:          0 GB        16 MB      0.00%
+Calculating size .pio\build\teensy41\firmware.elf
+Checking size .pio\build\teensy41\firmware.elf
+teensy_size: Memory Usage on Teensy 4.1:
+teensy_size:   FLASH: code:166396, data:60500, headers:8620   free for files:7890948
+teensy_size:    RAM1: variables:146304, code:163720, padding:120   free for local variables:214144
+teensy_size:    RAM2: variables:435904  free for malloc/new:88384
+Building .pio\build\teensy41\firmware.hex
+================================================================================ [SUCCESS] Took 4.82 seconds ================================================================================

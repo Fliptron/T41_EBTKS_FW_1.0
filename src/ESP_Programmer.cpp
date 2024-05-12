@@ -28,175 +28,180 @@
 #include <Arduino.h>
 #include "Inc_Common_Headers.h"
 
-//#define PIN_ESP_EN (9)
-//#define PIN_ESP_BOOT (10)
-#define PIN_ESP_EN (CORE_PIN_ESP_EN)
-#define PIN_ESP_BOOT (CORE_PIN_ESP_BOOT)
+void ESP_Prog_Loop(void);
+
+static uint32_t ESP32_link_timeout;
 
 void ESP_Reset(void)
 {
-  digitalWrite(PIN_ESP_EN,0);
-  digitalWrite(PIN_ESP_BOOT,1);   //keep boot high
-  delay(10);
-  digitalWrite(PIN_ESP_EN,1);     //release reset
+  CLEAR_ESP_EN;                   //  Reset the ESP32
+  SET_ESP_BOOT;                   //  Establish mode as "Run Firmware"
+  delay(10);                      //  Make sure it gets the message
+  SET_ESP_EN;                     //  Release Reset and let firmware run.
 }
 
-void ESP_Prog_Loop(void);
-
 //
-//
-//  test code to configure the teensy 4.1 as a usb->serial interface
-//  for firmware upload to the esp32 module
-//
+//  Show response message ahead of programming
 //
 
+void display_initial_ESP32_message(void)
+{
+  uint32_t ESP32_link_timeout;
+
+  ESP32_link_timeout = systick_millis_count;
+  while (1)
+  {
+    if (Serial2.available())                        // does the ESP32 have anything to say
+    {   //  yes
+      uint8_t ch = Serial2.read();
+      Serial.write(ch);
+      ESP32_link_timeout = systick_millis_count;    //  reset timeout
+    }
+    //
+    //  Test if idle for more than 10 ms
+    //
+    if (ESP32_link_timeout + 10 < systick_millis_count)
+    {
+      break;                                        //  exit loop if no more stuff from ESP32 for 10 ms
+    }
+  }
+}
+
+//
+//      Windows 11 USB Serial driver is broken, and does not maintain the order
+//      of changes to DTR and RTS, which is critical to entering Programming mode,
+//      or booting into normal ESP32 Firmware.
+//      Think of a processor that boasts of "out of order execution" that gets it wrong
+//
+
+//
+//      Old code that fails because Windows 11 USD driver is crap
+//      Now disabled. (this code did work on Windows 7 Pro, with a different USB driver)
+#if 0
 //
 //  translate the usb serial modem control signals (DTR,RTS)
 //  to control the ESP32 download mode
 //
-
 void usb_ser_rts_dtr(void)
 {
     int mask = 0;
-    mask |= Serial.rts()? 0 : 1;
-    mask |= Serial.dtr()? 0 : 2;
+    mask |= Serial.rts()? 0 : 1;    //  EN
+    mask |= Serial.dtr()? 0 : 2;    //  BOOT
 
     switch(mask)
     {
-        case 0: 
+        case 0:
         case 3: // do nothing
-            digitalWrite(PIN_ESP_EN,1);
-            digitalWrite(PIN_ESP_BOOT,1);
+            digitalWrite(CORE_PIN_ESP_EN,1);
+            digitalWrite(CORE_PIN_ESP_BOOT,1);
             break;
-        
+
         case 1: //rts active
-            digitalWrite(PIN_ESP_EN,1);
-            digitalWrite(PIN_ESP_BOOT,0);
+            digitalWrite(CORE_PIN_ESP_EN,1);
+            digitalWrite(CORE_PIN_ESP_BOOT,0);
             break;
-        
+
         case 2: //dtr active
-            digitalWrite(PIN_ESP_EN,0);
-            digitalWrite(PIN_ESP_BOOT,1);
+            digitalWrite(CORE_PIN_ESP_EN,0);
+            digitalWrite(CORE_PIN_ESP_BOOT,1);
             break;
-    }   
+    }
 }
+#endif
 
-static uint32_t ESP32_link_timeout;
-
-void ESP_Programmer_Setup(void) {
-  // put your setup code here, to run once:
-  //while(!Serial);
-  //Serial.begin(115200);
-
+void ESP_Programmer_Setup(void)
+{
   Serial2.begin(115200);
-  digitalWrite(PIN_ESP_EN,1);
-  digitalWrite(PIN_ESP_BOOT,1);
-  pinMode(PIN_ESP_EN,OUTPUT);
-  pinMode(PIN_ESP_BOOT,OUTPUT);
+//
+//  Make sure the control lines are configured correctly.
+//  and put the ESP32 into Reset state, and BOOT line is low, for programming
+//
+  pinMode(CORE_PIN_ESP_EN,OUTPUT);
+  pinMode(CORE_PIN_ESP_BOOT,OUTPUT);
 
-/*
-digitalWrite(PIN_ESP_BOOT,0);
-delay(10);
-digitalWrite(PIN_ESP_EN,0);
-delay(100);
-digitalWrite(PIN_ESP_EN,1);
-delay(10);
-digitalWrite(PIN_ESP_BOOT,1);
-*/
+  CLEAR_ESP_BOOT;
+  CLEAR_ESP_EN;
+  delay(1000);      //  wait a second to make sure that the ESP32 is in reset
+  //
+  //  Raise the Enable line, leaving BOOT low, which starts programming mode
+  //
+  SET_ESP_EN;
+  //
+  //  and then sends a message that should look something like this:
+  //
+  //    ets Jun  8 2016 00:22:57
+  //    
+  //    rst:0x1 (POWERON_RESET),boot:0x3 (DOWNLOAD_BOOT(UART0/UART1/SDIO_REI_REO_V2))
+  //    waiting for download
+  //
+  display_initial_ESP32_message();
 
-  Serial.printf("Ready....\r\n");
+  Serial.printf("\nReady to disconnect Tera Term and run esptool.py....\r\n");
   ESP32_link_timeout = systick_millis_count;
+  //
+  //  When the user sees the above message, they should
+  //    - disconnect the terminal emulator, so that Teensy can receive the programming data from esptool.py
+  //    - start esptool.py with the appropriate parameters. Currently it looks like this:
+  //
+  //      python esptool.py -p COM4 -b 115200 --chip esp32 write_flash 0x0000  D:\_Multi_Year_Files\EBTKS_V1.0\ESP32_Binaries\Combined\target.bin
+  //
 
   while(1)
   {
+    //
+    //  Copy data from esptool.py (running on host computer) to the ESP32 via the
+    //  Serial2 port, running at 115200 Baud
+    //
     ESP_Prog_Loop();
-    if (ESP32_link_timeout + 30000 < systick_millis_count)
+    //
+    //  Check for no serial activity for 30 seconds. This indicates the process is complete
+    //  or has failed
+    //
+    if (ESP32_link_timeout + 30000 < systick_millis_count)      //  30000 milliseconds is 30 seconds.
     {
       Serial.printf("\nExit ESP32 programming link due to 30 second timeout\n");
+      //
+      //  Restart the ESP32 in "Running Firmware" mode
+      //
       ESP_Reset();
       break;
     }
   }
 }
 
-void ESP_Prog_Loop() {
-  // put your main code here, to run repeatedly:
-  usb_ser_rts_dtr();
+//
+//  copy data from esptool.py (via T4.1 serial-over-USB port)
+//  to the ESP32-WROOM-32D (or E)
+//  Data is passed in both directions
+//  esptool.py reports progress on the host system's screen
+//  T4.1 is unable to report status, as the serial-over-USB port is in use
+//
 
+void ESP_Prog_Loop()
+{
+  //
+  //  First see if a character has arrived from esptool.py (running on host PC)
+  //
   if (Serial.available())
     {
+      //
+      //  Yes, so copy it to the ESP32, and reset the timeout
+      //
       uint8_t ch = Serial.read();
       Serial2.write(ch);
       ESP32_link_timeout = systick_millis_count;
     }
+  //
+  //  Second, see if ESP32 is trying to send any info back to esptool.py
+  //
   if (Serial2.available())
   {
+    //
+    //  Yes, so copy it serial port back to host (to esptool.py)
+    //  no resetting of timeout
+    //
     uint8_t xch = Serial2.read();
     Serial.write(xch);
   }
 }
 
-
-////////////////////////////////////  Example of what is seen on service terminal when this code starts up (command is esp32 prog)
-//                                    5/19/2022 Note: it is not made clear that this block of comments pre-dates the production
-//                                              hardware, which uses the service terminal port (COM over USB) for doing the download,
-//                                              thus these messages no longer appear, since the terminal function is disconnected.
-//                                              Actually, how did this ever work, I've forgotten. Maybe Russell remembers.
-//      
-//      
-//      EBTKS> esp32 prog
-//      Ready....
-//      ets Jun  8 2016 00:22:57
-//      
-//      rst:0x1 (POWERON_RESET),boot:0x13 (SPI_FAST_FLASH_BOOT)
-//      configsip: 0, SPIWP:0xee
-//      clk_drv:0x00,q_drv:0x00,d_drv:0x00,cs0_drv:0x00,hd_drv:0x00,wp_drv:0x00
-//      mode:DIO, clock div:2
-//      load:0x3fff0018,len:4
-//      load:0x3fff001c,len:5656
-//      load:0x40078000,len:0
-//      ho 12 tail 0 room 4
-//      load:0x40078000,len:13844
-//      entry 0x40078fc4
-//      I (30) boot: ESP-IDF v3.0.7 2nd stage bootloader
-//      I (31) boot: compile time 09:04:31
-//      I (31) boot: Enabling RNG early entropy source...
-//      I (35) boot: SPI Speed      : 40MHz
-//      I (39) boot: SPI Mode       : DIO
-//      I (43) boot: SPI Flash Size : 4MB
-//      I (47) boot: Partition Table:
-//      I (51) boot: ## Label            Usage          Type ST Offset   Length
-//      I (58) boot:  0 phy_init         RF data          01 01 0000f000 00001000
-//      I (66) boot:  1 otadata          OTA data         01 00 00010000 00002000
-//      I (73) boot:  2 nvs              WiFi data        01 02 00012000 0000e000
-//      I (81) boot:  3 at_customize     unknown          40 00 00020000 000e0000
-//      I (88) boot:  4 ota_0            OTA app          00 10 00100000 00180000
-//      I (95) boot:  5 ota_1            OTA app          00 11 00280000 00180000
-//      I (103) boot: End of partition table
-//      I (107) boot: No factory image, trying OTA 0
-//      I (112) esp_image: segment 0: paddr=0x00100020 vaddr=0x3f400020 size=0x20614 (132628) map
-//      I (168) esp_image: segment 1: paddr=0x0012063c vaddr=0x3ffc0000 size=0x02d7c ( 11644) load
-//      I (172) esp_image: segment 2: paddr=0x001233c0 vaddr=0x40080000 size=0x00400 (  1024) load
-//      I (175) esp_image: segment 3: paddr=0x001237c8 vaddr=0x40080400 size=0x0c848 ( 51272) load
-//      I (205) esp_image: segment 4: paddr=0x00130018 vaddr=0x400d0018 size=0xdfc80 (916608) map
-//      I (526) esp_image: segment 5: paddr=0x0020fca0 vaddr=0x4008cc48 size=0x02504 (  9476) load
-//      I (530) esp_image: segment 6: paddr=0x002121ac vaddr=0x400c0000 size=0x00064 (   100) load
-//      I (541) boot: Loaded app from partition at offset 0x100000
-//      I (542) boot: Disabling RNG early entropy source...
-//      1.1.3
-//      I (663) wifi: wifi firmware version: 703e53b
-//      I (664) wifi: config NVS flash: enabled
-//      I (664) wifi: config nano formating: disabled
-//      I (674) wifi: Init dynamic tx buffer num: 32
-//      I (675) wifi: Init data frame dynamic rx buffer num: 32
-//      I (675) wifi: Init management frame dynamic rx buffer num: 32
-//      I (680) wifi: wifi driver task: 3ffdeeb8, prio:23, stack:3584
-//      I (685) wifi: Init static rx buffer num: 10
-//      I (688) wifi: Init dynamic rx buffer num: 32
-//      I (693) wifi: wifi power manager task: 0x3ffe369c prio: 21 stack: 2560
-//      I (726) wifi: mode : softAP (98:cd:ac:6d:19:85)
-//      I (733) wifi: mode : sta (98:cd:ac:6d:19:84) + softAP (98:cd:ac:6d:19:85)
-//      I (737) wifi: mode : softAP (98:cd:ac:6d:19:85)
-//      I (740) wifi: set country: cc=CN schan=1 nchan=13 policy=1
-//      
-//      

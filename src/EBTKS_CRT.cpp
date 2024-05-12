@@ -171,7 +171,7 @@ void ioWriteCrtSad(uint8_t val) //  This function is running within an ISR, keep
 //  For HP83, HP85, and 9915
 //
 //  Since we don't have documentation on what the real CRT controller chip does with addresses that are inappropriate
-//  for the current mode, we just clip at the known high address, so we wont write outside the array.
+//  for the current mode, we just clip at the known high address, so we won't write outside the array.
 //
 
 void ioWriteCrtBad(uint8_t val)                 //  This function is running within an ISR, keep it short and fast.
@@ -200,11 +200,11 @@ void ioWriteCrtCtrl(uint8_t val) //  This function is running within an ISR, kee
   current_screen.ctrl = val;
 }
 
-//  The following comments only apply to this routine, fo systems with 32x16 alpha screens (and 64 lines of memory)
-//  or the graphics that these systems. The total CRT memory is 8 kB, and we place it in the first
+//  The following comments only apply to this routine, for systems with 32x16 alpha screens (and 64 lines of memory)
+//  or the graphics that these systems have. The total CRT memory is 8 kB, and we place it in the first
 //  half of the 16 kB allocated (because we grew the array when we started supporting HP86/87)
 //
-//  For us this is write only. This pokes data into the Video RAM mirror.
+//  For us, this is write only. This pokes data into the Video RAM mirror.
 //
 //  The way Russell wrote this, we are packing the 16 k nibbles into 8 k bytes. Which is logically
 //  correct, in that if we looked at the array, we would see the Text as intended. So the 8 k bytes == 16 k nibbles
@@ -220,7 +220,7 @@ void ioWriteCrtCtrl(uint8_t val) //  This function is running within an ISR, kee
 //  follow what is described, and infer the rest.
 //
 //  Hmmm. on page 7-112 in the graphics section, it discusses "any consecutive pair of nibbles"
-//  which would cover odd addresses
+//  which would cover odd addresses.
 //
 //  I wonder if we ever see an odd starting address? Russell's code handles it.
 //
@@ -426,6 +426,7 @@ void Safe_Write_CRTDAT(uint8_t val)
 }
 
 DMAMEM uint8_t serial2_tx_buff[3000];
+
 void initCrtEmu()
 {
   // if (get_screenEmu() && get_CRTRemote())
@@ -606,15 +607,15 @@ void Write_on_CRT_Alpha(uint16_t row, uint16_t column, const char *text)
 //  How fast can we write characters to the CRT ????
 //
 //  Results:    Writing to the screen can start about 920 us before the start of the 3.818ms of retrace time
-//              and extends till 340 us after the end of the retrace time, for a total of 5 ms or a 30%
-//              There are 4 gaps that appear in cosistent places. I bet this is related to horizontal scan time, maybe,
+//              and extends till 340 us after the end of the retrace time, for a total of 5 ms or about 30% of a frame time.
+//              There are 4 gaps that appear in consistent places. I bet this is related to horizontal scan time, maybe,
 //              or maybe loading up 32 characters for the display (even though we are in retrace???). Or maybe a badly
 //              designed DRAM refresh.
 //              The Gaps are 100 us wide, and Gap start to Gap start is 1.52 ms.
 //              Within the limit of the DMA base writing which takes a few bus cycles to check the busy bit, and a few to write,
-//              I can write a new character to the screen memory every 13.6 us
+//              I can write a new character to the screen memory every 13.6 us.
 //              So in 1 retrace time of 5 ms, - 4 * 100 us = 4.6 ms , giving approximately best case of 338 characters written
-//              and the full 512 charcters of the screen could be written in 2 retrace times.
+//              and the full 512 characters of the screen could be written in 2 retrace times.
 //
 //              Since the idle state of the busy bit is 'not busy' you can initiate a write at any time, but the next write
 //              will be delayed till the start of the retrace time. I will also bet the 5 ms window starts at the beginning of the
@@ -747,7 +748,7 @@ void CRT_Timing_Test_2(void)
 }
 
 //
-//  Writes 209 characters using 2 calls to Write_on_CRT_Alpha, so wil have overhead of negotiating DMA twice
+//  Writes 209 characters using 2 calls to Write_on_CRT_Alpha, so will have overhead of negotiating DMA twice
 //  and it tests Busy bit for every character.
 //  Takes 3.08 ms, averaging 14.7 us.
 //  But the code is way cleaner. So this really is the way to go, even though 50% ish slower

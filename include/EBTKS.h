@@ -57,10 +57,10 @@
 #define CORE_PIN_T04              ( 4)
 #define CORE_PIN_T05              ( 5)
 #define CORE_PIN_T06              ( 6)
-#define CORE_PIN_TXD              ( 7)
-#define CORE_PIN_RXD              ( 8)
-#define CORE_PIN_ESP_EN           ( 9)
-#define CORE_PIN_ESP_BOOT         (10)
+#define CORE_PIN_ESP32_TXD        ( 7)          // Data from ESP32-WROOM-32D (or E)
+#define CORE_PIN_ESP32_RXD        ( 8)          // Data to ESP32-WROOM-32D (or E)
+#define CORE_PIN_ESP_EN           ( 9)          // Resets ESP32-WROOM-32D (or E) when LOW
+#define CORE_PIN_ESP_BOOT         (10)          // ESP32-WROOM-32D (or E) BOOT MODE. Must be LOW when EN rises to enter programming mode
 #define CORE_PIN_T11              (11)
 #define CORE_PIN_T12              (12)
 #define CORE_PIN_T13              (13)
@@ -100,10 +100,10 @@
 #define GPIO_DR_T04               GPIO9_DR
 #define GPIO_DR_T05               GPIO9_DR
 #define GPIO_DR_T06               GPIO7_DR
-#define GPIO_DR_TXD               GPIO7_DR
-#define GPIO_DR_RXD               GPIO7_DR
-#define GPIO_DR_T09               GPIO7_DR
-#define GPIO_DR_T10               GPIO7_DR
+#define GPIO_DR_ESP32_TXD         GPIO7_DR
+#define GPIO_DR_ESP32_RXD         GPIO7_DR
+#define GPIO_DR_ESP_EN            GPIO7_DR
+#define GPIO_DR_ESP_BOOT          GPIO7_DR
 #define GPIO_DR_T11               GPIO7_DR
 #define GPIO_DR_T12               GPIO7_DR
 #define GPIO_DR_T13               GPIO7_DR
@@ -143,10 +143,10 @@
 #define BIT_POSITION_T04          ( 6)
 #define BIT_POSITION_T05          ( 8)
 #define BIT_POSITION_T06          (10)
-#define BIT_POSITION_TXD          (17)
-#define BIT_POSITION_RXD          (16)
-#define BIT_POSITION_T09          (11)
-#define BIT_POSITION_T10          ( 0)
+#define BIT_POSITION_ESP32_TXD    (17)
+#define BIT_POSITION_ESP32_RXD    (16)
+#define BIT_POSITION_ESP_EN       (11)
+#define BIT_POSITION_ESP_BOOT     ( 0)
 #define BIT_POSITION_T11          ( 2)
 #define BIT_POSITION_T12          ( 1)
 #define BIT_POSITION_T13          ( 3)
@@ -186,10 +186,10 @@
 #define BIT_MASK_T04               (1 << BIT_POSITION_T04       )
 #define BIT_MASK_T05               (1 << BIT_POSITION_T05       )
 #define BIT_MASK_T06               (1 << BIT_POSITION_T06       )
-#define BIT_MASK_TXD               (1 << BIT_POSITION_TXD       )
-#define BIT_MASK_RXD               (1 << BIT_POSITION_RXD       )
-#define BIT_MASK_T09               (1 << BIT_POSITION_T09       )
-#define BIT_MASK_T10               (1 << BIT_POSITION_T10       )
+#define BIT_MASK_ESP32_TXD         (1 << BIT_POSITION_ESP32_TXD )
+#define BIT_MASK_ESP32_RXD         (1 << BIT_POSITION_ESP32_RXD )
+#define BIT_MASK_ESP_EN            (1 << BIT_POSITION_ESP_EN    )
+#define BIT_MASK_ESP_BOOT          (1 << BIT_POSITION_ESP_BOOT  )
 #define BIT_MASK_T11               (1 << BIT_POSITION_T11       )
 #define BIT_MASK_T12               (1 << BIT_POSITION_T12       )
 #define BIT_MASK_T13               (1 << BIT_POSITION_T13       )
@@ -229,10 +229,10 @@
 #define GPIO_DR_SET_T04           GPIO9_DR_SET
 #define GPIO_DR_SET_T05           GPIO9_DR_SET
 #define GPIO_DR_SET_T06           GPIO7_DR_SET
-#define GPIO_DR_SET_TXD           GPIO7_DR_SET
-#define GPIO_DR_SET_RXD           GPIO7_DR_SET
-#define GPIO_DR_SET_T09           GPIO7_DR_SET
-#define GPIO_DR_SET_T10           GPIO7_DR_SET
+#define GPIO_DR_SET_ESP32_TXD     GPIO7_DR_SET
+#define GPIO_DR_SET_ESP32_RXD     GPIO7_DR_SET
+#define GPIO_DR_SET_ESP_EN        GPIO7_DR_SET
+#define GPIO_DR_SET_ESP_BOOT      GPIO7_DR_SET
 #define GPIO_DR_SET_T11           GPIO7_DR_SET
 #define GPIO_DR_SET_T12           GPIO7_DR_SET
 #define GPIO_DR_SET_T13           GPIO7_DR_SET
@@ -272,10 +272,10 @@
 #define GPIO_DR_CLEAR_T04           GPIO9_DR_CLEAR
 #define GPIO_DR_CLEAR_T05           GPIO9_DR_CLEAR
 #define GPIO_DR_CLEAR_T06           GPIO7_DR_CLEAR
-#define GPIO_DR_CLEAR_TXD           GPIO7_DR_CLEAR
-#define GPIO_DR_CLEAR_RXD           GPIO7_DR_CLEAR
-#define GPIO_DR_CLEAR_T09           GPIO7_DR_CLEAR
-#define GPIO_DR_CLEAR_T10           GPIO7_DR_CLEAR
+#define GPIO_DR_CLEAR_ESP32_TXD     GPIO7_DR_CLEAR
+#define GPIO_DR_CLEAR_ESP32_RXD     GPIO7_DR_CLEAR
+#define GPIO_DR_CLEAR_ESP_EN        GPIO7_DR_CLEAR
+#define GPIO_DR_CLEAR_ESP_BOOT      GPIO7_DR_CLEAR
 #define GPIO_DR_CLEAR_T11           GPIO7_DR_CLEAR
 #define GPIO_DR_CLEAR_T12           GPIO7_DR_CLEAR
 #define GPIO_DR_CLEAR_T13           GPIO7_DR_CLEAR
@@ -315,10 +315,10 @@
 #define GPIO_DR_TOGGLE_T04          GPIO9_DR_TOGGLE
 #define GPIO_DR_TOGGLE_T05          GPIO9_DR_TOGGLE
 #define GPIO_DR_TOGGLE_T06          GPIO7_DR_TOGGLE
-#define GPIO_DR_TOGGLE_TXD          GPIO7_DR_TOGGLE
-#define GPIO_DR_TOGGLE_RXD          GPIO7_DR_TOGGLE
-#define GPIO_DR_TOGGLE_T09          GPIO7_DR_TOGGLE
-#define GPIO_DR_TOGGLE_T10          GPIO7_DR_TOGGLE
+#define GPIO_DR_TOGGLE_ESP32_TXD    GPIO7_DR_TOGGLE
+#define GPIO_DR_TOGGLE_ESP32_RXD    GPIO7_DR_TOGGLE
+#define GPIO_DR_TOGGLE_ESP_EN       GPIO7_DR_TOGGLE
+#define GPIO_DR_TOGGLE_ESP_BOOT     GPIO7_DR_TOGGLE
 #define GPIO_DR_TOGGLE_T11          GPIO7_DR_TOGGLE
 #define GPIO_DR_TOGGLE_T12          GPIO7_DR_TOGGLE
 #define GPIO_DR_TOGGLE_T13          GPIO7_DR_TOGGLE
@@ -358,10 +358,10 @@
 #define GPIO_DIRECTION_T04          GPIO9_GDIR
 #define GPIO_DIRECTION_T05          GPIO9_GDIR
 #define GPIO_DIRECTION_T06          GPIO7_GDIR
-#define GPIO_DIRECTION_TXD          GPIO7_GDIR
-#define GPIO_DIRECTION_RXD          GPIO7_GDIR
-#define GPIO_DIRECTION_T09          GPIO7_GDIR
-#define GPIO_DIRECTION_T10          GPIO7_GDIR
+#define GPIO_DIRECTION_ESP32_TXD    GPIO7_GDIR
+#define GPIO_DIRECTION_ESP32_RXD    GPIO7_GDIR
+#define GPIO_DIRECTION_ESP_EN       GPIO7_GDIR
+#define GPIO_DIRECTION_ESP_BOOT     GPIO7_GDIR
 #define GPIO_DIRECTION_T11          GPIO7_GDIR
 #define GPIO_DIRECTION_T12          GPIO7_GDIR
 #define GPIO_DIRECTION_T13          GPIO7_GDIR
@@ -401,10 +401,10 @@
 #define GPIO_PAD_STATUS_REG_T04          GPIO9_PSR
 #define GPIO_PAD_STATUS_REG_T05          GPIO9_PSR
 #define GPIO_PAD_STATUS_REG_T06          GPIO7_PSR
-#define GPIO_PAD_STATUS_REG_TXD          GPIO7_PSR
-#define GPIO_PAD_STATUS_REG_RXD          GPIO7_PSR
-#define GPIO_PAD_STATUS_REG_T09          GPIO7_PSR
-#define GPIO_PAD_STATUS_REG_T10          GPIO7_PSR
+#define GPIO_PAD_STATUS_REG_ESP32_TXD    GPIO7_PSR
+#define GPIO_PAD_STATUS_REG_ESP32_RXD    GPIO7_PSR
+#define GPIO_PAD_STATUS_REG_ESP_EN       GPIO7_PSR
+#define GPIO_PAD_STATUS_REG_ESP_BOOT     GPIO7_PSR
 #define GPIO_PAD_STATUS_REG_T11          GPIO7_PSR
 #define GPIO_PAD_STATUS_REG_T12          GPIO7_PSR
 #define GPIO_PAD_STATUS_REG_T13          GPIO7_PSR
@@ -444,10 +444,10 @@
 #define IOMUX_CTRL_T04                  IOMUXC_SW_MUX_CTL_PAD_GPIO_EMC_06
 #define IOMUX_CTRL_T05                  IOMUXC_SW_MUX_CTL_PAD_GPIO_EMC_08
 #define IOMUX_CTRL_T06                  IOMUXC_SW_MUX_CTL_PAD_GPIO_B0_10
-#define IOMUX_CTRL_TXD                  IOMUXC_SW_MUX_CTL_PAD_GPIO_B1_01
-#define IOMUX_CTRL_RXD                  IOMUXC_SW_MUX_CTL_PAD_GPIO_B1_00
-#define IOMUX_CTRL_T09                  IOMUXC_SW_MUX_CTL_PAD_GPIO_B0_11
-#define IOMUX_CTRL_T10                  IOMUXC_SW_MUX_CTL_PAD_GPIO_B0_00
+#define IOMUX_CTRL_ESP32_TXD            IOMUXC_SW_MUX_CTL_PAD_GPIO_B1_01
+#define IOMUX_CTRL_ESP32_RXD            IOMUXC_SW_MUX_CTL_PAD_GPIO_B1_00
+#define IOMUX_CTRL_ESP_EN               IOMUXC_SW_MUX_CTL_PAD_GPIO_B0_11
+#define IOMUX_CTRL_ESP_BOOT             IOMUXC_SW_MUX_CTL_PAD_GPIO_B0_00
 #define IOMUX_CTRL_T11                  IOMUXC_SW_MUX_CTL_PAD_GPIO_B0_02
 #define IOMUX_CTRL_T12                  IOMUXC_SW_MUX_CTL_PAD_GPIO_B0_01
 #define IOMUX_CTRL_T13                  IOMUXC_SW_MUX_CTL_PAD_GPIO_B0_03
@@ -516,6 +516,12 @@
 #define ASSERT_INTPRI                 (GPIO_DR_SET_INTPRI   = BIT_MASK_INTPRI)
 #define RELEASE_INTPRI                (GPIO_DR_CLEAR_INTPRI = BIT_MASK_INTPRI)
 #define GET_ASSERT_INTPRI             ((GPIO_DR_INTPRI >> BIT_POSITION_INTPRI) & 0x01)
+
+#define SET_ESP_EN                    (GPIO_DR_SET_ESP_EN   = BIT_MASK_ESP_EN)
+#define CLEAR_ESP_EN                  (GPIO_DR_CLEAR_ESP_EN = BIT_MASK_ESP_EN)
+
+#define SET_ESP_BOOT                  (GPIO_DR_SET_ESP_BOOT   = BIT_MASK_ESP_BOOT)
+#define CLEAR_ESP_BOOT                (GPIO_DR_CLEAR_ESP_BOOT = BIT_MASK_ESP_BOOT)
 
 //
 //    On EBTKS V2.0 , with Teensy 4.1, the 8 bit data bus is GPIO 6

@@ -2410,7 +2410,7 @@ Linker script and memory map
 LOAD c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi-teensy/bin/../lib/gcc/arm-none-eabi/11.3.1/thumb/v7e-m+dp/hard/crti.o
 LOAD c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi-teensy/bin/../lib/gcc/arm-none-eabi/11.3.1/thumb/v7e-m+dp/hard/crtbegin.o
 LOAD c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi-teensy/bin/../lib/gcc/arm-none-eabi/11.3.1/thumb/v7e-m+dp/hard/crt0.o
-                0x659253de                __rtc_localtime = 0x659253de
+                0x66403b19                __rtc_localtime = 0x66403b19
 LOAD .pio\build\teensy41\src\EBTKS.cpp.o
 LOAD .pio\build\teensy41\src\EBTKS_1MB5.cpp.o
 LOAD .pio\build\teensy41\src\EBTKS_AUXROM.cpp.o
@@ -3388,15 +3388,15 @@ LOAD c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi-teens
  .text._Z9ESP_Resetv
                 0x000136a8       0x24 .pio\build\teensy41\src\ESP_Programmer.cpp.o
                 0x000136a8                ESP_Reset()
- .text._Z15usb_ser_rts_dtrv
-                0x000136cc       0x48 .pio\build\teensy41\src\ESP_Programmer.cpp.o
-                0x000136cc                usb_ser_rts_dtr()
+ .text._Z29display_initial_ESP32_messagev
+                0x000136cc       0x40 .pio\build\teensy41\src\ESP_Programmer.cpp.o
+                0x000136cc                display_initial_ESP32_message()
  .text._Z13ESP_Prog_Loopv
-                0x00013714       0x54 .pio\build\teensy41\src\ESP_Programmer.cpp.o
-                0x00013714                ESP_Prog_Loop()
+                0x0001370c       0x50 .pio\build\teensy41\src\ESP_Programmer.cpp.o
+                0x0001370c                ESP_Prog_Loop()
  .text._Z20ESP_Programmer_Setupv
-                0x00013768       0x94 .pio\build\teensy41\src\ESP_Programmer.cpp.o
-                0x00013768                ESP_Programmer_Setup()
+                0x0001375c       0xa0 .pio\build\teensy41\src\ESP_Programmer.cpp.o
+                0x0001375c                ESP_Programmer_Setup()
  .text.lzs_simple_compress
                 0x000137fc      0x288 .pio\build\teensy41\src\lzs-simple-compression.c.o
                 0x000137fc                lzs_simple_compress
@@ -4871,448 +4871,447 @@ LOAD c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi-teens
                                  0x17 (size before relaxing)
  *fill*         0x2000328b        0x1 
  .rodata._Z20ESP_Programmer_Setupv.str1.4
-                0x2000328c       0x43 .pio\build\teensy41\src\ESP_Programmer.cpp.o
- *fill*         0x200032cf        0x1 
+                0x2000328c       0x6f .pio\build\teensy41\src\ESP_Programmer.cpp.o
+ *fill*         0x200032fb        0x1 
  .rodata._Z20Setup_Logic_Analyzerv.str1.4
-                0x200032d0      0x5ec .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
+                0x200032fc      0x5ec .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
                                 0x5f0 (size before relaxing)
  .rodata._Z20dumpCrtAlphaAsBase64Pcb.str1.4
-                0x200038bc       0x2b .pio\build\teensy41\src\EBTKS_CRT.cpp.o
- *fill*         0x200038e7        0x1 
+                0x200038e8       0x2b .pio\build\teensy41\src\EBTKS_CRT.cpp.o
+ *fill*         0x20003913        0x1 
  .rodata._Z20kbd_history_up_arrowv.part.0.str1.4
-                0x200038e8       0x12 .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
- *fill*         0x200038fa        0x2 
- .rodata._Z20load_text_for_RMIDLEPKc.str1.4
-                0x200038fc       0x19 .pio\build\teensy41\src\EBTKS_AUXROM_SD_Services.cpp.o
- *fill*         0x20003915        0x3 
- .rodata._Z20time_up_by_incrementv.str1.4
-                0x20003918        0xe .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
+                0x20003914       0x12 .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
  *fill*         0x20003926        0x2 
+ .rodata._Z20load_text_for_RMIDLEPKc.str1.4
+                0x20003928       0x19 .pio\build\teensy41\src\EBTKS_AUXROM_SD_Services.cpp.o
+ *fill*         0x20003941        0x3 
+ .rodata._Z20time_up_by_incrementv.str1.4
+                0x20003944        0xe .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
+ *fill*         0x20003952        0x2 
  .rodata._Z22get_serial_string_pollv.str1.4
-                0x20003928       0x67 .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
+                0x20003954       0x67 .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
                                  0x73 (size before relaxing)
- *fill*         0x2000398f        0x1 
+ *fill*         0x200039bb        0x1 
  .rodata._Z25post_custom_error_messagePKct.str1.4
-                0x20003990       0x15 .pio\build\teensy41\src\EBTKS_AUXROM_SD_Services.cpp.o
- *fill*         0x200039a5        0x3 
+                0x200039bc       0x15 .pio\build\teensy41\src\EBTKS_AUXROM_SD_Services.cpp.o
+ *fill*         0x200039d1        0x3 
  .rodata._Z26Send_Visible_CRT_to_Serialv.str1.4
-                0x200039a8       0x5f .pio\build\teensy41\src\EBTKS_CRT.cpp.o
+                0x200039d4       0x5f .pio\build\teensy41\src\EBTKS_CRT.cpp.o
                                  0x62 (size before relaxing)
- *fill*         0x20003a07        0x1 
+ *fill*         0x20003a33        0x1 
  .rodata._Z26mount_drives_based_on_JSONRN11ArduinoJson8V6214PB212JsonDocumentE.str1.4
-                0x20003a08      0x143 .pio\build\teensy41\src\EBTKS_SD.cpp.o
+                0x20003a34      0x143 .pio\build\teensy41\src\EBTKS_SD.cpp.o
                                 0x14f (size before relaxing)
- *fill*         0x20003b4b        0x1 
+ *fill*         0x20003b77        0x1 
  .rodata._Z28cvt_HP85_real_to_IEEE_doublePh.str1.4
-                0x20003b4c        0xc .pio\build\teensy41\src\EBTKS_AUXROM.cpp.o
+                0x20003b78        0xc .pio\build\teensy41\src\EBTKS_AUXROM.cpp.o
  .rodata._Z4showv.str1.4
-                0x20003b58      0x130 .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
+                0x20003b84      0x130 .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
                                 0x168 (size before relaxing)
  .rodata._Z6cidDmpv.str1.4
-                0x20003c88       0x80 .pio\build\teensy41\src\EBTKS_SD.cpp.o
+                0x20003cb4       0x80 .pio\build\teensy41\src\EBTKS_SD.cpp.o
  .rodata._Z6csdDmpv.str1.4
-                0x20003d08       0x76 .pio\build\teensy41\src\EBTKS_SD.cpp.o
+                0x20003d34       0x76 .pio\build\teensy41\src\EBTKS_SD.cpp.o
                                  0x86 (size before relaxing)
- *fill*         0x20003d7e        0x2 
+ *fill*         0x20003daa        0x2 
  .rodata._Z6dmpVolv.str1.4
-                0x20003d80      0x125 .pio\build\teensy41\src\EBTKS_SD.cpp.o
- *fill*         0x20003ea5        0x3 
+                0x20003dac      0x125 .pio\build\teensy41\src\EBTKS_SD.cpp.o
+ *fill*         0x20003ed1        0x3 
  .rodata._Z6help_0v.str1.4
-                0x20003ea8       0xfd .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
- *fill*         0x20003fa5        0x3 
+                0x20003ed4       0xfd .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
+ *fill*         0x20003fd1        0x3 
  .rodata._Z6help_1v.str1.4
-                0x20003fa8      0x312 .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
+                0x20003fd4      0x312 .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
                                 0x316 (size before relaxing)
- *fill*         0x200042ba        0x2 
+ *fill*         0x200042e6        0x2 
  .rodata._Z6help_2v.str1.4
-                0x200042bc      0x27b .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
- *fill*         0x20004537        0x1 
+                0x200042e8      0x27b .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
+ *fill*         0x20004563        0x1 
  .rodata._Z6help_3v.str1.4
-                0x20004538      0x246 .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
- *fill*         0x2000477e        0x2 
+                0x20004564      0x246 .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
+ *fill*         0x200047aa        0x2 
  .rodata._Z6help_4v.str1.4
-                0x20004780       0x21 .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
- *fill*         0x200047a1        0x3 
+                0x200047ac       0x21 .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
+ *fill*         0x200047cd        0x3 
  .rodata._Z6help_5v.str1.4
-                0x200047a4      0x11c .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
+                0x200047d0      0x11c .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
  .rodata._Z6help_6v.str1.4
-                0x200048c0       0x72 .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
- *fill*         0x20004932        0x2 
+                0x200048ec       0x72 .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
+ *fill*         0x2000495e        0x2 
  .rodata._Z6help_7v.str1.4
-                0x20004934       0x14 .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
+                0x20004960       0x14 .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
  .rodata._Z6jay_piv.str1.4
-                0x20004948       0x3e .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
- *fill*         0x20004986        0x2 
+                0x20004974       0x3e .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
+ *fill*         0x200049b2        0x2 
  .rodata._Z6mbrDmpv.str1.4
-                0x20004988       0xab .pio\build\teensy41\src\EBTKS_SD.cpp.o
- *fill*         0x20004a33        0x1 
+                0x200049b4       0xab .pio\build\teensy41\src\EBTKS_SD.cpp.o
+ *fill*         0x20004a5f        0x1 
  .rodata._Z7loadRomPKciS0_.str1.4
-                0x20004a34      0x202 .pio\build\teensy41\src\EBTKS_SD.cpp.o
- *fill*         0x20004c36        0x2 
+                0x20004a60      0x202 .pio\build\teensy41\src\EBTKS_SD.cpp.o
+ *fill*         0x20004c62        0x2 
  .rodata._Z8set_datev.str1.4
-                0x20004c38      0x255 .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
- *fill*         0x20004e8d        0x3 
+                0x20004c64      0x255 .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
+ *fill*         0x20004eb9        0x3 
  .rodata._Z8set_timev.str1.4
-                0x20004e90      0x15c .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
+                0x20004ebc      0x15c .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
  .rodata._Z8show_RTCv.str1.4
-                0x20004fec       0x32 .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
+                0x20005018       0x32 .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
                                  0x3a (size before relaxing)
- *fill*         0x2000501e        0x2 
+ *fill*         0x2000504a        0x2 
  .rodata._Z9dump_keysbb.str1.4
-                0x20005020       0xba .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
+                0x2000504c       0xba .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
                                  0xbf (size before relaxing)
- *fill*         0x200050da        0x2 
+ *fill*         0x20005106        0x2 
  .rodata._Z9parse_MSUPc.str1.4
-                0x200050dc       0x73 .pio\build\teensy41\src\EBTKS_AUXROM_SD_Services.cpp.o
- *fill*         0x2000514f        0x1 
+                0x20005108       0x73 .pio\build\teensy41\src\EBTKS_AUXROM_SD_Services.cpp.o
+ *fill*         0x2000517b        0x1 
  .rodata._ZL10dayNames_P
-                0x20005150       0x20 .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
+                0x2000517c       0x20 .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
  .rodata._ZL10monthStr10
-                0x20005170        0x8 .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
+                0x2000519c        0x8 .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
  .rodata._ZL10monthStr11
-                0x20005178        0x9 .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
- *fill*         0x20005181        0x3 
+                0x200051a4        0x9 .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
+ *fill*         0x200051ad        0x3 
  .rodata._ZL10monthStr12
-                0x20005184        0x9 .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
- *fill*         0x2000518d        0x3 
+                0x200051b0        0x9 .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
+ *fill*         0x200051b9        0x3 
  .rodata._ZL11lookupTable
-                0x20005190      0x12c .pio\build\teensy41\libe34\libSdFat.a(upcase.cpp.o)
+                0x200051bc      0x12c .pio\build\teensy41\libe34\libSdFat.a(upcase.cpp.o)
  .rodata._ZL12monthNames_P
-                0x200052bc       0x34 .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
+                0x200052e8       0x34 .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
  .rodata._ZL21identification_string
-                0x200052f0       0x41 .pio\build\teensy41\src\EBTKS_AUXROM.cpp.o
- *fill*         0x20005331        0x3 
+                0x2000531c       0x41 .pio\build\teensy41\src\EBTKS_AUXROM.cpp.o
+ *fill*         0x2000535d        0x3 
  .rodata._ZL7dayStr0
-                0x20005334        0x4 .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
+                0x20005360        0x4 .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
  .rodata._ZL7dayStr1
-                0x20005338        0x7 .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
- *fill*         0x2000533f        0x1 
+                0x20005364        0x7 .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
+ *fill*         0x2000536b        0x1 
  .rodata._ZL7dayStr2
-                0x20005340        0x7 .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
- *fill*         0x20005347        0x1 
+                0x2000536c        0x7 .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
+ *fill*         0x20005373        0x1 
  .rodata._ZL7dayStr3
-                0x20005348        0x8 .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
+                0x20005374        0x8 .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
  .rodata._ZL7dayStr4
-                0x20005350        0xa .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
- *fill*         0x2000535a        0x2 
+                0x2000537c        0xa .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
+ *fill*         0x20005386        0x2 
  .rodata._ZL7dayStr5
-                0x2000535c        0x9 .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
- *fill*         0x20005365        0x3 
+                0x20005388        0x9 .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
+ *fill*         0x20005391        0x3 
  .rodata._ZL7dayStr6
-                0x20005368        0x7 .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
- *fill*         0x2000536f        0x1 
+                0x20005394        0x7 .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
+ *fill*         0x2000539b        0x1 
  .rodata._ZL7dayStr7
-                0x20005370        0x9 .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
- *fill*         0x20005379        0x3 
+                0x2000539c        0x9 .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
+ *fill*         0x200053a5        0x3 
  .rodata._ZL8mapTable
-                0x2000537c       0xd4 .pio\build\teensy41\libe34\libSdFat.a(upcase.cpp.o)
+                0x200053a8       0xd4 .pio\build\teensy41\libe34\libSdFat.a(upcase.cpp.o)
  .rodata._ZL9daySuffix
-                0x20005450       0x41 .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
- *fill*         0x20005491        0x3 
+                0x2000547c       0x41 .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
+ *fill*         0x200054bd        0x3 
  .rodata._ZL9monthDays
-                0x20005494        0xc .pio\build\teensy41\liba0e\libTime.a(Time.cpp.o)
+                0x200054c0        0xc .pio\build\teensy41\liba0e\libTime.a(Time.cpp.o)
  .rodata._ZL9monthStr0
-                0x200054a0        0x1 .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
- *fill*         0x200054a1        0x3 
+                0x200054cc        0x1 .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
+ *fill*         0x200054cd        0x3 
  .rodata._ZL9monthStr1
-                0x200054a4        0x8 .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
+                0x200054d0        0x8 .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
  .rodata._ZL9monthStr2
-                0x200054ac        0x9 .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
- *fill*         0x200054b5        0x3 
+                0x200054d8        0x9 .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
+ *fill*         0x200054e1        0x3 
  .rodata._ZL9monthStr3
-                0x200054b8        0x6 .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
- *fill*         0x200054be        0x2 
+                0x200054e4        0x6 .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
+ *fill*         0x200054ea        0x2 
  .rodata._ZL9monthStr4
-                0x200054c0        0x6 .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
- *fill*         0x200054c6        0x2 
+                0x200054ec        0x6 .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
+ *fill*         0x200054f2        0x2 
  .rodata._ZL9monthStr5
-                0x200054c8        0x4 .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
+                0x200054f4        0x4 .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
  .rodata._ZL9monthStr6
-                0x200054cc        0x5 .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
- *fill*         0x200054d1        0x3 
+                0x200054f8        0x5 .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
+ *fill*         0x200054fd        0x3 
  .rodata._ZL9monthStr7
-                0x200054d4        0x5 .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
- *fill*         0x200054d9        0x3 
+                0x20005500        0x5 .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
+ *fill*         0x20005505        0x3 
  .rodata._ZL9monthStr8
-                0x200054dc        0x7 .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
- *fill*         0x200054e3        0x1 
+                0x20005508        0x7 .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
+ *fill*         0x2000550f        0x1 
  .rodata._ZL9monthStr9
-                0x200054e4        0xa .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
+                0x20005510        0xa .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
  .rodata._ZN11ArduinoJson8V6214PB26detail16JsonDeserializerINS1_6ReaderI6FsFilevEENS1_12StringCopierEE12parseVariantINS1_14AllowAllFilterEEENS0_20DeserializationError4CodeERNS1_11VariantDataET_NS0_21DeserializationOption12NestingLimitE.isra.0.str1.4
-                0x200054ee        0x5 .pio\build\teensy41\src\EBTKS_SD.cpp.o
+                0x2000551a        0x5 .pio\build\teensy41\src\EBTKS_SD.cpp.o
  .rodata._ZN11ArduinoJson8V6214PB26detail16JsonDeserializerINS1_6ReaderI6FsFilevEENS1_12StringCopierEE17parseQuotedStringEv.str1.4
-                0x200054ee       0x11 .pio\build\teensy41\src\EBTKS_SD.cpp.o
- *fill*         0x200054ee        0x2 
+                0x2000551a       0x11 .pio\build\teensy41\src\EBTKS_SD.cpp.o
+ *fill*         0x2000551a        0x2 
  .rodata._ZN11ArduinoJson8V6214PB26detail16JsonDeserializerINS1_6ReaderIPcvEENS1_11StringMoverEE12parseVariantINS1_14AllowAllFilterEEENS0_20DeserializationError4CodeERNS1_11VariantDataET_NS0_21DeserializationOption12NestingLimitE.isra.0.str1.4
-                0x200054f0        0x5 .pio\build\teensy41\src\EBTKS.cpp.o
- *fill*         0x200054f5        0x3 
+                0x2000551c        0x5 .pio\build\teensy41\src\EBTKS.cpp.o
+ *fill*         0x20005521        0x3 
  .rodata._ZN11ArduinoJson8V6214PB26detail16JsonDeserializerINS1_6ReaderIPcvEENS1_11StringMoverEE17parseQuotedStringEv.str1.4
-                0x200054f8       0x11 .pio\build\teensy41\src\EBTKS.cpp.o
- *fill*         0x20005509        0x3 
+                0x20005524       0x11 .pio\build\teensy41\src\EBTKS.cpp.o
+ *fill*         0x20005535        0x3 
  .rodata._ZN14ExFatPartition4initEP22FsBlockDeviceInterfaceh.str1.4
-                0x2000550c        0x6 .pio\build\teensy41\libe34\libSdFat.a(ExFatPartition.cpp.o)
- *fill*         0x20005512        0x2 
+                0x20005538        0x6 .pio\build\teensy41\libe34\libSdFat.a(ExFatPartition.cpp.o)
+ *fill*         0x2000553e        0x2 
  .rodata._ZN4Tape10blockWriteEi.str1.4
-                0x20005514       0x14 .pio\build\teensy41\src\EBTKS_Tape_Drive.cpp.o
+                0x20005540       0x14 .pio\build\teensy41\src\EBTKS_Tape_Drive.cpp.o
  .rodata._ZN4Tape7setFileEPKc.str1.4
-                0x20005528       0x31 .pio\build\teensy41\src\EBTKS_Tape_Drive.cpp.o
- *fill*         0x20005559        0x3 
+                0x20005554       0x31 .pio\build\teensy41\src\EBTKS_Tape_Drive.cpp.o
+ *fill*         0x20005585        0x3 
  .rodata._ZN4Tape9blockReadEm.str1.4
-                0x2000555c       0x42 .pio\build\teensy41\src\EBTKS_Tape_Drive.cpp.o
- *fill*         0x2000559e        0x2 
+                0x20005588       0x42 .pio\build\teensy41\src\EBTKS_Tape_Drive.cpp.o
+ *fill*         0x200055ca        0x2 
  .rodata._ZN7DirLine11getNextLineEP11s_Dir_Entry.str1.4
-                0x200055a0       0x27 .pio\build\teensy41\src\EBTKS.cpp.o
+                0x200055cc       0x27 .pio\build\teensy41\src\EBTKS.cpp.o
                                  0x2f (size before relaxing)
- *fill*         0x200055c7        0x1 
+ *fill*         0x200055f3        0x1 
  .rodata._ZN8ESPComms10processMsgEv.str1.4
-                0x200055c8      0x1d1 .pio\build\teensy41\src\EBTKS.cpp.o
+                0x200055f4      0x1d1 .pio\build\teensy41\src\EBTKS.cpp.o
                                 0x1fd (size before relaxing)
- *fill*         0x20005799        0x3 
+ *fill*         0x200057c5        0x3 
  .rodata._ZN8SPIClass24spiclass_lpspi1_hardwareE
-                0x2000579c       0x70 .pio\build\teensy41\lib04e\libSPI.a(SPI.cpp.o)
-                0x2000579c                SPIClass::spiclass_lpspi1_hardware
+                0x200057c8       0x70 .pio\build\teensy41\lib04e\libSPI.a(SPI.cpp.o)
+                0x200057c8                SPIClass::spiclass_lpspi1_hardware
  .rodata._ZN8SPIClass24spiclass_lpspi3_hardwareE
-                0x2000580c       0x70 .pio\build\teensy41\lib04e\libSPI.a(SPI.cpp.o)
-                0x2000580c                SPIClass::spiclass_lpspi3_hardware
+                0x20005838       0x70 .pio\build\teensy41\lib04e\libSPI.a(SPI.cpp.o)
+                0x20005838                SPIClass::spiclass_lpspi3_hardware
  .rodata._ZN8SPIClass24spiclass_lpspi4_hardwareE
-                0x2000587c       0x70 .pio\build\teensy41\lib04e\libSPI.a(SPI.cpp.o)
-                0x2000587c                SPIClass::spiclass_lpspi4_hardware
+                0x200058a8       0x70 .pio\build\teensy41\lib04e\libSPI.a(SPI.cpp.o)
+                0x200058a8                SPIClass::spiclass_lpspi4_hardware
  .rodata._ZNK11ArduinoJson8V6214PB26detail11VariantData6acceptINS1_14JsonSerializerINS1_6WriterI14HardwareSerialvEEEEEENT_11result_typeERS9_.isra.0.str1.4
-                0x200058ec        0x7 .pio\build\teensy41\src\EBTKS.cpp.o
- *fill*         0x200058f3        0x1 
+                0x20005918        0x7 .pio\build\teensy41\src\EBTKS.cpp.o
+ *fill*         0x2000591f        0x1 
  .rodata._ZTV10StreamFileI10FsBaseFileyE
-                0x200058f4       0x24 .pio\build\teensy41\src\EBTKS.cpp.o
-                0x200058f4                vtable for StreamFile<FsBaseFile, unsigned long long>
+                0x20005920       0x24 .pio\build\teensy41\src\EBTKS.cpp.o
+                0x20005920                vtable for StreamFile<FsBaseFile, unsigned long long>
  .rodata._ZTV14HardwareSerial
-                0x20005918       0x24 .pio\build\teensy41\libFrameworkArduino.a(HardwareSerial.cpp.o)
-                0x20005918                vtable for HardwareSerial
+                0x20005944       0x24 .pio\build\teensy41\libFrameworkArduino.a(HardwareSerial.cpp.o)
+                0x20005944                vtable for HardwareSerial
  .rodata._ZTV16DedicatedSpiCard
-                0x2000593c       0x70 .pio\build\teensy41\libe34\libSdFat.a(SdSpiCard.cpp.o)
-                0x2000593c                vtable for DedicatedSpiCard
+                0x20005968       0x70 .pio\build\teensy41\libe34\libSdFat.a(SdSpiCard.cpp.o)
+                0x20005968                vtable for DedicatedSpiCard
  .rodata._ZTV16usb_serial_class
-                0x200059ac       0x28 .pio\build\teensy41\libFrameworkArduino.a(usb_inst.cpp.o)
-                0x200059ac                vtable for usb_serial_class
+                0x200059d8       0x28 .pio\build\teensy41\libFrameworkArduino.a(usb_inst.cpp.o)
+                0x200059d8                vtable for usb_serial_class
  .rodata._ZTV6FsFile
-                0x200059d4       0x24 .pio\build\teensy41\src\EBTKS.cpp.o
-                0x200059d4                vtable for FsFile
+                0x20005a00       0x24 .pio\build\teensy41\src\EBTKS.cpp.o
+                0x20005a00                vtable for FsFile
  .rodata._ZTV8HpibDisk
-                0x200059f8       0x38 .pio\build\teensy41\src\EBTKS_SD.cpp.o
-                0x200059f8                vtable for HpibDisk
+                0x20005a24       0x38 .pio\build\teensy41\src\EBTKS_SD.cpp.o
+                0x20005a24                vtable for HpibDisk
  .rodata._ZTV8SdioCard
-                0x20005a30       0x70 .pio\build\teensy41\libe34\libSdFat.a(SdioTeensy.cpp.o)
-                0x20005a30                vtable for SdioCard
+                0x20005a5c       0x70 .pio\build\teensy41\libe34\libSdFat.a(SdioTeensy.cpp.o)
+                0x20005a5c                vtable for SdioCard
  .rodata._ZTV9CrcStream
-                0x20005aa0       0x24 .pio\build\teensy41\src\EBTKS.cpp.o
-                0x20005aa0                vtable for CrcStream
+                0x20005acc       0x24 .pio\build\teensy41\src\EBTKS.cpp.o
+                0x20005acc                vtable for CrcStream
  .rodata._ZTV9HpibPrint
-                0x20005ac4       0x38 .pio\build\teensy41\src\EBTKS_SD.cpp.o
-                0x20005ac4                vtable for HpibPrint
+                0x20005af0       0x38 .pio\build\teensy41\src\EBTKS_SD.cpp.o
+                0x20005af0                vtable for HpibPrint
  .rodata._ZZN8SPIClass16beginTransactionE11SPISettingsE7clk_sel
-                0x20005afc       0x10 .pio\build\teensy41\libe34\libSdFat.a(SdSpiTeensy3.cpp.o)
-                0x20005afc                SPIClass::beginTransaction(SPISettings)::clk_sel
+                0x20005b28       0x10 .pio\build\teensy41\libe34\libSdFat.a(SdSpiTeensy3.cpp.o)
+                0x20005b28                SPIClass::beginTransaction(SPISettings)::clk_sel
  .rodata.__assert_func.str1.4
-                0x20005b0c       0x3f c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi-teensy/bin/../lib/gcc/arm-none-eabi/11.3.1/thumb/v7e-m+dp/hard\libc.a(libc_a-assert.o)
+                0x20005b38       0x3f c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi-teensy/bin/../lib/gcc/arm-none-eabi/11.3.1/thumb/v7e-m+dp/hard\libc.a(libc_a-assert.o)
                                  0x43 (size before relaxing)
- *fill*         0x20005b4b        0x1 
+ *fill*         0x20005b77        0x1 
  .rodata.__gethex.str1.4
-                0x20005b4c       0x75 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi-teensy/bin/../lib/gcc/arm-none-eabi/11.3.1/thumb/v7e-m+dp/hard\libc.a(libc_a-gdtoa-gethex.o)
+                0x20005b78       0x75 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi-teensy/bin/../lib/gcc/arm-none-eabi/11.3.1/thumb/v7e-m+dp/hard\libc.a(libc_a-gdtoa-gethex.o)
                                  0x79 (size before relaxing)
- *fill*         0x20005bc1        0x3 
+ *fill*         0x20005bed        0x3 
  .rodata.__hexdig
-                0x20005bc4      0x100 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi-teensy/bin/../lib/gcc/arm-none-eabi/11.3.1/thumb/v7e-m+dp/hard\libc.a(libc_a-gdtoa-gethex.o)
-                0x20005bc4                __hexdig
+                0x20005bf0      0x100 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi-teensy/bin/../lib/gcc/arm-none-eabi/11.3.1/thumb/v7e-m+dp/hard\libc.a(libc_a-gdtoa-gethex.o)
+                0x20005bf0                __hexdig
  .rodata.__multadd.str1.4
-                0x20005cc4       0x5a c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi-teensy/bin/../lib/gcc/arm-none-eabi/11.3.1/thumb/v7e-m+dp/hard\libc.a(libc_a-mprec.o)
+                0x20005cf0       0x5a c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi-teensy/bin/../lib/gcc/arm-none-eabi/11.3.1/thumb/v7e-m+dp/hard\libc.a(libc_a-mprec.o)
                                  0x6e (size before relaxing)
- *fill*         0x20005d1e        0x2 
+ *fill*         0x20005d4a        0x2 
  .rodata.__ssvfscanf_r.str1.4
-                0x20005d20        0x5 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi-teensy/bin/../lib/gcc/arm-none-eabi/11.3.1/thumb/v7e-m+dp/hard\libc.a(libc_a-svfscanf.o)
+                0x20005d4c        0x5 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi-teensy/bin/../lib/gcc/arm-none-eabi/11.3.1/thumb/v7e-m+dp/hard\libc.a(libc_a-svfscanf.o)
                                   0x9 (size before relaxing)
- *fill*         0x20005d25        0x3 
+ *fill*         0x20005d51        0x3 
  .rodata._ctype_
-                0x20005d28      0x101 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi-teensy/bin/../lib/gcc/arm-none-eabi/11.3.1/thumb/v7e-m+dp/hard\libc.a(libc_a-ctype_.o)
-                0x20005d28                _ctype_
- *fill*         0x20005e29        0x3 
+                0x20005d54      0x101 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi-teensy/bin/../lib/gcc/arm-none-eabi/11.3.1/thumb/v7e-m+dp/hard\libc.a(libc_a-ctype_.o)
+                0x20005d54                _ctype_
+ *fill*         0x20005e55        0x3 
  .rodata._dtoa_r.str1.4
-                0x20005e2c       0x69 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi-teensy/bin/../lib/gcc/arm-none-eabi/11.3.1/thumb/v7e-m+dp/hard\libc.a(libc_a-dtoa.o)
+                0x20005e58       0x69 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi-teensy/bin/../lib/gcc/arm-none-eabi/11.3.1/thumb/v7e-m+dp/hard\libc.a(libc_a-dtoa.o)
                                  0x81 (size before relaxing)
- *fill*         0x20005e95        0x3 
+ *fill*         0x20005ec1        0x3 
  .rodata._jp2uc_l.str1.4
-                0x20005e98       0x12 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi-teensy/bin/../lib/gcc/arm-none-eabi/11.3.1/thumb/v7e-m+dp/hard\libc.a(libc_a-jp2uc.o)
+                0x20005ec4       0x12 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi-teensy/bin/../lib/gcc/arm-none-eabi/11.3.1/thumb/v7e-m+dp/hard\libc.a(libc_a-jp2uc.o)
  .rodata._mbrtowc_r.str1.4
-                0x20005eaa        0x1 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi-teensy/bin/../lib/gcc/arm-none-eabi/11.3.1/thumb/v7e-m+dp/hard\libc.a(libc_a-mbrtowc.o)
- *fill*         0x20005eaa        0x2 
+                0x20005ed6        0x1 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi-teensy/bin/../lib/gcc/arm-none-eabi/11.3.1/thumb/v7e-m+dp/hard\libc.a(libc_a-mbrtowc.o)
+ *fill*         0x20005ed6        0x2 
  .rodata._strtod_l.str1.4
-                0x20005eac        0xf c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi-teensy/bin/../lib/gcc/arm-none-eabi/11.3.1/thumb/v7e-m+dp/hard\libc.a(libc_a-strtod.o)
+                0x20005ed8        0xf c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi-teensy/bin/../lib/gcc/arm-none-eabi/11.3.1/thumb/v7e-m+dp/hard\libc.a(libc_a-strtod.o)
                                  0x15 (size before relaxing)
- *fill*         0x20005ebb        0x1 
+ *fill*         0x20005ee7        0x1 
  .rodata._svfprintf_r.str1.4
-                0x20005ebc       0x3f c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi-teensy/bin/../lib/gcc/arm-none-eabi/11.3.1/thumb/v7e-m+dp/hard\libc.a(libc_a-svfprintf.o)
+                0x20005ee8       0x3f c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi-teensy/bin/../lib/gcc/arm-none-eabi/11.3.1/thumb/v7e-m+dp/hard\libc.a(libc_a-svfprintf.o)
                                  0x42 (size before relaxing)
  .rodata._vfiprintf_r.str1.4
-                0x20005efb       0x2f c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi-teensy/bin/../lib/gcc/arm-none-eabi/11.3.1/thumb/v7e-m+dp/hard\libc.a(libc_a-vfiprintf.o)
- *fill*         0x20005efb        0x1 
- .rodata.a1     0x20005efc       0xbc c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi-teensy/bin/../lib/gcc/arm-none-eabi/11.3.1/thumb/v7e-m+dp/hard\libc.a(libc_a-jp2uc.o)
- .rodata.a2     0x20005fb8       0xbc c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi-teensy/bin/../lib/gcc/arm-none-eabi/11.3.1/thumb/v7e-m+dp/hard\libc.a(libc_a-jp2uc.o)
- .rodata.a3     0x20006074       0x5b c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi-teensy/bin/../lib/gcc/arm-none-eabi/11.3.1/thumb/v7e-m+dp/hard\libc.a(libc_a-jp2uc.o)
- *fill*         0x200060cf        0x1 
- .rodata.a6     0x200060d0       0x70 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi-teensy/bin/../lib/gcc/arm-none-eabi/11.3.1/thumb/v7e-m+dp/hard\libc.a(libc_a-jp2uc.o)
- .rodata.a7     0x20006140       0xa2 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi-teensy/bin/../lib/gcc/arm-none-eabi/11.3.1/thumb/v7e-m+dp/hard\libc.a(libc_a-jp2uc.o)
- *fill*         0x200061e2        0x2 
- .rodata.a8     0x200061e4       0x40 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi-teensy/bin/../lib/gcc/arm-none-eabi/11.3.1/thumb/v7e-m+dp/hard\libc.a(libc_a-jp2uc.o)
- .rodata.b02cf  0x20006224     0x172a c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi-teensy/bin/../lib/gcc/arm-none-eabi/11.3.1/thumb/v7e-m+dp/hard\libc.a(libc_a-jp2uc.o)
- *fill*         0x2000794e        0x2 
+                0x20005f27       0x2f c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi-teensy/bin/../lib/gcc/arm-none-eabi/11.3.1/thumb/v7e-m+dp/hard\libc.a(libc_a-vfiprintf.o)
+ *fill*         0x20005f27        0x1 
+ .rodata.a1     0x20005f28       0xbc c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi-teensy/bin/../lib/gcc/arm-none-eabi/11.3.1/thumb/v7e-m+dp/hard\libc.a(libc_a-jp2uc.o)
+ .rodata.a2     0x20005fe4       0xbc c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi-teensy/bin/../lib/gcc/arm-none-eabi/11.3.1/thumb/v7e-m+dp/hard\libc.a(libc_a-jp2uc.o)
+ .rodata.a3     0x200060a0       0x5b c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi-teensy/bin/../lib/gcc/arm-none-eabi/11.3.1/thumb/v7e-m+dp/hard\libc.a(libc_a-jp2uc.o)
+ *fill*         0x200060fb        0x1 
+ .rodata.a6     0x200060fc       0x70 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi-teensy/bin/../lib/gcc/arm-none-eabi/11.3.1/thumb/v7e-m+dp/hard\libc.a(libc_a-jp2uc.o)
+ .rodata.a7     0x2000616c       0xa2 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi-teensy/bin/../lib/gcc/arm-none-eabi/11.3.1/thumb/v7e-m+dp/hard\libc.a(libc_a-jp2uc.o)
+ *fill*         0x2000620e        0x2 
+ .rodata.a8     0x20006210       0x40 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi-teensy/bin/../lib/gcc/arm-none-eabi/11.3.1/thumb/v7e-m+dp/hard\libc.a(libc_a-jp2uc.o)
+ .rodata.b02cf  0x20006250     0x172a c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi-teensy/bin/../lib/gcc/arm-none-eabi/11.3.1/thumb/v7e-m+dp/hard\libc.a(libc_a-jp2uc.o)
+ *fill*         0x2000797a        0x2 
  .rodata.basefix.0
-                0x20007950       0x22 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi-teensy/bin/../lib/gcc/arm-none-eabi/11.3.1/thumb/v7e-m+dp/hard\libc.a(libc_a-svfscanf.o)
- *fill*         0x20007972        0x2 
+                0x2000797c       0x22 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi-teensy/bin/../lib/gcc/arm-none-eabi/11.3.1/thumb/v7e-m+dp/hard\libc.a(libc_a-svfscanf.o)
+ *fill*         0x2000799e        0x2 
  .rodata.blanks.1
-                0x20007974       0x10 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi-teensy/bin/../lib/gcc/arm-none-eabi/11.3.1/thumb/v7e-m+dp/hard\libc.a(libc_a-svfprintf.o)
+                0x200079a0       0x10 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi-teensy/bin/../lib/gcc/arm-none-eabi/11.3.1/thumb/v7e-m+dp/hard\libc.a(libc_a-svfprintf.o)
  .rodata.blanks.1
-                0x20007984       0x10 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi-teensy/bin/../lib/gcc/arm-none-eabi/11.3.1/thumb/v7e-m+dp/hard\libc.a(libc_a-vfiprintf.o)
+                0x200079b0       0x10 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi-teensy/bin/../lib/gcc/arm-none-eabi/11.3.1/thumb/v7e-m+dp/hard\libc.a(libc_a-vfiprintf.o)
  .rodata.categories
-                0x20007994     0x3528 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi-teensy/bin/../lib/gcc/arm-none-eabi/11.3.1/thumb/v7e-m+dp/hard\libc.a(libc_a-categories.o)
- .rodata.d02f4  0x2000aebc     0x1a7c c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi-teensy/bin/../lib/gcc/arm-none-eabi/11.3.1/thumb/v7e-m+dp/hard\libc.a(libc_a-jp2uc.o)
+                0x200079c0     0x3528 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi-teensy/bin/../lib/gcc/arm-none-eabi/11.3.1/thumb/v7e-m+dp/hard\libc.a(libc_a-categories.o)
+ .rodata.d02f4  0x2000aee8     0x1a7c c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi-teensy/bin/../lib/gcc/arm-none-eabi/11.3.1/thumb/v7e-m+dp/hard\libc.a(libc_a-jp2uc.o)
  .rodata.digital_pin_to_info_PGM
-                0x2000c938      0x370 .pio\build\teensy41\libFrameworkArduino.a(digital.c.o)
-                0x2000c938                digital_pin_to_info_PGM
- .rodata.fpi.1  0x2000cca8       0x14 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi-teensy/bin/../lib/gcc/arm-none-eabi/11.3.1/thumb/v7e-m+dp/hard\libc.a(libc_a-strtod.o)
+                0x2000c964      0x370 .pio\build\teensy41\libFrameworkArduino.a(digital.c.o)
+                0x2000c964                digital_pin_to_info_PGM
+ .rodata.fpi.1  0x2000ccd4       0x14 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi-teensy/bin/../lib/gcc/arm-none-eabi/11.3.1/thumb/v7e-m+dp/hard\libc.a(libc_a-strtod.o)
  .rodata.fpinan.0
-                0x2000ccbc       0x14 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi-teensy/bin/../lib/gcc/arm-none-eabi/11.3.1/thumb/v7e-m+dp/hard\libc.a(libc_a-strtod.o)
+                0x2000cce8       0x14 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi-teensy/bin/../lib/gcc/arm-none-eabi/11.3.1/thumb/v7e-m+dp/hard\libc.a(libc_a-strtod.o)
  .rodata.length_value
-                0x2000ccd0        0x9 .pio\build\teensy41\src\lzs-simple-compression.c.o
- *fill*         0x2000ccd9        0x3 
+                0x2000ccfc        0x9 .pio\build\teensy41\src\lzs-simple-compression.c.o
+ *fill*         0x2000cd05        0x3 
  .rodata.length_width
-                0x2000ccdc        0x9 .pio\build\teensy41\src\lzs-simple-compression.c.o
- *fill*         0x2000cce5        0x3 
+                0x2000cd08        0x9 .pio\build\teensy41\src\lzs-simple-compression.c.o
+ *fill*         0x2000cd11        0x3 
  .rodata.loop.str1.4
-                0x2000cce8       0xcc .pio\build\teensy41\src\EBTKS.cpp.o
+                0x2000cd14       0xcc .pio\build\teensy41\src\EBTKS.cpp.o
                                  0xd0 (size before relaxing)
- .rodata.p05.0  0x2000cdb4        0xc c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi-teensy/bin/../lib/gcc/arm-none-eabi/11.3.1/thumb/v7e-m+dp/hard\libc.a(libc_a-mprec.o)
+ .rodata.p05.0  0x2000cde0        0xc c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi-teensy/bin/../lib/gcc/arm-none-eabi/11.3.1/thumb/v7e-m+dp/hard\libc.a(libc_a-mprec.o)
  .rodata.setup.str1.4
-                0x2000cdc0      0x403 .pio\build\teensy41\src\EBTKS.cpp.o
+                0x2000cdec      0x403 .pio\build\teensy41\src\EBTKS.cpp.o
                                 0x41b (size before relaxing)
- *fill*         0x2000d1c3        0x1 
+ *fill*         0x2000d1ef        0x1 
  .rodata.str1.4
-                0x2000d1c4        0xc .pio\build\teensy41\src\EBTKS.cpp.o
+                0x2000d1f0        0xc .pio\build\teensy41\src\EBTKS.cpp.o
  .rodata.str1.4
-                0x2000d1d0       0x53 .pio\build\teensy41\src\EBTKS_SD.cpp.o
- *fill*         0x2000d223        0x1 
+                0x2000d1fc       0x53 .pio\build\teensy41\src\EBTKS_SD.cpp.o
+ *fill*         0x2000d24f        0x1 
  .rodata.str1.4
-                0x2000d224      0x165 .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
+                0x2000d250      0x165 .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
                                 0x16d (size before relaxing)
- *fill*         0x2000d389        0x3 
+ *fill*         0x2000d3b5        0x3 
  .rodata.str1.4
-                0x2000d38c       0x44 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi-teensy/bin/../lib/gcc/arm-none-eabi/11.3.1/thumb/v7e-m+dp/hard\libc.a(libc_a-locale.o)
+                0x2000d3b8       0x44 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi-teensy/bin/../lib/gcc/arm-none-eabi/11.3.1/thumb/v7e-m+dp/hard\libc.a(libc_a-locale.o)
                                  0x4c (size before relaxing)
  .rodata.usb_descriptor_list
-                0x2000d3d0       0x84 .pio\build\teensy41\libFrameworkArduino.a(usb_desc.c.o)
-                0x2000d3d0                usb_descriptor_list
+                0x2000d3fc       0x84 .pio\build\teensy41\libFrameworkArduino.a(usb_desc.c.o)
+                0x2000d3fc                usb_descriptor_list
  .rodata.zeroes.0
-                0x2000d454       0x10 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi-teensy/bin/../lib/gcc/arm-none-eabi/11.3.1/thumb/v7e-m+dp/hard\libc.a(libc_a-svfprintf.o)
+                0x2000d480       0x10 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi-teensy/bin/../lib/gcc/arm-none-eabi/11.3.1/thumb/v7e-m+dp/hard\libc.a(libc_a-svfprintf.o)
  .rodata.zeroes.0
-                0x2000d464       0x10 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi-teensy/bin/../lib/gcc/arm-none-eabi/11.3.1/thumb/v7e-m+dp/hard\libc.a(libc_a-vfiprintf.o)
+                0x2000d490       0x10 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi-teensy/bin/../lib/gcc/arm-none-eabi/11.3.1/thumb/v7e-m+dp/hard\libc.a(libc_a-vfiprintf.o)
  *(SORT_BY_ALIGNMENT(SORT_BY_NAME(.data*)))
- *fill*         0x2000d474        0x4 
  .data._impure_data
-                0x2000d478      0x120 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi-teensy/bin/../lib/gcc/arm-none-eabi/11.3.1/thumb/v7e-m+dp/hard\libc.a(libc_a-impure.o)
-                0x2000d478                _impure_data
+                0x2000d4a0      0x120 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi-teensy/bin/../lib/gcc/arm-none-eabi/11.3.1/thumb/v7e-m+dp/hard\libc.a(libc_a-impure.o)
+                0x2000d4a0                _impure_data
  .data.Command_Table
-                0x2000d598      0x4b4 .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
-                0x2000d598                Command_Table
+                0x2000d5c0      0x4b4 .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
+                0x2000d5c0                Command_Table
  .data.Config_filename
-                0x2000da4c        0x4 .pio\build\teensy41\src\EBTKS.cpp.o
-                0x2000da4c                Config_filename
+                0x2000da74        0x4 .pio\build\teensy41\src\EBTKS.cpp.o
+                0x2000da74                Config_filename
  .data.EMC_NumBanks
-                0x2000da50        0x4 .pio\build\teensy41\src\EBTKS_SD.cpp.o
-                0x2000da50                EMC_NumBanks
+                0x2000da78        0x4 .pio\build\teensy41\src\EBTKS_SD.cpp.o
+                0x2000da78                EMC_NumBanks
  .data.EMC_StartBank
-                0x2000da54        0x4 .pio\build\teensy41\src\EBTKS_SD.cpp.o
-                0x2000da54                EMC_StartBank
+                0x2000da7c        0x4 .pio\build\teensy41\src\EBTKS_SD.cpp.o
+                0x2000da7c                EMC_StartBank
  .data.F_BUS_ACTUAL
-                0x2000da58        0x4 .pio\build\teensy41\libFrameworkArduino.a(clockspeed.c.o)
-                0x2000da58                F_BUS_ACTUAL
+                0x2000da80        0x4 .pio\build\teensy41\libFrameworkArduino.a(clockspeed.c.o)
+                0x2000da80                F_BUS_ACTUAL
  .data.F_CPU_ACTUAL
-                0x2000da5c        0x4 .pio\build\teensy41\libFrameworkArduino.a(clockspeed.c.o)
-                0x2000da5c                F_CPU_ACTUAL
- .data.Keys     0x2000da60      0x294 .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
-                0x2000da60                Keys
- .data.KeysCnt  0x2000dcf4        0x4 .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
-                0x2000dcf4                KeysCnt
- .data.Serial   0x2000dcf8       0x10 .pio\build\teensy41\libFrameworkArduino.a(usb_inst.cpp.o)
-                0x2000dcf8                Serial
+                0x2000da84        0x4 .pio\build\teensy41\libFrameworkArduino.a(clockspeed.c.o)
+                0x2000da84                F_CPU_ACTUAL
+ .data.Keys     0x2000da88      0x294 .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
+                0x2000da88                Keys
+ .data.KeysCnt  0x2000dd1c        0x4 .pio\build\teensy41\src\EBTKS_Utilities.cpp.o
+                0x2000dd1c                KeysCnt
+ .data.Serial   0x2000dd20       0x10 .pio\build\teensy41\libFrameworkArduino.a(usb_inst.cpp.o)
+                0x2000dd20                Serial
  .data._ZL11tapeInCount
-                0x2000dd08        0x4 .pio\build\teensy41\src\EBTKS_Tape_Drive.cpp.o
+                0x2000dd30        0x4 .pio\build\teensy41\src\EBTKS_Tape_Drive.cpp.o
  .data._ZL12currBlockNum
-                0x2000dd0c        0x4 .pio\build\teensy41\src\EBTKS_Tape_Drive.cpp.o
+                0x2000dd34        0x4 .pio\build\teensy41\src\EBTKS_Tape_Drive.cpp.o
  .data._ZL12syncInterval
-                0x2000dd10        0x4 .pio\build\teensy41\liba0e\libTime.a(Time.cpp.o)
+                0x2000dd38        0x4 .pio\build\teensy41\liba0e\libTime.a(Time.cpp.o)
  .data._ZL12test_message
-                0x2000dd14       0x5b .pio\build\teensy41\src\EBTKS_CRT.cpp.o
- *fill*         0x2000dd6f        0x1 
+                0x2000dd3c       0x5b .pio\build\teensy41\src\EBTKS_CRT.cpp.o
+ *fill*         0x2000dd97        0x1 
  .data._ZL14UART4_Hardware
-                0x2000dd70       0x64 .pio\build\teensy41\libFrameworkArduino.a(HardwareSerial2.cpp.o)
+                0x2000dd98       0x64 .pio\build\teensy41\libFrameworkArduino.a(HardwareSerial2.cpp.o)
  .data.__atexit_recursive_mutex
-                0x2000ddd4        0x4 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi-teensy/bin/../lib/gcc/arm-none-eabi/11.3.1/thumb/v7e-m+dp/hard\libc.a(libc_a-__call_atexit.o)
-                0x2000ddd4                __atexit_recursive_mutex
+                0x2000ddfc        0x4 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi-teensy/bin/../lib/gcc/arm-none-eabi/11.3.1/thumb/v7e-m+dp/hard\libc.a(libc_a-__call_atexit.o)
+                0x2000ddfc                __atexit_recursive_mutex
  .data.__brkval
-                0x2000ddd8        0x4 .pio\build\teensy41\libFrameworkArduino.a(startup.c.o)
-                0x2000ddd8                __brkval
+                0x2000de00        0x4 .pio\build\teensy41\libFrameworkArduino.a(startup.c.o)
+                0x2000de00                __brkval
  .data.__dso_handle
-                0x2000dddc        0x4 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi-teensy/bin/../lib/gcc/arm-none-eabi/11.3.1/thumb/v7e-m+dp/hard/crtbegin.o
-                0x2000dddc                __dso_handle
+                0x2000de04        0x4 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi-teensy/bin/../lib/gcc/arm-none-eabi/11.3.1/thumb/v7e-m+dp/hard/crtbegin.o
+                0x2000de04                __dso_handle
  .data.__global_locale
-                0x2000dde0      0x16c c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi-teensy/bin/../lib/gcc/arm-none-eabi/11.3.1/thumb/v7e-m+dp/hard\libc.a(libc_a-locale.o)
-                0x2000dde0                __global_locale
+                0x2000de08      0x16c c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi-teensy/bin/../lib/gcc/arm-none-eabi/11.3.1/thumb/v7e-m+dp/hard\libc.a(libc_a-locale.o)
+                0x2000de08                __global_locale
  .data.__malloc_av_
-                0x2000df4c      0x408 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi-teensy/bin/../lib/gcc/arm-none-eabi/11.3.1/thumb/v7e-m+dp/hard\libc.a(libc_a-mallocr.o)
-                0x2000df4c                __malloc_av_
+                0x2000df74      0x408 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi-teensy/bin/../lib/gcc/arm-none-eabi/11.3.1/thumb/v7e-m+dp/hard\libc.a(libc_a-mallocr.o)
+                0x2000df74                __malloc_av_
  .data.__malloc_sbrk_base
-                0x2000e354        0x4 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi-teensy/bin/../lib/gcc/arm-none-eabi/11.3.1/thumb/v7e-m+dp/hard\libc.a(libc_a-mallocr.o)
-                0x2000e354                __malloc_sbrk_base
+                0x2000e37c        0x4 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi-teensy/bin/../lib/gcc/arm-none-eabi/11.3.1/thumb/v7e-m+dp/hard\libc.a(libc_a-mallocr.o)
+                0x2000e37c                __malloc_sbrk_base
  .data.__malloc_trim_threshold
-                0x2000e358        0x4 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi-teensy/bin/../lib/gcc/arm-none-eabi/11.3.1/thumb/v7e-m+dp/hard\libc.a(libc_a-mallocr.o)
-                0x2000e358                __malloc_trim_threshold
- .data.__sglue  0x2000e35c        0xc c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi-teensy/bin/../lib/gcc/arm-none-eabi/11.3.1/thumb/v7e-m+dp/hard\libc.a(libc_a-findfp.o)
-                0x2000e35c                __sglue
+                0x2000e380        0x4 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi-teensy/bin/../lib/gcc/arm-none-eabi/11.3.1/thumb/v7e-m+dp/hard\libc.a(libc_a-mallocr.o)
+                0x2000e380                __malloc_trim_threshold
+ .data.__sglue  0x2000e384        0xc c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi-teensy/bin/../lib/gcc/arm-none-eabi/11.3.1/thumb/v7e-m+dp/hard\libc.a(libc_a-findfp.o)
+                0x2000e384                __sglue
  .data._impure_ptr
-                0x2000e368        0x4 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi-teensy/bin/../lib/gcc/arm-none-eabi/11.3.1/thumb/v7e-m+dp/hard\libc.a(libc_a-impure.o)
-                0x2000e368                _impure_ptr
+                0x2000e390        0x4 c:/users/philip freidin/.platformio/packages/toolchain-gccarmnoneeabi-teensy/bin/../lib/gcc/arm-none-eabi/11.3.1/thumb/v7e-m+dp/hard\libc.a(libc_a-impure.o)
+                0x2000e390                _impure_ptr
  .data.device_descriptor
-                0x2000e36c       0x12 .pio\build\teensy41\libFrameworkArduino.a(usb_desc.c.o)
- *fill*         0x2000e37e        0x2 
+                0x2000e394       0x12 .pio\build\teensy41\libFrameworkArduino.a(usb_desc.c.o)
+ *fill*         0x2000e3a6        0x2 
  .data.isr_table_gpio1
-                0x2000e380       0x80 .pio\build\teensy41\libFrameworkArduino.a(interrupt.c.o)
-                0x2000e380                isr_table_gpio1
+                0x2000e3a8       0x80 .pio\build\teensy41\libFrameworkArduino.a(interrupt.c.o)
+                0x2000e3a8                isr_table_gpio1
  .data.isr_table_gpio2
-                0x2000e400       0x80 .pio\build\teensy41\libFrameworkArduino.a(interrupt.c.o)
-                0x2000e400                isr_table_gpio2
+                0x2000e428       0x80 .pio\build\teensy41\libFrameworkArduino.a(interrupt.c.o)
+                0x2000e428                isr_table_gpio2
  .data.isr_table_gpio3
-                0x2000e480       0x80 .pio\build\teensy41\libFrameworkArduino.a(interrupt.c.o)
-                0x2000e480                isr_table_gpio3
+                0x2000e4a8       0x80 .pio\build\teensy41\libFrameworkArduino.a(interrupt.c.o)
+                0x2000e4a8                isr_table_gpio3
  .data.isr_table_gpio4
-                0x2000e500       0x80 .pio\build\teensy41\libFrameworkArduino.a(interrupt.c.o)
-                0x2000e500                isr_table_gpio4
+                0x2000e528       0x80 .pio\build\teensy41\libFrameworkArduino.a(interrupt.c.o)
+                0x2000e528                isr_table_gpio4
  .data.machineNames
-                0x2000e580       0x28 .pio\build\teensy41\src\EBTKS_SD.cpp.o
-                0x2000e580                machineNames
+                0x2000e5a8       0x28 .pio\build\teensy41\src\EBTKS_SD.cpp.o
+                0x2000e5a8                machineNames
  .data.microsoft_os_compatible_id_desc
-                0x2000e5a8       0x28 .pio\build\teensy41\libFrameworkArduino.a(usb_desc.c.o)
+                0x2000e5d0       0x28 .pio\build\teensy41\libFrameworkArduino.a(usb_desc.c.o)
  .data.microsoft_os_string_desc
-                0x2000e5d0       0x12 .pio\build\teensy41\libFrameworkArduino.a(usb_desc.c.o)
- *fill*         0x2000e5e2        0x2 
+                0x2000e5f8       0x12 .pio\build\teensy41\libFrameworkArduino.a(usb_desc.c.o)
+ *fill*         0x2000e60a        0x2 
  .data.usb_string_serial_number_default
-                0x2000e5e4       0x16 .pio\build\teensy41\libFrameworkArduino.a(usb_desc.c.o)
-                0x2000e5e4                usb_string_serial_number
-                0x2000e5e4                usb_string_serial_number_default
+                0x2000e60c       0x16 .pio\build\teensy41\libFrameworkArduino.a(usb_desc.c.o)
+                0x2000e60c                usb_string_serial_number
+                0x2000e60c                usb_string_serial_number_default
  .data._ZL11m_errorCode
-                0x2000e5fa        0x1 .pio\build\teensy41\libe34\libSdFat.a(SdioTeensy.cpp.o)
+                0x2000e622        0x1 .pio\build\teensy41\libe34\libSdFat.a(SdioTeensy.cpp.o)
  .data._ZZ14readTapeStatusvE9stickyGap
-                0x2000e5fb        0x1 .pio\build\teensy41\src\EBTKS_Tape_Drive.cpp.o
+                0x2000e623        0x1 .pio\build\teensy41\src\EBTKS_Tape_Drive.cpp.o
  .data.yield_active_check_flags
-                0x2000e5fc        0x1 .pio\build\teensy41\libFrameworkArduino.a(yield.cpp.o)
-                0x2000e5fc                yield_active_check_flags
+                0x2000e624        0x1 .pio\build\teensy41\libFrameworkArduino.a(yield.cpp.o)
+                0x2000e624                yield_active_check_flags
  *(.vectorsram)
- *fill*         0x2000e5fd      0x203 
+ *fill*         0x2000e625      0x1db 
  .vectorsram    0x2000e800      0x2c0 .pio\build\teensy41\libFrameworkArduino.a(startup.c.o)
                 0x2000e800                _VectorsRam
 

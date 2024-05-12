@@ -9,6 +9,7 @@
 #include "Inc_Common_Headers.h"
 #include "EBTKS_ESP.h"
 #include <TimeLib.h>
+//  #include "core_pins.h"  uncomment to quick access file with editor. Do not leave uncommented
 
 ESPComms esp32;
 
@@ -523,8 +524,8 @@ void setup()
   //	CORE_PIN_SCOPE_2	31							General entry and exit of whatever is currently being debugged, currently DMA, SCOPE_2
   //	CORE_PIN_T13			35							Also the on board LED. Toggle when errors are detected in diagnostic tests
 
-  pinMode(CORE_PIN_RXD, INPUT);       //  Communications with the ESP32
-  pinMode(CORE_PIN_TXD, INPUT);       //  Communications with the ESP32   one of these needs to be an output.
+  pinMode(CORE_PIN_ESP32_RXD, OUTPUT);      //  Communications with the ESP32
+  pinMode(CORE_PIN_ESP32_TXD, INPUT);       //  Communications with the ESP32
 
   digitalWrite(CORE_PIN_ESP_EN,1);
   digitalWrite(CORE_PIN_ESP_BOOT,1);
