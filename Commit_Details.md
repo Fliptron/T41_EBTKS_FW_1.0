@@ -603,7 +603,7 @@ Changes:
 -   Add tester for PSRAM, including avoiding allocated PSRAM memory, which requires
     an additional line to be added to
 
-    -  C:\Users\me\\.platformio\packages\framework-arduinoteensy\cores\teensy4\imxrt1062_t41.ld
+    -  C:\Users\--your-name---\\.platformio\packages\framework-arduinoteensy\cores\teensy4\imxrt1062_t41.ld
 
 -   which is not tracked by Git. The change is to add the following at line 89
 
@@ -910,7 +910,7 @@ Changes:
             func(param1, param2, param3);
 
 -   The DirLine.h class looks like it was extracted from EBTKS_AUXROM_SD_Services.cpp (around line 400)
-    and placed in /include, but there is still a copy in EBTKS_AUXROM_SD_Services.cpp , so this looks
+    and placed in \include, but there is still a copy in EBTKS_AUXROM_SD_Services.cpp , so this looks
     like an incomplete edit. There is a single reference to it in EBTKS_ESP.h . This class declaration
     should probably be removed from EBTKS_AUXROM_SD_Services.cpp, and appropriate changes made to use
     DirLine.h .
@@ -920,7 +920,8 @@ Changes:
                                       // can't find isReadOnly()
 
     This was done ages ago, but not documented in this Commit_Details.md file.
--   Note:  PlatformIO "Clean All" wipes all of .pio/build and .pio/libdeps. So on the next build,
+-   Note:  PlatformIO "Clean All" (or "Full Clean" , depending on the version of PlatformIO)
+    wipes all of .pio/build and .pio/libdeps. So on the next build,
     the libraries will be retrieved from the interwebs. platformio.ini specifies the folowing libraries
     with specific versions.
 
@@ -944,24 +945,47 @@ Changes:
 
 ## Commit \#132 01/29/2023
 
--   Release freeze on which libraries are being used. The freeze happened when hardware started shipping on 7/12/2021. At that time we were using the TeensyDuino library V1.53, and the SdFat library was separate from TeensyDuino. We were using version #2.0.2-beta.3 . With this commit the Current TeensyDuino V1.57 is being used. The most significant change is that SdFat is now part of this library, and both libraries have had 15 months of updates. The impact to this EBTKS firmware are listed below, and after a bit of a rough start at the development desk, the required changes are not too significant.
--   There has been a known issue with the Mass Storage ROM COPY command when copying a complete disk image from one disk to another, including from an external physical disk to an emulated disk. All files are not copied. For example:
+-   Release freeze on which libraries are being used. The freeze
+    happened when hardware started shipping on 7/12/2021. At that time
+    we were using the TeensyDuino library V1.53, and the SdFat library
+    was separate from TeensyDuino. We were using version #2.0.2-beta.3
+    . With this commit the Current TeensyDuino V1.57 is being used.
+    The most significant change is that SdFat is now part of this
+    library, and both libraries have had 15 months of updates. The
+    impact to this EBTKS firmware are listed below, and after a bit of
+    a rough start at the development desk, the required changes are
+    not too significant.
+-   There has been a known issue with the Mass Storage ROM COPY
+    command when copying a complete disk image from one disk to
+    another, including from an external physical disk to an emulated
+    disk. All files are not copied. For example:
 
     COPY ":D300" TO ":D302"
 
-    This problem does not seem to be repeatable now. While it is nice for bugs to go away, some more research is need to try and confirm that this "fix" is due to the new external libraries.
+    This problem does not seem to be repeatable now. While it is nice
+    for bugs to go away, some more research is need to try and confirm
+    that this "fix" is due to the new external libraries.
 
-    Update: The bug seems to be related to how much use of the SD card has occured, impacting the response time to SD operations, and leading to timeouts. It appears that the integrated SDFat
-    library (including updates to that library) have been fixed within TeensyDuino V1.57. 100's of megabytes of data transfers have occured in tests without a failure.
+    Update: The bug seems to be related to how much use of the SD card
+    has occured, impacting the response time to SD operations, and
+    leading to timeouts. It appears that the integrated SDFat library
+    (including updates to that library) have been fixed within
+    TeensyDuino V1.57. 100's of megabytes of data transfers have
+    occured in tests without a failure.
 
 -   Replaced all usage of "File" as a type with "FsFile" as part of update to TeensyDuino 1.57
 -   Change references to available32() to available64()
 -   Caught a bug in EBTKS_SD.cpp at line 857 and 957, READ_ONLY  should be  O_RDONLY.
--   In printDirectory() the openNextFile() return value is an FsFile rather than File, and FsFile does not have a file.name() function (that returns a pointer to the file name).
-    The new way to do it requires a local buffer (tempname[260]) and the file name is retrieved  with entry.getName(tempname, 258);
+-   In printDirectory() the openNextFile() return value is an FsFile
+    rather than File, and FsFile does not have a file.name() function
+    (that returns a pointer to the file name). The new way to do it
+    requires a local buffer (tempname[260]) and the file name is
+    retrieved  with entry.getName(tempname, 258);
 
-    Hmmm: this function is recursive, and it does not appear to be called by anything. Disabled it with "#if 0
-" and also in EBTKS_Function_Declarations.h and the project still links without errors.
+    Hmmm: this function is recursive, and it does not appear to be
+    called by anything. Disabled it with "#if 0 " and also in
+    EBTKS_Function_Declarations.h and the project still links without
+    errors.
 
 ## Commit \#133 12/31/2023
 
@@ -991,14 +1015,17 @@ Changes:
     The recomendation is to match the before versions of the functions with the copy in TeensyDuino V1.58. They should be identical. Then rename the ones in the TeensyDuino Library by appending **_OLD** to file name extension.
     Then copy the replacement from the after directory to the appropriate place.
     
-    In C:\Users\YOURNAME\.platformio\packages\framework-arduinoteensy\cores\teensy4 you will find
+    In C:\Users\\--your-name---\\.platformio\packages\framework-arduinoteensy\cores\teensy4 you will find
 
     -   HardwareSerial.cpp
     -   usb.c
 
-    In C:\Users\YOURNAME\.platformio\packages\framework-arduinoteensy\libraries\USBHost_t36 you will find
+    In C:\Users\\--your-name---\\.platformio\packages\framework-arduinoteensy\libraries\USBHost_t36 you will find
     
     -   ehci.cpp
+
+-   For comparing files (as part of the patching process) there are further details in commit \#135
+    and in the README.md in the Library_Patches directory.
 
 -   There may be some problems with this commit, as the change of computers, operating systems,
     and every piece of software, has led me to lose the magic incantation that includes the built .hex
@@ -1080,5 +1107,212 @@ Changes:
         ArduinoJson             6.21.4+sha.3e1be98
         SdFat                   2.1.2
         Time                    1.6.1
+
+## Commit \#135 05/20/2024
+
+Why are we here?  Apparently, PlatformIO ignores the appended version
+string that can be applied to a **lib_deps** entry in the
+platformio.ini file, and instead the most recent version is retrieved.
+Or, another explanation is that if the version is no longer in the
+library's repository, the most recent version is retrieved instead.
+This is done silently. This can go un-noticed for quite some time (in
+this repo's case, for over 2 years) as PlatformIO does not seem to
+retrieve the most recent version of a library, if there is alraedy a
+copy of some version in the .pio directory tree. Thus the primary
+developers of EBTKS firmware have been using a version of several
+libraries that are no longer available, and the versions that are
+being used are not part of what gets pushed to GitHub when a new
+commit occurs. This explains why others have not been able to fetch
+this repo and rebuild the firmware. I could be wrong about this, but
+the above explains what has been observed.
+
+Normally when the project clean is clicked in the VS Code tool bar (at
+the bottom of the screen, trash can icon), the \\.pio\\build directory
+is flushed, but \\.pio\\lib_deps is retained, which are the
+aforementioned libraries, that might not be most recent. If you select
+the PlatformIO icon in the left tool panel:
+
+    Project Tasks -> teensy41 -> General -> Full Clean
+
+Will clean both "build" and "libdeps" directories. The next build will
+then retrieve the most recent version of the libdep libraries.
+
+There are another set of libraries, that are entirely outside of the
+project directory tree, such as:
+
+-  GCC libraries
+   -   C:\\Users\\--your-name---\\.platformio\\packages\\toolchain-gccarmnoneeabi-teensy
+-  TeensyDuino
+   -  C:\\Users\\--your-name---\\.platformio\\packages\\framework-arduinoteensy\\cores\\teensy4
+   -  C:\\Users\\--your-name---\\.platformio\\packages\\framework-arduinoteensy\\libraries\\USBHost_t36
+
+So anyway, libdeps got cleaned, and the latest **ArduinoJson** library
+got installed in \\.pio\libdeps\teensy41 , and we jumped from V6.xx.xx
+to V7.0.4 , which according to the release notes for version 7 of the JSON
+library, the goal was ease of use rather than minimal memory size.
+
+From [Upgrade from V6 to V7](https://arduinojson.org/v7/how-to/upgrade-from-v6/)
+
+    ArduinoJson 7 is significantly bigger !!
+
+    ArduinoJson 6 had a strong focus on code size because 8-bit
+    microcontrollers were still dominant at the time. ArduinoJson 7
+    loosened the code size constraint to focus on ease of use. As a
+    result, version 7 is significantly bigger than version 6.
+
+Along with a larger memory requirement, the way *docs* are declared has changed,
+and the way NestedArrays and NestedObjects are created and referenced has changed.
+This commit includes the necessary changes. At least this particular change is
+useful, as it means we no longer have to declare the size of the Json doc used to
+store the parsed version of CONFIG.TXT.
+
+Apparently ArduinoJson has supported comments in the Json text files since version 5.
+The production release of EBTKS firmware, (7/12/2021) used V6.16.1 , but it was made
+an opt-in feature starting with version 6.14.0.  I really want comments in the
+CONFIG.TXT file, rather than the hokey way I have been doing it up to now.
+So, with this commit, this feature will be turned on. I'm undecided whether the
+required CONFIG file maybe should be named CONFIG.JSON  .
+
+Both of the C language comment styles are supported: /* */  and //
+
+### Confirming  that you are building the project correctly
+
+Starting with this commit, a log file is **manually** created by
+selecting the text in the build panel, after a successful (no errors)
+Platformio:Build . It is assumed that prior to the build, the
+Platformio:Clean has been run, which deletes most of the \\.pio\build
+directory. As this is a manual process, I may forget to do this for a
+specific commit. Please check the update time of build.log with other
+files of the most recent commit. Please read the section below about
+various tools for comparing two text files. After you have created a
+build, copy the text in the build panel into your own similarly named
+build.log (don't over write the reference version from the repo). This
+will let you confirm that the various libraries, GCC compiler, match
+the ones that Philip and Russell use. Before you start making your own
+changes to the repo, you should probably confirm that you can build an
+identical HEX file to the repo owner. Since the HEX file is a text file,
+it to can be compared, as can the EBTKS.map file.  All three files should
+be compared to the reference version fetched from GitHub. Build.log, and
+EBTKS.map are in the root directory of the project. The firmware.hex file
+can be found in \\.pio\build\teensy41
+
+In an ideal situation, the size of the various sections of the built image
+at the end of build.log should be identical.
+
+Some minor difference are to be expected for the following reasons:
+
+-   The current date and time are part of the built firmeware, so a small
+    number of bytes will be different
+-   The PlatformIO build process is multithreaded, and multiple compiles
+    are launched concurrently, depending on the capabilities of the host
+    computer. Due to minor differences in the launch time and the completion
+    time of the compiles, the order of lines in build.log might not line up
+    exactly, but all lines should be in both the reference version and your
+    version.
+
+Clone the repo from github, and make a copy, in a directory named reference.
+
+My preferred text file comparison tool is UltraCompare that creates very nice side-by-side
+displays of the differences between two files. You may have your own favorite.
+
+Although I haven't used it for this purpose, Visual Studio Code
+obviously has a built-in file compare capability. For files that are
+not part of the repo (the ones in the library directories ouside the
+repo), they can be accessed with Windows file Explorer, and dragged
+onto the tab area at the top of the main window. This allows editing
+and comparison.
+
+So, Options are:
+
+-   UltraCompare
+-   Your favorite text compare utility
+-   Visual Studio Code built-in side by side compare (which is very much like UltraCompare)
+-   Windows FC
+-   Git Bash diff
+
+### UltraCompare or your fav alternative
+
+For UltraCompare, if you have it, you know how to use it. Same for your own favorite.
+
+### VS Code file compare
+
+For files in the Library_Patches directory, first make them visible by
+expanding the folders in the left most panel. For files that are
+outside the repo (the library files that you will be replacing with
+the patched versions, open the Windows File Explorer, and navigate to
+their location. Drag the file name to the tab bar at the top of the
+main VS Code window, to open the file for editing. Do NOT edit the
+file.
+
+The three relevant library files to be patched are here:
+
+    C:\Users\\--your-name---\\.platformio\packages\framework-arduinoteensy\cores\teensy4\HardwareSerial.cpp
+    C:\Users\\--your-name---\\.platformio\packages\framework-arduinoteensy\cores\teensy4\usb.c
+    C:\Users\\--your-name---\\.platformio\packages\framework-arduinoteensy\libraries\USBHost_t36\ehci.cpp
+
+The procedure is as follows
+
+-   Follow the above instructions to add the file you want to compare from the external library
+-   At the top of the left most panel in VSCode, expand "OPEN EDITORS" , the file you just
+    added to the tab area should be visible
+-   Expand the Librar_Patches section of the projects files
+-   To make sure that the library you are about to patch is the same one that this repo
+    expects, go to the "Before" sub directory, and on the file you want to compare,
+    right click and select "Select for Compare"
+-   Go to the OPEN EDITORS section, and right click on the file that is in the external
+    library and click on "Compare with Selected". You should see the two-up display of the
+    file, and there should be no visible differences. If there are differences, you have either
+    already patched the library, or we are not working on the same version of TeensyDuino.
+    If it is a version issue, then the next step *may*  guide you on how to do the required patches.
+-   Do this for all 3 library files
+-   To see what the changes will be, select the same files from the before and after directories
+    with "Select for Compare" and "Compare with Selected" to see the required patch.
+-   Finally, after checking all three files, append _OLD to the extension of each file in
+    the library, to disable it, without  removing it. Then copy in the patched version from
+    the After directory. Note that ehci.cpp is not in the same directory as the other two.
+
+### Diff and FC
+
+As you are using Visual Studio Code and Platformio, **Git** tools have probably been installed
+so that you can clone the repo from GitHub. In the Windows File Explorer, open the directory
+that contains platformio.ini (the root of the repo) and see if
+
+    "Open Git Bash here"
+
+is an option. If so, then you will be able to run a version of **diff**
+
+In desperation, you can use the Microsoft Windows supplied utility **FC**.
+
+For the two copies of the repo, don't make any changes to reference. In the other copy,
+before you start making code changes, do a clean and a build. select all the text in
+the build process logging windows, and save it in the same directory as platformio.ini
+and name it Compile.log . Then in a cmd.exe window, compare the build.log you just
+created with the one in the reference directory.
+
+    Git Bash shell example
+    $ diff /i/Repos/EBTKS_FW/build.log /i/Repos/reference/build.log
+
+    Windows 11 FC example
+    I:\>fc /L /N I:\Repos\EBTKS_FW\build.log  I:\Repos\reference\build.log
+
+For the rest of the patching process, it is described in detail in the "VS Code file compare"
+section above.
+
+Changes:
+
+-   Support ArduinoJson library update to Version 7.0.4
+-   Enable comments in the CONFIG.TXT file
+-   ITCM grew by 5 kB to 168,716 bytes
+-   DTCM no change
+-   FLASH usage went from 2.9% to 2.96%
+-   About 180 kB available for future code or data
+-   New README.md in Library_Patches , which is mostly a copy of \#135 commit section
+    on file compare and applying patches to library elements that are outside the repo
+
+
+
+
+
+
 
 

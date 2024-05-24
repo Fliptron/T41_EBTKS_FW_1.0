@@ -9,7 +9,8 @@
       D:\2021\HP-85_EBTKS_V1.0\ESP32_Binaries\Where_stuff_comes_from.txt
 
 */
-#include <ArduinoJson.h>
+#define ARDUINOJSON_ENABLE_COMMENTS 1
+#include "ArduinoJson.h"
 #include "Base64.h"
 #include "DirLine.h"
 
@@ -243,8 +244,17 @@ public:
     {
       return;
     }
-    StaticJsonDocument<3000> jdoc;
-    StaticJsonDocument<6000> jreply;
+    //
+    //  ArduinoJson 6
+    //
+    //StaticJsonDocument<3000> jdoc;
+    //StaticJsonDocument<6000> jreply;
+
+    //
+    //  ArduinoJson 7 , JsonDocuments are elastic, so don't need size, are allocated on heap 
+    //
+    JsonDocument jdoc;
+    JsonDocument jreply;
 
     DeserializationError error = deserializeJson(jdoc, _line);
     if (error)
@@ -271,7 +281,18 @@ public:
       {
         _currFd = 1;
       }
-      JsonObject reply = jreply.createNestedObject("open");
+
+    //
+    //  ArduinoJson 6
+    //
+    //JsonObject reply = jreply.createNestedObject("open");
+
+    //
+    //  ArduinoJson 7 , jreply.createNestedObject("open")  ->  jreply["open"].to<JsonObject>();
+    //
+
+
+      JsonObject reply = jreply["open"].to<JsonObject>();
       reply["fd"] = _currFd;
     }
 
@@ -286,7 +307,7 @@ public:
         _currFd = -1;
         //_currFile = NULL; //invalidate the file handle
       }
-      JsonObject reply = jreply.createNestedObject("close");
+      JsonObject reply = jreply["close"].to<JsonObject>();
       reply["fd"] = _currFd;
     }
 
@@ -308,7 +329,7 @@ public:
         }
       }
       // send response
-      JsonObject reply = jreply.createNestedObject("read");
+      JsonObject reply = jreply["read"].to<JsonObject>();
       reply["fd"] = fd;
       reply["len"] = readLen;
       reply["data"] = _strBuff;
@@ -328,7 +349,7 @@ public:
       {
         writeLen = _currFile.write(_buff, len);
       }
-      JsonObject reply = jreply.createNestedObject("write");
+      JsonObject reply = jreply["write"].to<JsonObject>();
       reply["fd"] = fd;
       reply["len"] = writeLen;
     }
@@ -336,7 +357,7 @@ public:
     else if (jdoc["stat"])
     {
       //process file stat message
-      JsonObject reply = jreply.createNestedObject("stat");
+      JsonObject reply = jreply["stat"].to<JsonObject>();
       reply["fd"] = _currFd;
       reply["offset"] = 0;
     }
@@ -354,7 +375,7 @@ public:
       int foffset = _currFile.seek(offset);
 
       // returns file_offset or error
-      JsonObject reply = jreply.createNestedObject("lseek");
+      JsonObject reply = jreply["lseek"].to<JsonObject>();
       reply["fd"] = _currFd;
       reply["offset"] = foffset;
     }
@@ -362,7 +383,7 @@ public:
     else if (jdoc["set_time"])
     {
       String time = jdoc["set_time"]["time"] | "";
-      JsonObject reply = jreply.createNestedObject("set_time");
+      JsonObject reply = jreply["set_time"].to<JsonObject>();
       reply["ok"] = true;
     }
 
@@ -382,7 +403,7 @@ public:
           kbuff.putch(_buff[a]);
         }*/
 
-      JsonObject reply = jreply.createNestedObject("keyboard");
+      JsonObject reply = jreply["keyboard"].to<JsonObject>();
       reply["ok"] = true;
     }
 
@@ -396,7 +417,8 @@ public:
     else if (jdoc["get_alpha"])
     {
       dumpCrtAlphaAsBase64(_strBuff, false);
-      JsonObject reply = jreply.createNestedObject("hpText");
+      JsonObject reply = jreply["hpText"].to<JsonObject>();
+
       reply["isHP87"] = false; //only HP85 for the moment
       reply["image"] = _strBuff;
       reply["width"] = 32;
@@ -407,7 +429,7 @@ public:
     {
       dumpCrtAlphaAsBase64(_strBuff, true);
       Serial.printf("vbuff size:%d\r\n", strlen(_strBuff));
-      JsonObject reply = jreply.createNestedObject("hpGraph");
+      JsonObject reply = jreply["hpGraph"].to<JsonObject>();
       reply["isHP87"] = false; //only HP85 for the moment
       reply["image"] = _strBuff;
       reply["width"] = 32;
@@ -422,14 +444,17 @@ public:
       strncpy(_strBuff, jdoc["files"]["path"], MAX_STR_LEN);
       dl.beginDir(_strBuff);
 
-      JsonObject reply = jreply.createNestedObject("theFiles");
+      JsonObject reply = jreply["theFiles"].to<JsonObject>();
       reply["path"] = _strBuff;
-      JsonArray dirents = jreply.createNestedArray("dir");
+      //  V6  was  JsonArray dirents = jreply.createNestedArray("dir");
+      JsonArray dirents = jreply["dir"].to<JsonArray>();
       while (1)
       {
         if (dl.getNextLine(&dirent))
         {
-          JsonObject dir = dirents.createNestedObject();
+                                                          //  V6  was  JsonObject dir = dirents.createNestedObject();
+          JsonObject dir = dirents.add<JsonObject>();     //  V7
+
           dir["type"] = (dirent.is_directory) ? "dir" : "file";
           dir["name"] = dirent.dir_entry_text;
           dir["size"] = dirent.file_size;

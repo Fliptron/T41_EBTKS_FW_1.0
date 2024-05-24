@@ -1,7 +1,7 @@
- *  Executing task: C:\Users\Philip Freidin\.platformio\penv\Scripts\platformio.exe run 
+*  Executing task: C:\Users\Philip Freidin\.platformio\penv\Scripts\platformio.exe run 
 
 Processing teensy41 (platform: teensy; board: teensy41; framework: arduino)
----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 Verbose mode can be enabled via `-v, --verbose` option
 CONFIGURATION: https://docs.platformio.org/page/boards/teensy/teensy41.html
 PLATFORM: Teensy (4.18.0) > Teensy 4.1
@@ -17,7 +17,7 @@ Found 93 compatible libraries
 Scanning dependencies...
 Dependency Graph
 |-- SPI @ 1.0
-|-- ArduinoJson @ 6.21.4+sha.3e1be98
+|-- ArduinoJson @ 7.0.4+sha.1db803b
 |-- SdFat @ 2.1.2
 |-- Time @ 1.6.1
 Building in release mode
@@ -55,9 +55,9 @@ Compiling .pio\build\teensy41\libe34\SdFat\FatLib\FatFileSFN.cpp.o
 Compiling .pio\build\teensy41\libe34\SdFat\FatLib\FatFormatter.cpp.o
 Compiling .pio\build\teensy41\libe34\SdFat\FatLib\FatName.cpp.o
 Compiling .pio\build\teensy41\libe34\SdFat\FatLib\FatPartition.cpp.o
-Archiving .pio\build\teensy41\lib04e\libSPI.a
 Compiling .pio\build\teensy41\libe34\SdFat\FatLib\FatVolume.cpp.o
 Compiling .pio\build\teensy41\libe34\SdFat\FreeStack.cpp.o
+Archiving .pio\build\teensy41\lib04e\libSPI.a
 Compiling .pio\build\teensy41\libe34\SdFat\FsLib\FsFile.cpp.o
 Compiling .pio\build\teensy41\libe34\SdFat\FsLib\FsNew.cpp.o
 Compiling .pio\build\teensy41\libe34\SdFat\FsLib\FsVolume.cpp.o
@@ -174,16 +174,18 @@ Compiling .pio\build\teensy41\FrameworkArduino\yield.cpp.o
 Archiving .pio\build\teensy41\libFrameworkArduino.a
 Linking .pio\build\teensy41\firmware.elf
 Memory region         Used Size  Region Size  %age Used
-            ITCM:      163724 B       512 KB     31.23%
+            ITCM:      168716 B       512 KB     32.18%
             DTCM:      146304 B       512 KB     27.91%
              RAM:      435904 B       512 KB     83.14%
-           FLASH:        230 KB      7936 KB      2.90%
+           FLASH:        235 KB      7936 KB      2.96%
             ERAM:          0 GB        16 MB      0.00%
 Calculating size .pio\build\teensy41\firmware.elf
 Checking size .pio\build\teensy41\firmware.elf
-teensy_size: Memory Usage on Teensy 4.1:
-teensy_size:   FLASH: code:166396, data:60500, headers:8620   free for files:7890948
-teensy_size:    RAM1: variables:146304, code:163720, padding:120   free for local variables:214144
-teensy_size:    RAM2: variables:435904  free for malloc/new:88384
 Building .pio\build\teensy41\firmware.hex
-================================================================================ [SUCCESS] Took 4.82 seconds ================================================================================
+teensy_size: Memory Usage on Teensy 4.1:
+teensy_size:   FLASH: code:171388, data:60500, headers:8748   free for files:7885828
+teensy_size:    RAM1: variables:146304, code:168712, padding:27896   free for local variables:181376
+teensy_size:    RAM2: variables:435904  free for malloc/new:88384
+=========================================================================== [SUCCESS] Took 3.74 seconds ===========================================================================
+ *  Terminal will be reused by tasks, press any key to close it.
+ 

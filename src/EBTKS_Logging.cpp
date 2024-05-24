@@ -3,7 +3,8 @@
 //
 
 #include <Arduino.h>
-#include <ArduinoJson.h>
+#define ARDUINOJSON_ENABLE_COMMENTS 1
+#include "ArduinoJson.h"
 
 #include "Inc_Common_Headers.h"
 

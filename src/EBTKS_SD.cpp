@@ -5,7 +5,8 @@
 //
 
 #include <Arduino.h>
-#include <ArduinoJson.h>
+#define ARDUINOJSON_ENABLE_COMMENTS 1
+#include "ArduinoJson.h"
 
 #include "Inc_Common_Headers.h"
 
@@ -529,7 +530,18 @@ bool loadConfiguration(const char *filename)
   //  Don't forget to change the capacity to match your requirements.
   //  Use arduinojson.org/v6/assistant to compute the capacity.
   //
-  StaticJsonDocument<JSON_DOC_SIZE> doc;
+  //  Might not be required with V7 Json
+
+  //  ArduinoJson 6
+  //
+  //  StaticJsonDocument<JSON_DOC_SIZE> doc;StaticJsonDocument<JSON_DOC_SIZE> doc;
+  //
+
+  //
+  //  ArduinoJson 7 , JsonDocuments are elastic, so don't need size, are allocated on heap 
+  //
+
+  JsonDocument doc;
   #if TRACE_LOAD_CONFIG
   Serial.printf("\nCheckpoint 3\n"); Serial.flush();
   #endif
@@ -937,7 +949,10 @@ bool remount_drives(const char *filename)
   // Allocate a temporary JsonDocument
   // Don't forget to change the capacity to match your requirements.
   // Use arduinojson.org/v6/assistant to compute the capacity, and add a safety margin. Currently about 1500 bytes
-  StaticJsonDocument<JSON_DOC_SIZE> doc;
+  //  StaticJsonDocument<JSON_DOC_SIZE> doc;    //  V6
+  JsonDocument doc;                             //  V7  In Json V7, size is elastic, allocated on heap
+                                                //      Previously (V6) this was allocated as a Static, so repeated calls used same memory.
+                                                //      Does this doc get freed ? What about fragmentation of heap?? I guess FILO , so maybe not an issue.
 
   DeserializationError error = deserializeJson(doc, file);
   file.close();
